@@ -1,0 +1,130 @@
+{
+  "name": "RoYoGo",
+  "version": "1.0.0",
+  "description": "Electron app with React, TypeScript, and Vite",
+  "main": "dist-electron/main/main.js",
+  "author": "",
+  "license": "MIT",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "overrides": {
+    "drizzle-orm": "0.36.0"
+  },
+  "engines": {
+    "node": ">=25.5.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "clean": "rm -rf dist dist-electron",
+    "build": "pnpm run clean && pnpm run electron:build && electron-builder",
+    "build:win": "pnpm run clean && pnpm run electron:build && electron-builder --win",
+    "build:mac": "pnpm run clean && pnpm run electron:build && electron-builder --mac",
+    "build:all": "pnpm run clean && pnpm run electron:build && electron-builder --win --mac",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "electron:dev": "concurrently \"pnpm run dev\" \"wait-on http://localhost:5173 && NODE_ENV=development electron .\"",
+    "electron:build": "rm -rf dist-electron && tsc -p tsconfig.electron.json && cp -r src/main/db/migrations dist-electron/main/db/ && vite build",
+    "db:reset": "node scripts/remove-db.js",
+    "db:generate": "drizzle-kit generate",
+    "db:studio": "drizzle-kit studio",
+    "rebuild": "electron-rebuild",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-tabs": "^1.1.13",
+    "@tanstack/react-table": "^8.21.3",
+    "better-sqlite3": "^11.6.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "drizzle-orm": "0.36.0",
+    "electron-router-dom": "^2.1.0",
+    "lucide-react": "^0.460.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.21.0",
+    "tailwind-merge": "^2.5.4"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.2.9",
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/react": "^14.1.2",
+    "@testing-library/user-event": "^14.5.1",
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^25.0.0",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "@typescript-eslint/eslint-plugin": "^8.17.0",
+    "@typescript-eslint/parser": "^8.17.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/coverage-v8": "^1.2.0",
+    "@vitest/ui": "^1.2.0",
+    "autoprefixer": "^10.4.17",
+    "concurrently": "^8.2.2",
+    "drizzle-kit": "0.31.8",
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1",
+    "eslint": "^9.15.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "jsdom": "^23.0.1",
+    "postcss": "^8.4.33",
+    "tailwindcss": "^3.4.1",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11",
+    "vitest": "^1.2.0",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.bigbootybaba.electron-app",
+    "productName": "RoYoGo",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "dist-electron/main/db/migrations/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build/icon.png",
+      "category": "public.app-category.business",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    }
+  }
+}
