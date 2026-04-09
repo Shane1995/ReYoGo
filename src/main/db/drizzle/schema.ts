@@ -51,6 +51,7 @@ export type NewInventoryItemRow = typeof inventoryItems.$inferInsert;
 export const capturedInvoices = sqliteTable('captured_invoices', {
   id: text('id').primaryKey(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }),
 });
 
 export type CapturedInvoiceRow = typeof capturedInvoices.$inferSelect;
@@ -77,3 +78,20 @@ export const capturedInvoiceLines = sqliteTable('captured_invoice_lines', {
 
 export type CapturedInvoiceLineRow = typeof capturedInvoiceLines.$inferSelect;
 export type NewCapturedInvoiceLineRow = typeof capturedInvoiceLines.$inferInsert;
+
+/**
+ * Audit log for invoice edits. Each row is a snapshot (JSON) of the invoice+lines
+ * taken immediately before the edit was applied.
+ */
+export const invoiceAuditLog = sqliteTable('invoice_audit_log', {
+  id: text('id').primaryKey(),
+  invoiceId: text('invoice_id')
+    .notNull()
+    .references(() => capturedInvoices.id, { onDelete: 'cascade' }),
+  editedAt: integer('edited_at', { mode: 'timestamp' }).notNull(),
+  note: text('note'),
+  snapshot: text('snapshot').notNull(), // JSON: ICapturedInvoiceWithLines
+});
+
+export type InvoiceAuditLogRow = typeof invoiceAuditLog.$inferSelect;
+export type NewInvoiceAuditLogRow = typeof invoiceAuditLog.$inferInsert;

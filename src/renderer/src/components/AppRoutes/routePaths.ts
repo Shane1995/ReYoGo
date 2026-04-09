@@ -17,6 +17,11 @@ export enum InvoiceRoutes {
   History = "/goods-received/invoice/history",
 }
 
+/** Analysis domain. */
+export enum AnalysisRoutes {
+  CostPerUnit = "/goods-received/analysis",
+}
+
 export enum UserRoutes {
   Home = "/",
 }

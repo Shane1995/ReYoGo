@@ -9,13 +9,6 @@ export type ItemOption = {
   typeLabel?: string;
 };
 
-function itemLabel(item: ItemOption): string {
-  if (item.categoryName && item.typeLabel) {
-    return `${item.name} (${item.typeLabel} → ${item.categoryName})`;
-  }
-  return item.name;
-}
-
 type Props = {
   items: ItemOption[];
   value: string;
@@ -23,11 +16,47 @@ type Props = {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
-  /** Optional id for the input so parent can focus it (e.g. after adding a row). */
   inputId?: string;
-  /** Called after selecting an item (Enter or click); use to move focus to next field. */
   onSelectComplete?: () => void;
 };
+
+// Build grouped structure while preserving flat-index for keyboard nav
+type GroupedSection = {
+  typeLabel: string;
+  categories: {
+    categoryName: string;
+    items: { item: ItemOption; flatIndex: number }[];
+  }[];
+};
+
+function buildGroups(flat: ItemOption[]): GroupedSection[] {
+  const typeOrder: string[] = [];
+  const typeMap = new Map<string, Map<string, { item: ItemOption; flatIndex: number }[]>>();
+
+  flat.forEach((item, flatIndex) => {
+    const tl = item.typeLabel ?? "Other";
+    const cn = item.categoryName ?? "Uncategorised";
+
+    if (!typeMap.has(tl)) {
+      typeMap.set(tl, new Map());
+      typeOrder.push(tl);
+    }
+    const catMap = typeMap.get(tl)!;
+    if (!catMap.has(cn)) catMap.set(cn, []);
+    catMap.get(cn)!.push({ item, flatIndex });
+  });
+
+  return typeOrder.map((tl) => {
+    const catMap = typeMap.get(tl)!;
+    return {
+      typeLabel: tl,
+      categories: Array.from(catMap.entries()).map(([categoryName, items]) => ({
+        categoryName,
+        items,
+      })),
+    };
+  });
+}
 
 export function ItemAutocomplete({
   items,
@@ -46,10 +75,7 @@ export function ItemAutocomplete({
   const [containerId] = useState(() => `item-autocomplete-${crypto.randomUUID()}`);
   const listId = `${containerId}-list`;
 
-  const selectedItem = useMemo(
-    () => items.find((i) => i.id === value),
-    [items, value]
-  );
+  const selectedItem = useMemo(() => items.find((i) => i.id === value), [items, value]);
 
   const filteredItems = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -57,12 +83,15 @@ export function ItemAutocomplete({
     return items.filter(
       (i) =>
         i.name.toLowerCase().includes(q) ||
-        (i.categoryName?.toLowerCase().includes(q)) ||
-        (i.typeLabel?.toLowerCase().includes(q))
+        i.categoryName?.toLowerCase().includes(q) ||
+        i.typeLabel?.toLowerCase().includes(q)
     );
   }, [items, query]);
 
-  const displayValue = isOpen ? query : (selectedItem ? itemLabel(selectedItem) : "");
+  const groups = useMemo(() => buildGroups(filteredItems), [filteredItems]);
+
+  // Display: just the item name (no type→category suffix)
+  const displayValue = isOpen ? query : (selectedItem?.name ?? "");
 
   useEffect(() => {
     if (!isOpen) return;
@@ -73,29 +102,25 @@ export function ItemAutocomplete({
     const el = document.getElementById(containerId);
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    setListStyle({
-      top: rect.bottom,
-      left: rect.left,
-      width: Math.max(rect.width, 200),
-    });
+    setListStyle({ top: rect.bottom, left: rect.left, width: Math.max(rect.width, 200) });
   }, [containerId]);
 
   useEffect(() => {
     if (!isOpen) return;
     updateListPosition();
-    const onScrollOrResize = () => updateListPosition();
-    window.addEventListener("scroll", onScrollOrResize, true);
-    window.addEventListener("resize", onScrollOrResize);
+    const handler = () => updateListPosition();
+    window.addEventListener("scroll", handler, true);
+    window.addEventListener("resize", handler);
     return () => {
-      window.removeEventListener("scroll", onScrollOrResize, true);
-      window.removeEventListener("resize", onScrollOrResize);
+      window.removeEventListener("scroll", handler, true);
+      window.removeEventListener("resize", handler);
     };
   }, [isOpen, query, updateListPosition]);
 
   useEffect(() => {
     const list = document.getElementById(listId);
     if (!list || highlightIndex < 0) return;
-    const option = list.children[highlightIndex] as HTMLElement | undefined;
+    const option = list.querySelector(`[data-flat-index="${highlightIndex}"]`) as HTMLElement | null;
     option?.scrollIntoView({ block: "nearest" });
   }, [highlightIndex, listId]);
 
@@ -111,7 +136,7 @@ export function ItemAutocomplete({
 
   const handleFocus = () => {
     setIsOpen(true);
-    setQuery(selectedItem ? itemLabel(selectedItem) : "");
+    setQuery("");
   };
 
   const handleBlur = () => {
@@ -133,9 +158,7 @@ export function ItemAutocomplete({
     }
     if (e.key === "ArrowUp") {
       e.preventDefault();
-      setHighlightIndex((i) =>
-        i <= 0 ? Math.max(0, filteredItems.length - 1) : i - 1
-      );
+      setHighlightIndex((i) => (i <= 0 ? Math.max(0, filteredItems.length - 1) : i - 1));
       return;
     }
     if (e.key === "Enter") {
@@ -151,7 +174,7 @@ export function ItemAutocomplete({
     }
     if (e.key === "Escape") {
       setIsOpen(false);
-      setQuery(selectedItem ? itemLabel(selectedItem) : "");
+      setQuery("");
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     }
   };
@@ -169,10 +192,7 @@ export function ItemAutocomplete({
         id={inputId}
         type="text"
         value={displayValue}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setIsOpen(true);
-        }}
+        onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
         onFocus={handleFocus}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
@@ -198,37 +218,50 @@ export function ItemAutocomplete({
           <ul
             id={listId}
             role="listbox"
-            style={{
-              position: "fixed",
-              top: listStyle.top,
-              left: listStyle.left,
-              width: listStyle.width,
-              zIndex: 9999,
-            }}
-            className="max-h-56 overflow-auto rounded-md border border-[var(--nav-border)] bg-popover py-1 shadow-lg"
+            style={{ position: "fixed", top: listStyle.top, left: listStyle.left, width: listStyle.width, zIndex: 9999 }}
+            className="max-h-64 overflow-auto rounded-md border border-[var(--nav-border)] bg-popover py-1 shadow-lg"
           >
             {filteredItems.length === 0 ? (
-              <li className="px-2.5 py-2 text-sm text-muted-foreground" role="option">
+              <li className="px-3 py-2 text-sm text-muted-foreground" role="option">
                 No items match
               </li>
             ) : (
-              filteredItems.map((item, index) => (
-                <li
-                  key={item.id}
-                  id={`item-option-${item.id}`}
-                  role="option"
-                  aria-selected={value === item.id || index === highlightIndex}
-                  className={cn(
-                    "cursor-pointer px-2.5 py-1.5 text-sm",
-                    (value === item.id || index === highlightIndex) &&
-                    "bg-accent text-accent-foreground"
-                  )}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    handleSelect(item);
-                  }}
-                >
-                  {itemLabel(item)}
+              groups.map((group) => (
+                <li key={group.typeLabel} role="presentation">
+                  {/* Type header */}
+                  <div className="px-3 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {group.typeLabel}
+                  </div>
+                  <ul role="group">
+                    {group.categories.map((cat) => (
+                      <li key={cat.categoryName} role="presentation">
+                        {/* Category sub-header */}
+                        <div className="px-4 py-0.5 text-[11px] text-muted-foreground/70 italic">
+                          {cat.categoryName}
+                        </div>
+                        <ul role="group">
+                          {cat.items.map(({ item, flatIndex }) => (
+                            <li
+                              key={item.id}
+                              id={`item-option-${item.id}`}
+                              role="option"
+                              data-flat-index={flatIndex}
+                              aria-selected={value === item.id || flatIndex === highlightIndex}
+                              className={cn(
+                                "cursor-pointer px-6 py-1.5 text-sm",
+                                (value === item.id || flatIndex === highlightIndex) &&
+                                  "bg-accent text-accent-foreground"
+                              )}
+                              onMouseEnter={() => setHighlightIndex(flatIndex)}
+                              onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
+                            >
+                              {item.name}
+                            </li>
+                          ))}
+                        </ul>
+                      </li>
+                    ))}
+                  </ul>
                 </li>
               ))
             )}

@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 import { NavLink, Outlet } from "react-router-dom";
 import {
-  BarChart3,
   FolderPlusIcon,
   History,
   LayoutDashboardIcon,
@@ -9,6 +8,7 @@ import {
   PackagePlusIcon,
   PlusCircleIcon,
   ReceiptIcon,
+  TrendingUpIcon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -18,8 +18,7 @@ import {
   SidebarNav,
   SidebarNavItem,
 } from "@/components/ui/sidebar";
-import { ProductRoutes, GoodsReceivedCaptureRoutes, InvoiceRoutes } from "@/components/AppRoutes/routePaths";
-import { GoodsReceivedRouteSegments } from "@/components/AppRoutes/routePaths";
+import { ProductRoutes, GoodsReceivedCaptureRoutes, InvoiceRoutes, AnalysisRoutes } from "@/components/AppRoutes/routePaths";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -32,7 +31,7 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 const iconClass = "size-4 shrink-0 text-[var(--sidebar-foreground)]/60";
 
 const GoodsReceivedLayout = () => (
-  <div className="flex h-full min-h-full flex-1 flex-row">
+  <div className="flex min-h-0 flex-1 flex-row">
     <Sidebar className="shrink-0">
       <SidebarContent>
         <SidebarGroup>
@@ -51,15 +50,9 @@ const GoodsReceivedLayout = () => (
               </NavLink>
             </SidebarNavItem>
             <SidebarNavItem>
-              <NavLink to={`${ProductRoutes.GoodsReceived}/${GoodsReceivedRouteSegments.history}`} className={navLinkClass}>
+              <NavLink to={`${ProductRoutes.GoodsReceived}/history`} className={navLinkClass}>
                 <History className={iconClass} aria-hidden />
                 History
-              </NavLink>
-            </SidebarNavItem>
-            <SidebarNavItem>
-              <NavLink to={`${ProductRoutes.GoodsReceived}/${GoodsReceivedRouteSegments.analysis}`} className={navLinkClass}>
-                <BarChart3 className={iconClass} aria-hidden />
-                Analysis
               </NavLink>
             </SidebarNavItem>
           </SidebarNav>
@@ -104,9 +97,20 @@ const GoodsReceivedLayout = () => (
             </SidebarNavItem>
           </SidebarNav>
         </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Analysis</SidebarGroupLabel>
+          <SidebarNav>
+            <SidebarNavItem>
+              <NavLink to={AnalysisRoutes.CostPerUnit} className={navLinkClass}>
+                <TrendingUpIcon className={iconClass} aria-hidden />
+                Cost per unit
+              </NavLink>
+            </SidebarNavItem>
+          </SidebarNav>
+        </SidebarGroup>
       </SidebarContent>
     </Sidebar>
-    <main className="flex-1 overflow-auto bg-[var(--content-tint)]">
+    <main className="flex flex-1 min-h-0 flex-col overflow-hidden bg-[var(--content-tint)]">
       <Outlet />
     </main>
   </div>

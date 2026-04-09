@@ -6,8 +6,11 @@ import type {
 } from '../contract/inventory';
 import type {
   ICapturedInvoice,
+  ICapturedInvoiceAuditEntry,
   ICapturedInvoiceWithLines,
+  IInvoiceLineWithDate,
   ISaveCapturedInvoicePayload,
+  IUpdateCapturedInvoicePayload,
 } from '../contract/invoices';
 
 /**
@@ -30,6 +33,9 @@ export interface IPCInvokeMap {
   'invoices:save-invoice': { args: [payload: ISaveCapturedInvoicePayload]; return: void };
   'invoices:get-invoices': { args: []; return: ICapturedInvoice[] };
   'invoices:get-invoice': { args: [id: string]; return: ICapturedInvoiceWithLines | null };
+  'invoices:get-lines-for-analysis': { args: []; return: IInvoiceLineWithDate[] };
+  'invoices:update-invoice': { args: [payload: IUpdateCapturedInvoicePayload]; return: void };
+  'invoices:get-invoice-audit': { args: [id: string]; return: ICapturedInvoiceAuditEntry[] };
 }
 
 export type IPCChannel = keyof IPCInvokeMap;

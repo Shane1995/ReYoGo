@@ -42,7 +42,7 @@ function formatMoney(n: number): string {
 }
 
 export default function InvoicePage() {
-  const { items, categories, addCategory, submitCategory, addItem, submitItem } = useInventory();
+  const { items, categories, addCategory, addItem } = useInventory();
   const [lines, setLines] = useState<ProcessReceiptLine[]>(() => [createEmptyLine()]);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [itemModalOpen, setItemModalOpen] = useState(false);
@@ -78,7 +78,10 @@ export default function InvoicePage() {
   }, []);
 
   const removeLine = useCallback((id: string) => {
-    setLines((prev) => prev.filter((l) => l.id !== id));
+    setLines((prev) => {
+      const next = prev.filter((l) => l.id !== id);
+      return next.length > 0 ? next : [createEmptyLine()];
+    });
   }, []);
 
   const updateLine = useCallback((id: string, updates: Partial<ProcessReceiptLine>) => {
@@ -235,18 +238,34 @@ export default function InvoicePage() {
                                 quantity: e.target.value === "" ? 0 : Number(e.target.value),
                               })
                             }
+                            onKeyDown={(e) => {
+                              if (e.key === "Tab") {
+                                e.preventDefault();
+                                document.getElementById(`invoice-vat-${line.id}`)?.focus();
+                              }
+                            }}
                             className={cn(inputClass, "w-20")}
                             placeholder="0"
                           />
                         </TableCell>
                         <TableCell className="py-2 px-3">
                           <select
+                            id={`invoice-vat-${line.id}`}
                             value={line.vatMode}
                             onChange={(e) =>
                               updateLine(line.id, {
                                 vatMode: e.target.value as ProcessReceiptLine["vatMode"],
                               })
                             }
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                e.currentTarget.click();
+                              } else if (e.key === "Tab") {
+                                e.preventDefault();
+                                document.getElementById(`invoice-vatrate-${line.id}`)?.focus();
+                              }
+                            }}
                             className={cn(inputClass, "min-w-[6rem] cursor-pointer")}
                           >
                             <option value="exclusive">No (add VAT)</option>
@@ -256,6 +275,7 @@ export default function InvoicePage() {
                         </TableCell>
                         <TableCell className="py-2 px-3">
                           <input
+                            id={`invoice-vatrate-${line.id}`}
                             type="number"
                             min={0}
                             max={100}
@@ -266,6 +286,12 @@ export default function InvoicePage() {
                                 vatRate: e.target.value === "" ? 0 : Number(e.target.value),
                               })
                             }
+                            onKeyDown={(e) => {
+                              if (e.key === "Tab") {
+                                e.preventDefault();
+                                document.getElementById(`invoice-total-${line.id}`)?.focus();
+                              }
+                            }}
                             disabled={line.vatMode === "non-taxable"}
                             className={cn(inputClass, "w-20", line.vatMode === "non-taxable" && "opacity-50")}
                             placeholder="15"
@@ -273,6 +299,7 @@ export default function InvoicePage() {
                         </TableCell>
                         <TableCell className="py-2 px-3">
                           <input
+                            id={`invoice-total-${line.id}`}
                             type="number"
                             min={0}
                             step={0.01}
@@ -282,6 +309,12 @@ export default function InvoicePage() {
                                 totalVatExclude: e.target.value === "" ? 0 : Number(e.target.value),
                               })
                             }
+                            onKeyDown={(e) => {
+                              if (e.key === "Tab") {
+                                e.preventDefault();
+                                addLine();
+                              }
+                            }}
                             className={cn(inputClass, "w-28")}
                             placeholder="0.00"
                           />
@@ -293,7 +326,6 @@ export default function InvoicePage() {
                             size="sm"
                             className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                             onClick={() => removeLine(line.id)}
-                            disabled={lines.length <= 1}
                           >
                             Remove
                           </Button>
@@ -343,19 +375,19 @@ export default function InvoicePage() {
         className="shrink-0 sticky bottom-0 left-0 right-0 z-10 border-t border-[var(--nav-border)] bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.08)]"
         aria-label="Invoice summary"
       >
-        <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-3">
-          <div className="flex items-center gap-6 text-sm">
-            <span className="text-muted-foreground">
+        <div className="flex min-w-0 items-center justify-between gap-4 px-4 py-3">
+          <div className="flex min-w-0 items-center gap-4 text-sm overflow-hidden">
+            <span className="shrink-0 text-muted-foreground">
               <span className="font-medium text-foreground">{invoiceSummary.lineCount}</span> line item{invoiceSummary.lineCount !== 1 ? "s" : ""} added
             </span>
-            <span className="text-muted-foreground">
-              Total Exclusive: <span className="font-mono font-medium text-foreground">{formatMoney(invoiceSummary.subtotal)}</span>
+            <span className="shrink-0 text-muted-foreground">
+              Excl. <span className="font-mono font-medium text-foreground">{formatMoney(invoiceSummary.subtotal)}</span>
             </span>
-            <span className="text-muted-foreground">
-              Total VAT: <span className="font-mono font-medium text-foreground">{formatMoney(invoiceSummary.totalVat)}</span>
+            <span className="shrink-0 text-muted-foreground">
+              VAT <span className="font-mono font-medium text-foreground">{formatMoney(invoiceSummary.totalVat)}</span>
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             <Button
               type="button"
               size="sm"
@@ -373,19 +405,13 @@ export default function InvoicePage() {
       <AddCategoryModal
         open={categoryModalOpen}
         onClose={() => setCategoryModalOpen(false)}
-        onSave={(category) => {
-          const id = addCategory(category);
-          submitCategory(id);
-        }}
+        onSave={(category) => addCategory(category)}
       />
       <AddItemModal
         open={itemModalOpen}
         onClose={() => setItemModalOpen(false)}
         categories={categories}
-        onSave={(item) => {
-          const id = addItem(item);
-          submitItem(id);
-        }}
+        onSave={(item) => addItem(item)}
       />
     </div>
   );

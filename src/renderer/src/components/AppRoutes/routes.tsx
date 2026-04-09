@@ -3,12 +3,12 @@ import AppLayout from "@/layouts/AppLayout";
 import GoodsReceivedLayout from "@/layouts/GoodsReceivedLayout";
 import GoodsReceivedOverview from "@/pages/GoodsReceived/Overview";
 import GoodsReceivedAbout from "@/pages/GoodsReceived/About";
-import { CaptureLayout } from "@/pages/GoodsReceived/Capture/CaptureLayout";
+import { CaptureLayout } from "@/pages/GoodsReceived/Capture/Layout";
 import { InventoryLayout } from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived/Layout/InventoryLayout";
 import CapturedGoodsReceivedIndex from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived";
 import AddItemsPage from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived/AddItems";
 import AddCategoriesPage from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived/AddCategories";
-import { InvoiceLayout } from "@/pages/GoodsReceived/Invoice/InvoiceLayout";
+import { InvoiceLayout } from "@/pages/GoodsReceived/Invoice/Layout";
 import InvoicePage from "@/pages/GoodsReceived/Invoice";
 import InvoiceHistoryPage from "@/pages/GoodsReceived/Invoice/History";
 import GoodsReceivedHistory from "@/pages/GoodsReceived/History";
@@ -25,6 +25,7 @@ export {
   ProductRoutes,
   GoodsReceivedCaptureRoutes,
   InvoiceRoutes,
+  AnalysisRoutes,
   UserRoutes,
   GoodsReceivedRouteSegments,
 } from "./routePaths";

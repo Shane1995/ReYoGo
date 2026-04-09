@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useInventory } from "../Context/InventoryContext";
-import { TYPE_LABELS, TYPE_VALUES, UNIT_OPTIONS } from "../types";
+import { TYPE_LABELS, UNIT_OPTIONS } from "../types";
 import type { TypeValue, UnitOfMeasure } from "../types";
 import { cn } from "@/lib/utils";
 import { AddCategoryModal } from "./AddCategoryModal";
@@ -40,7 +40,7 @@ function createEmptyRow(): PendingRow {
 }
 
 export default function AddItemsPage() {
-  const { categories, addItem, addCategory, submitCategory, submitItem } = useInventory();
+  const { categories, items, addItem, addCategory } = useInventory();
   const navigate = useNavigate();
   const [rows, setRows] = useState<PendingRow[]>([createEmptyRow()]);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
@@ -73,23 +73,40 @@ export default function AddItemsPage() {
     );
   }, []);
 
+  const duplicateIds = useMemo(() => {
+    const existingNames = new Set(items.map((i) => i.name.trim().toLowerCase()));
+    const seen = new Map<string, string>();
+    const dupes = new Set<string>();
+    for (const row of rows) {
+      const key = row.name.trim().toLowerCase();
+      if (!key) continue;
+      if (existingNames.has(key)) {
+        dupes.add(row.id);
+      } else if (seen.has(key)) {
+        dupes.add(row.id);
+        dupes.add(seen.get(key)!);
+      } else {
+        seen.set(key, row.id);
+      }
+    }
+    return dupes;
+  }, [rows, items]);
+
   const submit = useCallback(() => {
-    const valid = rows.filter((r) => r.name.trim() && r.categoryId);
+    const valid = rows.filter((r) => r.name.trim() && r.categoryId && !duplicateIds.has(r.id));
+    if (!valid.length) return;
     valid.forEach((r) => {
-      const id = addItem({
+      addItem({
         name: r.name.trim(),
         categoryId: r.categoryId,
         type: r.type,
         unitOfMeasure: r.unitOfMeasure,
       });
-      submitItem(id);
     });
-    if (valid.length) {
-      setRows([createEmptyRow()]);
-    }
-  }, [rows, addItem, submitItem]);
+    setRows([createEmptyRow()]);
+  }, [rows, duplicateIds, addItem]);
 
-  const hasValidRows = rows.some((r) => r.name.trim() && r.categoryId);
+  const hasValidRows = rows.some((r) => r.name.trim() && r.categoryId && !duplicateIds.has(r.id));
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -101,22 +118,14 @@ export default function AddItemsPage() {
               Add items with name, category and unit. Add a category first if needed.
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setCategoryModalOpen(true)}
-            >
-              Add category
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
-              Cancel
-            </Button>
-            <Button size="sm" onClick={submit} disabled={!hasValidRows}>
-              Submit
-            </Button>
-          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setCategoryModalOpen(true)}
+          >
+            Add category
+          </Button>
         </div>
       </header>
 
@@ -139,13 +148,25 @@ export default function AddItemsPage() {
                     className="border-[var(--nav-border)] hover:bg-muted/30"
                   >
                     <TableCell className="py-2 px-3">
-                      <input
-                        id={`add-item-name-${row.id}`}
-                        value={row.name}
-                        onChange={(e) => updateRow(row.id, { name: e.target.value })}
-                        className={cn(inputClass, "min-w-[10rem]")}
-                        placeholder="Item name"
-                      />
+                      <div className="flex items-center gap-2">
+                        <input
+                          id={`add-item-name-${row.id}`}
+                          value={row.name}
+                          onChange={(e) => updateRow(row.id, { name: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") addRow();
+                          }}
+                          className={cn(
+                            inputClass,
+                            "min-w-[10rem]",
+                            duplicateIds.has(row.id) && "border-destructive focus:ring-destructive/50"
+                          )}
+                          placeholder="Item name"
+                        />
+                        {duplicateIds.has(row.id) && (
+                          <span className="shrink-0 text-xs text-destructive">Already exists</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="py-2 px-3">
                       <select
@@ -154,6 +175,12 @@ export default function AddItemsPage() {
                           const categoryId = e.target.value;
                           const cat = categories.find((c) => c.id === categoryId);
                           updateRow(row.id, cat ? { categoryId, type: cat.type } : { categoryId });
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            e.currentTarget.click();
+                          }
                         }}
                         className={cn(inputClass, "min-w-[10rem] cursor-pointer")}
                       >
@@ -171,6 +198,15 @@ export default function AddItemsPage() {
                         onChange={(e) =>
                           updateRow(row.id, { unitOfMeasure: e.target.value as UnitOfMeasure })
                         }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            e.currentTarget.click();
+                          } else if (e.key === "Tab") {
+                            e.preventDefault();
+                            addRow();
+                          }
+                        }}
                         className={cn(inputClass, "min-w-[6rem] cursor-pointer")}
                       >
                         {UNIT_OPTIONS.map((u) => (
@@ -195,11 +231,21 @@ export default function AddItemsPage() {
                 ))}
               </TableBody>
             </Table>
-            <div className="flex justify-end border-t border-[var(--nav-border)] bg-muted/10 px-3 py-2">
-              <Button type="button" variant="ghost" size="sm" onClick={addRow} className="gap-1.5">
-                <PlusIcon className="size-4" aria-hidden />
-                Add row
-              </Button>
+            <div className="border-t border-[var(--nav-border)] bg-muted/10">
+              <div className="flex justify-end px-3 py-2">
+                <Button type="button" variant="ghost" size="sm" onClick={addRow} className="gap-1.5">
+                  <PlusIcon className="size-4" aria-hidden />
+                  Add row
+                </Button>
+              </div>
+              <div className="flex justify-end gap-2 border-t border-[var(--nav-border)] px-3 py-2">
+                <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+                  Cancel
+                </Button>
+                <Button variant="success" size="sm" onClick={submit} disabled={!hasValidRows}>
+                  Submit
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -208,10 +254,7 @@ export default function AddItemsPage() {
       <AddCategoryModal
         open={categoryModalOpen}
         onClose={() => setCategoryModalOpen(false)}
-        onSave={(category) => {
-          const id = addCategory(category);
-          submitCategory(id);
-        }}
+        onSave={(category) => addCategory(category)}
       />
     </div>
   );

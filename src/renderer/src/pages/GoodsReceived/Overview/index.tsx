@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
-import { GoodsReceivedCaptureRoutes, InvoiceRoutes } from "@/components/AppRoutes/routePaths";
+import { AnalysisRoutes, GoodsReceivedCaptureRoutes, InvoiceRoutes } from "@/components/AppRoutes/routePaths";
 import { Button } from "@/components/ui/button";
-import { PackagePlusIcon, ReceiptIcon } from "lucide-react";
+import { PackagePlusIcon, ReceiptIcon, TrendingUpIcon } from "lucide-react";
 
 const quickLinkGroups = [
   {
@@ -19,6 +19,13 @@ const quickLinkGroups = [
     links: [
       { label: "Capture Invoice", to: InvoiceRoutes.Base },
       { label: "Invoice history", to: InvoiceRoutes.History },
+    ],
+  },
+  {
+    title: "Analysis",
+    icon: TrendingUpIcon,
+    links: [
+      { label: "Cost per unit", to: AnalysisRoutes.CostPerUnit },
     ],
   },
 ] as const;

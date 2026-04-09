@@ -47,28 +47,27 @@ function createWindow(): BrowserWindow {
 
 app.whenReady().then(() => {
   registerIPC();
-  const mainWindow = createWindow();
+  createWindow();
 
   let dbReady = false;
-  let rendererWaiting = false;
+  let pendingSender: Electron.WebContents | null = null;
 
   const trySendDbReady = () => {
-    if (dbReady && rendererWaiting) {
-      mainWindow.webContents.send(getDbReadyChannel());
+    if (dbReady && pendingSender && !pendingSender.isDestroyed()) {
+      pendingSender.send(getDbReadyChannel());
+      pendingSender = null;
     }
   };
 
-  ipcMain.on(DB_REQUEST_READY_CHANNEL, () => {
-    rendererWaiting = true;
+  ipcMain.on(DB_REQUEST_READY_CHANNEL, (event) => {
+    pendingSender = event.sender;
     trySendDbReady();
   });
 
   initDatabase()
     .then(() => {
       dbReady = true;
-      setTimeout(() => {
-        trySendDbReady();
-      }, 10000);
+      trySendDbReady();
     })
     .catch((err) => {
       console.error('Failed to init database', err);
