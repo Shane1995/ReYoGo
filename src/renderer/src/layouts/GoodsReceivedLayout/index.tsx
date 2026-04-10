@@ -4,7 +4,6 @@ import {
   FolderPlusIcon,
   History,
   LayoutDashboardIcon,
-  InfoIcon,
   PackagePlusIcon,
   PlusCircleIcon,
   ReceiptIcon,
@@ -43,16 +42,15 @@ const GoodsReceivedLayout = () => (
                 Overview
               </NavLink>
             </SidebarNavItem>
+          </SidebarNav>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Analysis</SidebarGroupLabel>
+          <SidebarNav>
             <SidebarNavItem>
-              <NavLink to={`${ProductRoutes.GoodsReceived}/about`} className={navLinkClass}>
-                <InfoIcon className={iconClass} aria-hidden />
-                About
-              </NavLink>
-            </SidebarNavItem>
-            <SidebarNavItem>
-              <NavLink to={`${ProductRoutes.GoodsReceived}/history`} className={navLinkClass}>
-                <History className={iconClass} aria-hidden />
-                History
+              <NavLink to={AnalysisRoutes.CostPerUnit} className={navLinkClass}>
+                <TrendingUpIcon className={iconClass} aria-hidden />
+                Cost per unit
               </NavLink>
             </SidebarNavItem>
           </SidebarNav>
@@ -93,17 +91,6 @@ const GoodsReceivedLayout = () => (
               <NavLink to={InvoiceRoutes.History} className={navLinkClass}>
                 <History className={iconClass} aria-hidden />
                 Invoice history
-              </NavLink>
-            </SidebarNavItem>
-          </SidebarNav>
-        </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel>Analysis</SidebarGroupLabel>
-          <SidebarNav>
-            <SidebarNavItem>
-              <NavLink to={AnalysisRoutes.CostPerUnit} className={navLinkClass}>
-                <TrendingUpIcon className={iconClass} aria-hidden />
-                Cost per unit
               </NavLink>
             </SidebarNavItem>
           </SidebarNav>

@@ -36,7 +36,6 @@ export const GoodsReceivedRouteSegments = {
   categories: "categories",
   invoice: "invoice",
   invoiceHistory: "history",
-  history: "history",
   analysis: "analysis",
   view: "view",
   add: "add",

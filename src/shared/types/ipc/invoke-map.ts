@@ -1,4 +1,3 @@
-import type { IAccount, IAccounts, ICreateAccountBody } from '../contract/accounts';
 import type {
   IInventoryCategory,
   IInventoryItem,
@@ -15,14 +14,9 @@ import type {
 
 /**
  * Maps each IPC channel to its argument tuple and return type.
- * Keys must match the values in accounts.ts / catalog.ts / inventory.ts. Add entries when you add new handlers.
+ * Keys must match the values in inventory.ts / invoices.ts. Add entries when you add new handlers.
  */
 export interface IPCInvokeMap {
-  'accounts:get-accounts': { args: []; return: IAccounts };
-  'accounts:create-account': { args: [body: ICreateAccountBody]; return: IAccount };
-  'catalog:get-items': { args: []; return: unknown[] };
-  'catalog:add-item': { args: [item: unknown]; return: void };
-  'catalog:clear-items': { args: []; return: void };
   'inventory:get-categories': { args: []; return: IInventoryCategory[] };
   'inventory:get-items': { args: []; return: IInventoryItem[] };
   'inventory:upsert-category': { args: [category: IInventoryCategory]; return: void };

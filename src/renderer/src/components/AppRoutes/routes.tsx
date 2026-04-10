@@ -2,7 +2,6 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import AppLayout from "@/layouts/AppLayout";
 import GoodsReceivedLayout from "@/layouts/GoodsReceivedLayout";
 import GoodsReceivedOverview from "@/pages/GoodsReceived/Overview";
-import GoodsReceivedAbout from "@/pages/GoodsReceived/About";
 import { CaptureLayout } from "@/pages/GoodsReceived/Capture/Layout";
 import { InventoryLayout } from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived/Layout/InventoryLayout";
 import CapturedGoodsReceivedIndex from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived";
@@ -11,7 +10,6 @@ import AddCategoriesPage from "@/pages/GoodsReceived/Capture/CapturedGoodsReceiv
 import { InvoiceLayout } from "@/pages/GoodsReceived/Invoice/Layout";
 import InvoicePage from "@/pages/GoodsReceived/Invoice";
 import InvoiceHistoryPage from "@/pages/GoodsReceived/Invoice/History";
-import GoodsReceivedHistory from "@/pages/GoodsReceived/History";
 import GoodsReceivedAnalysis from "@/pages/GoodsReceived/Analysis";
 import {
   ProductRoutes,
@@ -37,8 +35,6 @@ export function AppRoutesComponent() {
         <Route index element={<Navigate to={ProductRoutes.GoodsReceived} replace />} />
         <Route path={GoodsReceivedRouteSegments.root} element={<GoodsReceivedLayout />}>
           <Route index element={<GoodsReceivedOverview />} />
-          <Route path="about" element={<GoodsReceivedAbout />} />
-          <Route path={GoodsReceivedRouteSegments.history} element={<GoodsReceivedHistory />} />
           <Route path={GoodsReceivedRouteSegments.analysis} element={<GoodsReceivedAnalysis />} />
           <Route path={GoodsReceivedRouteSegments.capture} element={<CaptureLayout />}>
             <Route index element={<Navigate to={ProductRoutes.GoodsReceived} replace />} />
