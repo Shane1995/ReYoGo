@@ -11,6 +11,7 @@ import {
   GlassWaterIcon,
   SearchIcon,
   XIcon,
+  LineChartIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -84,6 +85,7 @@ export type InventoryTreeTableProps = {
   onDiscardItem: (id: string) => void;
   onBulkDeleteItems: (ids: string[]) => void;
   onBulkDeleteCategories: (ids: string[]) => void;
+  onViewInsights: (itemId: string) => void;
 };
 
 function Highlight({ text, query }: { text: string; query: string }) {
@@ -288,6 +290,7 @@ export function InventoryTreeTable({
   onDiscardItem,
   onBulkDeleteItems,
   onBulkDeleteCategories,
+  onViewInsights,
 }: InventoryTreeTableProps) {
   const [expandedTypes, setExpandedTypes] = useState<Set<TypeValue>>(() => new Set(TYPE_VALUES));
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
@@ -857,6 +860,14 @@ export function InventoryTreeTable({
                                             </>
                                           ) : (
                                             <>
+                                              {!isEditingItem && !isMoving && (
+                                                <Button type="button" variant="ghost" size="icon" className="size-7 text-muted-foreground hover:text-foreground"
+                                                  onClick={() => onViewInsights(item.id)} aria-label="View cost insights"
+                                                  title="View cost insights"
+                                                >
+                                                  <LineChartIcon className="size-3.5" />
+                                                </Button>
+                                              )}
                                               {!isEditingItem && !isMoving && (
                                                 <Button type="button" variant="ghost" size="icon" className="size-7 text-muted-foreground hover:text-foreground"
                                                   onClick={() => startEditItem(item)} aria-label="Edit item"

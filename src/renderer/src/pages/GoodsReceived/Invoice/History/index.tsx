@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { InvoicesIPC } from "@shared/types/ipc";
 import type {
   ICapturedInvoice,
@@ -8,7 +8,7 @@ import type {
 } from "@shared/types/contract";
 import { Button } from "@/components/ui/button";
 import { InvoiceRoutes } from "@/components/AppRoutes/routePaths";
-import { ReceiptIcon, ChevronDownIcon, ChevronRightIcon, PencilIcon, ClockIcon, XIcon, CheckIcon } from "lucide-react";
+import { ReceiptIcon, ChevronDownIcon, ChevronRightIcon, PencilIcon, ClockIcon, XIcon, CheckIcon, CopyIcon } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -402,10 +402,43 @@ export default function InvoiceHistoryPage() {
   const [rowMode, setRowMode] = useState<Record<string, RowMode>>({});
 
   const { items } = useInventory();
+  const navigate = useNavigate();
+
+  const handleReuse = useCallback(
+    async (id: string) => {
+      let detail = detailCache[id];
+      if (!detail) {
+        const inv = await window.electronAPI.ipcRenderer.invoke(InvoicesIPC.GET_INVOICE, id);
+        if (inv) {
+          setDetailCache((prev) => ({ ...prev, [id]: inv }));
+          detail = inv;
+        }
+      }
+      if (!detail) return;
+      const templateLines = detail.lines.map((l) => ({
+        id: crypto.randomUUID(),
+        itemId: l.itemId,
+        quantity: 0,
+        vatMode: l.vatMode,
+        vatRate: l.vatRate,
+        totalVatExclude: 0,
+      }));
+      navigate(InvoiceRoutes.Base, { state: { templateLines } });
+    },
+    [detailCache, navigate]
+  );
 
   const loadInvoices = useCallback(async () => {
-    const list = await window.electronAPI.ipcRenderer.invoke(InvoicesIPC.GET_INVOICES);
+    const list: ICapturedInvoiceWithLines[] = await window.electronAPI.ipcRenderer.invoke(
+      InvoicesIPC.GET_INVOICES_WITH_LINES
+    );
     setInvoices(list);
+    // Pre-populate detail cache so totals show immediately
+    setDetailCache((prev) => {
+      const next = { ...prev };
+      for (const inv of list) next[inv.id] = inv;
+      return next;
+    });
   }, []);
 
   useEffect(() => {
@@ -593,6 +626,17 @@ export default function InvoiceHistoryPage() {
                         {/* Actions */}
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center gap-1 justify-end">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs gap-1 text-muted-foreground"
+                              title="Pre-fill capture form with these items (no qty or price)"
+                              onClick={() => handleReuse(inv.id)}
+                            >
+                              <CopyIcon className="size-3" />
+                              Reuse
+                            </Button>
                             <Button
                               type="button"
                               variant="ghost"

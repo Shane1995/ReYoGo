@@ -1,7 +1,7 @@
 import { Fragment, useState, useCallback, useEffect } from "react";
-import { ChevronDownIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronRightIcon, PlusIcon, CopyIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { InvoicesIPC } from "@shared/types/ipc";
 import { InvoiceRoutes } from "@/components/AppRoutes/routePaths";
 import {
@@ -43,10 +43,16 @@ function formatMoney(n: number): string {
 
 export default function InvoicePage() {
   const { items, categories, addCategory, addItem } = useInventory();
-  const [lines, setLines] = useState<ProcessReceiptLine[]>(() => [createEmptyLine()]);
+  const location = useLocation();
+  const [lines, setLines] = useState<ProcessReceiptLine[]>(() => {
+    const template = (location.state as { templateLines?: ProcessReceiptLine[] } | null)?.templateLines;
+    return template && template.length > 0 ? template : [createEmptyLine()];
+  });
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [expandedResultLineIds, setExpandedResultLineIds] = useState<Set<string>>(new Set());
+  const isReused = !!(location.state as { templateLines?: ProcessReceiptLine[] } | null)?.templateLines;
+  const [reuseNoticeDismissed, setReuseNoticeDismissed] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [lastAddedLineId, setLastAddedLineId] = useState<string | null>(null);
@@ -178,6 +184,21 @@ export default function InvoicePage() {
           </div>
         </div>
       </header>
+
+      {isReused && !reuseNoticeDismissed && (
+        <div className="shrink-0 flex items-center gap-2 border-b border-[var(--nav-border)] bg-muted/40 px-4 py-2 text-sm text-muted-foreground">
+          <CopyIcon className="size-3.5 shrink-0" />
+          <span>Items pre-filled from a previous invoice — add quantity and price to continue.</span>
+          <button
+            type="button"
+            onClick={() => setReuseNoticeDismissed(true)}
+            className="ml-auto text-muted-foreground hover:text-foreground"
+            aria-label="Dismiss"
+          >
+            <XIcon className="size-3.5" />
+          </button>
+        </div>
+      )}
 
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-4 my-4">

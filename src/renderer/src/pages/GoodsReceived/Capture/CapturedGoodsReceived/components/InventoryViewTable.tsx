@@ -7,6 +7,7 @@ import {
   GlassWaterIcon,
   SearchIcon,
   XIcon,
+  LineChartIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -58,9 +59,10 @@ function Highlight({ text, query }: { text: string; query: string }) {
 type Props = {
   categories: InventoryCategory[];
   items: InventoryItem[];
+  onViewInsights: (itemId: string) => void;
 };
 
-export function InventoryViewTable({ categories, items }: Props) {
+export function InventoryViewTable({ categories, items, onViewInsights }: Props) {
   const [expandedTypes, setExpandedTypes] = useState<Set<TypeValue>>(() => new Set(TYPE_VALUES));
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
@@ -223,9 +225,10 @@ export function InventoryViewTable({ categories, items }: Props) {
                           {isCategoryExpanded && categoryItems.length > 0 && (
                             <div className={cn("ml-5 border-l-2 pl-3", cfg.treeLine)}>
                               {/* Column headers */}
-                              <div className="mb-0.5 grid grid-cols-[1fr_5rem] gap-2 px-2 pb-1 pt-0.5">
+                              <div className="mb-0.5 grid grid-cols-[1fr_5rem_2rem] gap-2 px-2 pb-1 pt-0.5">
                                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Name</span>
                                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Unit</span>
+                                <span />
                               </div>
                               {/* Item rows */}
                               <div className="divide-y divide-border/40 overflow-hidden rounded-md border border-border/60 bg-background">
@@ -233,7 +236,7 @@ export function InventoryViewTable({ categories, items }: Props) {
                                   <div
                                     key={item.id}
                                     className={cn(
-                                      "grid grid-cols-[1fr_5rem] gap-2 px-3 py-2 text-sm",
+                                      "grid grid-cols-[1fr_5rem_2rem] items-center gap-2 px-3 py-2 text-sm",
                                       idx % 2 === 0 ? "bg-background" : "bg-muted/20"
                                     )}
                                   >
@@ -249,6 +252,14 @@ export function InventoryViewTable({ categories, items }: Props) {
                                         <span className="text-muted-foreground/50">—</span>
                                       )}
                                     </span>
+                                    <button
+                                      type="button"
+                                      title="View cost insights"
+                                      onClick={() => onViewInsights(item.id)}
+                                      className="flex size-6 items-center justify-center rounded text-muted-foreground/50 hover:bg-muted hover:text-foreground transition-colors"
+                                    >
+                                      <LineChartIcon className="size-3.5" />
+                                    </button>
                                   </div>
                                 ))}
                               </div>

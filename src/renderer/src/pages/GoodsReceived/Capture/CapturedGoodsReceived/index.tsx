@@ -1,5 +1,7 @@
 import { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { EyeIcon, PencilIcon } from "lucide-react";
+import { AnalysisRoutes } from "@/components/AppRoutes/routePaths";
 import { useInventory } from "./Context/InventoryContext";
 import { InventoryTreeTable } from "./components/InventoryTreeTable";
 import { InventoryViewTable } from "./components/InventoryViewTable";
@@ -24,7 +26,13 @@ export default function InventoryIndex() {
     deleteItemFromBackend,
   } = useInventory();
 
+  const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>("view");
+
+  const handleViewInsights = useCallback(
+    (itemId: string) => navigate(AnalysisRoutes.CostPerUnit, { state: { itemId } }),
+    [navigate]
+  );
   const [confirmingDeleteCategoryId, setConfirmingDeleteCategoryId] = useState<string | null>(null);
   const [confirmingDeleteItemId, setConfirmingDeleteItemId] = useState<string | null>(null);
 
@@ -129,7 +137,7 @@ export default function InventoryIndex() {
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-6 my-5">
           {mode === "view" ? (
-            <InventoryViewTable categories={categories} items={items} />
+            <InventoryViewTable categories={categories} items={items} onViewInsights={handleViewInsights} />
           ) : (
             <InventoryTreeTable
               categories={categories}
@@ -150,6 +158,7 @@ export default function InventoryIndex() {
               onDiscardItem={removeItem}
               onBulkDeleteItems={onBulkDeleteItems}
               onBulkDeleteCategories={onBulkDeleteCategories}
+              onViewInsights={handleViewInsights}
             />
           )}
         </div>
