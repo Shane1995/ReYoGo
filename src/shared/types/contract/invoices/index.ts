@@ -38,6 +38,7 @@ export interface IInvoiceLineWithDate {
   totalVatExclude: number;
   createdAt: Date;
   categoryType?: string | null;
+  categoryName?: string | null;
 }
 
 /** Audit log entry for a single edit to a captured invoice. */

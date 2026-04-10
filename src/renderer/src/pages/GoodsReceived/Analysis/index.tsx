@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { InvoicesIPC } from "@shared/types/ipc";
 import type { IInvoiceLineWithDate } from "@shared/types/contract";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ type ItemGroup = {
   name: string;
   uom?: string;
   categoryType: string;
+  categoryName?: string;
   entries: ItemEntry[];
 };
 
@@ -74,6 +76,7 @@ function buildItemGroups(
         itemId: line.itemId,
         name: line.itemNameSnapshot,
         categoryType: line.categoryType ?? "other",
+        categoryName: line.categoryName ?? undefined,
         entries: [],
       });
     }
@@ -81,6 +84,7 @@ function buildItemGroups(
     group.name = line.itemNameSnapshot;
     group.uom = line.unitOfMeasure ?? undefined;
     group.categoryType = line.categoryType ?? group.categoryType;
+    group.categoryName = line.categoryName ?? group.categoryName;
     group.entries.push({
       invoiceId: line.invoiceId,
       date,
@@ -121,9 +125,55 @@ function changeCls(v: number | null, bold = false) {
   );
 }
 
+// ── Shared insight helpers ────────────────────────────────────────────────────
+
+function groupStats(gs: ItemGroup[]) {
+  const changes = gs.map(overallChangePct).filter((v): v is number => v !== null);
+  return {
+    count: gs.length,
+    avgChange: changes.length > 0 ? changes.reduce((a, b) => a + b, 0) / changes.length : null,
+    increased: changes.filter((v) => v > 0).length,
+    decreased: changes.filter((v) => v < 0).length,
+  };
+}
+
+function InsightChips({ stats }: { stats: ReturnType<typeof groupStats> }) {
+  return (
+    <div className="flex items-center gap-1.5 text-xs">
+      <span className="text-muted-foreground">
+        {stats.count} item{stats.count !== 1 ? "s" : ""}
+      </span>
+      {stats.avgChange !== null && (
+        <span className={cn("font-mono font-medium", changeCls(stats.avgChange))}>
+          avg {fmtPct(stats.avgChange)}
+        </span>
+      )}
+      {stats.increased > 0 && (
+        <span className="rounded-full bg-destructive/10 px-1.5 py-0.5 font-medium text-destructive">
+          {stats.increased} ↑
+        </span>
+      )}
+      {stats.decreased > 0 && (
+        <span className="rounded-full bg-green-600/10 px-1.5 py-0.5 font-medium text-green-600 dark:text-green-500">
+          {stats.decreased} ↓
+        </span>
+      )}
+    </div>
+  );
+}
+
 // ── Summary table (All tab) ───────────────────────────────────────────────────
 
 function SummaryTableView({ groups, onSelect }: { groups: ItemGroup[]; onSelect: (id: string) => void }) {
+  const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
+
+  const toggleCat = (key: string) =>
+    setExpandedCats((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+
   if (groups.length === 0) {
     return (
       <div className="rounded-lg border border-[var(--nav-border)] bg-muted/20 p-10 text-center text-muted-foreground">
@@ -142,61 +192,117 @@ function SummaryTableView({ groups, onSelect }: { groups: ItemGroup[]; onSelect:
     ...Array.from(sectionMap.entries()).filter(([t]) => !TYPE_ORDER.includes(t)).map(([t, gs]) => ({ type: t, groups: gs })),
   ];
 
+  const renderItemRows = (catGroups: ItemGroup[]) =>
+    catGroups.map((group, gi) => {
+      const last = group.entries[group.entries.length - 1];
+      const change = overallChangePct(group);
+      const minPrice = Math.min(...group.entries.map((e) => e.unitPrice));
+      const avgPrice = group.entries.reduce((s, e) => s + e.unitPrice, 0) / group.entries.length;
+      return (
+        <tr
+          key={group.itemId}
+          onClick={() => onSelect(group.itemId)}
+          className={cn(
+            "border-b border-[var(--nav-border)]/40 cursor-pointer hover:bg-[var(--nav-active-border)]/5 transition-colors",
+            gi % 2 === 0 ? "bg-background" : "bg-muted/10"
+          )}
+        >
+          <td className="py-2.5 px-4 font-medium text-foreground">{group.name}</td>
+          <td className="py-2.5 px-4 text-center tabular-nums text-muted-foreground">{group.entries.length}</td>
+          <td className="py-2.5 px-4 text-right font-mono text-muted-foreground">{fmt(minPrice)}</td>
+          <td className="py-2.5 px-4 text-right font-mono text-muted-foreground">{fmt(avgPrice)}</td>
+          <td className="py-2.5 px-4 text-right text-muted-foreground">{fmtDate(last.date)}</td>
+          <td className="py-2.5 px-4 text-right font-mono font-medium text-foreground">
+            {fmt(last.unitPrice)}{last.uom ? ` / ${last.uom}` : ""}
+          </td>
+          <td className={cn("py-2.5 px-4 text-right", changeCls(change, true))}>
+            {change === null ? "—" : fmtPct(change)}
+          </td>
+          <td className="py-2.5 px-2 text-muted-foreground/40 text-xs">→</td>
+        </tr>
+      );
+    });
+
+  const tableHead = (
+    <thead>
+      <tr className="border-b border-[var(--nav-border)] bg-muted/20 text-xs">
+        <th className="py-2 px-4 text-left font-medium text-muted-foreground">Item</th>
+        <th className="py-2 px-4 text-center font-medium text-muted-foreground">Entries</th>
+        <th className="py-2 px-4 text-right font-medium text-muted-foreground">Min</th>
+        <th className="py-2 px-4 text-right font-medium text-muted-foreground">Avg</th>
+        <th className="py-2 px-4 text-right font-medium text-muted-foreground">Last captured</th>
+        <th className="py-2 px-4 text-right font-medium text-muted-foreground">Last price (excl. VAT)</th>
+        <th className="py-2 px-4 text-right font-medium text-muted-foreground">Overall change</th>
+        <th />
+      </tr>
+    </thead>
+  );
+
   return (
-    <div className="space-y-6">
-      {sections.map((section) => (
-        <div key={section.type}>
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {typeLabel(section.type)}
-          </h2>
-          <div className="rounded-lg border border-[var(--nav-border)] overflow-hidden bg-background">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--nav-border)] bg-muted/30">
-                  <th className="py-2 px-4 text-left font-medium text-foreground">Item</th>
-                  <th className="py-2 px-4 text-center font-medium text-foreground">Entries</th>
-                  <th className="py-2 px-4 text-right font-medium text-foreground">Min</th>
-                  <th className="py-2 px-4 text-right font-medium text-foreground">Avg</th>
-                  <th className="py-2 px-4 text-right font-medium text-foreground">Last captured</th>
-                  <th className="py-2 px-4 text-right font-medium text-foreground">Last price (excl. VAT)</th>
-                  <th className="py-2 px-4 text-right font-medium text-foreground">Overall change</th>
-                </tr>
-              </thead>
-              <tbody>
-                {section.groups.map((group, gi) => {
-                  const last = group.entries[group.entries.length - 1];
-                  const change = overallChangePct(group);
-                  const minPrice = Math.min(...group.entries.map((e) => e.unitPrice));
-                  const avgPrice = group.entries.reduce((s, e) => s + e.unitPrice, 0) / group.entries.length;
-                  return (
-                    <tr
-                      key={group.itemId}
-                      onClick={() => onSelect(group.itemId)}
-                      className={cn(
-                        "border-b border-[var(--nav-border)]/50 cursor-pointer hover:bg-muted/20",
-                        gi % 2 === 0 ? "bg-background" : "bg-muted/10"
-                      )}
-                    >
-                      <td className="py-2 px-4 font-medium text-foreground">{group.name}</td>
-                      <td className="py-2 px-4 text-center text-muted-foreground">{group.entries.length}</td>
-                      <td className="py-2 px-4 text-right font-mono text-muted-foreground">{fmt(minPrice)}</td>
-                      <td className="py-2 px-4 text-right font-mono text-muted-foreground">{fmt(avgPrice)}</td>
-                      <td className="py-2 px-4 text-right text-muted-foreground">{fmtDate(last.date)}</td>
-                      <td className="py-2 px-4 text-right font-mono font-medium text-foreground">
-                        {fmt(last.unitPrice)}{last.uom ? ` / ${last.uom}` : ""}
-                      </td>
-                      <td className={cn("py-2 px-4 text-right", changeCls(change, true))}>
-                        {change === null ? "—" : fmtPct(change)}
-                      </td>
-                      <td className="py-2 px-2 text-muted-foreground/40 text-xs">→</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+    <div className="space-y-5">
+      {sections.map((section) => {
+        const catMap = new Map<string, ItemGroup[]>();
+        for (const g of section.groups) {
+          const key = g.categoryName ?? "";
+          if (!catMap.has(key)) catMap.set(key, []);
+          catMap.get(key)!.push(g);
+        }
+        const hasSubCategories = catMap.size > 1 || (catMap.size === 1 && !catMap.has(""));
+        const catSections = hasSubCategories
+          ? Array.from(catMap.entries()).sort(([a], [b]) => a.localeCompare(b))
+          : null;
+        const typeStats = groupStats(section.groups);
+
+        return (
+          <div key={section.type} className="rounded-xl border border-[var(--nav-border)] overflow-hidden">
+            {/* Type header */}
+            <div className="flex items-center justify-between px-4 py-3 bg-muted/30 border-b border-[var(--nav-border)]">
+              <span className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
+                {typeLabel(section.type)}
+              </span>
+              <InsightChips stats={typeStats} />
+            </div>
+
+            {catSections ? (
+              <table className="w-full text-sm">
+                {tableHead}
+                <tbody>
+                  {catSections.map(([catName, catGroups]) => {
+                    const catStats = groupStats(catGroups);
+                    const isCollapsed = !expandedCats.has(catName);
+                    return (
+                      <React.Fragment key={catName}>
+                        {/* Category group row */}
+                        <tr className="border-b border-[var(--nav-border)]/60 cursor-pointer select-none hover:bg-muted/10"
+                          onClick={() => toggleCat(catName)}>
+                          <td colSpan={8} className="relative py-0">
+                            <div className="absolute inset-y-0 left-0 w-0.5 bg-[var(--nav-active-border)]/60" />
+                            <div className="flex items-center justify-between pl-5 pr-4 py-2">
+                              <div className="flex items-center gap-2">
+                                <span className={cn("inline-block transition-transform text-xs text-muted-foreground/50", !isCollapsed && "rotate-90")}>▶</span>
+                                <span className="inline-flex items-center rounded-md border border-[var(--nav-active-border)]/40 bg-[var(--nav-active-border)]/15 px-2 py-0.5 text-xs font-semibold text-[var(--nav-active-border)]">
+                                  {catName || "Uncategorised"}
+                                </span>
+                              </div>
+                              <InsightChips stats={catStats} />
+                            </div>
+                          </td>
+                        </tr>
+                        {!isCollapsed && renderItemRows(catGroups)}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <table className="w-full text-sm">
+                {tableHead}
+                <tbody>{renderItemRows(section.groups)}</tbody>
+              </table>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -205,6 +311,14 @@ function SummaryTableView({ groups, onSelect }: { groups: ItemGroup[]; onSelect:
 
 function TableView({ groups, onSelect }: { groups: ItemGroup[]; onSelect: (id: string) => void }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
+
+  const toggleCat = (key: string) =>
+    setExpandedCats((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
 
   if (groups.length === 0) {
     return (
@@ -221,99 +335,141 @@ function TableView({ groups, onSelect }: { groups: ItemGroup[]; onSelect: (id: s
       return next;
     });
 
-  const changes = groups.map(overallChangePct).filter((v): v is number => v !== null);
-  const avgChange = changes.length > 0 ? changes.reduce((a, b) => a + b, 0) / changes.length : null;
-  const increased = changes.filter((v) => v > 0).length;
-  const decreased = changes.filter((v) => v < 0).length;
+  // Group items by category name
+  const categoryMap = new Map<string, ItemGroup[]>();
+  for (const g of groups) {
+    const key = g.categoryName ?? "";
+    if (!categoryMap.has(key)) categoryMap.set(key, []);
+    categoryMap.get(key)!.push(g);
+  }
+  const hasCategories = categoryMap.size > 1 || (categoryMap.size === 1 && !categoryMap.has(""));
+  const categorySections = hasCategories
+    ? Array.from(categoryMap.entries()).sort(([a], [b]) => a.localeCompare(b))
+    : null;
+
+  const allStats = groupStats(groups);
+
+  const tableHead = (
+    <thead>
+      <tr className="border-b border-[var(--nav-border)] bg-muted/20 text-xs">
+        <th className="w-8 py-2 px-2" />
+        <th className="py-2 px-4 text-left font-medium text-muted-foreground">Item</th>
+        <th className="py-2 px-4 text-left font-medium text-muted-foreground">Last captured</th>
+        <th className="py-2 px-4 text-right font-medium text-muted-foreground">Last unit price (excl. VAT)</th>
+        <th className="py-2 px-4 text-right font-medium text-muted-foreground">Overall change</th>
+        <th />
+      </tr>
+    </thead>
+  );
+
+  const renderRows = (rowGroups: ItemGroup[]) =>
+    rowGroups.map((group, gi) => {
+      const last = group.entries[group.entries.length - 1];
+      const change = overallChangePct(group);
+      const isExpanded = expanded.has(group.itemId);
+      return (
+        <>
+          <tr
+            key={group.itemId}
+            onClick={() => onSelect(group.itemId)}
+            className={cn(
+              "border-b border-[var(--nav-border)]/40 cursor-pointer hover:bg-[var(--nav-active-border)]/5 transition-colors",
+              gi % 2 === 0 ? "bg-background" : "bg-muted/10"
+            )}
+          >
+            <td className="py-2.5 px-3 text-center text-muted-foreground"
+              onClick={(e) => { e.stopPropagation(); toggleExpand(group.itemId); }}>
+              <span className={cn("inline-block transition-transform text-xs", isExpanded && "rotate-90")}>▶</span>
+            </td>
+            <td className="py-2.5 px-4 font-medium text-foreground">{group.name}</td>
+            <td className="py-2.5 px-4 text-muted-foreground">{fmtDate(last.date)}</td>
+            <td className="py-2.5 px-4 text-right font-mono font-medium text-foreground">
+              {fmt(last.unitPrice)}{last.uom ? ` / ${last.uom}` : ""}
+            </td>
+            <td className={cn("py-2.5 px-4 text-right", changeCls(change, true))}>
+              {change === null ? "—" : fmtPct(change)}
+            </td>
+            <td className="py-2.5 px-2 text-muted-foreground/40 text-xs">→</td>
+          </tr>
+          {isExpanded && (
+            <tr key={`${group.itemId}-detail`} className="border-b border-[var(--nav-border)]">
+              <td />
+              <td colSpan={4} className="px-4 py-3 bg-muted/5">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-muted-foreground">
+                      <th className="pb-1.5 text-left font-medium">Date</th>
+                      <th className="pb-1.5 text-right font-medium">Qty</th>
+                      <th className="pb-1.5 text-right font-medium">UoM</th>
+                      <th className="pb-1.5 text-right font-medium">Unit price (excl. VAT)</th>
+                      <th className="pb-1.5 text-right font-medium">vs Previous</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.entries.map((entry, ei) => {
+                      const prev = ei > 0 ? group.entries[ei - 1] : null;
+                      const pct = prev && prev.unitPrice > 0
+                        ? ((entry.unitPrice - prev.unitPrice) / prev.unitPrice) * 100 : null;
+                      return (
+                        <tr key={`${entry.invoiceId}-${ei}`} className="border-t border-[var(--nav-border)]/30">
+                          <td className="py-1.5 text-muted-foreground">{fmtDate(entry.date)}</td>
+                          <td className="py-1.5 text-right font-mono">{entry.quantity}</td>
+                          <td className="py-1.5 text-right text-muted-foreground">{entry.uom ?? "—"}</td>
+                          <td className="py-1.5 text-right font-mono font-medium">{fmt(entry.unitPrice)}</td>
+                          <td className={cn("py-1.5 text-right", changeCls(pct))}>
+                            {pct === null ? "—" : fmtPct(pct)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          )}
+        </>
+      );
+    });
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* Top-level summary strip */}
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <span>{groups.length} item{groups.length !== 1 ? "s" : ""}</span>
-        {avgChange !== null && <span className={changeCls(avgChange)}>avg {fmtPct(avgChange)}</span>}
-        {increased > 0 && <span className="text-destructive">{increased} up</span>}
-        {decreased > 0 && <span className="text-green-600 dark:text-green-500">{decreased} down</span>}
+        <InsightChips stats={allStats} />
       </div>
 
-      <div className="rounded-lg border border-[var(--nav-border)] overflow-hidden bg-background">
+      <div className="rounded-xl border border-[var(--nav-border)] overflow-hidden">
         <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[var(--nav-border)] bg-muted/30">
-              <th className="w-8 py-2 px-2" />
-              <th className="py-2 px-4 text-left font-medium text-foreground">Item</th>
-              <th className="py-2 px-4 text-left font-medium text-foreground">Last captured</th>
-              <th className="py-2 px-4 text-right font-medium text-foreground">Last unit price (excl. VAT)</th>
-              <th className="py-2 px-4 text-right font-medium text-foreground">Overall change</th>
-            </tr>
-          </thead>
+          {tableHead}
           <tbody>
-            {groups.map((group, gi) => {
-              const last = group.entries[group.entries.length - 1];
-              const change = overallChangePct(group);
-              const isExpanded = expanded.has(group.itemId);
-              return (
-                <>
-                  <tr
-                    key={group.itemId}
-                    onClick={() => onSelect(group.itemId)}
-                    className={cn(
-                      "border-b border-[var(--nav-border)]/50 cursor-pointer hover:bg-muted/20",
-                      gi % 2 === 0 ? "bg-background" : "bg-muted/10"
-                    )}
-                  >
-                    <td className="py-2 px-3 text-center text-muted-foreground"
-                      onClick={(e) => { e.stopPropagation(); toggleExpand(group.itemId); }}>
-                      <span className={cn("inline-block transition-transform text-xs", isExpanded && "rotate-90")}>▶</span>
-                    </td>
-                    <td className="py-2 px-4 font-medium text-foreground">{group.name}</td>
-                    <td className="py-2 px-4 text-muted-foreground">{fmtDate(last.date)}</td>
-                    <td className="py-2 px-4 text-right font-mono font-medium text-foreground">
-                      {fmt(last.unitPrice)}{last.uom ? ` / ${last.uom}` : ""}
-                    </td>
-                    <td className={cn("py-2 px-4 text-right", changeCls(change, true))}>
-                      {change === null ? "—" : fmtPct(change)}
-                    </td>
-                    <td className="py-2 px-2 text-muted-foreground/40 text-xs">→</td>
-                  </tr>
-                  {isExpanded && (
-                    <tr key={`${group.itemId}-detail`} className="border-b border-[var(--nav-border)]">
-                      <td />
-                      <td colSpan={4} className="px-4 py-3 bg-muted/5">
-                        <table className="w-full text-xs">
-                          <thead>
-                            <tr className="text-muted-foreground">
-                              <th className="pb-1.5 text-left font-medium">Date</th>
-                              <th className="pb-1.5 text-right font-medium">Qty</th>
-                              <th className="pb-1.5 text-right font-medium">UoM</th>
-                              <th className="pb-1.5 text-right font-medium">Unit price (excl. VAT)</th>
-                              <th className="pb-1.5 text-right font-medium">vs Previous</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {group.entries.map((entry, ei) => {
-                              const prev = ei > 0 ? group.entries[ei - 1] : null;
-                              const pct = prev && prev.unitPrice > 0
-                                ? ((entry.unitPrice - prev.unitPrice) / prev.unitPrice) * 100 : null;
-                              return (
-                                <tr key={`${entry.invoiceId}-${ei}`} className="border-t border-[var(--nav-border)]/30">
-                                  <td className="py-1.5 text-muted-foreground">{fmtDate(entry.date)}</td>
-                                  <td className="py-1.5 text-right font-mono">{entry.quantity}</td>
-                                  <td className="py-1.5 text-right text-muted-foreground">{entry.uom ?? "—"}</td>
-                                  <td className="py-1.5 text-right font-mono font-medium">{fmt(entry.unitPrice)}</td>
-                                  <td className={cn("py-1.5 text-right", changeCls(pct))}>
-                                    {pct === null ? "—" : fmtPct(pct)}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+            {categorySections ? (
+              categorySections.map(([catName, catGroups]) => {
+                const catStats = groupStats(catGroups);
+                const isCollapsed = !expandedCats.has(catName);
+                return (
+                  <React.Fragment key={catName}>
+                    <tr className="border-b border-[var(--nav-border)]/60 cursor-pointer select-none hover:bg-muted/10"
+                      onClick={() => toggleCat(catName)}>
+                      <td colSpan={6} className="relative py-0">
+                        <div className="absolute inset-y-0 left-0 w-0.5 bg-[var(--nav-active-border)]/60" />
+                        <div className="flex items-center justify-between pl-5 pr-4 py-2">
+                          <div className="flex items-center gap-2">
+                            <span className={cn("inline-block transition-transform text-xs text-muted-foreground/50", !isCollapsed && "rotate-90")}>▶</span>
+                            <span className="inline-flex items-center rounded-md border border-[var(--nav-active-border)]/40 bg-[var(--nav-active-border)]/15 px-2 py-0.5 text-xs font-semibold text-[var(--nav-active-border)]">
+                              {catName || "Uncategorised"}
+                            </span>
+                          </div>
+                          <InsightChips stats={catStats} />
+                        </div>
                       </td>
                     </tr>
-                  )}
-                </>
-              );
-            })}
+                    {!isCollapsed && renderRows(catGroups)}
+                  </React.Fragment>
+                );
+              })
+            ) : (
+              renderRows(groups)
+            )}
           </tbody>
         </table>
       </div>
@@ -999,6 +1155,10 @@ export default function GoodsReceivedAnalysis() {
   const [search, setSearch] = useState("");
   const [activeType, setActiveType] = useState<string>("all");
   const [view, setView] = useState<"table" | "chart" | "categories">("table");
+  const location = useLocation();
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(
+    (location.state as { itemId?: string } | null)?.itemId ?? null
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -1096,7 +1256,7 @@ export default function GoodsReceivedAnalysis() {
         </div>
       </div>
 
-      {availableTypes.length > 1 && view !== "categories" && (
+      {!selectedItemId && availableTypes.length > 1 && view !== "categories" && (
         <div className="shrink-0 border-b border-[var(--nav-border)] bg-background px-4">
           <div className="flex gap-0">
             {tabs.map((t) => (
@@ -1125,10 +1285,16 @@ export default function GoodsReceivedAnalysis() {
           <div className="rounded-lg border border-[var(--nav-border)] bg-muted/20 p-10 text-center text-muted-foreground">
             No captured invoices yet. Save invoices from Capture Invoice to see analysis here.
           </div>
+        ) : selectedItemId ? (
+          (() => {
+            const group = allGroups.find((g) => g.itemId === selectedItemId) ?? null;
+            if (!group) { setSelectedItemId(null); return null; }
+            return <ItemDetail group={group} onBack={() => setSelectedItemId(null)} />;
+          })()
         ) : view === "table" ? (
           activeType === "all"
-            ? <SummaryTableView groups={groups} />
-            : <TableView groups={groups} />
+            ? <SummaryTableView groups={groups} onSelect={setSelectedItemId} />
+            : <TableView groups={groups} onSelect={setSelectedItemId} />
         ) : view === "chart" ? (
           <ChartView groups={groups} />
         ) : (

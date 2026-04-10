@@ -14,6 +14,10 @@ async function getInvoices(): Promise<Awaited<ReturnType<typeof invoicesDb.getIn
   return invoicesDb.getInvoices();
 }
 
+async function getInvoicesWithLines(): Promise<Awaited<ReturnType<typeof invoicesDb.getInvoicesWithLines>>> {
+  return invoicesDb.getInvoicesWithLines();
+}
+
 async function getInvoice(
   _event: Electron.IpcMainInvokeEvent,
   id: string
@@ -42,6 +46,7 @@ async function getInvoiceAudit(
 export function registerInvoicesHandlers(): void {
   ipcMain.handle(InvoicesIPC.SAVE_INVOICE, saveInvoice);
   ipcMain.handle(InvoicesIPC.GET_INVOICES, getInvoices);
+  ipcMain.handle(InvoicesIPC.GET_INVOICES_WITH_LINES, getInvoicesWithLines);
   ipcMain.handle(InvoicesIPC.GET_INVOICE, getInvoice);
   ipcMain.handle(InvoicesIPC.GET_LINES_FOR_ANALYSIS, getLinesForAnalysis);
   ipcMain.handle(InvoicesIPC.UPDATE_INVOICE, updateInvoice);

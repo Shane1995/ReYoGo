@@ -32,6 +32,7 @@ export interface IPCInvokeMap {
   'inventory:submit': { args: [payload: IInventorySubmitPayload]; return: void };
   'invoices:save-invoice': { args: [payload: ISaveCapturedInvoicePayload]; return: void };
   'invoices:get-invoices': { args: []; return: ICapturedInvoice[] };
+  'invoices:get-invoices-with-lines': { args: []; return: ICapturedInvoiceWithLines[] };
   'invoices:get-invoice': { args: [id: string]; return: ICapturedInvoiceWithLines | null };
   'invoices:get-lines-for-analysis': { args: []; return: IInvoiceLineWithDate[] };
   'invoices:update-invoice': { args: [payload: IUpdateCapturedInvoicePayload]; return: void };

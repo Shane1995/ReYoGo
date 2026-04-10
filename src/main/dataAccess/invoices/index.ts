@@ -92,6 +92,7 @@ export async function getLinesForAnalysis(): Promise<IInvoiceLineWithDate[]> {
       totalVatExclude: schema.capturedInvoiceLines.totalVatExclude,
       createdAt: schema.capturedInvoices.createdAt,
       categoryType: schema.inventoryCategories.type,
+      categoryName: schema.inventoryCategories.name,
     })
     .from(schema.capturedInvoiceLines)
     .innerJoin(
@@ -112,6 +113,32 @@ export async function getLinesForAnalysis(): Promise<IInvoiceLineWithDate[]> {
     ...toLine(r),
     createdAt: r.createdAt,
     categoryType: r.categoryType ?? null,
+    categoryName: r.categoryName ?? null,
+  }));
+}
+
+export async function getInvoicesWithLines(): Promise<ICapturedInvoiceWithLines[]> {
+  const db = getDb();
+  const invoiceRows = await db
+    .select()
+    .from(schema.capturedInvoices)
+    .orderBy(desc(schema.capturedInvoices.createdAt));
+
+  if (invoiceRows.length === 0) return [];
+
+  const lineRows = await db
+    .select()
+    .from(schema.capturedInvoiceLines);
+
+  const linesByInvoice = new Map<string, typeof lineRows>();
+  for (const line of lineRows) {
+    if (!linesByInvoice.has(line.invoiceId)) linesByInvoice.set(line.invoiceId, []);
+    linesByInvoice.get(line.invoiceId)!.push(line);
+  }
+
+  return invoiceRows.map((inv) => ({
+    ...toInvoice({ id: inv.id, createdAt: inv.createdAt, updatedAt: inv.updatedAt }),
+    lines: (linesByInvoice.get(inv.id) ?? []).map(toLine),
   }));
 }
 
