@@ -6,28 +6,21 @@ const navItems = [
   { label: "Goods Received", path: ProductRoutes.GoodsReceivedValidation },
 ] as const;
 
-type TopNavProps = {
-  /** When true, omit bottom border so header + sub-nav read as one block */
-  hideBottomBorder?: boolean;
-};
-
-export const TopNav = ({ hideBottomBorder }: TopNavProps) => {
+export const TopNav = () => {
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-50 w-full bg-[var(--nav-bg)] shadow-sm",
-        "backdrop-blur supports-[backdrop-filter]:bg-[var(--nav-bg)]/90",
-        !hideBottomBorder && "border-b border-[var(--nav-border)]"
-      )}
-    >
-      <div className="container flex h-14 items-center gap-8 px-4">
+    <header className="sticky top-0 z-50 w-full bg-[var(--nav-bg)]">
+      <div className="flex items-end gap-6 px-4">
+        {/* Branding */}
         <Link
           to="/"
-          className="flex items-center gap-2 font-medium text-[var(--nav-foreground)] hover:opacity-90"
+          className="flex shrink-0 items-center gap-2 py-3 font-semibold text-[var(--nav-foreground)] transition-opacity hover:opacity-80"
         >
-          <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="Logo" className="h-8 w-auto" />
+          <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="Logo" className="h-6 w-auto" />
+          <span className="text-sm">ReYoGo</span>
         </Link>
-        <nav className="flex items-center gap-0.5">
+
+        {/* Top-level nav tabs */}
+        <nav className="flex items-end gap-0">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
@@ -35,11 +28,10 @@ export const TopNav = ({ hideBottomBorder }: TopNavProps) => {
               end={false}
               className={({ isActive }) =>
                 cn(
-                  "relative flex items-center border-b-2 px-4 py-2 text-sm font-medium transition-colors",
-                  "hover:text-[var(--nav-foreground)]",
+                  "-mb-px flex items-center gap-1.5 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors",
                   isActive
                     ? "border-[var(--nav-active-border)] text-[var(--nav-foreground)]"
-                    : "border-transparent text-[var(--nav-foreground-muted)] hover:text-[var(--nav-foreground)]"
+                    : "border-transparent text-[var(--nav-foreground-muted)] hover:border-[var(--nav-border)] hover:text-[var(--nav-foreground)]"
                 )
               }
             >

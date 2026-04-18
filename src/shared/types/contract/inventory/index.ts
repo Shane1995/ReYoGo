@@ -1,5 +1,4 @@
-export type InventoryType = 'food' | 'drink' | 'non-perishable';
-export type UnitOfMeasure = 'litres' | 'kgs' | 'unit';
+export type InventoryType = string;
 
 export interface IInventoryCategory {
   id: string;
@@ -12,7 +11,7 @@ export interface IInventoryItem {
   name: string;
   categoryId: string;
   type: InventoryType;
-  unitOfMeasure?: UnitOfMeasure;
+  unitOfMeasure?: string;
 }
 
 export interface IInventorySubmitPayload {

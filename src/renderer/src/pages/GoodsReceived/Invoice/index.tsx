@@ -13,9 +13,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useInventory } from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived/Context/InventoryContext";
-import { TYPE_LABELS } from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived/types";
-import { AddCategoryModal } from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived/AddItems/AddCategoryModal";
-import { AddItemModal } from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived/AddItems/AddItemModal";
+import { AddCategoryModal } from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived/components/AddCategoryModal";
+import { AddItemModal } from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived/components/AddItemModal";
 import { ItemAutocomplete } from "./ItemAutocomplete";
 import type { ProcessReceiptLine } from "./types";
 import { getProcessLineComputed, DEFAULT_VAT_RATE } from "./types";
@@ -42,7 +41,7 @@ function formatMoney(n: number): string {
 }
 
 export default function InvoicePage() {
-  const { items, categories, addCategory, addItem } = useInventory();
+  const { items, categories, units, addCategory, addItem } = useInventory();
   const location = useLocation();
   const [lines, setLines] = useState<ProcessReceiptLine[]>(() => {
     const template = (location.state as { templateLines?: ProcessReceiptLine[] } | null)?.templateLines;
@@ -101,7 +100,7 @@ export default function InvoicePage() {
     return {
       ...item,
       categoryName: cat?.name ?? "",
-      typeLabel: cat ? TYPE_LABELS[cat.type] : "",
+      typeLabel: cat?.type ?? "",
     };
   });
 
@@ -121,8 +120,7 @@ export default function InvoicePage() {
   const validLines = lines.filter(
     (l) =>
       l.itemId &&
-      String(l.quantity).trim() !== "" &&
-      Number(l.quantity) >= 0 &&
+      Number(l.quantity) > 0 &&
       (l.totalVatExclude ?? 0) >= 0
   );
 
@@ -432,6 +430,7 @@ export default function InvoicePage() {
         open={itemModalOpen}
         onClose={() => setItemModalOpen(false)}
         categories={categories}
+        units={units}
         onSave={(item) => addItem(item)}
       />
     </div>

@@ -1,34 +1,26 @@
-import { useEffect, useState } from "react";
 import AppRoutes from "@/components/AppRoutes";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { Spinner } from "../ui/spinner";
-
-
-export function LoadingSpinner() {
-  return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center gap-4">
-      <Spinner className="size-8" />
-      <p className="text-sm text-muted-foreground">Loading...</p>
-    </div>
-  );
-}
+import SetupWizard from "@/pages/Setup";
+import { LoadingSpinner } from "./LoadingSpinner";
+import { useAppReady } from "./hooks/useAppReady";
 
 const AppLoader = () => {
-  const [isReady, setIsReady] = useState(false);
-  useEffect(() => {
+  const { isReady, setupComplete, setSetupComplete } = useAppReady();
 
-    window.electronAPI.requestAppReady();
-    window.electronAPI.onAppReady(() => {
-      setIsReady(true);
-    });
-  }, []);
+  if (!isReady) return <LoadingSpinner />;
 
-  return isReady ? (
+  if (setupComplete === false) {
+    return (
+      <SetupWizard
+        onComplete={() => setSetupComplete(true)}
+      />
+    );
+  }
+
+  return (
     <ErrorBoundary>
       <AppRoutes />
     </ErrorBoundary>
-  ) : (
-    <LoadingSpinner />
   );
 };
 

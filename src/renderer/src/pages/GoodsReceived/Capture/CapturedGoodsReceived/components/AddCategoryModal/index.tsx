@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { TYPE_LABELS, TYPE_VALUES } from "../types";
-import type { TypeValue, InventoryCategory } from "../types";
+import type { TypeValue, InventoryCategory } from "../../types";
+import { useInventory } from "../../Context/InventoryContext";
 import { cn } from "@/lib/utils";
 
 const inputClass = cn(
@@ -15,26 +15,23 @@ type AddCategoryModalProps = {
   onSave: (category: Omit<InventoryCategory, "id">) => void;
 };
 
-export function AddCategoryModal({
-  open,
-  onClose,
-  onSave,
-}: AddCategoryModalProps) {
+export function AddCategoryModal({ open, onClose, onSave }: AddCategoryModalProps) {
+  const { goodTypes } = useInventory();
   const [name, setName] = useState("");
-  const [type, setType] = useState<TypeValue>("food");
+  const [type, setType] = useState<TypeValue>("");
 
   const handleSave = useCallback(() => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    onSave({ name: trimmed, type });
+    onSave({ name: trimmed, type: type || goodTypes[0] || "" });
     setName("");
-    setType("food");
+    setType("");
     onClose();
-  }, [name, type, onSave, onClose]);
+  }, [name, type, goodTypes, onSave, onClose]);
 
   const handleClose = useCallback(() => {
     setName("");
-    setType("food");
+    setType("");
     onClose();
   }, [onClose]);
 
@@ -55,9 +52,7 @@ export function AddCategoryModal({
         </p>
         <div className="mt-4 space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Name
-            </label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -68,29 +63,22 @@ export function AddCategoryModal({
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Type
-            </label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Type</label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value as TypeValue)}
               className={cn(inputClass, "cursor-pointer")}
             >
-              {TYPE_VALUES.map((t) => (
-                <option key={t} value={t}>
-                  {TYPE_LABELS[t]}
-                </option>
+              {!type && <option value="">Select type</option>}
+              {goodTypes.map((t) => (
+                <option key={t} value={t}>{t}</option>
               ))}
             </select>
           </div>
         </div>
         <div className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button type="button" onClick={handleSave} disabled={!name.trim()}>
-            Save
-          </Button>
+          <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
+          <Button type="button" onClick={handleSave} disabled={!name.trim()}>Save</Button>
         </div>
       </div>
     </div>

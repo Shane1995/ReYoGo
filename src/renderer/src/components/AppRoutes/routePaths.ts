@@ -5,19 +5,17 @@ export enum ProductRoutes {
 
 export enum GoodsReceivedCaptureRoutes {
   CapturedGoodsReceived = "/goods-received/capture/captured-goods-received",
-  AddItems = "/goods-received/capture/captured-goods-received/add-items",
-  AddCategories = "/goods-received/capture/captured-goods-received/add-categories",
+  Import = "/goods-received/capture/captured-goods-received/import",
   Items = "/goods-received/capture/items",
   Categories = "/goods-received/capture/categories",
+  GoodTypes = "/goods-received/capture/good-types",
 }
 
-/** Invoice domain: capture and history. */
 export enum InvoiceRoutes {
   Base = "/goods-received/invoice",
   History = "/goods-received/invoice/history",
 }
 
-/** Analysis domain. */
 export enum AnalysisRoutes {
   CostPerUnit = "/goods-received/analysis",
 }
@@ -26,17 +24,17 @@ export enum UserRoutes {
   Home = "/",
 }
 
-export const GoodsReceivedRouteSegments = {
-  root: ProductRoutes.GoodsReceived.slice(1),
-  capture: "capture",
-  capturedGoodsReceived: "captured-goods-received",
-  addItems: "add-items",
-  addCategories: "add-categories",
-  items: "items",
-  categories: "categories",
-  invoice: "invoice",
-  invoiceHistory: "history",
-  analysis: "analysis",
-  view: "view",
-  add: "add",
-} as const;
+export enum GoodsReceivedRouteSegments {
+  root = "goods-received",
+  capture = "capture",
+  capturedGoodsReceived = "captured-goods-received",
+  import = "import",
+  items = "items",
+  categories = "categories",
+  goodTypes = "good-types",
+  invoice = "invoice",
+  invoiceHistory = "history",
+  analysis = "analysis",
+  view = "view",
+  add = "add",
+}

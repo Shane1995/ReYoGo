@@ -14,6 +14,8 @@ function invokeInventory(channel: IPCChannel, ...args: unknown[]): Promise<unkno
 type InventoryContextValue = {
   categories: InventoryCategory[];
   items: InventoryItem[];
+  units: string[];
+  goodTypes: string[];
   addCategory: (category: Omit<InventoryCategory, "id">) => string;
   updateCategory: (id: string, updates: Partial<InventoryCategory>) => void;
   removeCategory: (id: string) => void;
@@ -29,8 +31,16 @@ const InventoryContext = createContext<InventoryContextValue | null>(null);
 export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [units, setUnits] = useState<string[]>([]);
+  const [goodTypes, setGoodTypes] = useState<string[]>([]);
 
   useEffect(() => {
+    (window.electronAPI.ipcRenderer.invoke('setup:get-units') as Promise<{ name: string }[]>)
+      .then((data) => setUnits(data.map((u) => u.name)))
+      .catch(console.error);
+    (window.electronAPI.ipcRenderer.invoke('setup:get-good-types') as Promise<string[]>)
+      .then((data) => setGoodTypes(data))
+      .catch(console.error);
     invokeInventory(InventoryIPC.GET_CATEGORIES)
       .then((data) => {
         const list = Array.isArray(data) ? (data as InventoryCategory[]) : [];
@@ -117,6 +127,8 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const value: InventoryContextValue = {
     categories,
     items,
+    units,
+    goodTypes,
     addCategory,
     updateCategory,
     removeCategory,

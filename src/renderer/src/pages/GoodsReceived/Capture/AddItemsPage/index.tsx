@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,9 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useInventory } from "../Context/InventoryContext";
-import { TYPE_LABELS, TYPE_VALUES } from "../types";
-import type { TypeValue } from "../types";
+import { useInventory } from "../CapturedGoodsReceived/Context/InventoryContext";
+import type { TypeValue } from "../CapturedGoodsReceived/types";
 import { cn } from "@/lib/utils";
 
 const inputClass = cn(
@@ -23,27 +21,27 @@ const inputClass = cn(
 type PendingRow = {
   id: string;
   name: string;
+  categoryId: string;
   type: TypeValue;
+  unitOfMeasure: string;
 };
 
 function createEmptyRow(): PendingRow {
-  return { id: crypto.randomUUID(), name: "", type: "food" };
+  return { id: crypto.randomUUID(), name: "", categoryId: "", type: "", unitOfMeasure: "" };
 }
 
-export default function AddCategoriesPage() {
-  const { categories, addCategory } = useInventory();
-  const navigate = useNavigate();
+export default function AddItemsPage() {
+  const { categories, items, units, addItem } = useInventory();
   const [rows, setRows] = useState<PendingRow[]>([createEmptyRow()]);
   const [lastAddedRowId, setLastAddedRowId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!lastAddedRowId) return;
-    const id = `add-category-name-${lastAddedRowId}`;
-    const focus = () => {
+    const id = `add-item-name-${lastAddedRowId}`;
+    const t = setTimeout(() => {
       document.getElementById(id)?.focus();
       setLastAddedRowId(null);
-    };
-    const t = setTimeout(focus, 50);
+    }, 50);
     return () => clearTimeout(t);
   }, [lastAddedRowId]);
 
@@ -61,10 +59,9 @@ export default function AddCategoriesPage() {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
   }, []);
 
-  // Per-row duplicate detection: matches existing categories or sibling rows
   const duplicateIds = useMemo(() => {
-    const existingNames = new Set(categories.map((c) => c.name.trim().toLowerCase()));
-    const seen = new Map<string, string>(); // normalised name → first row id
+    const existingNames = new Set(items.map((i) => i.name.trim().toLowerCase()));
+    const seen = new Map<string, string>();
     const dupes = new Set<string>();
     for (const row of rows) {
       const key = row.name.trim().toLowerCase();
@@ -79,48 +76,59 @@ export default function AddCategoriesPage() {
       }
     }
     return dupes;
-  }, [rows, categories]);
+  }, [rows, items]);
 
   const submit = useCallback(() => {
-    const valid = rows.filter((r) => r.name.trim() && !duplicateIds.has(r.id));
+    const valid = rows.filter((r) => r.name.trim() && r.categoryId && !duplicateIds.has(r.id));
     if (!valid.length) return;
-    valid.forEach((r) => addCategory({ name: r.name.trim(), type: r.type }));
+    valid.forEach((r) => {
+      addItem({
+        name: r.name.trim(),
+        categoryId: r.categoryId,
+        type: r.type,
+        unitOfMeasure: r.unitOfMeasure || undefined,
+      });
+    });
     setRows([createEmptyRow()]);
-  }, [rows, duplicateIds, addCategory]);
+  }, [rows, duplicateIds, addItem]);
 
-  const hasValidRows = rows.some((r) => r.name.trim() && !duplicateIds.has(r.id));
+  // Require all named rows to also have a category before enabling Submit
+  const namedRows = rows.filter((r) => r.name.trim());
+  const hasValidRows = namedRows.some((r) => r.categoryId && !duplicateIds.has(r.id));
+  const hasIncompleteRows = namedRows.some((r) => !r.categoryId);
+  const canSubmit = hasValidRows && !hasIncompleteRows;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="shrink-0 border-b border-[var(--nav-border)] bg-background px-4 py-3">
-        <div>
-          <h1 className="text-lg font-semibold text-foreground">Add categories</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            Add categories with name and type. They appear in Captured Goods Received and in the Add items dropdown.
-          </p>
-        </div>
+      <header className="shrink-0 border-b border-[var(--nav-border)] bg-background px-6 py-4">
+        <h1 className="text-xl font-semibold tracking-tight">Add items</h1>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Add items with a name, category and unit. Add a category first if needed.
+        </p>
       </header>
 
       <div className="min-h-0 flex-1 overflow-auto">
-        <div className="mx-4 my-4">
+        <div className="mx-6 my-5">
           <div className="rounded-lg border border-[var(--nav-border)] bg-background">
             <Table>
               <TableHeader>
                 <TableRow className="border-[var(--nav-border)] hover:bg-transparent">
                   <TableHead className="font-medium text-foreground">Name</TableHead>
-                  <TableHead className="font-medium text-foreground">Type</TableHead>
+                  <TableHead className="font-medium text-foreground">Category</TableHead>
+                  <TableHead className="font-medium text-foreground">Unit of measure</TableHead>
                   <TableHead className="w-16" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {rows.map((row) => {
                   const isDupe = duplicateIds.has(row.id);
+                  const isIncomplete = !!row.name.trim() && !row.categoryId;
                   return (
                     <TableRow key={row.id} className="border-[var(--nav-border)] hover:bg-muted/30">
                       <TableCell className="py-2 px-3">
                         <div className="flex items-center gap-2">
                           <input
-                            id={`add-category-name-${row.id}`}
+                            id={`add-item-name-${row.id}`}
                             value={row.name}
                             onChange={(e) => updateRow(row.id, { name: e.target.value })}
                             onKeyDown={(e) => {
@@ -131,7 +139,7 @@ export default function AddCategoriesPage() {
                               "min-w-[10rem]",
                               isDupe && "border-destructive focus:ring-destructive/50"
                             )}
-                            placeholder="Category name"
+                            placeholder="Item name"
                           />
                           {isDupe && (
                             <span className="shrink-0 text-xs text-destructive">Already exists</span>
@@ -140,21 +148,46 @@ export default function AddCategoriesPage() {
                       </TableCell>
                       <TableCell className="py-2 px-3">
                         <select
-                          value={row.type}
-                          onChange={(e) => updateRow(row.id, { type: e.target.value as TypeValue })}
+                          value={row.categoryId}
+                          onChange={(e) => {
+                            const categoryId = e.target.value;
+                            const cat = categories.find((c) => c.id === categoryId);
+                            updateRow(row.id, cat ? { categoryId, type: cat.type } : { categoryId });
+                          }}
+                          className={cn(
+                            inputClass,
+                            "min-w-[10rem] cursor-pointer",
+                            isIncomplete && "border-destructive focus:ring-destructive/50"
+                          )}
+                        >
+                          <option value="">Select category</option>
+                          {categories.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.type} → {c.name}
+                            </option>
+                          ))}
+                        </select>
+                        {isIncomplete && (
+                          <span className="text-xs text-destructive mt-0.5 block">Required</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-2 px-3">
+                        <select
+                          value={row.unitOfMeasure}
+                          onChange={(e) =>
+                            updateRow(row.id, { unitOfMeasure: e.target.value })
+                          }
                           onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              e.currentTarget.click();
-                            } else if (e.key === "Tab") {
+                            if (e.key === "Tab") {
                               e.preventDefault();
                               addRow();
                             }
                           }}
-                          className={cn(inputClass, "min-w-[8rem] cursor-pointer")}
+                          className={cn(inputClass, "min-w-[6rem] cursor-pointer")}
                         >
-                          {TYPE_VALUES.map((t) => (
-                            <option key={t} value={t}>{TYPE_LABELS[t]}</option>
+                          <option value="">— none —</option>
+                          {units.map((u) => (
+                            <option key={u} value={u}>{u}</option>
                           ))}
                         </select>
                       </TableCell>
@@ -182,10 +215,10 @@ export default function AddCategoriesPage() {
                 </Button>
               </div>
               <div className="flex justify-end gap-2 border-t border-[var(--nav-border)] px-3 py-2">
-                <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
-                  Cancel
+                <Button variant="outline" size="sm" onClick={() => setRows([createEmptyRow()])}>
+                  Clear
                 </Button>
-                <Button variant="success" size="sm" onClick={submit} disabled={!hasValidRows}>
+                <Button size="sm" onClick={submit} disabled={!canSubmit}>
                   Submit
                 </Button>
               </div>

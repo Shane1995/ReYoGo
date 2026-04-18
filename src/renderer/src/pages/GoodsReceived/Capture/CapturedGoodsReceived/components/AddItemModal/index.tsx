@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { TYPE_LABELS, UNIT_OPTIONS } from "../types";
-import type { TypeValue, InventoryCategory, InventoryItem, UnitOfMeasure } from "../types";
+import type { TypeValue, InventoryCategory, InventoryItem } from "../../types";
 import { cn } from "@/lib/utils";
 
 const inputClass = cn(
@@ -13,41 +12,32 @@ type AddItemModalProps = {
   open: boolean;
   onClose: () => void;
   categories: InventoryCategory[];
+  units: string[];
   onSave: (item: Omit<InventoryItem, "id">) => void;
 };
 
-export function AddItemModal({
-  open,
-  onClose,
-  categories,
-  onSave,
-}: AddItemModalProps) {
+export function AddItemModal({ open, onClose, categories, units, onSave }: AddItemModalProps) {
   const [name, setName] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [unitOfMeasure, setUnitOfMeasure] = useState<UnitOfMeasure>("unit");
+  const [unitOfMeasure, setUnitOfMeasure] = useState("");
 
   const category = categories.find((c) => c.id === categoryId);
-  const type: TypeValue = category?.type ?? "food";
+  const type: TypeValue = category?.type ?? "";
 
   const handleSave = useCallback(() => {
     const trimmed = name.trim();
     if (!trimmed || !categoryId) return;
-    onSave({
-      name: trimmed,
-      categoryId,
-      type,
-      unitOfMeasure,
-    });
+    onSave({ name: trimmed, categoryId, type, unitOfMeasure: unitOfMeasure || undefined });
     setName("");
     setCategoryId("");
-    setUnitOfMeasure("unit");
+    setUnitOfMeasure("");
     onClose();
   }, [name, categoryId, type, unitOfMeasure, onSave, onClose]);
 
   const handleClose = useCallback(() => {
     setName("");
     setCategoryId("");
-    setUnitOfMeasure("unit");
+    setUnitOfMeasure("");
     onClose();
   }, [onClose]);
 
@@ -68,9 +58,7 @@ export function AddItemModal({
         </p>
         <div className="mt-4 space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Name
-            </label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -81,9 +69,7 @@ export function AddItemModal({
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Category
-            </label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Category</label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
@@ -94,35 +80,28 @@ export function AddItemModal({
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .map((c) => (
                   <option key={c.id} value={c.id}>
-                    {TYPE_LABELS[c.type]} → {c.name}
+                    {c.type} → {c.name}
                   </option>
                 ))}
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Unit of measure
-            </label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Unit of measure</label>
             <select
               value={unitOfMeasure}
-              onChange={(e) => setUnitOfMeasure(e.target.value as UnitOfMeasure)}
+              onChange={(e) => setUnitOfMeasure(e.target.value)}
               className={cn(inputClass, "cursor-pointer")}
             >
-              {UNIT_OPTIONS.map((u) => (
-                <option key={u} value={u}>
-                  {u}
-                </option>
+              <option value="">— none —</option>
+              {units.map((u) => (
+                <option key={u} value={u}>{u}</option>
               ))}
             </select>
           </div>
         </div>
         <div className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button type="button" onClick={handleSave} disabled={!name.trim() || !categoryId}>
-            Save
-          </Button>
+          <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
+          <Button type="button" onClick={handleSave} disabled={!name.trim() || !categoryId}>Save</Button>
         </div>
       </div>
     </div>

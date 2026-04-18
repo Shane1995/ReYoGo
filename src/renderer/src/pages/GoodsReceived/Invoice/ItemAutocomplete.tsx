@@ -20,44 +20,6 @@ type Props = {
   onSelectComplete?: () => void;
 };
 
-// Build grouped structure while preserving flat-index for keyboard nav
-type GroupedSection = {
-  typeLabel: string;
-  categories: {
-    categoryName: string;
-    items: { item: ItemOption; flatIndex: number }[];
-  }[];
-};
-
-function buildGroups(flat: ItemOption[]): GroupedSection[] {
-  const typeOrder: string[] = [];
-  const typeMap = new Map<string, Map<string, { item: ItemOption; flatIndex: number }[]>>();
-
-  flat.forEach((item, flatIndex) => {
-    const tl = item.typeLabel ?? "Other";
-    const cn = item.categoryName ?? "Uncategorised";
-
-    if (!typeMap.has(tl)) {
-      typeMap.set(tl, new Map());
-      typeOrder.push(tl);
-    }
-    const catMap = typeMap.get(tl)!;
-    if (!catMap.has(cn)) catMap.set(cn, []);
-    catMap.get(cn)!.push({ item, flatIndex });
-  });
-
-  return typeOrder.map((tl) => {
-    const catMap = typeMap.get(tl)!;
-    return {
-      typeLabel: tl,
-      categories: Array.from(catMap.entries()).map(([categoryName, items]) => ({
-        categoryName,
-        items,
-      })),
-    };
-  });
-}
-
 export function ItemAutocomplete({
   items,
   value,
@@ -70,7 +32,7 @@ export function ItemAutocomplete({
 }: Props) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const [highlightIndex, setHighlightIndex] = useState(0);
+  const [highlightIndex, setHighlightIndex] = useState(-1);
   const [listStyle, setListStyle] = useState({ top: 0, left: 0, width: 0 });
   const [containerId] = useState(() => `item-autocomplete-${crypto.randomUUID()}`);
   const listId = `${containerId}-list`;
@@ -78,25 +40,26 @@ export function ItemAutocomplete({
   const selectedItem = useMemo(() => items.find((i) => i.id === value), [items, value]);
 
   const filteredItems = useMemo(() => {
+    const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name));
     const q = query.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter(
-      (i) =>
-        i.name.toLowerCase().includes(q) ||
-        i.categoryName?.toLowerCase().includes(q) ||
-        i.typeLabel?.toLowerCase().includes(q)
-    );
+    if (!q) return sorted;
+    return sorted.filter((i) => i.name.toLowerCase().includes(q));
   }, [items, query]);
 
-  const groups = useMemo(() => buildGroups(filteredItems), [filteredItems]);
-
-  // Display: just the item name (no type→category suffix)
   const displayValue = isOpen ? query : (selectedItem?.name ?? "");
 
   useEffect(() => {
     if (!isOpen) return;
-    setHighlightIndex(0);
+    setHighlightIndex(filteredItems.findIndex((i) => i.id === value));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, isOpen]);
+
+  useEffect(() => {
+    if (highlightIndex < 0) return;
+    const highlighted = filteredItems[highlightIndex];
+    if (!highlighted) return;
+    document.getElementById(`item-option-${highlighted.id}`)?.scrollIntoView({ block: "nearest" });
+  }, [highlightIndex, filteredItems]);
 
   const updateListPosition = useCallback(() => {
     const el = document.getElementById(containerId);
@@ -116,13 +79,6 @@ export function ItemAutocomplete({
       window.removeEventListener("resize", handler);
     };
   }, [isOpen, query, updateListPosition]);
-
-  useEffect(() => {
-    const list = document.getElementById(listId);
-    if (!list || highlightIndex < 0) return;
-    const option = list.querySelector(`[data-flat-index="${highlightIndex}"]`) as HTMLElement | null;
-    option?.scrollIntoView({ block: "nearest" });
-  }, [highlightIndex, listId]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -203,11 +159,6 @@ export function ItemAutocomplete({
         aria-expanded={isOpen}
         aria-autocomplete="list"
         aria-controls={listId}
-        aria-activedescendant={
-          isOpen && filteredItems[highlightIndex]
-            ? `item-option-${filteredItems[highlightIndex].id}`
-            : undefined
-        }
         className={cn(
           "h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm",
           "focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0"
@@ -226,42 +177,19 @@ export function ItemAutocomplete({
                 No items match
               </li>
             ) : (
-              groups.map((group) => (
-                <li key={group.typeLabel} role="presentation">
-                  {/* Type header */}
-                  <div className="px-3 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {group.typeLabel}
-                  </div>
-                  <ul role="group">
-                    {group.categories.map((cat) => (
-                      <li key={cat.categoryName} role="presentation">
-                        {/* Category sub-header */}
-                        <div className="px-4 py-0.5 text-[11px] text-muted-foreground/70 italic">
-                          {cat.categoryName}
-                        </div>
-                        <ul role="group">
-                          {cat.items.map(({ item, flatIndex }) => (
-                            <li
-                              key={item.id}
-                              id={`item-option-${item.id}`}
-                              role="option"
-                              data-flat-index={flatIndex}
-                              aria-selected={value === item.id || flatIndex === highlightIndex}
-                              className={cn(
-                                "cursor-pointer px-6 py-1.5 text-sm",
-                                (value === item.id || flatIndex === highlightIndex) &&
-                                  "bg-accent text-accent-foreground"
-                              )}
-                              onMouseEnter={() => setHighlightIndex(flatIndex)}
-                              onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
-                            >
-                              {item.name}
-                            </li>
-                          ))}
-                        </ul>
-                      </li>
-                    ))}
-                  </ul>
+              filteredItems.map((item, index) => (
+                <li
+                  key={item.id}
+                  id={`item-option-${item.id}`}
+                  role="option"
+                  aria-selected={index === highlightIndex}
+                  className={cn(
+                    "cursor-pointer px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground",
+                    index === highlightIndex && "bg-accent text-accent-foreground"
+                  )}
+                  onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
+                >
+                  {item.name}
                 </li>
               ))
             )}

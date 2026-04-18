@@ -1,10 +1,7 @@
-import { Fragment, useState, useCallback } from "react";
+import { Fragment, useState, useCallback, useMemo } from "react";
 import {
   ChevronDownIcon,
   ChevronRightIcon,
-  PackageIcon,
-  UtensilsIcon,
-  GlassWaterIcon,
   SearchIcon,
   XIcon,
   LineChartIcon,
@@ -12,49 +9,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { TYPE_LABELS, TYPE_VALUES } from "../types";
-import type { TypeValue, InventoryCategory, InventoryItem } from "../types";
-
-const TYPE_CONFIG: Record<TypeValue, {
-  color: string;
-  badgeClass: string;
-  treeLine: string;
-  icon: React.FC<{ className?: string }>;
-}> = {
-  food: {
-    color: "text-emerald-700 dark:text-emerald-400",
-    badgeClass: "border-transparent bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300",
-    treeLine: "border-emerald-200 dark:border-emerald-800",
-    icon: UtensilsIcon,
-  },
-  drink: {
-    color: "text-sky-700 dark:text-sky-400",
-    badgeClass: "border-transparent bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-300",
-    treeLine: "border-sky-200 dark:border-sky-800",
-    icon: GlassWaterIcon,
-  },
-  "non-perishable": {
-    color: "text-amber-700 dark:text-amber-400",
-    badgeClass: "border-transparent bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300",
-    treeLine: "border-amber-200 dark:border-amber-800",
-    icon: PackageIcon,
-  },
-};
-
-function Highlight({ text, query }: { text: string; query: string }) {
-  if (!query) return <>{text}</>;
-  const idx = text.toLowerCase().indexOf(query.toLowerCase());
-  if (idx === -1) return <>{text}</>;
-  return (
-    <>
-      {text.slice(0, idx)}
-      <mark className="rounded-sm bg-yellow-200 text-yellow-900 dark:bg-yellow-700 dark:text-yellow-100 px-0">
-        {text.slice(idx, idx + query.length)}
-      </mark>
-      {text.slice(idx + query.length)}
-    </>
-  );
-}
+import type { TypeValue, InventoryCategory, InventoryItem } from "../../types";
+import { useInventory } from "../../Context/InventoryContext";
+import { getTypeConfig } from "../../utils/typeConfig";
+import { Highlight } from "../Highlight";
 
 type Props = {
   categories: InventoryCategory[];
@@ -63,7 +21,14 @@ type Props = {
 };
 
 export function InventoryViewTable({ categories, items, onViewInsights }: Props) {
-  const [expandedTypes, setExpandedTypes] = useState<Set<TypeValue>>(() => new Set(TYPE_VALUES));
+  const { goodTypes } = useInventory();
+
+  const allTypes = useMemo(() => {
+    const fromCategories = categories.map((c) => c.type).filter(Boolean);
+    return Array.from(new Set([...goodTypes, ...fromCategories]));
+  }, [goodTypes, categories]);
+
+  const [expandedTypes, setExpandedTypes] = useState<Set<TypeValue>>(() => new Set(allTypes));
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
 
@@ -90,7 +55,6 @@ export function InventoryViewTable({ categories, items, onViewInsights }: Props)
 
   return (
     <div className="space-y-3">
-      {/* Search + summary */}
       <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2">
         <div className="relative flex-1">
           <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -120,8 +84,8 @@ export function InventoryViewTable({ categories, items, onViewInsights }: Props)
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-3">
-          {TYPE_VALUES.map((type) => {
-            const cfg = TYPE_CONFIG[type];
+          {allTypes.map((type) => {
+            const cfg = getTypeConfig(type, allTypes);
             const TypeIcon = cfg.icon;
             const count = items.filter((i) => i.type === type).length;
             return (
@@ -134,9 +98,8 @@ export function InventoryViewTable({ categories, items, onViewInsights }: Props)
         </div>
       </div>
 
-      {/* Type sections */}
-      {TYPE_VALUES.map((type) => {
-        const cfg = TYPE_CONFIG[type];
+      {allTypes.map((type) => {
+        const cfg = getTypeConfig(type, allTypes);
         const TypeIcon = cfg.icon;
         const isExpanded = expandedTypes.has(type);
         const typeCategories = categories.filter((c) => c.type === type && c.name.trim());
@@ -153,7 +116,6 @@ export function InventoryViewTable({ categories, items, onViewInsights }: Props)
 
         return (
           <div key={type} className="overflow-hidden rounded-xl border border-border bg-background">
-            {/* Type header — full-width toggle button, no nested buttons */}
             <button
               type="button"
               className="flex w-full items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-muted/40"
@@ -165,7 +127,7 @@ export function InventoryViewTable({ categories, items, onViewInsights }: Props)
                   : <ChevronRightIcon className="size-4" />}
               </span>
               <TypeIcon className={cn("size-4 shrink-0", cfg.color)} />
-              <span className="font-semibold text-sm text-foreground">{TYPE_LABELS[type]}</span>
+              <span className="font-semibold text-sm text-foreground">{type}</span>
               <Badge className={cn("text-[11px] font-medium", cfg.badgeClass)}>
                 {typeCategories.length} categories · {typeItemCount} items
               </Badge>
@@ -178,7 +140,6 @@ export function InventoryViewTable({ categories, items, onViewInsights }: Props)
                     No categories.
                   </p>
                 ) : (
-                  /* Left-border tree container, indented from type header */
                   <div className={cn("ml-9 mr-4 mb-3 mt-1 space-y-1")}>
                     {filteredCategories.map((category) => {
                       const allCategoryItems = items.filter((i) => i.categoryId === category.id);
@@ -194,7 +155,6 @@ export function InventoryViewTable({ categories, items, onViewInsights }: Props)
 
                       return (
                         <Fragment key={category.id}>
-                          {/* Category row */}
                           <div
                             className={cn(
                               "flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 transition-colors",
@@ -221,16 +181,13 @@ export function InventoryViewTable({ categories, items, onViewInsights }: Props)
                             )}
                           </div>
 
-                          {/* Items — indented further with a coloured left border */}
                           {isCategoryExpanded && categoryItems.length > 0 && (
                             <div className={cn("ml-5 border-l-2 pl-3", cfg.treeLine)}>
-                              {/* Column headers */}
                               <div className="mb-0.5 grid grid-cols-[1fr_5rem_2rem] gap-2 px-2 pb-1 pt-0.5">
                                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Name</span>
                                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Unit</span>
                                 <span />
                               </div>
-                              {/* Item rows */}
                               <div className="divide-y divide-border/40 overflow-hidden rounded-md border border-border/60 bg-background">
                                 {categoryItems.map((item, idx) => (
                                   <div
@@ -276,8 +233,7 @@ export function InventoryViewTable({ categories, items, onViewInsights }: Props)
         );
       })}
 
-      {/* No search results */}
-      {query && TYPE_VALUES.every((type) => {
+      {query && allTypes.every((type) => {
         const typeCategories = categories.filter((c) => c.type === type && c.name.trim());
         return !typeCategories.some(
           (cat) =>

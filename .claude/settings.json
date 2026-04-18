@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(ls *.json)",
+      "Bash(pnpm electron:build)",
+      "Bash(pnpm add:*)",
+      "Bash(grep -n \"IInvoiceLineWithDate\\\\|InvoicesIPC\" /Users/shanelinden/dev/ReYoGo/src/shared/types/*.ts)"
+    ]
+  }
+}

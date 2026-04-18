@@ -9,8 +9,8 @@ const quickLinkGroups = [
     icon: PackagePlusIcon,
     links: [
       { label: "Captured Goods Received", to: GoodsReceivedCaptureRoutes.CapturedGoodsReceived },
-      { label: "Add items", to: GoodsReceivedCaptureRoutes.AddItems },
-      { label: "Add categories", to: GoodsReceivedCaptureRoutes.AddCategories },
+      { label: "Add items", to: GoodsReceivedCaptureRoutes.Items },
+      { label: "Add categories", to: GoodsReceivedCaptureRoutes.Categories },
     ],
   },
   {

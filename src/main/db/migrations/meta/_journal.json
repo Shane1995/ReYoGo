@@ -50,6 +50,13 @@
       "when": 1775748501000,
       "tag": "0006_invoice_audit_log",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1775748502000,
+      "tag": "0007_setup_tables",
+      "breakpoints": true
     }
   ]
 }

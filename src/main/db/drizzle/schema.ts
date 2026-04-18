@@ -95,3 +95,25 @@ export const invoiceAuditLog = sqliteTable('invoice_audit_log', {
 
 export type InvoiceAuditLogRow = typeof invoiceAuditLog.$inferSelect;
 export type NewInvoiceAuditLogRow = typeof invoiceAuditLog.$inferInsert;
+
+/**
+ * Units of measure configurable by the user (e.g. litres, kgs, unit, pieces).
+ */
+export const unitsOfMeasure = sqliteTable('units_of_measure', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});
+
+export type UnitOfMeasureRow = typeof unitsOfMeasure.$inferSelect;
+export type NewUnitOfMeasureRow = typeof unitsOfMeasure.$inferInsert;
+
+/**
+ * Key-value store for application configuration (e.g. setup_complete flag).
+ */
+export const appConfig = sqliteTable('app_config', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+});
+
+export type AppConfigRow = typeof appConfig.$inferSelect;

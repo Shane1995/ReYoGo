@@ -1,12 +1,16 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import AppLayout from "@/layouts/AppLayout";
 import GoodsReceivedLayout from "@/layouts/GoodsReceivedLayout";
+import { CapturedGoodsSectionLayout } from "@/layouts/CapturedGoodsSectionLayout";
+import { AnalysisSectionLayout } from "@/layouts/AnalysisSectionLayout";
 import GoodsReceivedOverview from "@/pages/GoodsReceived/Overview";
 import { CaptureLayout } from "@/pages/GoodsReceived/Capture/Layout";
 import { InventoryLayout } from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived/Layout/InventoryLayout";
 import CapturedGoodsReceivedIndex from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived";
-import AddItemsPage from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived/AddItems";
-import AddCategoriesPage from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived/AddCategories";
+import ImportPage from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived/ImportPage";
+import AddItemsPage from "@/pages/GoodsReceived/Capture/AddItemsPage";
+import AddCategoriesPage from "@/pages/GoodsReceived/Capture/AddCategoriesPage";
+import ManageTypesPage from "@/pages/GoodsReceived/Capture/ManageTypesPage";
 import { InvoiceLayout } from "@/pages/GoodsReceived/Invoice/Layout";
 import InvoicePage from "@/pages/GoodsReceived/Invoice";
 import InvoiceHistoryPage from "@/pages/GoodsReceived/Invoice/History";
@@ -15,7 +19,6 @@ import {
   ProductRoutes,
   UserRoutes,
   GoodsReceivedCaptureRoutes,
-  InvoiceRoutes,
   GoodsReceivedRouteSegments,
 } from "./routePaths";
 
@@ -35,23 +38,26 @@ export function AppRoutesComponent() {
         <Route index element={<Navigate to={ProductRoutes.GoodsReceived} replace />} />
         <Route path={GoodsReceivedRouteSegments.root} element={<GoodsReceivedLayout />}>
           <Route index element={<GoodsReceivedOverview />} />
-          <Route path={GoodsReceivedRouteSegments.analysis} element={<GoodsReceivedAnalysis />} />
-          <Route path={GoodsReceivedRouteSegments.capture} element={<CaptureLayout />}>
-            <Route index element={<Navigate to={ProductRoutes.GoodsReceived} replace />} />
-            <Route path={GoodsReceivedRouteSegments.capturedGoodsReceived} element={<InventoryLayout />}>
-              <Route index element={<CapturedGoodsReceivedIndex />} />
-              <Route path={GoodsReceivedRouteSegments.addItems} element={<AddItemsPage />} />
-              <Route path={GoodsReceivedRouteSegments.addCategories} element={<AddCategoriesPage />} />
-            </Route>
-            <Route
-              path={GoodsReceivedRouteSegments.items}
-              element={<Navigate to={GoodsReceivedCaptureRoutes.CapturedGoodsReceived} replace />}
-            />
-            <Route
-              path={GoodsReceivedRouteSegments.categories}
-              element={<Navigate to={GoodsReceivedCaptureRoutes.CapturedGoodsReceived} replace />}
-            />
+
+          <Route element={<AnalysisSectionLayout />}>
+            <Route path={GoodsReceivedRouteSegments.analysis} element={<GoodsReceivedAnalysis />} />
           </Route>
+
+          <Route element={<CapturedGoodsSectionLayout />}>
+            <Route path={GoodsReceivedRouteSegments.capture} element={<CaptureLayout />}>
+              <Route element={<InventoryLayout />}>
+                <Route index element={<Navigate to={GoodsReceivedCaptureRoutes.CapturedGoodsReceived} replace />} />
+                <Route path={GoodsReceivedRouteSegments.capturedGoodsReceived}>
+                  <Route index element={<CapturedGoodsReceivedIndex />} />
+                  <Route path={GoodsReceivedRouteSegments.import} element={<ImportPage />} />
+                </Route>
+                <Route path={GoodsReceivedRouteSegments.items} element={<AddItemsPage />} />
+                <Route path={GoodsReceivedRouteSegments.categories} element={<AddCategoriesPage />} />
+                <Route path={GoodsReceivedRouteSegments.goodTypes} element={<ManageTypesPage />} />
+              </Route>
+            </Route>
+          </Route>
+
           <Route path={GoodsReceivedRouteSegments.invoice} element={<InvoiceLayout />}>
             <Route index element={<InvoicePage />} />
             <Route path={GoodsReceivedRouteSegments.invoiceHistory} element={<InvoiceHistoryPage />} />

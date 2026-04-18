@@ -8,7 +8,6 @@ import { InventoryViewTable } from "./components/InventoryViewTable";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { TypeValue } from "./types";
-import { UNIT_OPTIONS } from "./types";
 
 type Mode = "view" | "edit";
 
@@ -16,6 +15,8 @@ export default function InventoryIndex() {
   const {
     categories,
     items,
+    units,
+    goodTypes,
     addCategory,
     updateCategory,
     addItem,
@@ -45,7 +46,7 @@ export default function InventoryIndex() {
     (categoryId: string) => {
       const category = categories.find((c) => c.id === categoryId);
       if (!category) return undefined;
-      return addItem({ name: "", categoryId, type: category.type, unitOfMeasure: UNIT_OPTIONS[0] });
+      return addItem({ name: "", categoryId, type: category.type, unitOfMeasure: units[0] });
     },
     [categories, addItem]
   );
@@ -85,20 +86,19 @@ export default function InventoryIndex() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="shrink-0 border-b border-[var(--nav-border)] bg-[var(--nav-bg)] px-6 py-4">
+      <header className="shrink-0 border-b border-border px-6 py-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold tracking-tight text-[var(--nav-foreground)]">
+            <h1 className="text-xl font-semibold tracking-tight">
               Captured Goods Received
             </h1>
-            <p className="mt-0.5 text-sm text-[var(--nav-foreground-muted)]">
+            <p className="mt-0.5 text-sm text-muted-foreground">
               {mode === "view"
                 ? "Browse your categories and items."
                 : "Organise categories and items. Click any name to edit · Tab to move between fields · Tab after unit to add the next row."}
             </p>
           </div>
 
-          {/* Mode toggle */}
           <div className="flex shrink-0 items-center gap-1 rounded-lg border border-[var(--nav-border)] bg-[var(--nav-accent)]/40 p-1">
             <Button
               type="button"
@@ -159,6 +159,8 @@ export default function InventoryIndex() {
               onBulkDeleteItems={onBulkDeleteItems}
               onBulkDeleteCategories={onBulkDeleteCategories}
               onViewInsights={handleViewInsights}
+              units={units}
+              goodTypes={goodTypes}
             />
           )}
         </div>
