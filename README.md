@@ -1,4 +1,4 @@
-# Big Booty Baba Electron App
+# ReYoGo
 
 An Electron application built with React, TypeScript, and Vite.
 

@@ -12,10 +12,10 @@ export function SummaryCard({
   color: 'emerald' | 'muted' | 'amber' | 'red';
 }) {
   const bg = {
-    emerald: 'bg-emerald-50 border-emerald-200',
+    emerald: 'bg-emerald-500/10 border-emerald-500/30',
     muted: 'bg-muted/40 border-[var(--nav-border)]',
-    amber: 'bg-amber-50 border-amber-200',
-    red: 'bg-red-50 border-red-200',
+    amber: 'bg-amber-500/10 border-amber-500/30',
+    red: 'bg-red-500/10 border-red-500/30',
   }[color];
 
   return (

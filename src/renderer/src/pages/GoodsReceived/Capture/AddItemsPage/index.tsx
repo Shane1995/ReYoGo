@@ -32,6 +32,8 @@ function createEmptyRow(): PendingRow {
 
 export default function AddItemsPage() {
   const { categories, items, units, addItem } = useInventory();
+  const namedCategories = categories.filter((c) => c.name.trim());
+  const categoryTypes = Array.from(new Set(namedCategories.map((c) => c.type)));
   const [rows, setRows] = useState<PendingRow[]>([createEmptyRow()]);
   const [lastAddedRowId, setLastAddedRowId] = useState<string | null>(null);
 
@@ -151,7 +153,7 @@ export default function AddItemsPage() {
                           value={row.categoryId}
                           onChange={(e) => {
                             const categoryId = e.target.value;
-                            const cat = categories.find((c) => c.id === categoryId);
+                            const cat = namedCategories.find((c) => c.id === categoryId);
                             updateRow(row.id, cat ? { categoryId, type: cat.type } : { categoryId });
                           }}
                           className={cn(
@@ -160,11 +162,15 @@ export default function AddItemsPage() {
                             isIncomplete && "border-destructive focus:ring-destructive/50"
                           )}
                         >
-                          <option value="">Select category</option>
-                          {categories.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.type} → {c.name}
-                            </option>
+                          <option value="">Select a category…</option>
+                          {categoryTypes.map((type) => (
+                            <optgroup key={type} label={type}>
+                              {namedCategories
+                                .filter((c) => c.type === type)
+                                .map((c) => (
+                                  <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </optgroup>
                           ))}
                         </select>
                         {isIncomplete && (

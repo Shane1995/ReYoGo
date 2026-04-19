@@ -1,8 +1,7 @@
-import { Fragment, useState, useCallback, useEffect } from "react";
+import { Fragment } from "react";
 import { ChevronDownIcon, ChevronRightIcon, PlusIcon, CopyIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "react-router-dom";
-import { InvoicesIPC } from "@shared/types/ipc";
+import { Link } from "react-router-dom";
 import { InvoiceRoutes } from "@/components/AppRoutes/routePaths";
 import {
   Table,
@@ -12,152 +11,43 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useInventory } from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived/Context/InventoryContext";
 import { AddCategoryModal } from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived/components/AddCategoryModal";
 import { AddItemModal } from "@/pages/GoodsReceived/Capture/CapturedGoodsReceived/components/AddItemModal";
 import { ItemAutocomplete } from "./ItemAutocomplete";
 import type { ProcessReceiptLine } from "./types";
-import { getProcessLineComputed, DEFAULT_VAT_RATE } from "./types";
+import { getProcessLineComputed } from "./types";
+import { useInvoiceForm } from "./hooks/useInvoiceForm";
+import { formatMoney } from "./utils/formatMoney";
+import { inputClass } from "./utils/inputClass";
 import { cn } from "@/lib/utils";
 
-const inputClass = cn(
-  "h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm",
-  "focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0"
-);
-
-function createEmptyLine(): ProcessReceiptLine {
-  return {
-    id: crypto.randomUUID(),
-    itemId: "",
-    quantity: 0,
-    vatMode: "exclusive",
-    vatRate: DEFAULT_VAT_RATE,
-    totalVatExclude: 0,
-  };
-}
-
-function formatMoney(n: number): string {
-  return n.toFixed(2);
-}
-
 export default function InvoicePage() {
-  const { items, categories, units, addCategory, addItem } = useInventory();
-  const location = useLocation();
-  const [lines, setLines] = useState<ProcessReceiptLine[]>(() => {
-    const template = (location.state as { templateLines?: ProcessReceiptLine[] } | null)?.templateLines;
-    return template && template.length > 0 ? template : [createEmptyLine()];
-  });
-  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
-  const [itemModalOpen, setItemModalOpen] = useState(false);
-  const [expandedResultLineIds, setExpandedResultLineIds] = useState<Set<string>>(new Set());
-  const isReused = !!(location.state as { templateLines?: ProcessReceiptLine[] } | null)?.templateLines;
-  const [reuseNoticeDismissed, setReuseNoticeDismissed] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [lastAddedLineId, setLastAddedLineId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!lastAddedLineId) return;
-    const id = `invoice-item-${lastAddedLineId}`;
-    const focus = () => {
-      document.getElementById(id)?.focus();
-      setLastAddedLineId(null);
-    };
-    const t = setTimeout(focus, 50);
-    return () => clearTimeout(t);
-  }, [lastAddedLineId]);
-
-  const toggleResultRow = useCallback((lineId: string) => {
-    setExpandedResultLineIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(lineId)) next.delete(lineId);
-      else next.add(lineId);
-      return next;
-    });
-  }, []);
-
-  const addLine = useCallback(() => {
-    const newLine = createEmptyLine();
-    setLines((prev) => [...prev, newLine]);
-    setLastAddedLineId(newLine.id);
-  }, []);
-
-  const removeLine = useCallback((id: string) => {
-    setLines((prev) => {
-      const next = prev.filter((l) => l.id !== id);
-      return next.length > 0 ? next : [createEmptyLine()];
-    });
-  }, []);
-
-  const updateLine = useCallback((id: string, updates: Partial<ProcessReceiptLine>) => {
-    setLines((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, ...updates } : l))
-    );
-  }, []);
-
-  const itemsWithCategory = items.map((item) => {
-    const cat = categories.find((c) => c.id === item.categoryId);
-    return {
-      ...item,
-      categoryName: cat?.name ?? "",
-      typeLabel: cat?.type ?? "",
-    };
-  });
-
-  const invoiceSummary = lines.reduce(
-    (acc, line) => {
-      const c = getProcessLineComputed(line);
-      return {
-        lineCount: acc.lineCount + (line.itemId ? 1 : 0),
-        subtotal: acc.subtotal + c.netTotal,
-        totalVat: acc.totalVat + c.vatAmount,
-        grandTotal: acc.grandTotal + c.grossTotal,
-      };
-    },
-    { lineCount: 0, subtotal: 0, totalVat: 0, grandTotal: 0 }
-  );
-
-  const validLines = lines.filter(
-    (l) =>
-      l.itemId &&
-      Number(l.quantity) > 0 &&
-      (l.totalVatExclude ?? 0) >= 0
-  );
-
-  const handleSave = useCallback(async () => {
-    if (validLines.length === 0) {
-      setSaveError("Add at least one line with an item, quantity, and total.");
-      return;
-    }
-    setSaveError(null);
-    setIsSaving(true);
-    try {
-      const payload = {
-        id: crypto.randomUUID(),
-        lines: validLines.map((line) => {
-          const item = items.find((i) => i.id === line.itemId);
-          const computed = getProcessLineComputed(line);
-          return {
-            id: line.id,
-            itemId: line.itemId,
-            itemNameSnapshot: item?.name ?? "Unknown",
-            unitOfMeasure: item?.unitOfMeasure ?? null,
-            quantity: Number(line.quantity) || 0,
-            vatMode: line.vatMode,
-            vatRate: line.vatRate,
-            totalVatExclude: computed.netTotal,
-          };
-        }),
-      };
-      await window.electronAPI.ipcRenderer.invoke(InvoicesIPC.SAVE_INVOICE, payload);
-      setLines([createEmptyLine()]);
-      setExpandedResultLineIds(new Set());
-    } catch (e) {
-      setSaveError(e instanceof Error ? e.message : "Failed to save invoice");
-    } finally {
-      setIsSaving(false);
-    }
-  }, [validLines, items]);
+  const {
+    units,
+    categories,
+    addCategory,
+    addItem,
+    lines,
+    categoryModalOpen,
+    setCategoryModalOpen,
+    itemModalOpen,
+    setItemModalOpen,
+    expandedResultLineIds,
+    isReused,
+    reuseNoticeDismissed,
+    setReuseNoticeDismissed,
+    isSaving,
+    saveError,
+    toggleResultRow,
+    addLine,
+    removeLine,
+    updateLine,
+    itemsWithCategory,
+    itemMetaMap,
+    invoiceSummary,
+    validLines,
+    handleSave,
+  } = useInvoiceForm();
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -244,6 +134,24 @@ export default function InvoicePage() {
                             placeholder="Search or select item…"
                             onSelectComplete={() => document.getElementById(`invoice-qty-${line.id}`)?.focus()}
                           />
+                          {line.itemId && (() => {
+                            const meta = itemMetaMap.get(line.itemId);
+                            if (!meta) return null;
+                            const unitPrice = computed.netUnitPrice > 0
+                              ? `Unit price: ${formatMoney(computed.netUnitPrice)}`
+                              : null;
+                            const parts = [
+                              meta.categoryName && `${meta.categoryName}`,
+                              meta.typeLabel && `${meta.typeLabel}`,
+                              meta.unitOfMeasure && `${meta.unitOfMeasure}`,
+                              unitPrice,
+                            ].filter(Boolean);
+                            return parts.length > 0 ? (
+                              <p className="mt-0.5 text-xs text-muted-foreground truncate">
+                                {parts.join(" · ")}
+                              </p>
+                            ) : null;
+                          })()}
                         </TableCell>
                         <TableCell className="py-2 px-3">
                           <input
@@ -337,6 +245,11 @@ export default function InvoicePage() {
                             className={cn(inputClass, "w-28")}
                             placeholder="0.00"
                           />
+                          {computed.netUnitPrice > 0 && (
+                            <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+                              {formatMoney(computed.netUnitPrice)}<span className="font-sans"> /unit</span>
+                            </p>
+                          )}
                         </TableCell>
                         <TableCell className="py-2 px-2">
                           <Button

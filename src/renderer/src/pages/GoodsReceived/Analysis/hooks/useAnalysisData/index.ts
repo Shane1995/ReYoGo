@@ -1,16 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useAnalysisLines } from "../useAnalysisLines";
 import { buildItemGroups } from "../../utils/buildItemGroups";
 import { TYPE_ORDER } from "../../types";
 
-export function useAnalysisData(initialItemId: string | null) {
+export type AnalysisTab = "all" | "by-type" | "by-category";
+
+export function useAnalysisData() {
   const { lines, loading } = useAnalysisLines();
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [search, setSearch] = useState("");
-  const [activeType, setActiveType] = useState<string>("all");
-  const [view, setView] = useState<"table" | "chart" | "categories">("table");
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(initialItemId);
+  const [filterType, setFilterType] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [analysisTab, setAnalysisTab] = useState<AnalysisTab>("all");
 
   const allGroups = useMemo(
     () => buildItemGroups(lines, fromDate, toDate),
@@ -24,47 +26,55 @@ export function useAnalysisData(initialItemId: string | null) {
     );
   }, [allGroups]);
 
-  useEffect(() => {
-    if (activeType !== "all" && !availableTypes.includes(activeType)) {
-      setActiveType("all");
+  const availableCategories = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const g of allGroups) {
+      if (g.categoryName && !seen.has(g.categoryName)) {
+        seen.set(g.categoryName, g.categoryName);
+      }
     }
-  }, [availableTypes, activeType]);
+    return Array.from(seen.keys()).sort();
+  }, [allGroups]);
 
   const groups = useMemo(() => {
-    let filtered = activeType === "all"
-      ? allGroups
-      : allGroups.filter((g) => g.categoryType === activeType);
+    let filtered = allGroups;
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       filtered = filtered.filter((g) => g.name.toLowerCase().includes(q));
     }
+    if (filterType) {
+      filtered = filtered.filter((g) => g.categoryType === filterType);
+    }
+    if (filterCategory) {
+      filtered = filtered.filter((g) => g.categoryName === filterCategory);
+    }
     return filtered;
-  }, [allGroups, activeType, search]);
+  }, [allGroups, search, filterType, filterCategory]);
 
-  const searchGroups = useMemo(() => {
-    if (!search.trim()) return allGroups;
-    const q = search.trim().toLowerCase();
-    return allGroups.filter((g) => g.name.toLowerCase().includes(q));
-  }, [allGroups, search]);
+  const clearFilters = () => {
+    setSearch("");
+    setFromDate("");
+    setToDate("");
+    setFilterType("");
+    setFilterCategory("");
+  };
+
+  const hasFilters = !!(search || fromDate || toDate || filterType || filterCategory);
 
   return {
     lines,
     loading,
-    fromDate,
-    setFromDate,
-    toDate,
-    setToDate,
-    search,
-    setSearch,
-    activeType,
-    setActiveType,
-    view,
-    setView,
-    selectedItemId,
-    setSelectedItemId,
+    fromDate, setFromDate,
+    toDate, setToDate,
+    search, setSearch,
+    filterType, setFilterType,
+    filterCategory, setFilterCategory,
+    analysisTab, setAnalysisTab,
     allGroups,
     availableTypes,
+    availableCategories,
     groups,
-    searchGroups,
+    hasFilters,
+    clearFilters,
   };
 }

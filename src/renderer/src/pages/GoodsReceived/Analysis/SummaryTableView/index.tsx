@@ -1,14 +1,25 @@
 import { Fragment, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { InsightChips } from "../InsightChips";
 import { fmt, fmtDate, fmtPct } from "../utils/format";
 import { overallChangePct, groupStats } from "../utils/stats";
 import { changeCls } from "../utils/styles";
 import { TYPE_ORDER, typeLabel } from "../types";
+import { itemTrendPath } from "@/components/AppRoutes/routePaths";
 import type { ItemGroup } from "../types";
 
-export function SummaryTableView({ groups, onSelect }: { groups: ItemGroup[]; onSelect: (id: string) => void }) {
+export function SummaryTableView({ groups }: { groups: ItemGroup[] }) {
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
+  const navigate = useNavigate();
 
   const toggleCat = (key: string) =>
     setExpandedCats((prev) => {
@@ -19,7 +30,7 @@ export function SummaryTableView({ groups, onSelect }: { groups: ItemGroup[]; on
 
   if (groups.length === 0) {
     return (
-      <div className="rounded-lg border border-[var(--nav-border)] bg-muted/20 p-10 text-center text-muted-foreground">
+      <div className="rounded-xl border border-border bg-muted/20 p-10 text-center text-sm text-muted-foreground">
         No data for the selected range or search.
       </div>
     );
@@ -35,115 +46,94 @@ export function SummaryTableView({ groups, onSelect }: { groups: ItemGroup[]; on
     ...Array.from(sectionMap.entries()).filter(([t]) => !TYPE_ORDER.includes(t)).map(([t, gs]) => ({ type: t, groups: gs })),
   ];
 
-  const renderItemRows = (catGroups: ItemGroup[]) =>
-    catGroups.map((group, gi) => {
-      const last = group.entries[group.entries.length - 1];
-      const change = overallChangePct(group);
-      const minPrice = Math.min(...group.entries.map((e) => e.unitPrice));
-      const avgPrice = group.entries.reduce((s, e) => s + e.unitPrice, 0) / group.entries.length;
-      return (
-        <tr
-          key={group.itemId}
-          onClick={() => onSelect(group.itemId)}
-          className={cn(
-            "border-b border-[var(--nav-border)]/40 cursor-pointer hover:bg-[var(--nav-active-border)]/5 transition-colors",
-            gi % 2 === 0 ? "bg-background" : "bg-muted/10"
-          )}
-        >
-          <td className="py-2.5 px-4 font-medium text-foreground">{group.name}</td>
-          <td className="py-2.5 px-4 text-center tabular-nums text-muted-foreground">{group.entries.length}</td>
-          <td className="py-2.5 px-4 text-right font-mono text-muted-foreground">{fmt(minPrice)}</td>
-          <td className="py-2.5 px-4 text-right font-mono text-muted-foreground">{fmt(avgPrice)}</td>
-          <td className="py-2.5 px-4 text-right text-muted-foreground">{fmtDate(last.date)}</td>
-          <td className="py-2.5 px-4 text-right font-mono font-medium text-foreground">
-            {fmt(last.unitPrice)}{last.uom ? ` / ${last.uom}` : ""}
-          </td>
-          <td className={cn("py-2.5 px-4 text-right", changeCls(change, true))}>
-            {change === null ? "—" : fmtPct(change)}
-          </td>
-          <td className="py-2.5 px-2 text-muted-foreground/40 text-xs">→</td>
-        </tr>
-      );
-    });
-
-  const tableHead = (
-    <thead>
-      <tr className="border-b border-[var(--nav-border)] bg-muted/20 text-xs">
-        <th className="py-2 px-4 text-left font-medium text-muted-foreground">Item</th>
-        <th className="py-2 px-4 text-center font-medium text-muted-foreground">Entries</th>
-        <th className="py-2 px-4 text-right font-medium text-muted-foreground">Min</th>
-        <th className="py-2 px-4 text-right font-medium text-muted-foreground">Avg</th>
-        <th className="py-2 px-4 text-right font-medium text-muted-foreground">Last captured</th>
-        <th className="py-2 px-4 text-right font-medium text-muted-foreground">Last price (excl. VAT)</th>
-        <th className="py-2 px-4 text-right font-medium text-muted-foreground">Overall change</th>
-        <th />
-      </tr>
-    </thead>
-  );
-
   return (
-    <div className="space-y-5">
-      {sections.map((section) => {
-        const catMap = new Map<string, ItemGroup[]>();
-        for (const g of section.groups) {
-          const key = g.categoryName ?? "";
-          if (!catMap.has(key)) catMap.set(key, []);
-          catMap.get(key)!.push(g);
-        }
-        const hasSubCategories = catMap.size > 1 || (catMap.size === 1 && !catMap.has(""));
-        const catSections = hasSubCategories
-          ? Array.from(catMap.entries()).sort(([a], [b]) => a.localeCompare(b))
-          : null;
-        const typeStats = groupStats(section.groups);
+    <div className="rounded-xl border border-border overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-secondary hover:bg-secondary">
+            <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80">Item</TableHead>
+            <TableHead className="text-center text-xs font-semibold uppercase tracking-wider text-foreground/80">Entries</TableHead>
+            <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-foreground/80">Min</TableHead>
+            <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-foreground/80">Avg</TableHead>
+            <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-foreground/80">Last Captured</TableHead>
+            <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-foreground/80">Last Price (excl. VAT)</TableHead>
+            <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-foreground/80">Overall Change</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sections.map((section) => {
+            const catMap = new Map<string, ItemGroup[]>();
+            for (const g of section.groups) {
+              const key = g.categoryName ?? "";
+              if (!catMap.has(key)) catMap.set(key, []);
+              catMap.get(key)!.push(g);
+            }
+            const catSections = Array.from(catMap.entries()).sort(([a], [b]) => a.localeCompare(b));
+            const typeStats = groupStats(section.groups);
 
-        return (
-          <div key={section.type} className="rounded-xl border border-[var(--nav-border)] overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 bg-muted/30 border-b border-[var(--nav-border)]">
-              <span className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
-                {typeLabel(section.type)}
-              </span>
-              <InsightChips stats={typeStats} />
-            </div>
+            return (
+              <Fragment key={section.type}>
+                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                  <TableCell colSpan={7} className="py-2.5 px-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-widest text-foreground/60">
+                        {typeLabel(section.type)}
+                      </span>
+                      <InsightChips stats={typeStats} />
+                    </div>
+                  </TableCell>
+                </TableRow>
 
-            {catSections ? (
-              <table className="w-full text-sm">
-                {tableHead}
-                <tbody>
-                  {catSections.map(([catName, catGroups]) => {
-                    const catStats = groupStats(catGroups);
-                    const isCollapsed = !expandedCats.has(catName);
-                    return (
-                      <Fragment key={catName}>
-                        <tr className="border-b border-[var(--nav-border)]/60 cursor-pointer select-none hover:bg-muted/10"
-                          onClick={() => toggleCat(catName)}>
-                          <td colSpan={8} className="relative py-0">
-                            <div className="absolute inset-y-0 left-0 w-0.5 bg-[var(--nav-active-border)]/60" />
-                            <div className="flex items-center justify-between pl-5 pr-4 py-2">
-                              <div className="flex items-center gap-2">
-                                <span className={cn("inline-block transition-transform text-xs text-muted-foreground/50", !isCollapsed && "rotate-90")}>▶</span>
-                                <span className="inline-flex items-center rounded-md border border-[var(--nav-active-border)]/40 bg-[var(--nav-active-border)]/15 px-2 py-0.5 text-xs font-semibold text-[var(--nav-active-border)]">
-                                  {catName || "Uncategorised"}
-                                </span>
-                              </div>
-                              <InsightChips stats={catStats} />
+                {catSections.map(([catName, catGroups], ci) => {
+                  const catStats = groupStats(catGroups);
+                  const isExpanded = expandedCats.has(catName);
+                  return (
+                    <Fragment key={catName}>
+                      <TableRow
+                        className={cn("cursor-pointer select-none hover:bg-white/[0.08]", ci % 2 === 1 ? "bg-white/[0.06]" : "bg-muted/10")}
+                        onClick={() => toggleCat(catName)}
+                      >
+                        <TableCell colSpan={7} className="relative py-0">
+                          <div className="absolute inset-y-0 left-0 w-0.5 bg-border" />
+                          <div className="flex items-center justify-between pl-6 pr-4 py-2">
+                            <div className="flex items-center gap-2">
+                              <span className={cn("inline-block text-xs text-muted-foreground/50 transition-transform", isExpanded && "rotate-90")}>▶</span>
+                              <span className="text-sm font-medium text-foreground/70">{catName || "Uncategorised"}</span>
                             </div>
-                          </td>
-                        </tr>
-                        {!isCollapsed && renderItemRows(catGroups)}
-                      </Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
-            ) : (
-              <table className="w-full text-sm">
-                {tableHead}
-                <tbody>{renderItemRows(section.groups)}</tbody>
-              </table>
-            )}
-          </div>
-        );
-      })}
+                            <InsightChips stats={catStats} />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+
+                      {isExpanded && catGroups.map((group, gi) => {
+                        const last = group.entries[group.entries.length - 1];
+                        const change = overallChangePct(group);
+                        const minPrice = Math.min(...group.entries.map((e) => e.unitPrice));
+                        const avgPrice = group.entries.reduce((s, e) => s + e.unitPrice, 0) / group.entries.length;
+                        return (
+                          <TableRow key={group.itemId} className={cn("cursor-pointer hover:bg-white/[0.08]", gi % 2 === 1 ? "bg-white/[0.06]" : "")} onClick={() => navigate(itemTrendPath(group.itemId))}>
+                            <TableCell className="py-3 pl-10 font-medium text-foreground hover:underline">{group.name}</TableCell>
+                            <TableCell className="py-3 text-center tabular-nums text-muted-foreground">{group.entries.length}</TableCell>
+                            <TableCell className="py-3 text-right font-mono text-muted-foreground">{fmt(minPrice)}</TableCell>
+                            <TableCell className="py-3 text-right font-mono text-muted-foreground">{fmt(avgPrice)}</TableCell>
+                            <TableCell className="py-3 text-right text-muted-foreground">{fmtDate(last.date)}</TableCell>
+                            <TableCell className="py-3 text-right font-mono font-medium text-foreground">
+                              {fmt(last.unitPrice)}{last.uom ? ` / ${last.uom}` : ""}
+                            </TableCell>
+                            <TableCell className={cn("py-3 text-right", changeCls(change, true))}>
+                              {change === null ? "—" : fmtPct(change)}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </Fragment>
+                  );
+                })}
+              </Fragment>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }

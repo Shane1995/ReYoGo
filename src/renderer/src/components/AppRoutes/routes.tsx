@@ -15,6 +15,7 @@ import { InvoiceLayout } from "@/pages/GoodsReceived/Invoice/Layout";
 import InvoicePage from "@/pages/GoodsReceived/Invoice";
 import InvoiceHistoryPage from "@/pages/GoodsReceived/Invoice/History";
 import GoodsReceivedAnalysis from "@/pages/GoodsReceived/Analysis";
+import ItemTrendPage from "@/pages/GoodsReceived/Analysis/ItemTrendPage";
 import {
   ProductRoutes,
   UserRoutes,
@@ -41,6 +42,7 @@ export function AppRoutesComponent() {
 
           <Route element={<AnalysisSectionLayout />}>
             <Route path={GoodsReceivedRouteSegments.analysis} element={<GoodsReceivedAnalysis />} />
+            <Route path={`${GoodsReceivedRouteSegments.analysis}/item/:itemId`} element={<ItemTrendPage />} />
           </Route>
 
           <Route element={<CapturedGoodsSectionLayout />}>

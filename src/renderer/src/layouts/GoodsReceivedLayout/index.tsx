@@ -19,8 +19,8 @@ const tabClass = ({ isActive }: { isActive: boolean }) =>
   );
 
 const GoodsReceivedLayout = () => (
-  <div className="flex min-h-0 flex-1 flex-col">
-    <nav className="flex items-end gap-0 overflow-x-auto bg-[var(--nav-bg)] px-4 border-b border-[var(--nav-border)]">
+  <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <nav className="flex shrink-0 items-end gap-0 overflow-x-auto bg-[var(--nav-bg)] px-4 border-b border-[var(--nav-border)]">
       {subNavItems.map((item) => (
         <NavLink key={item.path} to={item.path} end={item.end} className={tabClass}>
           <item.icon className="size-3.5 shrink-0" aria-hidden />
@@ -28,7 +28,7 @@ const GoodsReceivedLayout = () => (
         </NavLink>
       ))}
     </nav>
-    <main className="flex flex-1 min-h-0 flex-col overflow-hidden bg-[var(--content-tint)]">
+    <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--content-tint)]">
       <Outlet />
     </main>
   </div>

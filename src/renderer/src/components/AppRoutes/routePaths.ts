@@ -18,6 +18,11 @@ export enum InvoiceRoutes {
 
 export enum AnalysisRoutes {
   CostPerUnit = "/goods-received/analysis",
+  ItemTrend = "/goods-received/analysis/item/:itemId",
+}
+
+export function itemTrendPath(itemId: string) {
+  return `/goods-received/analysis/item/${itemId}`;
 }
 
 export enum UserRoutes {
