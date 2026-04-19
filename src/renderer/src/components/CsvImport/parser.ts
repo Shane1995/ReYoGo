@@ -2,9 +2,20 @@ import * as XLSX from 'xlsx';
 
 export type InventoryType = string;
 
-export interface ParsedUnit { name: string }
-export interface ParsedCategory { name: string; type: InventoryType }
-export interface ParsedItem { name: string; categoryName: string; unit?: string }
+export interface ParsedUnit {
+  name: string;
+}
+
+export interface ParsedCategory {
+  name: string;
+  type: InventoryType;
+}
+
+export interface ParsedItem {
+  name: string;
+  categoryName: string;
+  unit?: string;
+}
 
 export interface ParseResult {
   units: ParsedUnit[];
@@ -19,6 +30,16 @@ function col(row: Record<string, unknown>, ...keys: string[]): string {
     if (v !== undefined && v !== null && String(v).trim()) return String(v).trim();
   }
   return '';
+}
+
+function dedupe<T>(arr: T[], key: (item: T) => string): T[] {
+  const seen = new Set<string>();
+  return arr.filter((item) => {
+    const k = key(item);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
 }
 
 function parseUnitsSheet(sheet: XLSX.WorkSheet, result: ParseResult) {
@@ -84,16 +105,6 @@ export function parseFile(file: File): Promise<ParseResult> {
     };
     reader.onerror = () => reject(new Error('Failed to read file'));
     reader.readAsArrayBuffer(file);
-  });
-}
-
-function dedupe<T>(arr: T[], key: (item: T) => string): T[] {
-  const seen = new Set<string>();
-  return arr.filter((item) => {
-    const k = key(item);
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
   });
 }
 

@@ -6,8 +6,10 @@ import { cn } from '@/lib/utils';
 import { parseFile, downloadTemplate } from './parser';
 import type { ParseResult } from './parser';
 import { enrichParseResult } from './review';
-import type { ReviewResult, ExistingInventory } from './review';
+import type { ReviewResult } from './review';
 import { ImportReview } from './ImportReview';
+import { fetchExisting } from './utils/fetchExisting';
+import { setupService } from '@/services/setup';
 
 export { downloadTemplate };
 
@@ -25,24 +27,6 @@ type Phase =
   | { kind: 'loading-db' }
   | { kind: 'review'; parsed: ParseResult; review: ReviewResult }
   | { kind: 'error'; message: string };
-
-async function fetchExisting(): Promise<ExistingInventory> {
-  const invoke = window.electronAPI.ipcRenderer.invoke;
-  const [cats, items, units, goodTypes] = await Promise.all([
-    invoke('inventory:get-categories'),
-    invoke('inventory:get-items'),
-    invoke('setup:get-units'),
-    invoke('setup:get-good-types'),
-  ]);
-  const catList = cats as { name: string; type: string }[];
-  return {
-    categoryNames: new Set(catList.map((c) => c.name.toLowerCase())),
-    itemNames: new Set((items as { name: string }[]).map((i) => i.name.toLowerCase())),
-    unitNames: new Set((units as { name: string }[]).map((u) => u.name.toLowerCase())),
-    categoryList: catList.map((c) => ({ name: c.name, type: c.type as import('./parser').InventoryType })),
-    goodTypes: goodTypes as string[],
-  };
-}
 
 export function CsvImportButton({
   onImport,
@@ -119,7 +103,6 @@ export function CsvImportButton({
             className="flex flex-col w-full max-w-2xl max-h-[90vh] rounded-2xl border border-[var(--nav-border)] bg-background shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="flex items-center justify-between border-b border-[var(--nav-border)] px-5 py-4 shrink-0">
               <div className="flex items-center gap-2.5">
                 <FileSpreadsheetIcon className="size-5 text-[var(--nav-active-border)]" />
@@ -143,11 +126,9 @@ export function CsvImportButton({
               </button>
             </div>
 
-            {/* Body */}
             <div className="flex-1 overflow-y-auto px-5 py-4 min-h-0">
               {(phase.kind === 'idle' || phase.kind === 'error') && (
                 <div className="space-y-4">
-                  {/* Format guide */}
                   <div className="rounded-lg border border-[var(--nav-border)] bg-muted/30 p-4 space-y-3 text-sm">
                     <p className="font-semibold text-foreground">Expected format</p>
                     <p className="text-muted-foreground">
@@ -171,7 +152,7 @@ export function CsvImportButton({
                     <button
                       type="button"
                       onClick={async () => {
-                        const types = await window.electronAPI.ipcRenderer.invoke('setup:get-good-types') as string[];
+                        const types = await setupService.getGoodTypes() as string[];
                         downloadTemplate(types);
                       }}
                       className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--nav-active-border)] hover:underline"
@@ -222,7 +203,6 @@ export function CsvImportButton({
               )}
             </div>
 
-            {/* Footer — only shown in idle/error states (review has its own footer) */}
             {(phase.kind === 'idle' || phase.kind === 'error') && (
               <div className="flex justify-end border-t border-[var(--nav-border)] px-5 py-3 shrink-0">
                 <div className="flex gap-2">

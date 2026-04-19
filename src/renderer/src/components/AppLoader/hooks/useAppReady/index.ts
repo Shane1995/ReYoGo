@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchSetupStatus } from "../../utils/fetchSetupStatus";
+import { appService } from "@/services/app";
 
 export function useAppReady() {
   const [isReady, setIsReady] = useState(false);
@@ -8,12 +9,12 @@ export function useAppReady() {
   useEffect(() => {
     // Register the listener before sending the request so the response
     // can never arrive before the once-listener is in place.
-    window.electronAPI.onAppReady(async () => {
+    appService.onAppReady(async () => {
       const isComplete = await fetchSetupStatus();
       setSetupComplete(isComplete);
       setIsReady(true);
     });
-    window.electronAPI.requestAppReady();
+    appService.requestAppReady();
   }, []);
 
   return { isReady, setupComplete, setSetupComplete };

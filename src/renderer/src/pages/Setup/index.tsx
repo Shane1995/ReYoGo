@@ -14,6 +14,8 @@ import type { IUnitOfMeasure } from "@shared/types/contract/setup";
 import type { IInventoryCategory, IInventoryItem } from "@shared/types/contract/inventory";
 import { CsvImportButton, downloadTemplate } from "@/components/CsvImport";
 import type { ReviewResult } from "@/components/CsvImport/review";
+import { setupService } from "@/services/setup";
+import { inventoryService } from "@/services/inventory";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -146,7 +148,7 @@ function WelcomeStep({
         <button
           type="button"
           onClick={async () => {
-            const types = await window.electronAPI.ipcRenderer.invoke('setup:get-good-types') as string[];
+            const types = await setupService.getGoodTypes();
             downloadTemplate(types);
           }}
           className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
@@ -731,8 +733,6 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
   const [items, setItems] = useState<PendingItem[]>([createEmptyItem()]);
   const [saving, setSaving] = useState(false);
 
-  const { invoke } = window.electronAPI.ipcRenderer;
-
   const goTo = (s: Step) => setStep(s);
 
   const handleImport = useCallback((_parsed: unknown, review: ReviewResult) => {
@@ -791,24 +791,20 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
   const handleFinish = useCallback(async () => {
     setSaving(true);
     try {
-      // Save good types
-      await invoke("setup:set-good-types", goodTypes);
+      await setupService.setGoodTypes(goodTypes);
 
-      // Save units
       for (const unit of units) {
-        await invoke("setup:upsert-unit", unit);
+        await setupService.upsertUnit(unit);
       }
 
-      // Save categories (valid only)
       const validCategories = categories.filter((c) => c.name.trim());
       const categoryMap = new Map<string, IInventoryCategory>();
       for (const cat of validCategories) {
         const category: IInventoryCategory = { id: cat.id, name: cat.name.trim(), type: cat.type };
-        await invoke("inventory:upsert-category", category);
+        await inventoryService.upsertCategory(category);
         categoryMap.set(cat.id, category);
       }
 
-      // Save items (valid only)
       const validItems = items.filter((i) => i.name.trim() && i.categoryId);
       for (const item of validItems) {
         const cat = categoryMap.get(item.categoryId);
@@ -821,16 +817,16 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
           type: cat.type,
           unitOfMeasure: unit?.name,
         };
-        await invoke("inventory:upsert-item", inventoryItem);
+        await inventoryService.upsertItem(inventoryItem);
       }
 
-      await invoke("setup:complete");
+      await setupService.complete();
       onComplete();
     } catch (err) {
       console.error("Setup failed", err);
       setSaving(false);
     }
-  }, [goodTypes, units, categories, items, invoke, onComplete]);
+  }, [goodTypes, units, categories, items, onComplete]);
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-[var(--content-tint)] p-6">

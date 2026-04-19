@@ -1,7 +1,5 @@
 import type { ParseResult, ParsedCategory, InventoryType } from './parser';
 
-// ─── Output types ─────────────────────────────────────────────────────────────
-
 export type UnitStatus = 'new' | 'exists';
 export type CategoryStatus = 'new' | 'exists';
 export type ItemStatus = 'new' | 'exists' | 'unresolved';
@@ -27,7 +25,6 @@ export interface ReviewItem {
   unit?: string;
   status: ItemStatus;
   selected: boolean;
-  /** Why the item is unresolved (original category name when status is unresolved) */
   unresolvedReason?: string;
 }
 
@@ -36,7 +33,6 @@ export interface ReviewResult {
   categories: ReviewCategory[];
   items: ReviewItem[];
   parseErrors: string[];
-  /** All categories available for assigning to unresolved items (DB + import sheet) */
   availableCategories: { name: string; type: InventoryType }[];
   goodTypes: string[];
   counts: {
@@ -46,12 +42,10 @@ export interface ReviewResult {
   };
 }
 
-// ─── Enrichment ───────────────────────────────────────────────────────────────
-
 export interface ExistingInventory {
-  categoryNames: Set<string>; // lowercase
-  itemNames: Set<string>;     // lowercase
-  unitNames: Set<string>;     // lowercase
+  categoryNames: Set<string>;
+  itemNames: Set<string>;
+  unitNames: Set<string>;
   categoryList?: { name: string; type: InventoryType }[];
   goodTypes?: string[];
 }
@@ -63,13 +57,11 @@ export function enrichParseResult(
   const { categoryNames, itemNames, unitNames } = existing;
   const goodTypes = existing.goodTypes ?? [];
 
-  // ── Units ──────────────────────────────────────────────────────────────────
   const units: ReviewUnit[] = result.units.map((u) => {
     const exists = unitNames.has(u.name.toLowerCase());
     return { name: u.name, status: exists ? 'exists' : 'new', selected: !exists };
   });
 
-  // ── Categories from the categories sheet ──────────────────────────────────
   const importedCatLower = new Map<string, ParsedCategory>(
     result.categories.map((c) => [c.name.toLowerCase(), c])
   );
@@ -87,8 +79,6 @@ export function enrichParseResult(
     };
   });
 
-  // ── Items ──────────────────────────────────────────────────────────────────
-  // Categories that will exist: existing DB + explicitly imported categories
   const willExistCatLower = new Set<string>([
     ...categoryNames,
     ...importedCatLower.keys(),
@@ -112,7 +102,6 @@ export function enrichParseResult(
     };
   });
 
-  // ── Available categories for assigning to unresolved items ────────────────
   const seenCatNames = new Set<string>();
   const availableCategories: { name: string; type: InventoryType }[] = [];
 
@@ -132,16 +121,9 @@ export function enrichParseResult(
   }
   availableCategories.sort((a, b) => a.name.localeCompare(b.name));
 
-  // ── Summary counts ────────────────────────────────────────────────────────
-  const allRows = [
-    ...units.map((u) => u.status as string),
-    ...categories.map((c) => c.status as string),
-    ...items.map((i) => i.status as string),
-  ];
-
   const counts = {
-    newTotal: allRows.filter((s) => s === 'new').length,
-    existsTotal: allRows.filter((s) => s === 'exists').length,
+    newTotal: units.filter((u) => u.status === 'new').length + categories.filter((c) => c.status === 'new').length + items.filter((i) => i.status === 'new').length,
+    existsTotal: units.filter((u) => u.status === 'exists').length + categories.filter((c) => c.status === 'exists').length + items.filter((i) => i.status === 'exists').length,
     unresolvedTotal: items.filter((i) => i.status === 'unresolved').length,
   };
 
