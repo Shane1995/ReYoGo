@@ -16,6 +16,7 @@ type InventoryContextValue = {
   items: InventoryItem[];
   units: string[];
   goodTypes: string[];
+  addGoodType: (type: string) => void;
   addCategory: (category: Omit<InventoryCategory, "id">) => string;
   updateCategory: (id: string, updates: Partial<InventoryCategory>) => void;
   removeCategory: (id: string) => void;
@@ -52,6 +53,15 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         setItems(Array.isArray(data) ? (data as InventoryItem[]) : []);
       })
       .catch(console.error);
+  }, []);
+
+  const addGoodType = useCallback((type: string) => {
+    setGoodTypes((prev) => {
+      if (prev.includes(type)) return prev;
+      const next = [...prev, type];
+      (window.electronAPI.ipcRenderer.invoke('setup:set-good-types', next) as Promise<void>).catch(console.error);
+      return next;
+    });
   }, []);
 
   const addCategory = useCallback((category: Omit<InventoryCategory, "id">): string => {
@@ -129,6 +139,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     items,
     units,
     goodTypes,
+    addGoodType,
     addCategory,
     updateCategory,
     removeCategory,

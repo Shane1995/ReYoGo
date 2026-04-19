@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { PencilIcon, Trash2Icon, LineChartIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/DataTable";
 import type { ColumnDef, FilterField, FilterValues } from "@/components/DataTable";
 import { cn } from "@/lib/utils";
@@ -45,6 +46,8 @@ export function ItemsTable({
   const [filterValues, setFilterValues] = useState<FilterValues>({});
   const [editingItem, setEditingItem] = useState<InventoryItem | null | undefined>(undefined);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
   const allTypes = useMemo(() => {
     const fromCategories = categories.map((c) => c.type).filter(Boolean);
@@ -69,14 +72,16 @@ export function ItemsTable({
   }, [items, categories, costMap]);
 
   const filteredItems = useMemo(() => {
+    const search = (filterValues.search as string)?.toLowerCase() ?? "";
+    const type = (filterValues.type as string) ?? "";
+    const categories_ = (filterValues.category as string[]) ?? [];
+    const units_ = (filterValues.unit as string[]) ?? [];
+
     return flatItems.filter((item) => {
-      const search = filterValues.search?.toLowerCase() ?? "";
-      const type = filterValues.type ?? "";
-      const category = filterValues.category ?? "";
       if (search && !item.name.toLowerCase().includes(search)) return false;
       if (type && item.type !== type) return false;
-      if (category && item.categoryId !== category) return false;
-      if (filterValues.unit && item.unitOfMeasure !== filterValues.unit) return false;
+      if (categories_.length > 0 && !categories_.includes(item.categoryId)) return false;
+      if (units_.length > 0 && !units_.includes(item.unitOfMeasure ?? "")) return false;
       return true;
     });
   }, [flatItems, filterValues]);
@@ -106,17 +111,83 @@ export function ItemsTable({
       key: "category",
       label: "Categories",
       type: "select",
-      options: categoryOptions,
+      multi: true,
+      options: (values) => {
+        const selectedType = values.type as string;
+        return categoryOptions.filter((opt) => {
+          if (!selectedType) return true;
+          const cat = categories.find((c) => c.id === opt.value);
+          return cat?.type === selectedType;
+        });
+      },
     },
     {
       key: "unit",
       label: "Units",
       type: "select",
+      multi: true,
       options: unitOptions,
     },
   ];
 
+  const allFilteredIds = useMemo(() => filteredItems.map((i) => i.id), [filteredItems]);
+  const allSelected = allFilteredIds.length > 0 && allFilteredIds.every((id) => selectedIds.has(id));
+  const someSelected = allFilteredIds.some((id) => selectedIds.has(id));
+
+  function toggleAll() {
+    if (allSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        allFilteredIds.forEach((id) => next.delete(id));
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => new Set([...prev, ...allFilteredIds]));
+    }
+  }
+
+  function toggleOne(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleBulkDelete() {
+    const ids = Array.from(selectedIds);
+    for (const id of ids) {
+      await onDelete(id);
+    }
+    setSelectedIds(new Set());
+    setConfirmBulkDelete(false);
+  }
+
   const columns: ColumnDef<FlatItem>[] = [
+    {
+      key: "select",
+      header: (
+        <input
+          type="checkbox"
+          checked={allSelected}
+          ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected; }}
+          onChange={toggleAll}
+          className="size-4 cursor-pointer rounded border-border accent-primary [color-scheme:dark]"
+          aria-label="Select all"
+        />
+      ),
+      width: "40px",
+      cell: (row) => (
+        <input
+          type="checkbox"
+          checked={selectedIds.has(row.id)}
+          onChange={() => toggleOne(row.id)}
+          className="size-4 cursor-pointer rounded border-border accent-primary [color-scheme:dark]"
+          aria-label={`Select ${row.name}`}
+        />
+      ),
+    },
     {
       key: "name",
       header: "Item Name",
@@ -230,20 +301,86 @@ export function ItemsTable({
 
   return (
     <>
+      {selectedIds.size > 0 && (
+        <div className="mb-2 flex items-center gap-3 rounded-lg border border-primary/20 bg-secondary px-3 py-1.5">
+          <span className="text-xs font-medium text-secondary-foreground">
+            {selectedIds.size} item{selectedIds.size !== 1 ? "s" : ""} selected
+          </span>
+          <div className="h-3 w-px bg-border" />
+          {confirmBulkDelete ? (
+            <>
+              <Button
+                type="button"
+                size="sm"
+                variant="destructive"
+                className="h-7 text-xs"
+                onClick={handleBulkDelete}
+              >
+                Confirm — delete {selectedIds.size}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-7 text-xs text-muted-foreground hover:text-secondary-foreground"
+                onClick={() => setConfirmBulkDelete(false)}
+              >
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-7 gap-1.5 text-xs text-primary hover:bg-primary/10 hover:text-primary"
+                onClick={() => setConfirmBulkDelete(true)}
+              >
+                <Trash2Icon className="size-3" />
+                Delete selected
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-7 text-xs text-muted-foreground hover:text-secondary-foreground"
+                onClick={() => setSelectedIds(new Set())}
+              >
+                Clear
+              </Button>
+            </>
+          )}
+        </div>
+      )}
       <DataTable
         columns={columns}
         data={filteredItems}
         filters={filters}
         filterValues={filterValues}
         onFilterChange={(key, value) =>
-          setFilterValues((prev) => ({ ...prev, [key]: value }))
+          setFilterValues((prev) => {
+            const next = { ...prev, [key]: value };
+            if (key === "type") {
+              const selectedType = value as string;
+              const currentCats = (prev.category as string[]) ?? [];
+              if (selectedType && currentCats.length > 0) {
+                const validCats = currentCats.filter((id) => {
+                  const cat = categories.find((c) => c.id === id);
+                  return cat?.type === selectedType;
+                });
+                next.category = validCats;
+              }
+            }
+            return next;
+          })
         }
         onClearFilters={() => setFilterValues({})}
         rowKey={(row) => row.id}
         emptyMessage={
-          Object.values(filterValues).some(Boolean)
+          Object.values(filterValues).some((v) => (Array.isArray(v) ? v.length > 0 : Boolean(v)))
             ? "No items match your filters."
-            : "No items yet. Add your first item above."
+            : "No items yet. Use the + button to add your first item."
         }
       />
 

@@ -1,12 +1,10 @@
-import { useCallback } from "react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { PlusIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { itemTrendPath } from "@/components/AppRoutes/routePaths";
 import { useInventory } from "./Context/InventoryContext";
 import { ItemsTable } from "./components/ItemsTable";
-import { EditItemDialog } from "./components/EditItemDialog";
-import { Button } from "@/components/ui/button";
+import { AddInventoryModal } from "./components/AddInventoryModal";
 import { useItemCosts } from "./hooks/useItemCosts";
 import type { InventoryItem } from "./types";
 
@@ -16,14 +14,13 @@ export default function InventoryIndex() {
     items,
     units,
     goodTypes,
-    addItem,
     updateItem,
     deleteItemFromBackend,
   } = useInventory();
 
   const navigate = useNavigate();
   const costMap = useItemCosts();
-  const [addingItem, setAddingItem] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
   const handleViewInsights = useCallback(
     (itemId: string) => navigate(itemTrendPath(itemId)),
@@ -35,30 +32,10 @@ export default function InventoryIndex() {
     [updateItem]
   );
 
-  const handleAdd = useCallback(
-    (_id: string | null, values: Omit<InventoryItem, "id">) => {
-      addItem({ ...values, unitOfMeasure: values.unitOfMeasure });
-      setAddingItem(false);
-    },
-    [addItem]
-  );
-
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-auto">
-        <div className="mx-6 my-5">
-          <div className="mb-3 flex justify-end">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="gap-1.5 text-xs"
-              onClick={() => setAddingItem(true)}
-            >
-              <PlusIcon className="size-3.5" />
-              Add item
-            </Button>
-          </div>
+        <div className="mx-6 my-5 pb-20">
           <ItemsTable
             items={items}
             categories={categories}
@@ -72,15 +49,16 @@ export default function InventoryIndex() {
         </div>
       </div>
 
-      {addingItem && (
-        <EditItemDialog
-          item={null}
-          categories={categories}
-          units={units}
-          onSave={handleAdd}
-          onClose={() => setAddingItem(false)}
-        />
-      )}
+      <button
+        type="button"
+        title="Add to inventory"
+        onClick={() => setAddModalOpen(true)}
+        className="fixed bottom-6 right-6 z-40 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors"
+      >
+        <PlusIcon className="size-5" />
+      </button>
+
+      <AddInventoryModal open={addModalOpen} onClose={() => setAddModalOpen(false)} />
     </div>
   );
 }

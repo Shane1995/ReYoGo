@@ -20,12 +20,12 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   );
 
 export function InvoiceLayout() {
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("sidebar-invoice-collapsed") === "true");
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("sidebar-section-collapsed") === "true");
 
   const toggleCollapsed = () =>
     setCollapsed((c) => {
       const next = !c;
-      localStorage.setItem("sidebar-invoice-collapsed", String(next));
+      localStorage.setItem("sidebar-section-collapsed", String(next));
       return next;
     });
 

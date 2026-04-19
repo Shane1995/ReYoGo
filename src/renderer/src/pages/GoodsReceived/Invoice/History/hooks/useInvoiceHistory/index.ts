@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { InvoicesIPC } from "@shared/types/ipc";
 import type { ICapturedInvoice, ICapturedInvoiceWithLines } from "@shared/types/contract";
@@ -14,6 +14,7 @@ export function useInvoiceHistory() {
   const [loading, setLoading] = useState(true);
   const [detailCache, setDetailCache] = useState<Record<string, ICapturedInvoiceWithLines>>({});
   const [rowMode, setRowModeState] = useState<Record<string, RowMode>>({});
+  const [search, setSearch] = useState("");
 
   const { items } = useInventory();
   const navigate = useNavigate();
@@ -140,12 +141,23 @@ export function useInvoiceHistory() {
     [items, detailCache, loadInvoices, setMode]
   );
 
+  const filteredInvoices = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return invoices;
+    return invoices.filter((inv) => {
+      const detail = detailCache[inv.id];
+      return detail?.lines.some((l) => l.itemNameSnapshot.toLowerCase().includes(q));
+    });
+  }, [invoices, detailCache, search]);
+
   return {
-    invoices,
+    invoices: filteredInvoices,
     loading,
     detailCache,
     rowMode,
     setMode,
+    search,
+    setSearch,
     handleReuse,
     handleExpandDetail,
     handleEditClick,

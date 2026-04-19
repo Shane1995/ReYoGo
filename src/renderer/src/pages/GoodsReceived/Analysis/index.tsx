@@ -7,10 +7,10 @@ import { ByCategoryView } from "./ByCategoryView";
 import { typeLabel } from "./types";
 
 const inputClass =
-  "h-8 rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40";
+  "h-8 rounded-md border border-input bg-muted px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40";
 
 const selectClass =
-  "h-8 rounded-md border border-input bg-background px-2.5 pr-7 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40 text-muted-foreground";
+  "h-8 rounded-md border border-input bg-muted px-2.5 pr-7 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40 text-muted-foreground";
 
 const TAB_LABELS: { key: AnalysisTab; label: string }[] = [
   { key: "all", label: "All Items" },

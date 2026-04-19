@@ -22,12 +22,12 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   );
 
 export function CapturedGoodsSectionLayout() {
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("sidebar-capture-collapsed") === "true");
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("sidebar-section-collapsed") === "true");
 
   const toggleCollapsed = () =>
     setCollapsed((c) => {
       const next = !c;
-      localStorage.setItem("sidebar-capture-collapsed", String(next));
+      localStorage.setItem("sidebar-section-collapsed", String(next));
       return next;
     });
 

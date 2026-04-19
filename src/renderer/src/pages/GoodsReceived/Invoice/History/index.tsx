@@ -26,6 +26,8 @@ export default function InvoiceHistoryPage() {
     detailCache,
     rowMode,
     setMode,
+    search,
+    setSearch,
     handleReuse,
     handleExpandDetail,
     handleEditClick,
@@ -35,7 +37,7 @@ export default function InvoiceHistoryPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="shrink-0 border-b border-[var(--nav-border)] bg-background px-4 py-3">
+      <header className="shrink-0 border-b border-border bg-background px-4 py-3 space-y-2">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-lg font-semibold text-foreground">Invoice history</h1>
@@ -50,35 +52,48 @@ export default function InvoiceHistoryPage() {
             </Link>
           </Button>
         </div>
+        <input
+          type="search"
+          placeholder="Search by item name…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+        />
       </header>
 
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {loading ? (
           <p className="text-muted-foreground text-sm">Loading…</p>
         ) : invoices.length === 0 ? (
-          <div className="rounded-lg border border-[var(--nav-border)] bg-muted/20 p-8 text-center text-muted-foreground">
-            <p>No captured invoices yet.</p>
-            <Button asChild variant="link" className="mt-2">
-              <Link to={InvoiceRoutes.Base}>Capture your first invoice</Link>
-            </Button>
+          <div className="rounded-xl border border-border bg-muted/20 p-10 text-center text-sm text-muted-foreground">
+            {search ? (
+              <p>No invoices contain an item matching <strong>"{search}"</strong>.</p>
+            ) : (
+              <>
+                <p>No captured invoices yet.</p>
+                <Button asChild variant="link" className="mt-2">
+                  <Link to={InvoiceRoutes.Base}>Capture your first invoice</Link>
+                </Button>
+              </>
+            )}
           </div>
         ) : (
-          <div className="rounded-lg border border-[var(--nav-border)] bg-background overflow-hidden">
+          <div className="rounded-xl border border-border overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="border-[var(--nav-border)] hover:bg-transparent">
-                  <TableHead className="w-8 p-2" />
-                  <TableHead className="font-medium text-foreground">Date captured</TableHead>
-                  <TableHead className="font-medium text-foreground w-16 text-right">Lines</TableHead>
-                  <TableHead className="font-medium text-foreground w-28 text-right">Excl.</TableHead>
-                  <TableHead className="font-medium text-foreground w-24 text-right">VAT</TableHead>
-                  <TableHead className="font-medium text-foreground w-28 text-right">Total</TableHead>
-                  <TableHead className="font-medium text-foreground w-36">Last edited</TableHead>
+                <TableRow className="bg-secondary hover:bg-secondary">
+                  <TableHead className="w-8 p-2 text-xs font-semibold uppercase tracking-wider text-foreground/80" />
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80">Date captured</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80 w-16 text-right">Lines</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80 w-28 text-right">Excl.</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80 w-24 text-right">VAT</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80 w-28 text-right">Total</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80 w-36">Last edited</TableHead>
                   <TableHead className="w-36" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invoices.map((inv) => {
+                {invoices.map((inv, i) => {
                   const mode = rowMode[inv.id]?.kind ?? "view";
                   const detail = detailCache[inv.id];
                   const totals = detail ? invoiceTotals(detail.lines) : null;
@@ -87,7 +102,8 @@ export default function InvoiceHistoryPage() {
                     <Fragment key={inv.id}>
                       <TableRow
                         className={cn(
-                          "border-[var(--nav-border)] hover:bg-muted/30 cursor-pointer",
+                          "cursor-pointer hover:bg-muted/30",
+                          i % 2 === 1 && "bg-white/[0.06]",
                           (mode === "detail" || mode === "edit" || mode === "audit") && "bg-muted/20"
                         )}
                         onClick={() => handleExpandDetail(inv.id)}
@@ -155,16 +171,16 @@ export default function InvoiceHistoryPage() {
                       </TableRow>
 
                       {mode === "detail" && detail && (
-                        <TableRow className="border-[var(--nav-border)] hover:bg-transparent">
+                        <TableRow className="border-border hover:bg-transparent">
                           <TableCell colSpan={8} className="p-0">
-                            <div className="border-t border-[var(--nav-border)] bg-muted/10 px-4 py-3">
+                            <div className="border-t border-border bg-muted/10 px-4 py-3">
                               {detail.lines.length === 0 ? (
                                 <p className="text-sm text-muted-foreground">No line items.</p>
                               ) : (
                                 <>
                                   <table className="w-full text-sm">
                                     <thead>
-                                      <tr className="border-b border-[var(--nav-border)]">
+                                      <tr className="border-b border-border">
                                         <th className="pb-2 pr-4 text-left font-medium">Item</th>
                                         <th className="pb-2 pr-4 text-right font-medium">Qty</th>
                                         <th className="pb-2 pr-4 text-right font-medium">UoM</th>
@@ -178,7 +194,7 @@ export default function InvoiceHistoryPage() {
                                         const qty = line.quantity || 0;
                                         const unitPrice = qty > 0 ? line.totalVatExclude / qty : 0;
                                         return (
-                                          <tr key={line.id} className="border-b border-[var(--nav-border)]/50">
+                                          <tr key={line.id} className="border-b border-border/50">
                                             <td className="py-1.5 pr-4">{line.itemNameSnapshot}</td>
                                             <td className="py-1.5 pr-4 text-right">{line.quantity}</td>
                                             <td className="py-1.5 pr-4 text-right text-muted-foreground">
@@ -201,7 +217,7 @@ export default function InvoiceHistoryPage() {
                                   {(() => {
                                     const t = invoiceTotals(detail.lines);
                                     return (
-                                      <div className="mt-3 flex gap-6 text-sm border-t border-[var(--nav-border)] pt-3">
+                                      <div className="mt-3 flex gap-6 text-sm border-t border-border pt-3">
                                         <span className="text-muted-foreground">Exclusive <span className="font-mono font-medium text-foreground">{formatMoney(t.excl)}</span></span>
                                         <span className="text-muted-foreground">VAT <span className="font-mono font-medium text-foreground">{formatMoney(t.vat)}</span></span>
                                         <span className="text-muted-foreground">Total <span className="font-mono font-semibold text-foreground">{formatMoney(t.total)}</span></span>
@@ -216,7 +232,7 @@ export default function InvoiceHistoryPage() {
                       )}
 
                       {mode === "edit" && detail && (
-                        <TableRow className="border-[var(--nav-border)] hover:bg-transparent">
+                        <TableRow className="border-border hover:bg-transparent">
                           <TableCell colSpan={8} className="p-0">
                             <EditPanel
                               invoice={detail}
@@ -228,7 +244,7 @@ export default function InvoiceHistoryPage() {
                       )}
 
                       {mode === "audit" && (
-                        <TableRow className="border-[var(--nav-border)] hover:bg-transparent">
+                        <TableRow className="border-border hover:bg-transparent">
                           <TableCell colSpan={8} className="p-0">
                             <AuditPanel
                               invoiceId={inv.id}

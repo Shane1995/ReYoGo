@@ -18,12 +18,12 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   );
 
 export function AnalysisSectionLayout() {
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("sidebar-analysis-collapsed") === "true");
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("sidebar-section-collapsed") === "true");
 
   const toggleCollapsed = () =>
     setCollapsed((c) => {
       const next = !c;
-      localStorage.setItem("sidebar-analysis-collapsed", String(next));
+      localStorage.setItem("sidebar-section-collapsed", String(next));
       return next;
     });
 

@@ -17,7 +17,7 @@ type Props<T> = {
   data: T[];
   filters?: FilterField[];
   filterValues?: FilterValues;
-  onFilterChange?: (key: string, value: string) => void;
+  onFilterChange?: (key: string, value: string | string[]) => void;
   onClearFilters?: () => void;
   emptyMessage?: string;
   rowKey: (row: T) => string;
