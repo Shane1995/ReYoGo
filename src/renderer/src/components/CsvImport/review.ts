@@ -1,4 +1,5 @@
 import type { ParseResult, ParsedCategory, InventoryType } from './parser';
+export type { InventoryType };
 
 export type UnitStatus = 'new' | 'exists';
 export type CategoryStatus = 'new' | 'exists';

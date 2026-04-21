@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="src/renderer/public/logo.png" alt="ReYoGo logo" width="120" />
+</p>
+
 # ReYoGo
 
 An Electron application built with React, TypeScript, and Vite.

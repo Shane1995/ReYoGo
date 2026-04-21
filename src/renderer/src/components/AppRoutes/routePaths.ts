@@ -1,38 +1,38 @@
 export enum ProductRoutes {
-  GoodsReceivedValidation = "/goods-received",
-  GoodsReceived = "/goods-received",
+  InventoryValidation = "/inventory",
+  Inventory = "/inventory",
 }
 
-export enum GoodsReceivedCaptureRoutes {
-  CapturedGoodsReceived = "/goods-received/capture/captured-goods-received",
-  Import = "/goods-received/capture/captured-goods-received/import",
-  Items = "/goods-received/capture/items",
-  Categories = "/goods-received/capture/categories",
-  GoodTypes = "/goods-received/capture/good-types",
+export enum InventoryCaptureRoutes {
+  CapturedInventory = "/inventory/capture/captured-inventory",
+  Import = "/inventory/capture/captured-inventory/import",
+  Items = "/inventory/capture/items",
+  Categories = "/inventory/capture/categories",
+  GoodTypes = "/inventory/capture/good-types",
 }
 
 export enum InvoiceRoutes {
-  Base = "/goods-received/invoice",
-  History = "/goods-received/invoice/history",
+  Base = "/inventory/invoice",
+  History = "/inventory/invoice/history",
 }
 
 export enum AnalysisRoutes {
-  CostPerUnit = "/goods-received/analysis",
-  ItemTrend = "/goods-received/analysis/item/:itemId",
+  CostPerUnit = "/inventory/analysis",
+  ItemTrend = "/inventory/analysis/item/:itemId",
 }
 
 export function itemTrendPath(itemId: string) {
-  return `/goods-received/analysis/item/${itemId}`;
+  return `/inventory/analysis/item/${itemId}`;
 }
 
 export enum UserRoutes {
   Home = "/",
 }
 
-export enum GoodsReceivedRouteSegments {
-  root = "goods-received",
+export enum InventoryRouteSegments {
+  root = "inventory",
   capture = "capture",
-  capturedGoodsReceived = "captured-goods-received",
+  capturedInventory = "captured-inventory",
   import = "import",
   items = "items",
   categories = "categories",

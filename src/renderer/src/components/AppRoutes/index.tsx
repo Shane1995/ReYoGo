@@ -1,9 +1,9 @@
 export {
   ProductRoutes,
-  GoodsReceivedCaptureRoutes,
+  InventoryCaptureRoutes,
   InvoiceRoutes,
   UserRoutes,
-  GoodsReceivedRouteSegments,
+  InventoryRouteSegments,
 } from "./routePaths";
 
 export { AppRoutesComponent } from "./routes";
