@@ -47,15 +47,12 @@ export default function InvoicePage() {
     addLine,
     removeLine,
     updateLine,
-    setAllVatMode,
     itemsWithCategory,
     itemMetaMap,
     invoiceSummary,
     validLines,
     handleSave,
   } = useInvoiceForm();
-
-  const globalVatMode = lines.every((l) => l.vatMode === lines[0]?.vatMode) ? lines[0]?.vatMode : "";
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -87,22 +84,7 @@ export default function InvoicePage() {
           </div>
           <div className="flex items-center gap-2">
             <label className="text-sm text-muted-foreground whitespace-nowrap">Invoice date</label>
-            <DatePicker value={invoiceDate} onChange={setInvoiceDate} placeholder="Pick a date" />
-          </div>
-          <div className="flex items-center gap-2 ml-auto">
-            <label className="text-sm text-muted-foreground whitespace-nowrap">All lines VAT</label>
-            <select
-              value={globalVatMode}
-              onChange={(e) => {
-                if (e.target.value) setAllVatMode(e.target.value as "exclusive" | "inclusive" | "non-taxable");
-              }}
-              className={cn(inputClass, "min-w-[9rem] cursor-pointer")}
-            >
-              <option value="">Mixed</option>
-              <option value="exclusive">Exclusive (add VAT)</option>
-              <option value="inclusive">Inclusive (VAT incl.)</option>
-              <option value="non-taxable">Non-taxable</option>
-            </select>
+            <DatePicker value={invoiceDate} onChange={setInvoiceDate} />
           </div>
         </div>
       </header>
