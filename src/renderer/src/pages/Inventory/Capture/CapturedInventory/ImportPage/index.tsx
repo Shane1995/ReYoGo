@@ -133,9 +133,9 @@ export default function ImportPage() {
       </header>
 
       <div className="min-h-0 flex-1 overflow-auto">
-        <div className="mx-5 my-5">
+        <div className="mx-auto w-full max-w-2xl px-5 py-5">
           {state.phase === "idle" && (
-            <div className="space-y-4 max-w-2xl">
+            <div className="space-y-4">
               <FormatGuide />
               <DropZone onClick={() => fileRef.current?.click()} />
             </div>
@@ -153,7 +153,7 @@ export default function ImportPage() {
           )}
 
           {state.phase === "error" && (
-            <div className="max-w-2xl space-y-4">
+            <div className="space-y-4">
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {state.message}
               </div>
@@ -164,7 +164,7 @@ export default function ImportPage() {
           )}
 
           {state.phase === "review" && (
-            <div className="max-w-2xl">
+            <div>
               <ImportReview
                 review={state.review}
                 onCommit={handleCommit}

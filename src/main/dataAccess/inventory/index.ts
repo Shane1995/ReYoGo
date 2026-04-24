@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import type { IInventoryCategory, IInventoryItem } from '@shared/types/contract';
 import { getDb, schema } from '../../db';
 import type { InventoryCategoryRow, InventoryItemRow } from '../../db/drizzle/schema';
@@ -41,7 +41,8 @@ export async function getItems(): Promise<IInventoryItem[]> {
     .innerJoin(
       schema.inventoryCategories,
       eq(schema.inventoryItems.categoryId, schema.inventoryCategories.id)
-    );
+    )
+    .orderBy(asc(schema.inventoryItems.name));
   return rows.map((r) => toItem(r.item, r.categoryType as IInventoryCategory['type']));
 }
 

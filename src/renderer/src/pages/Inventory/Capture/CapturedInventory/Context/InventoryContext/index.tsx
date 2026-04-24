@@ -20,7 +20,6 @@ type InventoryContextValue = {
   setGoodTypes: (types: string[]) => void;
   addCategory: (category: Omit<InventoryCategory, "id">) => string;
   updateCategory: (id: string, updates: Partial<InventoryCategory>) => void;
-  removeCategory: (id: string) => void;
   addItem: (item: Omit<InventoryItem, "id">) => string;
   updateItem: (id: string, updates: Partial<InventoryItem>) => void;
   removeItem: (id: string) => void;
@@ -88,11 +87,6 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const removeCategory = useCallback((id: string) => {
-    setCategories((prev) => prev.filter((c) => c.id !== id));
-    setItems((prev) => prev.filter((i) => i.categoryId !== id));
-  }, []);
-
   const addItem = useCallback((item: Omit<InventoryItem, "id">): string => {
     const id = crypto.randomUUID();
     const newItem = { ...item, id };
@@ -144,7 +138,6 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     setGoodTypes,
     addCategory,
     updateCategory,
-    removeCategory,
     addItem,
     updateItem,
     removeItem,
