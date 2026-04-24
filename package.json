@@ -1,5 +1,5 @@
 {
-  "name": "RoYoGo",
+  "name": "ReYoGo",
   "version": "1.0.0",
   "description": "Electron app with React, TypeScript, and Vite",
   "main": "dist-electron/main/main.js",
@@ -87,7 +87,7 @@
   },
   "build": {
     "appId": "com.bigbootybaba.electron-app",
-    "productName": "RoYoGo",
+    "productName": "ReYoGo",
     "directories": {
       "output": "release"
     },

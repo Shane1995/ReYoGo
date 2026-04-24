@@ -28,7 +28,7 @@ function createWindow(): BrowserWindow {
 
   // Log load failures (e.g. file not found) so you can see them when running from terminal
   window.webContents.on('did-fail-load', (_event, code, errDesc, url) => {
-    console.error('[RoYoGo] Failed to load:', code, errDesc, url);
+    console.error('[ReYoGo] Failed to load:', code, errDesc, url);
   });
 
   // In production: getAppPath() already points at app.asar (or its root); do not add 'app.asar' again
