@@ -20,6 +20,7 @@ import { useInvoiceForm } from "./hooks/useInvoiceForm";
 import { formatMoney } from "./utils/formatMoney";
 import { inputClass } from "./utils/inputClass";
 import { cn } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 
 export default function InvoicePage() {
   const {
@@ -86,12 +87,7 @@ export default function InvoicePage() {
           </div>
           <div className="flex items-center gap-2">
             <label className="text-sm text-muted-foreground whitespace-nowrap">Invoice date</label>
-            <input
-              type="date"
-              value={invoiceDate}
-              onChange={(e) => setInvoiceDate(e.target.value)}
-              className={cn(inputClass, "w-40")}
-            />
+            <DatePicker value={invoiceDate} onChange={setInvoiceDate} placeholder="Pick a date" />
           </div>
           <div className="flex items-center gap-2 ml-auto">
             <label className="text-sm text-muted-foreground whitespace-nowrap">All lines VAT</label>
