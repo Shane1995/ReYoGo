@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { StockMovementsIPC } from '@shared/types/ipc';
+import { StockMovementsIPC } from '../../../shared/types/ipc';
 import * as stockMovementsDb from '../../dataAccess/stockMovements';
 
 async function getCurrentStock(): Promise<Awaited<ReturnType<typeof stockMovementsDb.getCurrentStockByItem>>> {
