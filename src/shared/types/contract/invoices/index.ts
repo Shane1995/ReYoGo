@@ -16,6 +16,8 @@ export interface ICapturedInvoiceLine {
 /** Captured invoice header (goods received receipt). */
 export interface ICapturedInvoice {
   id: string;
+  invoiceNumber?: string | null;
+  invoiceDate?: Date | null;
   createdAt: Date;
   updatedAt?: Date | null;
 }
@@ -69,6 +71,8 @@ export interface IUpdateCapturedInvoicePayload {
 /** Payload to save a new captured invoice (header id + lines). */
 export interface ISaveCapturedInvoicePayload {
   id: string;
+  invoiceNumber?: string | null;
+  invoiceDate?: Date | null;
   lines: Array<{
     id: string;
     itemId: string;

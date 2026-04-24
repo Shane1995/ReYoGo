@@ -57,19 +57,26 @@
       "when": 1775748502000,
       "tag": "0007_setup_tables",
       "breakpoints": true
-    }
-    ,{
+    },
+    {
       "idx": 8,
       "version": "6",
       "when": 1775748503000,
       "tag": "0008_stock_movements",
       "breakpoints": true
-    }
-    ,{
+    },
+    {
       "idx": 9,
       "version": "6",
       "when": 1775748504000,
       "tag": "0009_weighted_avg_and_cogs",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1777065343795,
+      "tag": "0010_jittery_betty_ross",
       "breakpoints": true
     }
   ]

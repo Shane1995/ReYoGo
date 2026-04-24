@@ -11,8 +11,8 @@ import type {
 } from '@shared/types/contract';
 import { getDb, schema } from '../../db';
 
-function toInvoice(row: { id: string; createdAt: Date; updatedAt?: Date | null }): ICapturedInvoice {
-  return { id: row.id, createdAt: row.createdAt, updatedAt: row.updatedAt ?? null };
+function toInvoice(row: { id: string; invoiceNumber?: string | null; invoiceDate?: Date | null; createdAt: Date; updatedAt?: Date | null }): ICapturedInvoice {
+  return { id: row.id, invoiceNumber: row.invoiceNumber ?? null, invoiceDate: row.invoiceDate ?? null, createdAt: row.createdAt, updatedAt: row.updatedAt ?? null };
 }
 
 function toLine(row: {
@@ -66,6 +66,8 @@ export async function saveInvoice(payload: ISaveCapturedInvoicePayload): Promise
   db.transaction((tx) => {
     tx.insert(schema.capturedInvoices).values({
       id: payload.id,
+      invoiceNumber: payload.invoiceNumber ?? null,
+      invoiceDate: payload.invoiceDate ?? null,
       createdAt,
     }).run();
     const validLines = payload.lines.filter(
@@ -113,7 +115,7 @@ export async function getInvoices(): Promise<ICapturedInvoice[]> {
     .select()
     .from(schema.capturedInvoices)
     .orderBy(desc(schema.capturedInvoices.createdAt));
-  return rows.map((r) => toInvoice({ id: r.id, createdAt: r.createdAt, updatedAt: r.updatedAt }));
+  return rows.map((r) => toInvoice({ id: r.id, invoiceNumber: r.invoiceNumber, invoiceDate: r.invoiceDate, createdAt: r.createdAt, updatedAt: r.updatedAt }));
 }
 
 export async function getLinesForAnalysis(): Promise<IInvoiceLineWithDate[]> {
@@ -175,7 +177,7 @@ export async function getInvoicesWithLines(): Promise<ICapturedInvoiceWithLines[
   }
 
   return invoiceRows.map((inv) => ({
-    ...toInvoice({ id: inv.id, createdAt: inv.createdAt, updatedAt: inv.updatedAt }),
+    ...toInvoice(inv),
     lines: (linesByInvoice.get(inv.id) ?? []).map(toLine),
   }));
 }
@@ -193,7 +195,7 @@ export async function getInvoiceById(id: string): Promise<ICapturedInvoiceWithLi
     .from(schema.capturedInvoiceLines)
     .where(eq(schema.capturedInvoiceLines.invoiceId, id));
   return {
-    ...toInvoice({ id: inv.id, createdAt: inv.createdAt, updatedAt: inv.updatedAt }),
+    ...toInvoice(inv),
     lines: lineRows.map(toLine),
   };
 }

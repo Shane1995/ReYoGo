@@ -3,17 +3,55 @@ import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { InvoicesIPC } from "@shared/types/ipc";
 import { useInventory } from "@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext";
-import type { ProcessReceiptLine } from "../../types";
+import type { ProcessReceiptLine, VatMode } from "../../types";
 import { getProcessLineComputed } from "../../types";
 import { createEmptyLine } from "../../utils/createEmptyLine";
+
+const DRAFT_KEY = "reyogo:invoice-draft";
+
+type DraftState = {
+  lines: ProcessReceiptLine[];
+  invoiceNumber: string;
+  invoiceDate: string;
+};
+
+function loadDraft(): DraftState | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as DraftState;
+  } catch {
+    return null;
+  }
+}
+
+function saveDraft(state: DraftState) {
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(state));
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+}
 
 export function useInvoiceForm() {
   const { items, categories, units, addCategory, addItem } = useInventory();
   const location = useLocation();
 
+  const templateLines = (location.state as { templateLines?: ProcessReceiptLine[] } | null)?.templateLines;
+  const isReused = !!templateLines;
+
   const [lines, setLines] = useState<ProcessReceiptLine[]>(() => {
-    const template = (location.state as { templateLines?: ProcessReceiptLine[] } | null)?.templateLines;
-    return template && template.length > 0 ? template : [createEmptyLine()];
+    if (templateLines && templateLines.length > 0) return templateLines;
+    const draft = loadDraft();
+    return draft?.lines.length ? draft.lines : [createEmptyLine()];
+  });
+  const [invoiceNumber, setInvoiceNumber] = useState<string>(() => {
+    if (isReused) return "";
+    return loadDraft()?.invoiceNumber ?? "";
+  });
+  const [invoiceDate, setInvoiceDate] = useState<string>(() => {
+    if (isReused) return "";
+    return loadDraft()?.invoiceDate ?? "";
   });
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [itemModalOpen, setItemModalOpen] = useState(false);
@@ -24,7 +62,11 @@ export function useInvoiceForm() {
   const [lastAddedLineId, setLastAddedLineId] = useState<string | null>(null);
   const [lastAddedLineFocusField, setLastAddedLineFocusField] = useState("item");
 
-  const isReused = !!(location.state as { templateLines?: ProcessReceiptLine[] } | null)?.templateLines;
+  // Persist draft on every change (skip when reusing a template to avoid overwriting a real draft)
+  useEffect(() => {
+    if (isReused) return;
+    saveDraft({ lines, invoiceNumber, invoiceDate });
+  }, [lines, invoiceNumber, invoiceDate, isReused]);
 
   useEffect(() => {
     if (!lastAddedLineId) return;
@@ -61,6 +103,10 @@ export function useInvoiceForm() {
 
   const updateLine = useCallback((id: string, updates: Partial<ProcessReceiptLine>) => {
     setLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)));
+  }, []);
+
+  const setAllVatMode = useCallback((mode: VatMode) => {
+    setLines((prev) => prev.map((l) => ({ ...l, vatMode: mode })));
   }, []);
 
   const itemsWithCategory = useMemo(
@@ -109,6 +155,8 @@ export function useInvoiceForm() {
     try {
       const payload = {
         id: window.crypto.randomUUID(),
+        invoiceNumber: invoiceNumber.trim() || null,
+        invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
         lines: validLines.map((line) => {
           const item = items.find((i) => i.id === line.itemId);
           const computed = getProcessLineComputed(line);
@@ -126,14 +174,17 @@ export function useInvoiceForm() {
       };
       await window.electronAPI.ipcRenderer.invoke(InvoicesIPC.SAVE_INVOICE, payload);
       setLines([createEmptyLine()]);
+      setInvoiceNumber("");
+      setInvoiceDate("");
       setExpandedResultLineIds(new Set());
+      clearDraft();
       toast.success("Invoice saved");
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : "Failed to save invoice");
     } finally {
       setIsSaving(false);
     }
-  }, [validLines, items]);
+  }, [validLines, items, invoiceNumber, invoiceDate]);
 
   return {
     units,
@@ -141,6 +192,10 @@ export function useInvoiceForm() {
     addCategory,
     addItem,
     lines,
+    invoiceNumber,
+    setInvoiceNumber,
+    invoiceDate,
+    setInvoiceDate,
     categoryModalOpen,
     setCategoryModalOpen,
     itemModalOpen,
@@ -155,6 +210,7 @@ export function useInvoiceForm() {
     addLine,
     removeLine,
     updateLine,
+    setAllVatMode,
     itemsWithCategory,
     itemMetaMap,
     invoiceSummary,

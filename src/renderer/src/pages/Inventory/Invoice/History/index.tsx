@@ -116,7 +116,10 @@ export default function InvoiceHistoryPage() {
                           )}
                         </TableCell>
                         <TableCell className="font-medium">
-                          {formatDate(inv.createdAt)}
+                          {inv.invoiceDate ? formatDate(inv.invoiceDate) : formatDate(inv.createdAt)}
+                          {inv.invoiceNumber && (
+                            <p className="text-xs text-muted-foreground mt-0.5">{inv.invoiceNumber}</p>
+                          )}
                         </TableCell>
                         <TableCell className="text-right text-muted-foreground">
                           {detail ? detail.lines.length : "—"}

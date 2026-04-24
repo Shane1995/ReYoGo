@@ -52,6 +52,8 @@ export type NewInventoryItemRow = typeof inventoryItems.$inferInsert;
  */
 export const capturedInvoices = sqliteTable('captured_invoices', {
   id: text('id').primaryKey(),
+  invoiceNumber: text('invoice_number'),
+  invoiceDate: integer('invoice_date', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }),
 });
