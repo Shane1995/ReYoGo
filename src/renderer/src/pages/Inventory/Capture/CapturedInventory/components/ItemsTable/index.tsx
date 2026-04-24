@@ -21,6 +21,7 @@ export function ItemsTable({
   goodTypes,
   costMap,
   stockMap,
+  weightedAvgMap,
   onUpdate,
   onDelete,
   onViewInsights,
@@ -30,7 +31,7 @@ export function ItemsTable({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const { filterValues, filteredItems, filters, allTypes, handleFilterChange, clearFilters } =
-    useItemFilters({ items, categories, goodTypes, costMap, stockMap });
+    useItemFilters({ items, categories, goodTypes, costMap, stockMap, weightedAvgMap });
 
   const filteredIds = useMemo(() => filteredItems.map((i) => i.id), [filteredItems]);
 
@@ -112,6 +113,20 @@ export function ItemsTable({
           </span>
         ) : (
           <span className="text-muted-foreground/50">No data</span>
+        ),
+    },
+    {
+      key: "weightedAvgCost",
+      header: "Weighted Avg Cost",
+      align: "right",
+      cell: (row) =>
+        row.weightedAvgCost != null ? (
+          <span className="font-mono text-foreground">
+            {row.weightedAvgCost.toFixed(2)}
+            {row.unitOfMeasure ? ` / ${row.unitOfMeasure}` : ""}
+          </span>
+        ) : (
+          <span className="text-muted-foreground/50">—</span>
         ),
     },
     {

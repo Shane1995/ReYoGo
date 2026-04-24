@@ -12,6 +12,7 @@ export type FlatItem = {
   lastCostPerUnit?: number;
   lastCostUom?: string;
   currentStock?: number;
+  weightedAvgCost?: number | null;
 };
 
 export type ItemsTableProps = {
@@ -21,6 +22,7 @@ export type ItemsTableProps = {
   goodTypes: string[];
   costMap: Map<string, ItemCost>;
   stockMap: Map<string, number>;
+  weightedAvgMap: Map<string, number | null>;
   onUpdate: (id: string, values: Omit<InventoryItem, "id">) => void;
   onDelete: (id: string) => void;
   onViewInsights: (id: string) => void;

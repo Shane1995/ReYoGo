@@ -12,6 +12,7 @@ import type {
   IUpdateCapturedInvoicePayload,
 } from '../contract/invoices';
 import type { IUnitOfMeasure, ISetupStatus } from '../contract/setup';
+import type { ICOGSSummary, IItemCostHistory } from '../contract/stockMovements';
 
 /**
  * Maps each IPC channel to its argument tuple and return type.
@@ -34,6 +35,9 @@ export interface IPCInvokeMap {
   'invoices:get-invoice-audit': { args: [id: string]; return: ICapturedInvoiceAuditEntry[] };
   'invoices:get-last-unit-prices': { args: []; return: Record<string, number> };
   'stock-movements:get-current-stock': { args: []; return: Record<string, number> };
+  'stock-movements:get-weighted-avg-costs': { args: []; return: Record<string, number | null> };
+  'stock-movements:get-item-cost-history': { args: [itemId: string]; return: IItemCostHistory };
+  'stock-movements:get-cogs': { args: [fromDate?: string, toDate?: string]; return: ICOGSSummary };
   'setup:get-status': { args: []; return: ISetupStatus };
   'setup:complete': { args: []; return: void };
   'setup:get-units': { args: []; return: IUnitOfMeasure[] };

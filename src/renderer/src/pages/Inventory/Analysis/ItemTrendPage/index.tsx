@@ -1,6 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeftIcon } from "lucide-react";
+import { stockMovementsService } from "@/services/stockMovements";
+import type { IItemCostHistory } from "@shared/types/contract";
 import {
   ResponsiveContainer,
   LineChart,
@@ -22,6 +24,14 @@ export default function ItemTrendPage() {
   const { itemId } = useParams<{ itemId: string }>();
   const navigate = useNavigate();
   const { lines, loading } = useAnalysisLines();
+  const [costHistory, setCostHistory] = useState<IItemCostHistory | null>(null);
+
+  useEffect(() => {
+    if (!itemId) return;
+    stockMovementsService.getItemCostHistory(itemId)
+      .then(setCostHistory)
+      .catch(() => {});
+  }, [itemId]);
 
   const group = useMemo(() => {
     if (!itemId || !lines.length) return null;
@@ -108,6 +118,23 @@ export default function ItemTrendPage() {
             label="Overall change"
             value={stats.change === null ? "—" : fmtPct(stats.change)}
             className={changeCls(stats.change, true)}
+          />
+        </div>
+      )}
+
+      {costHistory && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2">
+          <StatCard
+            label="Weighted Avg Cost"
+            value={costHistory.weightedAvgCost != null ? `${fmt(costHistory.weightedAvgCost)}${stats?.uom ? ` / ${stats.uom}` : ""}` : "—"}
+            muted
+          />
+          <StatCard
+            label="Current Stock"
+            value={costHistory.totalStock != null
+              ? `${costHistory.totalStock % 1 === 0 ? costHistory.totalStock.toFixed(0) : costHistory.totalStock.toFixed(2)}${stats?.uom ? ` ${stats.uom}` : ""}`
+              : "—"}
+            muted
           />
         </div>
       )}

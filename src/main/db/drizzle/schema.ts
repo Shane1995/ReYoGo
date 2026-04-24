@@ -35,6 +35,8 @@ export const inventoryItems = sqliteTable('inventory_items', {
     .notNull()
     .references(() => inventoryCategories.id, { onDelete: 'cascade' }),
   unitOfMeasure: text('unit_of_measure'),
+  weightedAvgCost: real('weighted_avg_cost'),
+  totalStock: real('total_stock'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });
@@ -127,6 +129,7 @@ export const stockMovements = sqliteTable('stock_movements', {
   source: text('source').notNull(),
   referenceId: text('reference_id'),
   costAtTime: real('cost_at_time'),
+  cogsAmount: real('cogs_amount'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 

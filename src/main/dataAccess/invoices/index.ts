@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { eq, desc, asc, gt } from 'drizzle-orm';
+import { eq, desc, asc, gt, sql } from 'drizzle-orm';
 import type {
   ICapturedInvoice,
   ICapturedInvoiceAuditEntry,
@@ -42,9 +42,27 @@ function toLine(row: {
   };
 }
 
+function recalcItemCosts(db: ReturnType<typeof getDb>, itemIds: string[], now: Date): void {
+  for (const itemId of itemIds) {
+    const [agg] = db
+      .select({
+        weightedAvgCost: sql<number | null>`CASE WHEN SUM(CASE WHEN type = 'IN' THEN quantity ELSE 0 END) > 0 THEN SUM(CASE WHEN type = 'IN' AND cost_at_time IS NOT NULL THEN quantity * cost_at_time ELSE 0 END) / SUM(CASE WHEN type = 'IN' THEN quantity ELSE 0 END) ELSE NULL END`,
+        totalStock: sql<number>`COALESCE(SUM(CASE WHEN type = 'IN' THEN quantity WHEN type = 'OUT' THEN -quantity ELSE 0 END), 0)`,
+      })
+      .from(schema.stockMovements)
+      .where(eq(schema.stockMovements.itemId, itemId))
+      .all();
+    db.update(schema.inventoryItems)
+      .set({ weightedAvgCost: agg?.weightedAvgCost ?? null, totalStock: agg?.totalStock ?? 0, updatedAt: now })
+      .where(eq(schema.inventoryItems.id, itemId))
+      .run();
+  }
+}
+
 export async function saveInvoice(payload: ISaveCapturedInvoicePayload): Promise<void> {
   const db = getDb();
   const createdAt = new Date();
+  let affectedItemIds: string[] = [];
   db.transaction((tx) => {
     tx.insert(schema.capturedInvoices).values({
       id: payload.id,
@@ -83,9 +101,11 @@ export async function saveInvoice(payload: ISaveCapturedInvoicePayload): Promise
         }));
       if (inMovements.length > 0) {
         tx.insert(schema.stockMovements).values(inMovements).run();
+        affectedItemIds = [...new Set(inMovements.map((m) => m.itemId))];
       }
     }
   });
+  if (affectedItemIds.length > 0) recalcItemCosts(db, affectedItemIds, createdAt);
 }
 
 export async function getInvoices(): Promise<ICapturedInvoice[]> {
@@ -190,6 +210,9 @@ export async function updateInvoice(payload: IUpdateCapturedInvoicePayload): Pro
     (l) => l.itemId && l.itemNameSnapshot && l.quantity >= 0 && l.totalVatExclude >= 0
   );
 
+  // Collect all affected item IDs (old + new) for recalc
+  const affectedItemIds = new Set<string>(current.lines.map((l) => l.itemId));
+
   db.transaction((tx) => {
     // Write audit snapshot (before state)
     tx.insert(schema.invoiceAuditLog).values({
@@ -238,6 +261,7 @@ export async function updateInvoice(payload: IUpdateCapturedInvoicePayload): Pro
         }));
       if (inMovements.length > 0) {
         tx.insert(schema.stockMovements).values(inMovements).run();
+        for (const m of inMovements) affectedItemIds.add(m.itemId);
       }
     }
 
@@ -247,6 +271,8 @@ export async function updateInvoice(payload: IUpdateCapturedInvoicePayload): Pro
       .where(eq(schema.capturedInvoices.id, payload.id))
       .run();
   });
+
+  if (affectedItemIds.size > 0) recalcItemCosts(db, [...affectedItemIds], editedAt);
 }
 
 export async function getLastUnitPrices(): Promise<Record<string, number>> {

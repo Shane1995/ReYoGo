@@ -65,5 +65,12 @@
       "tag": "0008_stock_movements",
       "breakpoints": true
     }
+    ,{
+      "idx": 9,
+      "version": "6",
+      "when": 1775748504000,
+      "tag": "0009_weighted_avg_and_cogs",
+      "breakpoints": true
+    }
   ]
 }
