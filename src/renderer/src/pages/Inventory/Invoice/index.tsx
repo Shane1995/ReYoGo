@@ -104,7 +104,7 @@ export default function InvoicePage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {lines.map((line) => {
+                {lines.map((line, i) => {
                   const computed = getProcessLineComputed(line);
                   const isResultExpanded = expandedResultLineIds.has(line.id);
                   return (
@@ -138,7 +138,7 @@ export default function InvoicePage() {
                             const meta = itemMetaMap.get(line.itemId);
                             if (!meta) return null;
                             const unitPrice = computed.netUnitPrice > 0
-                              ? `Unit price: ${formatMoney(computed.netUnitPrice)}`
+                              ? `Unit price: ${formatMoney(line.vatMode === "inclusive" ? computed.grossUnitPrice : computed.netUnitPrice)} excl. VAT`
                               : null;
                             const parts = [
                               meta.categoryName && `${meta.categoryName}`,
@@ -166,7 +166,15 @@ export default function InvoicePage() {
                               })
                             }
                             onKeyDown={(e) => {
-                              if (e.key === "Tab") {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                const nextLine = lines[i + 1];
+                                if (nextLine) {
+                                  document.getElementById(`invoice-qty-${nextLine.id}`)?.focus();
+                                } else {
+                                  addLine("qty");
+                                }
+                              } else if (e.key === "Tab") {
                                 e.preventDefault();
                                 document.getElementById(`invoice-vat-${line.id}`)?.focus();
                               }
@@ -214,7 +222,15 @@ export default function InvoicePage() {
                               })
                             }
                             onKeyDown={(e) => {
-                              if (e.key === "Tab") {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                const nextLine = lines[i + 1];
+                                if (nextLine) {
+                                  document.getElementById(`invoice-vatrate-${nextLine.id}`)?.focus();
+                                } else {
+                                  addLine("vatrate");
+                                }
+                              } else if (e.key === "Tab") {
                                 e.preventDefault();
                                 document.getElementById(`invoice-total-${line.id}`)?.focus();
                               }
@@ -237,7 +253,15 @@ export default function InvoicePage() {
                               })
                             }
                             onKeyDown={(e) => {
-                              if (e.key === "Tab") {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                const nextLine = lines[i + 1];
+                                if (nextLine) {
+                                  document.getElementById(`invoice-total-${nextLine.id}`)?.focus();
+                                } else {
+                                  addLine("total");
+                                }
+                              } else if (e.key === "Tab") {
                                 e.preventDefault();
                                 addLine();
                               }
@@ -247,7 +271,7 @@ export default function InvoicePage() {
                           />
                           {computed.netUnitPrice > 0 && (
                             <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                              {formatMoney(computed.netUnitPrice)}<span className="font-sans"> /unit</span>
+                              {formatMoney(computed.netUnitPrice)}<span className="font-sans"> /unit excl. VAT</span>
                             </p>
                           )}
                         </TableCell>
@@ -289,7 +313,7 @@ export default function InvoicePage() {
               </TableBody>
             </Table>
             <div className="flex justify-end border-t border-[var(--nav-border)] bg-muted/10 px-3 py-2">
-              <Button type="button" variant="ghost" size="sm" onClick={addLine} className="gap-1.5">
+              <Button type="button" variant="ghost" size="sm" onClick={() => addLine()} className="gap-1.5">
                 <PlusIcon className="size-4" aria-hidden />
                 Add row
               </Button>

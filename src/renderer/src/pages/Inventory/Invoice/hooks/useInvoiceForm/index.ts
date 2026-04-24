@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
+import { toast } from "sonner";
 import { InvoicesIPC } from "@shared/types/ipc";
 import { useInventory } from "@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext";
 import type { ProcessReceiptLine } from "../../types";
@@ -21,18 +22,19 @@ export function useInvoiceForm() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [lastAddedLineId, setLastAddedLineId] = useState<string | null>(null);
+  const [lastAddedLineFocusField, setLastAddedLineFocusField] = useState("item");
 
   const isReused = !!(location.state as { templateLines?: ProcessReceiptLine[] } | null)?.templateLines;
 
   useEffect(() => {
     if (!lastAddedLineId) return;
-    const id = `invoice-item-${lastAddedLineId}`;
+    const id = `invoice-${lastAddedLineFocusField}-${lastAddedLineId}`;
     const t = setTimeout(() => {
       document.getElementById(id)?.focus();
       setLastAddedLineId(null);
     }, 50);
     return () => clearTimeout(t);
-  }, [lastAddedLineId]);
+  }, [lastAddedLineId, lastAddedLineFocusField]);
 
   const toggleResultRow = useCallback((lineId: string) => {
     setExpandedResultLineIds((prev) => {
@@ -43,8 +45,9 @@ export function useInvoiceForm() {
     });
   }, []);
 
-  const addLine = useCallback(() => {
+  const addLine = useCallback((focusField = "item") => {
     const newLine = createEmptyLine();
+    setLastAddedLineFocusField(focusField);
     setLines((prev) => [...prev, newLine]);
     setLastAddedLineId(newLine.id);
   }, []);
@@ -124,6 +127,7 @@ export function useInvoiceForm() {
       await window.electronAPI.ipcRenderer.invoke(InvoicesIPC.SAVE_INVOICE, payload);
       setLines([createEmptyLine()]);
       setExpandedResultLineIds(new Set());
+      toast.success("Invoice saved");
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : "Failed to save invoice");
     } finally {
