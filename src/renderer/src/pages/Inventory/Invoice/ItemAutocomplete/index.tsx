@@ -34,7 +34,7 @@ export function ItemAutocomplete({
   const [isOpen, setIsOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const [listStyle, setListStyle] = useState({ top: 0, left: 0, width: 0 });
-  const [containerId] = useState(() => `item-autocomplete-${crypto.randomUUID()}`);
+  const [containerId] = useState(() => `item-autocomplete-${window.crypto.randomUUID()}`);
   const listId = `${containerId}-list`;
 
   const selectedItem = useMemo(() => items.find((i) => i.id === value), [items, value]);

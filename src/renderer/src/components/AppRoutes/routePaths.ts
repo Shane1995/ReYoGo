@@ -21,6 +21,13 @@ export enum AnalysisRoutes {
   ItemTrend = "/inventory/analysis/item/:itemId",
 }
 
+export enum CostingRoutes {
+  Base = "/inventory/costing",
+  Dashboard = "/inventory/costing/dashboard",
+  PriceVariance = "/inventory/costing/price-variance",
+  CostReport = "/inventory/costing/cost-report",
+}
+
 export function itemTrendPath(itemId: string) {
   return `/inventory/analysis/item/${itemId}`;
 }
@@ -40,6 +47,10 @@ export enum InventoryRouteSegments {
   invoice = "invoice",
   invoiceHistory = "history",
   analysis = "analysis",
+  costing = "costing",
+  costingDashboard = "dashboard",
+  costingPriceVariance = "price-variance",
+  costingCostReport = "cost-report",
   view = "view",
   add = "add",
 }

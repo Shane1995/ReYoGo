@@ -43,6 +43,10 @@ async function getInvoiceAudit(
   return invoicesDb.getInvoiceAudit(id);
 }
 
+async function getLastUnitPrices(): Promise<Awaited<ReturnType<typeof invoicesDb.getLastUnitPrices>>> {
+  return invoicesDb.getLastUnitPrices();
+}
+
 export function registerInvoicesHandlers(): void {
   ipcMain.handle(InvoicesIPC.SAVE_INVOICE, saveInvoice);
   ipcMain.handle(InvoicesIPC.GET_INVOICES, getInvoices);
@@ -51,4 +55,5 @@ export function registerInvoicesHandlers(): void {
   ipcMain.handle(InvoicesIPC.GET_LINES_FOR_ANALYSIS, getLinesForAnalysis);
   ipcMain.handle(InvoicesIPC.UPDATE_INVOICE, updateInvoice);
   ipcMain.handle(InvoicesIPC.GET_INVOICE_AUDIT, getInvoiceAudit);
+  ipcMain.handle(InvoicesIPC.GET_LAST_UNIT_PRICES, getLastUnitPrices);
 }

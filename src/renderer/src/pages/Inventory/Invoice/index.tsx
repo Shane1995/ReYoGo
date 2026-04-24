@@ -229,7 +229,7 @@ export default function InvoicePage() {
                             id={`invoice-total-${line.id}`}
                             type="number"
                             min={0}
-                            step={0.01}
+                            step={1}
                             value={line.totalVatExclude || ""}
                             onChange={(e) =>
                               updateLine(line.id, {

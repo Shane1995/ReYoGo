@@ -1,11 +1,12 @@
 import { cn } from "@/lib/utils";
 import { NavLink, Outlet } from "react-router-dom";
-import { LayoutDashboardIcon, PackagePlusIcon, ReceiptIcon, TrendingUpIcon } from "lucide-react";
-import { ProductRoutes, InventoryCaptureRoutes, InvoiceRoutes, AnalysisRoutes } from "@/components/AppRoutes/routePaths";
+import { LayoutDashboardIcon, PackagePlusIcon, ReceiptIcon, TrendingUpIcon, CoinsIcon } from "lucide-react";
+import { ProductRoutes, InventoryCaptureRoutes, InvoiceRoutes, AnalysisRoutes, CostingRoutes } from "@/components/AppRoutes/routePaths";
 
 const subNavItems = [
   { label: "Overview",           path: ProductRoutes.Inventory,                        icon: LayoutDashboardIcon, end: true  },
   { label: "Analysis",           path: AnalysisRoutes.CostPerUnit,                     icon: TrendingUpIcon,      end: false },
+  { label: "Costing",            path: CostingRoutes.Base,                             icon: CoinsIcon,           end: false },
   { label: "Captured Inventory", path: InventoryCaptureRoutes.CapturedInventory,       icon: PackagePlusIcon,     end: false },
   { label: "Invoice",            path: InvoiceRoutes.Base,                             icon: ReceiptIcon,         end: false },
 ] as const;

@@ -69,7 +69,7 @@ export function useInvoiceHistory() {
       }
       if (!detail) return;
       const templateLines = detail.lines.map((l) => ({
-        id: crypto.randomUUID(),
+        id: window.crypto.randomUUID(),
         itemId: l.itemId,
         quantity: 0,
         vatMode: l.vatMode,

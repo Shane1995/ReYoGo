@@ -151,7 +151,7 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
                   <input
                     type="number"
                     min={0}
-                    step={0.01}
+                    step={1}
                     value={line.totalVatExclude || ""}
                     onChange={(e) =>
                       updateLine(line.id, {
@@ -177,7 +177,7 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
         </table>
         <button
           type="button"
-          onClick={() => setLines((prev) => [...prev, { id: crypto.randomUUID(), itemId: "", quantity: 0, vatMode: "exclusive", vatRate: DEFAULT_VAT_RATE, totalVatExclude: 0 }])}
+          onClick={() => setLines((prev) => [...prev, { id: window.crypto.randomUUID(), itemId: "", quantity: 0, vatMode: "exclusive", vatRate: DEFAULT_VAT_RATE, totalVatExclude: 0 }])}
           className="mt-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
           + Add row

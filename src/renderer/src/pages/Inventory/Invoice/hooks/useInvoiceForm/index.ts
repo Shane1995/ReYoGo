@@ -105,7 +105,7 @@ export function useInvoiceForm() {
     setIsSaving(true);
     try {
       const payload = {
-        id: crypto.randomUUID(),
+        id: window.crypto.randomUUID(),
         lines: validLines.map((line) => {
           const item = items.find((i) => i.id === line.itemId);
           const computed = getProcessLineComputed(line);

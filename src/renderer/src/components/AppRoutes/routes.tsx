@@ -16,11 +16,16 @@ import InvoicePage from "@/pages/Inventory/Invoice";
 import InvoiceHistoryPage from "@/pages/Inventory/Invoice/History";
 import InventoryAnalysis from "@/pages/Inventory/Analysis";
 import ItemTrendPage from "@/pages/Inventory/Analysis/ItemTrendPage";
+import { CostingLayout } from "@/pages/Inventory/Costing/Layout";
+import CostingDashboard from "@/pages/Inventory/Costing/Dashboard";
+import PriceVariancePage from "@/pages/Inventory/Costing/PriceVariance";
+import CostReportPage from "@/pages/Inventory/Costing/CostReport";
 import {
   ProductRoutes,
   UserRoutes,
   InventoryCaptureRoutes,
   InventoryRouteSegments,
+  CostingRoutes,
 } from "./routePaths";
 
 export {
@@ -28,6 +33,7 @@ export {
   InventoryCaptureRoutes,
   InvoiceRoutes,
   AnalysisRoutes,
+  CostingRoutes,
   UserRoutes,
   InventoryRouteSegments,
 } from "./routePaths";
@@ -58,6 +64,13 @@ export function AppRoutesComponent() {
                 <Route path={InventoryRouteSegments.goodTypes} element={<ManageTypesPage />} />
               </Route>
             </Route>
+          </Route>
+
+          <Route path={InventoryRouteSegments.costing} element={<CostingLayout />}>
+            <Route index element={<Navigate to={CostingRoutes.Dashboard} replace />} />
+            <Route path={InventoryRouteSegments.costingDashboard} element={<CostingDashboard />} />
+            <Route path={InventoryRouteSegments.costingPriceVariance} element={<PriceVariancePage />} />
+            <Route path={InventoryRouteSegments.costingCostReport} element={<CostReportPage />} />
           </Route>
 
           <Route path={InventoryRouteSegments.invoice} element={<InvoiceLayout />}>

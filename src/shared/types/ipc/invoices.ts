@@ -6,4 +6,5 @@ export enum InvoicesIPC {
   GET_LINES_FOR_ANALYSIS = 'invoices:get-lines-for-analysis',
   UPDATE_INVOICE = 'invoices:update-invoice',
   GET_INVOICE_AUDIT = 'invoices:get-invoice-audit',
+  GET_LAST_UNIT_PRICES = 'invoices:get-last-unit-prices',
 }

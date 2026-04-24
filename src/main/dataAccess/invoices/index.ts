@@ -1,4 +1,5 @@
-import { eq, desc, asc } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
+import { eq, desc, asc, gt } from 'drizzle-orm';
 import type {
   ICapturedInvoice,
   ICapturedInvoiceAuditEntry,
@@ -175,7 +176,7 @@ export async function updateInvoice(payload: IUpdateCapturedInvoicePayload): Pro
   db.transaction((tx) => {
     // Write audit snapshot (before state)
     tx.insert(schema.invoiceAuditLog).values({
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       invoiceId: payload.id,
       editedAt,
       note: payload.note ?? null,
@@ -209,6 +210,30 @@ export async function updateInvoice(payload: IUpdateCapturedInvoicePayload): Pro
       .where(eq(schema.capturedInvoices.id, payload.id))
       .run();
   });
+}
+
+export async function getLastUnitPrices(): Promise<Record<string, number>> {
+  const rows = await getDb()
+    .select({
+      itemId: schema.capturedInvoiceLines.itemId,
+      quantity: schema.capturedInvoiceLines.quantity,
+      totalVatExclude: schema.capturedInvoiceLines.totalVatExclude,
+    })
+    .from(schema.capturedInvoiceLines)
+    .innerJoin(
+      schema.capturedInvoices,
+      eq(schema.capturedInvoiceLines.invoiceId, schema.capturedInvoices.id)
+    )
+    .where(gt(schema.capturedInvoiceLines.quantity, 0))
+    .orderBy(desc(schema.capturedInvoices.createdAt));
+
+  const result: Record<string, number> = {};
+  for (const row of rows) {
+    if (!(row.itemId in result)) {
+      result[row.itemId] = row.totalVatExclude / row.quantity;
+    }
+  }
+  return result;
 }
 
 export async function getInvoiceAudit(invoiceId: string): Promise<ICapturedInvoiceAuditEntry[]> {

@@ -3,7 +3,7 @@ import { DEFAULT_VAT_RATE } from "../types";
 
 export function createEmptyLine(): ProcessReceiptLine {
   return {
-    id: crypto.randomUUID(),
+    id: window.crypto.randomUUID(),
     itemId: "",
     quantity: 0,
     vatMode: "exclusive",
