@@ -148,7 +148,10 @@ export default function InvoicePage() {
                             value={line.itemId}
                             onChange={(itemId) => updateLine(line.id, { itemId })}
                             placeholder="Search or select item…"
-                            onSelectComplete={() => document.getElementById(`invoice-qty-${line.id}`)?.focus()}
+                            onSelectComplete={() => {
+                              document.getElementById(`invoice-qty-${line.id}`)?.focus();
+                              if (i === lines.length - 1) addLine();
+                            }}
                           />
                           {line.itemId && (() => {
                             const meta = itemMetaMap.get(line.itemId);
