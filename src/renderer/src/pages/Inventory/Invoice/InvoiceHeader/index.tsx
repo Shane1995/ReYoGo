@@ -12,6 +12,8 @@ type Props = {
   onInvoiceDateChange: (v: string) => void;
   onAddCategory: () => void;
   onAddItem: () => void;
+  isDirty: boolean;
+  onClear: () => void;
 };
 
 export function InvoiceHeader({
@@ -21,6 +23,8 @@ export function InvoiceHeader({
   onInvoiceDateChange,
   onAddCategory,
   onAddItem,
+  isDirty,
+  onClear,
 }: Props) {
   return (
     <header className="shrink-0 border-b border-[var(--nav-border)] bg-background px-4 py-3 space-y-3">
@@ -30,6 +34,17 @@ export function InvoiceHeader({
           <Button asChild variant="ghost" size="sm">
             <Link to={InvoiceRoutes.History}>View history</Link>
           </Button>
+          {isDirty && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onClear}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              Clear
+            </Button>
+          )}
           <Button type="button" variant="outline" size="sm" onClick={onAddCategory}>
             Add category
           </Button>

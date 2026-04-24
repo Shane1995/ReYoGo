@@ -62,10 +62,14 @@ export function useInvoiceForm() {
   const [lastAddedLineId, setLastAddedLineId] = useState<string | null>(null);
   const [lastAddedLineFocusField, setLastAddedLineFocusField] = useState("item");
 
-  // Persist draft on every change (skip when reusing a template to avoid overwriting a real draft)
   useEffect(() => {
     if (isReused) return;
-    saveDraft({ lines, invoiceNumber, invoiceDate });
+    const hasMeaningfulContent = lines.some((l) => l.itemId) || !!invoiceNumber.trim() || !!invoiceDate;
+    if (hasMeaningfulContent) {
+      saveDraft({ lines, invoiceNumber, invoiceDate });
+    } else {
+      clearDraft();
+    }
   }, [lines, invoiceNumber, invoiceDate, isReused]);
 
   useEffect(() => {
@@ -108,6 +112,16 @@ export function useInvoiceForm() {
   const setAllVatMode = useCallback((mode: VatMode) => {
     setLines((prev) => prev.map((l) => ({ ...l, vatMode: mode })));
   }, []);
+
+  const clearForm = useCallback(() => {
+    setLines([createEmptyLine()]);
+    setInvoiceNumber("");
+    setInvoiceDate("");
+    setExpandedResultLineIds(new Set());
+    clearDraft();
+  }, []);
+
+  const isDirty = lines.some((l) => l.itemId) || !!invoiceNumber.trim() || !!invoiceDate;
 
   const itemsWithCategory = useMemo(
     () =>
@@ -211,6 +225,8 @@ export function useInvoiceForm() {
     removeLine,
     updateLine,
     setAllVatMode,
+    clearForm,
+    isDirty,
     itemsWithCategory,
     itemMetaMap,
     invoiceSummary,

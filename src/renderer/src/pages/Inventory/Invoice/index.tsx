@@ -35,6 +35,8 @@ export default function InvoicePage() {
     addLine,
     removeLine,
     updateLine,
+    clearForm,
+    isDirty,
     itemsWithCategory,
     itemMetaMap,
     invoiceSummary,
@@ -56,6 +58,8 @@ export default function InvoicePage() {
         onInvoiceDateChange={setInvoiceDate}
         onAddCategory={() => setCategoryModalOpen(true)}
         onAddItem={() => setItemModalOpen(true)}
+        isDirty={isDirty}
+        onClear={clearForm}
       />
 
       {isReused && !reuseNoticeDismissed && (
