@@ -20,6 +20,7 @@ export function ItemsTable({
   units,
   goodTypes,
   costMap,
+  stockMap,
   onUpdate,
   onDelete,
   onViewInsights,
@@ -29,7 +30,7 @@ export function ItemsTable({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const { filterValues, filteredItems, filters, allTypes, handleFilterChange, clearFilters } =
-    useItemFilters({ items, categories, goodTypes, costMap });
+    useItemFilters({ items, categories, goodTypes, costMap, stockMap });
 
   const filteredIds = useMemo(() => filteredItems.map((i) => i.id), [filteredItems]);
 
@@ -111,6 +112,22 @@ export function ItemsTable({
           </span>
         ) : (
           <span className="text-muted-foreground/50">No data</span>
+        ),
+    },
+    {
+      key: "stock",
+      header: "Stock",
+      align: "right",
+      cell: (row) =>
+        row.currentStock !== undefined ? (
+          <span className="font-mono text-foreground">
+            {row.currentStock % 1 === 0
+              ? row.currentStock.toFixed(0)
+              : row.currentStock.toFixed(2)}
+            {row.unitOfMeasure ? ` ${row.unitOfMeasure}` : ""}
+          </span>
+        ) : (
+          <span className="text-muted-foreground/50">—</span>
         ),
     },
     {

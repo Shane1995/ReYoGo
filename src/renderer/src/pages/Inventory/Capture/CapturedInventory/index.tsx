@@ -6,6 +6,7 @@ import { useInventory } from "./Context/InventoryContext";
 import { ItemsTable } from "./components/ItemsTable";
 import { AddInventoryModal } from "./components/AddInventoryModal";
 import { useItemCosts } from "./hooks/useItemCosts";
+import { useItemStock } from "./hooks/useItemStock";
 import type { InventoryItem } from "./types";
 
 export default function InventoryIndex() {
@@ -20,6 +21,7 @@ export default function InventoryIndex() {
 
   const navigate = useNavigate();
   const costMap = useItemCosts();
+  const stockMap = useItemStock();
   const [addModalOpen, setAddModalOpen] = useState(false);
 
   const handleViewInsights = useCallback(
@@ -42,6 +44,7 @@ export default function InventoryIndex() {
             units={units}
             goodTypes={goodTypes}
             costMap={costMap}
+            stockMap={stockMap}
             onUpdate={handleUpdate}
             onDelete={deleteItemFromBackend}
             onViewInsights={handleViewInsights}

@@ -33,6 +33,7 @@ export interface IPCInvokeMap {
   'invoices:update-invoice': { args: [payload: IUpdateCapturedInvoicePayload]; return: void };
   'invoices:get-invoice-audit': { args: [id: string]; return: ICapturedInvoiceAuditEntry[] };
   'invoices:get-last-unit-prices': { args: []; return: Record<string, number> };
+  'stock-movements:get-current-stock': { args: []; return: Record<string, number> };
   'setup:get-status': { args: []; return: ISetupStatus };
   'setup:complete': { args: []; return: void };
   'setup:get-units': { args: []; return: IUnitOfMeasure[] };

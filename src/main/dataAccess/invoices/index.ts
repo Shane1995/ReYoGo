@@ -67,6 +67,23 @@ export async function saveInvoice(payload: ISaveCapturedInvoicePayload): Promise
           totalVatExclude: l.totalVatExclude,
         }))
       ).run();
+
+      const inMovements = validLines
+        .filter((l) => l.quantity > 0)
+        .map((l) => ({
+          id: randomUUID(),
+          itemId: l.itemId,
+          itemNameSnapshot: l.itemNameSnapshot,
+          type: 'IN' as const,
+          quantity: l.quantity,
+          source: 'invoice' as const,
+          referenceId: payload.id,
+          costAtTime: l.totalVatExclude / l.quantity,
+          createdAt,
+        }));
+      if (inMovements.length > 0) {
+        tx.insert(schema.stockMovements).values(inMovements).run();
+      }
     }
   });
 }
@@ -183,9 +200,12 @@ export async function updateInvoice(payload: IUpdateCapturedInvoicePayload): Pro
       snapshot: JSON.stringify(current),
     }).run();
 
-    // Replace lines
     tx.delete(schema.capturedInvoiceLines)
       .where(eq(schema.capturedInvoiceLines.invoiceId, payload.id))
+      .run();
+
+    tx.delete(schema.stockMovements)
+      .where(eq(schema.stockMovements.referenceId, payload.id))
       .run();
 
     if (validLines.length > 0) {
@@ -202,6 +222,23 @@ export async function updateInvoice(payload: IUpdateCapturedInvoicePayload): Pro
           totalVatExclude: l.totalVatExclude,
         }))
       ).run();
+
+      const inMovements = validLines
+        .filter((l) => l.quantity > 0)
+        .map((l) => ({
+          id: randomUUID(),
+          itemId: l.itemId,
+          itemNameSnapshot: l.itemNameSnapshot,
+          type: 'IN' as const,
+          quantity: l.quantity,
+          source: 'invoice' as const,
+          referenceId: payload.id,
+          costAtTime: l.totalVatExclude / l.quantity,
+          createdAt: editedAt,
+        }));
+      if (inMovements.length > 0) {
+        tx.insert(schema.stockMovements).values(inMovements).run();
+      }
     }
 
     // Stamp updatedAt

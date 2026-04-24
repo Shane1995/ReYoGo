@@ -8,9 +8,10 @@ type Props = {
   categories: InventoryCategory[];
   goodTypes: string[];
   costMap: Map<string, ItemCost>;
+  stockMap: Map<string, number>;
 };
 
-export function useItemFilters({ items, categories, goodTypes, costMap }: Props) {
+export function useItemFilters({ items, categories, goodTypes, costMap, stockMap }: Props) {
   const [filterValues, setFilterValues] = useState<FilterValues>({});
 
   const allTypes = useMemo(() => {
@@ -31,9 +32,10 @@ export function useItemFilters({ items, categories, goodTypes, costMap }: Props)
         unitOfMeasure: item.unitOfMeasure,
         lastCostPerUnit: cost?.price,
         lastCostUom: cost?.uom,
+        currentStock: stockMap.get(item.id),
       };
     });
-  }, [items, categories, costMap]);
+  }, [items, categories, costMap, stockMap]);
 
   const filteredItems = useMemo(() => {
     const search = (filterValues.search as string)?.toLowerCase() ?? "";

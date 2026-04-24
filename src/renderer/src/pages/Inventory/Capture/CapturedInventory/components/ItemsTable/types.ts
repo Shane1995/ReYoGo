@@ -11,6 +11,7 @@ export type FlatItem = {
   unitOfMeasure?: string;
   lastCostPerUnit?: number;
   lastCostUom?: string;
+  currentStock?: number;
 };
 
 export type ItemsTableProps = {
@@ -19,6 +20,7 @@ export type ItemsTableProps = {
   units: string[];
   goodTypes: string[];
   costMap: Map<string, ItemCost>;
+  stockMap: Map<string, number>;
   onUpdate: (id: string, values: Omit<InventoryItem, "id">) => void;
   onDelete: (id: string) => void;
   onViewInsights: (id: string) => void;
