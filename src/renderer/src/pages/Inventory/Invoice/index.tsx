@@ -285,11 +285,6 @@ export default function InvoicePage() {
                             className={cn(inputClass, "w-28")}
                             placeholder="0.00"
                           />
-                          {computed.netUnitPrice > 0 && (
-                            <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                              {formatMoney(computed.netUnitPrice)}<span className="font-sans"> /unit excl. VAT</span>
-                            </p>
-                          )}
                         </TableCell>
                         <TableCell className="py-2 px-2">
                           <Button
