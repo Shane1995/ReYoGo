@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { InventoryCaptureRoutes } from "@/components/AppRoutes/routePaths";
+import { StockRoutes } from "@/components/AppRoutes/routePaths";
 import { PackagePlusIcon, UploadIcon, ListPlusIcon, FolderPlusIcon, TagsIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 
 const sidebarItems = [
-  { label: "Captured Inventory", path: InventoryCaptureRoutes.CapturedInventory, icon: PackagePlusIcon, end: true  },
-  { label: "Add Items",          path: InventoryCaptureRoutes.Items,              icon: ListPlusIcon,   end: true  },
-  { label: "Add Categories",     path: InventoryCaptureRoutes.Categories,         icon: FolderPlusIcon, end: true  },
-  { label: "Good Types",         path: InventoryCaptureRoutes.GoodTypes,          icon: TagsIcon,       end: true  },
-  { label: "Import",             path: InventoryCaptureRoutes.Import,             icon: UploadIcon,     end: false },
+  { label: "Captured Inventory", path: StockRoutes.Base,       icon: PackagePlusIcon, end: true  },
+  { label: "Add Items",          path: StockRoutes.AddItems,   icon: ListPlusIcon,    end: true  },
+  { label: "Add Categories",     path: StockRoutes.Categories, icon: FolderPlusIcon,  end: true  },
+  { label: "Good Types",         path: StockRoutes.Types,      icon: TagsIcon,        end: true  },
+  { label: "Import",             path: StockRoutes.Import,     icon: UploadIcon,      end: false },
 ] as const;
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>

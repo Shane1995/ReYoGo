@@ -7,7 +7,7 @@ import { parseFile, downloadTemplate } from "@/components/CsvImport/parser";
 import { enrichParseResult } from "@/components/CsvImport/review";
 import type { ReviewResult, ExistingInventory } from "@/components/CsvImport/review";
 import { ImportReview } from "@/components/CsvImport/ImportReview";
-import { InventoryCaptureRoutes } from "@/components/AppRoutes/routePaths";
+import { StockRoutes } from "@/components/AppRoutes/routePaths";
 import { useInventory } from "../Context/InventoryContext";
 import { FormatGuide } from "./FormatGuide";
 import { DropZone } from "./DropZone";
@@ -78,7 +78,7 @@ export default function ImportPage() {
         });
       }
 
-      navigate(InventoryCaptureRoutes.CapturedInventory);
+      navigate(StockRoutes.Base);
     } catch (err) {
       console.error("Import commit failed", err);
       setState({ phase: "error", message: "Something went wrong while saving. Please try again." });

@@ -1,31 +1,30 @@
 export enum ProductRoutes {
-  InventoryValidation = "/inventory",
   Inventory = "/inventory",
 }
 
-export enum InventoryCaptureRoutes {
-  CapturedInventory = "/inventory/capture/captured-inventory",
-  Import = "/inventory/capture/captured-inventory/import",
-  Items = "/inventory/capture/items",
-  Categories = "/inventory/capture/categories",
-  GoodTypes = "/inventory/capture/good-types",
+export enum StockRoutes {
+  Base       = "/inventory/stock",
+  Import     = "/inventory/stock/import",
+  AddItems   = "/inventory/stock/add-items",
+  Categories = "/inventory/stock/categories",
+  Types      = "/inventory/stock/types",
 }
 
 export enum InvoiceRoutes {
-  Base = "/inventory/invoice",
-  History = "/inventory/invoice/history",
+  Base    = "/inventory/invoices",
+  History = "/inventory/invoices/history",
 }
 
 export enum AnalysisRoutes {
   CostPerUnit = "/inventory/analysis",
-  ItemTrend = "/inventory/analysis/item/:itemId",
+  ItemTrend   = "/inventory/analysis/item/:itemId",
 }
 
 export enum CostingRoutes {
-  Base = "/inventory/costing",
-  Dashboard = "/inventory/costing/dashboard",
+  Base          = "/inventory/costing",
+  Dashboard     = "/inventory/costing",
   PriceVariance = "/inventory/costing/price-variance",
-  CostReport = "/inventory/costing/cost-report",
+  CostReport    = "/inventory/costing/cost-report",
 }
 
 export function itemTrendPath(itemId: string) {
@@ -37,20 +36,16 @@ export enum UserRoutes {
 }
 
 export enum InventoryRouteSegments {
-  root = "inventory",
-  capture = "capture",
-  capturedInventory = "captured-inventory",
-  import = "import",
-  items = "items",
-  categories = "categories",
-  goodTypes = "good-types",
-  invoice = "invoice",
-  invoiceHistory = "history",
-  analysis = "analysis",
-  costing = "costing",
-  costingDashboard = "dashboard",
+  root                 = "inventory",
+  stock                = "stock",
+  import               = "import",
+  addItems             = "add-items",
+  categories           = "categories",
+  types                = "types",
+  invoices             = "invoices",
+  invoiceHistory       = "history",
+  analysis             = "analysis",
+  costing              = "costing",
   costingPriceVariance = "price-variance",
-  costingCostReport = "cost-report",
-  view = "view",
-  add = "add",
+  costingCostReport    = "cost-report",
 }

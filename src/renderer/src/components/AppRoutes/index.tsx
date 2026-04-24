@@ -1,6 +1,6 @@
 export {
   ProductRoutes,
-  InventoryCaptureRoutes,
+  StockRoutes,
   InvoiceRoutes,
   UserRoutes,
   InventoryRouteSegments,

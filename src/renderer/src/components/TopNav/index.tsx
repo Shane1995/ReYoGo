@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { ProductRoutes } from "@/components/AppRoutes/routePaths";
 
 const navItems = [
-  { label: "Inventory", path: ProductRoutes.InventoryValidation },
+  { label: "Inventory", path: ProductRoutes.Inventory },
 ] as const;
 
 export const TopNav = () => {

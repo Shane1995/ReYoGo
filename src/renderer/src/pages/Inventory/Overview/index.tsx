@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { AnalysisRoutes, InventoryCaptureRoutes, InvoiceRoutes } from "@/components/AppRoutes/routePaths";
+import { AnalysisRoutes, StockRoutes, InvoiceRoutes } from "@/components/AppRoutes/routePaths";
 import { Button } from "@/components/ui/button";
 import { PackagePlusIcon, ReceiptIcon, TrendingUpIcon } from "lucide-react";
 
@@ -8,9 +8,9 @@ const quickLinkGroups = [
     title: "Capture",
     icon: PackagePlusIcon,
     links: [
-      { label: "Captured Inventory", to: InventoryCaptureRoutes.CapturedInventory },
-      { label: "Add items", to: InventoryCaptureRoutes.Items },
-      { label: "Add categories", to: InventoryCaptureRoutes.Categories },
+      { label: "Captured Inventory", to: StockRoutes.Base },
+      { label: "Add items",          to: StockRoutes.AddItems },
+      { label: "Add categories",     to: StockRoutes.Categories },
     ],
   },
   {

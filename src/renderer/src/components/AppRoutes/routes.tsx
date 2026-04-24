@@ -4,7 +4,6 @@ import InventoryLayout from "@/layouts/InventoryLayout";
 import { CapturedInventorySectionLayout } from "@/layouts/CapturedInventorySectionLayout";
 import { AnalysisSectionLayout } from "@/layouts/AnalysisSectionLayout";
 import InventoryOverview from "@/pages/Inventory/Overview";
-import { CaptureLayout } from "@/pages/Inventory/Capture/Layout";
 import { InventoryLayout as CapturedInventoryLayout } from "@/pages/Inventory/Capture/CapturedInventory/Layout/InventoryLayout";
 import CapturedInventoryIndex from "@/pages/Inventory/Capture/CapturedInventory";
 import ImportPage from "@/pages/Inventory/Capture/CapturedInventory/ImportPage";
@@ -23,14 +22,14 @@ import CostReportPage from "@/pages/Inventory/Costing/CostReport";
 import {
   ProductRoutes,
   UserRoutes,
-  InventoryCaptureRoutes,
+  StockRoutes,
   InventoryRouteSegments,
   CostingRoutes,
 } from "./routePaths";
 
 export {
   ProductRoutes,
-  InventoryCaptureRoutes,
+  StockRoutes,
   InvoiceRoutes,
   AnalysisRoutes,
   CostingRoutes,
@@ -52,28 +51,22 @@ export function AppRoutesComponent() {
           </Route>
 
           <Route element={<CapturedInventorySectionLayout />}>
-            <Route path={InventoryRouteSegments.capture} element={<CaptureLayout />}>
-              <Route element={<CapturedInventoryLayout />}>
-                <Route index element={<Navigate to={InventoryCaptureRoutes.CapturedInventory} replace />} />
-                <Route path={InventoryRouteSegments.capturedInventory}>
-                  <Route index element={<CapturedInventoryIndex />} />
-                  <Route path={InventoryRouteSegments.import} element={<ImportPage />} />
-                </Route>
-                <Route path={InventoryRouteSegments.items} element={<AddItemsPage />} />
-                <Route path={InventoryRouteSegments.categories} element={<AddCategoriesPage />} />
-                <Route path={InventoryRouteSegments.goodTypes} element={<ManageTypesPage />} />
-              </Route>
+            <Route path={InventoryRouteSegments.stock} element={<CapturedInventoryLayout />}>
+              <Route index element={<CapturedInventoryIndex />} />
+              <Route path={InventoryRouteSegments.import} element={<ImportPage />} />
+              <Route path={InventoryRouteSegments.addItems} element={<AddItemsPage />} />
+              <Route path={InventoryRouteSegments.categories} element={<AddCategoriesPage />} />
+              <Route path={InventoryRouteSegments.types} element={<ManageTypesPage />} />
             </Route>
           </Route>
 
           <Route path={InventoryRouteSegments.costing} element={<CostingLayout />}>
-            <Route index element={<Navigate to={CostingRoutes.Dashboard} replace />} />
-            <Route path={InventoryRouteSegments.costingDashboard} element={<CostingDashboard />} />
+            <Route index element={<CostingDashboard />} />
             <Route path={InventoryRouteSegments.costingPriceVariance} element={<PriceVariancePage />} />
             <Route path={InventoryRouteSegments.costingCostReport} element={<CostReportPage />} />
           </Route>
 
-          <Route path={InventoryRouteSegments.invoice} element={<InvoiceLayout />}>
+          <Route path={InventoryRouteSegments.invoices} element={<InvoiceLayout />}>
             <Route index element={<InvoicePage />} />
             <Route path={InventoryRouteSegments.invoiceHistory} element={<InvoiceHistoryPage />} />
           </Route>

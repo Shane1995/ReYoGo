@@ -1,14 +1,14 @@
 import { cn } from "@/lib/utils";
 import { NavLink, Outlet } from "react-router-dom";
 import { LayoutDashboardIcon, PackagePlusIcon, ReceiptIcon, TrendingUpIcon, CoinsIcon } from "lucide-react";
-import { ProductRoutes, InventoryCaptureRoutes, InvoiceRoutes, AnalysisRoutes, CostingRoutes } from "@/components/AppRoutes/routePaths";
+import { ProductRoutes, StockRoutes, InvoiceRoutes, AnalysisRoutes, CostingRoutes } from "@/components/AppRoutes/routePaths";
 
 const subNavItems = [
-  { label: "Overview",           path: ProductRoutes.Inventory,                        icon: LayoutDashboardIcon, end: true  },
-  { label: "Analysis",           path: AnalysisRoutes.CostPerUnit,                     icon: TrendingUpIcon,      end: false },
-  { label: "Costing",            path: CostingRoutes.Base,                             icon: CoinsIcon,           end: false },
-  { label: "Captured Inventory", path: InventoryCaptureRoutes.CapturedInventory,       icon: PackagePlusIcon,     end: false },
-  { label: "Invoice",            path: InvoiceRoutes.Base,                             icon: ReceiptIcon,         end: false },
+  { label: "Overview",           path: ProductRoutes.Inventory,    icon: LayoutDashboardIcon, end: true  },
+  { label: "Analysis",           path: AnalysisRoutes.CostPerUnit, icon: TrendingUpIcon,      end: false },
+  { label: "Costing",            path: CostingRoutes.Base,         icon: CoinsIcon,           end: false },
+  { label: "Stock",              path: StockRoutes.Base,           icon: PackagePlusIcon,     end: false },
+  { label: "Invoices",           path: InvoiceRoutes.Base,         icon: ReceiptIcon,         end: false },
 ] as const;
 
 const tabClass = ({ isActive }: { isActive: boolean }) =>
