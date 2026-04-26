@@ -168,12 +168,10 @@ export function ItemDetailChart({ group, metric }: { group: ItemGroup; metric: M
       {tooltip && (
         <div
           className="pointer-events-none absolute z-10 top-2 rounded-lg border border-[var(--nav-border)] bg-background shadow-lg text-xs w-48"
-          style={{
-            ...(tooltipOnRight
-              ? { left: `calc(${(tooltip.screenXPx / tooltip.svgWidthPx) * 100}% + 12px)` }
-              : { right: `calc(${((tooltip.svgWidthPx - tooltip.screenXPx) / tooltip.svgWidthPx) * 100}% + 12px)` }
-            ),
-          }}
+          style={tooltipOnRight
+            ? { left: `calc(${(tooltip.screenXPx / tooltip.svgWidthPx) * 100}% + 12px)` }
+            : { right: `calc(${((tooltip.svgWidthPx - tooltip.screenXPx) / tooltip.svgWidthPx) * 100}% + 12px)` }
+          }
         >
           <div className="border-b border-[var(--nav-border)] px-3 py-2">
             <p className="font-medium text-foreground">{fmtDate(tooltip.entry.date)}</p>

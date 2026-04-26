@@ -5,7 +5,7 @@ import { CostingRoutes } from "@/components/AppRoutes/routePaths";
 import { ChevronLeftIcon, ChevronRightIcon, LayoutDashboardIcon, ArrowUpDownIcon, FileBarChart2Icon } from "lucide-react";
 
 const costingTabs = [
-  { label: "Dashboard",      path: CostingRoutes.Dashboard,     icon: LayoutDashboardIcon, end: true  },
+  { label: "Dashboard",      path: CostingRoutes.Base,          icon: LayoutDashboardIcon, end: true  },
   { label: "Price Variance", path: CostingRoutes.PriceVariance, icon: ArrowUpDownIcon,     end: false },
   { label: "Cost Report",    path: CostingRoutes.CostReport,    icon: FileBarChart2Icon,   end: false },
 ] as const;
