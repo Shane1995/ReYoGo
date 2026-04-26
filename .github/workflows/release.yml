@@ -8,14 +8,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
-# ── Versions — update here only ───────────────────────────────────────────────
 env:
   NODE_VERSION: "25"
   PNPM_VERSION: "9.15.0"
 
 jobs:
-  install:
-    runs-on: ubuntu-latest
+  build-mac:
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -25,11 +24,20 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Build macOS package
+        env:
+          # To enable code signing add CSC_LINK and CSC_KEY_PASSWORD as repository secrets.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: pnpm run build:mac
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-mac
+          path: release/
+          retention-days: 1
 
-  build:
-    needs: install
-    runs-on: ubuntu-latest
+  build-win:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -39,13 +47,49 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run electron:build
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Build Windows package
+        run: pnpm run build:win
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-win
+          path: release/
+          retention-days: 1
 
-  deploy:
-    needs: build
+  release:
+    needs: [ build-mac, build-win ]
     runs-on: ubuntu-latest
-    environment: production
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
-      - run: echo "Deploy — no-op placeholder"
+      - name: Detect channel
+        id: channel
+        run: |
+          if [[ "${{ github.ref_name }}" == *-beta* ]]; then
+            echo "is_beta=true" >> $GITHUB_OUTPUT
+            echo "channel=beta" >> $GITHUB_OUTPUT
+          else
+            echo "is_beta=false" >> $GITHUB_OUTPUT
+            echo "channel=stable" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-mac
+          path: artifacts/mac
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-win
+          path: artifacts/win
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: ${{ steps.channel.outputs.is_beta }}
+          generate_release_notes: true
+          files: |
+            artifacts/mac/*.dmg
+            artifacts/mac/*.zip
+            artifacts/win/*.exe
+            artifacts/win/*.zip
