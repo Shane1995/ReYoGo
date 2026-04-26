@@ -15,9 +15,9 @@ env:
   PNPM_VERSION: "9.15.0"
 
 jobs:
-  build-mac:
-    name: build:mac
-    runs-on: macos-latest
+  bump:
+    name: Bump version
+    runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.bump.outputs.version }}
       tag: ${{ steps.bump.outputs.tag }}
@@ -57,15 +57,21 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
 
+  build-mac:
+    name: build:mac
+    needs: bump
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.bump.outputs.tag }}
       - uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
-
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm exec electron-builder install-app-deps
       - name: build:mac
@@ -80,12 +86,12 @@ jobs:
 
   build-win:
     name: build:win
-    needs: build-mac
+    needs: bump
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ needs.build-mac.outputs.tag }}
+          ref: ${{ needs.bump.outputs.tag }}
       - uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
@@ -105,7 +111,7 @@ jobs:
 
   publish:
     name: Publish release
-    needs: [ build-mac, build-win ]
+    needs: [ bump, build-mac, build-win ]
     runs-on: ubuntu-latest
     environment: production
     permissions:
@@ -124,7 +130,7 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ needs.build-mac.outputs.tag }}
+          tag_name: ${{ needs.bump.outputs.tag }}
           prerelease: false
           generate_release_notes: true
           files: |
