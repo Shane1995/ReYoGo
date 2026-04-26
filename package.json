@@ -17,10 +17,10 @@
   "scripts": {
     "dev": "vite",
     "clean": "shx rm -rf dist dist-electron",
-    "build": "pnpm run clean && pnpm run electron:build && electron-builder",
-    "build:win": "pnpm run clean && pnpm run electron:build && electron-builder --win",
-    "build:mac": "pnpm run clean && pnpm run electron:build && electron-builder --mac",
-    "build:all": "pnpm run clean && pnpm run electron:build && electron-builder --win --mac",
+    "build": "pnpm run clean && pnpm run electron:build && electron-builder --publish never",
+    "build:win": "pnpm run clean && pnpm run electron:build && electron-builder --win --publish never",
+    "build:mac": "pnpm run clean && pnpm run electron:build && electron-builder --mac --publish never",
+    "build:all": "pnpm run clean && pnpm run electron:build && electron-builder --win --mac --publish never",
     "preview": "vite preview",
     "test": "vitest --passWithNoTests",
     "test:ui": "vitest --ui",
@@ -94,7 +94,6 @@
   },
   "build": {
     "appId": "com.reyogo.app",
-    "publish": "never",
     "productName": "ReYoGo",
     "directories": {
       "output": "release"
