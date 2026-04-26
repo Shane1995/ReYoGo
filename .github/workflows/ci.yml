@@ -1,14 +1,12 @@
 name: CI
 
 on:
-  push:
-    branches-ignore: [ main ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.head.sha || github.sha }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
