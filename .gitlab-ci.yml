@@ -1,0 +1,54 @@
+stages:
+  - install
+  - validate
+  - test
+  - build
+  - deploy
+
+variables:
+  PNPM_VERSION: "9.15.0"
+  PNPM_STORE_DIR: .pnpm-store
+
+default:
+  image: node:25-bookworm
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq build-essential python3
+    - corepack enable
+    - corepack prepare pnpm@${PNPM_VERSION} --activate
+    - pnpm config set store-dir $PNPM_STORE_DIR
+
+cache:
+  key:
+    files:
+      - pnpm-lock.yaml
+  paths:
+    - .pnpm-store/
+
+install:
+  stage: install
+  script:
+    - pnpm install --frozen-lockfile
+
+validate:
+  stage: validate
+  script:
+    - pnpm install --frozen-lockfile
+    - pnpm run lint
+
+test:
+  stage: test
+  script:
+    - pnpm install --frozen-lockfile
+    - pnpm run test
+
+build:
+  stage: build
+  script:
+    - pnpm install --frozen-lockfile
+    - pnpm run electron:build
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploy stage — no-op placeholder"
+  when: manual
