@@ -1,0 +1,134 @@
+name: Promote to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump type
+        required: true
+        default: patch
+        type: choice
+        options: [ patch, minor, major ]
+
+env:
+  NODE_VERSION: "24"
+  PNPM_VERSION: "9.15.0"
+
+jobs:
+  build-mac:
+    name: build:mac
+    runs-on: macos-latest
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+      tag: ${{ steps.bump.outputs.tag }}
+    steps:
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Configure git
+        run: |
+          git config user.name "ReYoGo-bot[bot]"
+          git config user.email "ReYoGo-bot[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        id: bump
+        run: |
+          npm version ${{ inputs.bump }} --no-git-tag-version
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v${VERSION}"
+          git add package.json
+          git commit -m "chore: release ${TAG}"
+          git tag "${TAG}"
+          git push origin HEAD:main
+          git push origin "${TAG}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm exec electron-builder install-app-deps
+      - name: build:mac
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: pnpm run build:mac
+      - uses: actions/upload-artifact@v7
+        with:
+          name: prod-mac
+          path: release/
+          retention-days: 7
+
+  build-win:
+    name: build:win
+    needs: build-mac
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.build-mac.outputs.tag }}
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm exec electron-builder install-app-deps
+      - name: build:win
+        run: pnpm run build:win
+      - uses: actions/upload-artifact@v7
+        with:
+          name: prod-win
+          path: release/
+          retention-days: 7
+
+  publish:
+    name: Publish release
+    needs: [ build-mac, build-win ]
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: prod-mac
+          path: artifacts/mac
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: prod-win
+          path: artifacts/win
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.build-mac.outputs.tag }}
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            artifacts/mac/*.dmg
+            artifacts/mac/*.zip
+            artifacts/win/*.exe
+            artifacts/win/*.zip
