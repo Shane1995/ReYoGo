@@ -22,9 +22,7 @@ import CostReportPage from "@/pages/Inventory/Costing/CostReport";
 import {
   ProductRoutes,
   UserRoutes,
-  StockRoutes,
   InventoryRouteSegments,
-  CostingRoutes,
 } from "./routePaths";
 
 export {

@@ -22,7 +22,6 @@ export enum AnalysisRoutes {
 
 export enum CostingRoutes {
   Base          = "/inventory/costing",
-  Dashboard     = "/inventory/costing",
   PriceVariance = "/inventory/costing/price-variance",
   CostReport    = "/inventory/costing/cost-report",
 }
