@@ -11,12 +11,12 @@
     "drizzle-orm": "0.36.0"
   },
   "engines": {
-    "node": ">=25.5.0",
+    "node": ">=24.0.0",
     "pnpm": ">=9.0.0"
   },
   "scripts": {
     "dev": "vite",
-    "clean": "rm -rf dist dist-electron",
+    "clean": "shx rm -rf dist dist-electron",
     "build": "pnpm run clean && pnpm run electron:build && electron-builder",
     "build:win": "pnpm run clean && pnpm run electron:build && electron-builder --win",
     "build:mac": "pnpm run clean && pnpm run electron:build && electron-builder --mac",
@@ -26,7 +26,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "electron:dev": "concurrently \"pnpm run dev\" \"wait-on http://localhost:5173 && NODE_ENV=development electron .\"",
-    "electron:build": "rm -rf dist-electron && tsc -p tsconfig.electron.json && cp -r src/main/db/migrations dist-electron/main/db/ && vite build",
+    "electron:build": "shx rm -rf dist-electron && tsc -p tsconfig.electron.json && shx cp -r src/main/db/migrations dist-electron/main/db/ && vite build",
     "db:reset": "node scripts/remove-db.js",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
@@ -82,6 +82,7 @@
     "jsdom": "^23.0.1",
     "lint-staged": "^16.4.0",
     "oxlint": "^1.61.0",
+    "shx": "^0.3.4",
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",
