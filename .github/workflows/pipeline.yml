@@ -96,7 +96,7 @@ jobs:
   stage:
     name: Approve staging
     if: github.event_name == 'push'
-    needs: [ validate, test, typecheck ]
+    needs: [ build ]
     runs-on: ubuntu-latest
     environment: staging
     outputs:
