@@ -95,11 +95,3 @@ jobs:
             dist/
             dist-electron/
           retention-days: 1
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-    environment: production
-    steps:
-      - run: echo "Deploy — no-op placeholder"
