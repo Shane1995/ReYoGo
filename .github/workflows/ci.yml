@@ -96,3 +96,53 @@ jobs:
             dist-electron/
           retention-days: 1
 
+  build-mac:
+    name: build:mac
+    if: github.event_name == 'push'
+    needs: [ validate, test, typecheck ]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: build:mac
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: pnpm run build:mac
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-mac
+          path: release/
+          retention-days: 3
+
+  build-win:
+    name: build:win
+    if: github.event_name == 'push'
+    needs: [ validate, test, typecheck ]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: build:win
+        env:
+          npm_execpath: npm
+        run: pnpm run build:win
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-win
+          path: release/
+          retention-days: 3
+
