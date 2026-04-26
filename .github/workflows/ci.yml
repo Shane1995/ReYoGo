@@ -110,7 +110,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm exec electron-builder install-app-deps
       - name: build:mac
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
@@ -136,9 +137,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm exec electron-builder install-app-deps
       - name: build:win
-        env:
-          npm_execpath: npm
         run: pnpm run build:win
       - uses: actions/upload-artifact@v7
         with:

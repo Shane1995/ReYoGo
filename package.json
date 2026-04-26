@@ -95,6 +95,7 @@
   "build": {
     "appId": "com.reyogo.app",
     "productName": "ReYoGo",
+    "npmRebuild": false,
     "directories": {
       "output": "release"
     },
