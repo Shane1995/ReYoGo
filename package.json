@@ -30,8 +30,7 @@
     "db:reset": "node scripts/remove-db.js",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "postinstall": "electron-rebuild",
-    "rebuild": "electron-rebuild",
+    "postinstall": "electron-builder install-app-deps",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit",
     "lint": "oxlint src/",
     "prepare": "husky"
@@ -62,7 +61,6 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@electron/rebuild": "^3.2.9",
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.5.1",
@@ -95,7 +93,8 @@
     "src/**/*.{ts,tsx}": "oxlint"
   },
   "build": {
-    "appId": "com.bigbootybaba.electron-app",
+    "appId": "com.reyogo.app",
+    "publish": "never",
     "productName": "ReYoGo",
     "directories": {
       "output": "release"
