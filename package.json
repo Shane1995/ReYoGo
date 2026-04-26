@@ -32,6 +32,7 @@
     "db:studio": "drizzle-kit studio",
     "postinstall": "electron-rebuild",
     "rebuild": "electron-rebuild",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit",
     "lint": "oxlint src/"
   },
   "dependencies": {
