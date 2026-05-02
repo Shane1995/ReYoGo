@@ -8,4 +8,8 @@ export const appService = {
   requestAppReady: () => window.electronAPI.requestAppReady(),
   getVersion: (): Promise<AppVersionInfo> =>
     window.electronAPI.ipcRenderer.invoke(AppIPC.GET_VERSION),
+  onUpdateDownloaded: (callback: () => void): (() => void) =>
+    window.electronAPI.onUpdateDownloaded(callback),
+  installUpdate: (): Promise<void> =>
+    window.electronAPI.ipcRenderer.invoke(AppIPC.INSTALL_UPDATE),
 };
