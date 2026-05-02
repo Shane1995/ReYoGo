@@ -1,3 +1,4 @@
+export { AppIPC } from './app';
 export { InventoryIPC } from './inventory';
 export { InvoicesIPC } from './invoices';
 export { SetupIPC } from './setup';
