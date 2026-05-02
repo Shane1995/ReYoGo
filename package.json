@@ -49,6 +49,7 @@
     "date-fns": "^4.1.0",
     "drizzle-orm": "0.36.0",
     "electron-router-dom": "^2.1.0",
+    "electron-updater": "^6.8.3",
     "lucide-react": "^0.460.0",
     "next-themes": "^0.4.6",
     "react": "^18.2.0",
@@ -80,8 +81,8 @@
     "jsdom": "^23.0.1",
     "lint-staged": "^16.4.0",
     "oxlint": "^1.61.0",
-    "shx": "^0.3.4",
     "postcss": "^8.4.33",
+    "shx": "^0.3.4",
     "tailwindcss": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.3.3",
@@ -91,54 +92,5 @@
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": "oxlint"
-  },
-  "build": {
-    "appId": "com.reyogo.app",
-    "productName": "ReYoGo",
-    "npmRebuild": false,
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "dist-electron/**/*",
-      "package.json"
-    ],
-    "asarUnpack": [
-      "dist-electron/main/db/migrations/**"
-    ],
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "icon": "build/icon.png"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    },
-    "mac": {
-      "target": [
-        "dmg",
-        "zip"
-      ],
-      "icon": "build/icon.icns",
-      "category": "public.app-category.business",
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist"
-    }
   }
 }

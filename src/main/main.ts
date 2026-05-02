@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
+import { autoUpdater } from 'electron-updater';
 import { join } from 'path';
 import { DB_REQUEST_READY_CHANNEL } from '../shared/ipc-events';
 import { getDbReadyChannel, initDatabase } from './db';
@@ -48,6 +49,10 @@ function createWindow(): BrowserWindow {
 app.whenReady().then(() => {
   registerIPC();
   createWindow();
+
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdatesAndNotify();
+  }
 
   let dbReady = false;
   let pendingSender: Electron.WebContents | null = null;

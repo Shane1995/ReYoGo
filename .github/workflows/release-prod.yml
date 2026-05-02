@@ -1,0 +1,120 @@
+name: Release to Production
+
+on:
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: release-prod
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "24"
+  PNPM_VERSION: "9.15.0"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      is_release: ${{ steps.check.outputs.is_release }}
+    steps:
+      - id: check
+        run: |
+          if [[ "${{ github.ref_name }}" =~ -beta\. ]]; then
+            echo "is_release=false" >> $GITHUB_OUTPUT
+          else
+            echo "is_release=true" >> $GITHUB_OUTPUT
+          fi
+
+  build-mac:
+    needs: check
+    if: needs.check.outputs.is_release == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm exec electron-builder install-app-deps
+      - name: Build
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          PRODUCT_NAME: ReYoGo
+          UPDATE_FEED_URL: ${{ vars.PROD_UPDATE_FEED_URL }}
+          VITE_APP_ENV: production
+        run: |
+          pnpm run clean
+          pnpm run electron:build
+          pnpm exec electron-builder --mac
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-mac
+          path: release/
+          retention-days: 7
+
+  build-win:
+    needs: check
+    if: needs.check.outputs.is_release == 'true'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm exec electron-builder install-app-deps
+      - name: Build
+        env:
+          PRODUCT_NAME: ReYoGo
+          UPDATE_FEED_URL: ${{ vars.PROD_UPDATE_FEED_URL }}
+          VITE_APP_ENV: production
+        run: |
+          pnpm run clean
+          pnpm run electron:build
+          pnpm exec electron-builder --win
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-win
+          path: release/
+          retention-days: 7
+
+  publish-production:
+    name: Approve — upload to production
+    needs: [build-mac, build-win]
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist-mac
+          path: artifacts/
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist-win
+          path: artifacts/
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-west-2
+      - name: Upload to S3 production
+        run: aws s3 sync artifacts/ s3://reyogo-desktop-releases/production/
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --repo ${{ github.repository }} \
+            --generate-notes \
+            --title "${{ github.ref_name }}"

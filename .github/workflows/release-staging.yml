@@ -1,0 +1,205 @@
+name: Release to Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump type
+        required: true
+        type: choice
+        options: [patch, minor, major]
+
+concurrency:
+  group: release-staging
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "24"
+  PNPM_VERSION: "9.15.0"
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      beta_tag: ${{ steps.bump.outputs.beta_tag }}
+      new_version: ${{ steps.bump.outputs.new_version }}
+    steps:
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Configure git
+        run: |
+          git config user.name "ReYoGo-bot[bot]"
+          git config user.email "ReYoGo-bot[bot]@users.noreply.github.com"
+
+      - id: bump
+        name: Bump version and create beta tag
+        run: |
+          git fetch --tags
+
+          CURRENT=$(node -p "require('./package.json').version")
+          BASE=$(echo "$CURRENT" | sed 's/-beta\.[0-9]*//')
+
+          BUMP="${{ inputs.bump }}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
+          case "$BUMP" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+          NEW_BASE="$MAJOR.$MINOR.$PATCH"
+
+          EXISTING=$(git tag -l "v${NEW_BASE}-beta.*" | sort -V | tail -1)
+          if [ -z "$EXISTING" ]; then
+            BETA_N=1
+          else
+            LAST_N=$(echo "$EXISTING" | sed 's/.*-beta\.//')
+            BETA_N=$((LAST_N + 1))
+          fi
+
+          NEW_VERSION="${NEW_BASE}-beta.${BETA_N}"
+          BETA_TAG="v${NEW_VERSION}"
+
+          npm version "$NEW_VERSION" --no-git-tag-version
+          git add package.json
+          git commit -m "chore: release ${BETA_TAG}"
+          git tag "$BETA_TAG"
+          git push origin HEAD:main "$BETA_TAG"
+
+          echo "beta_tag=$BETA_TAG" >> $GITHUB_OUTPUT
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+  ci:
+    needs: version
+    uses: ./.github/workflows/ci.yml
+
+  build-mac:
+    needs: [version, ci]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.version.outputs.beta_tag }}
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm exec electron-builder install-app-deps
+      - name: Build
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          PRODUCT_NAME: ReYoGo Staging
+          UPDATE_FEED_URL: ${{ vars.STAGING_UPDATE_FEED_URL }}
+          VITE_APP_ENV: staging
+        run: |
+          pnpm run clean
+          pnpm run electron:build
+          pnpm exec electron-builder --mac
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-mac
+          path: release/
+          retention-days: 7
+
+  build-win:
+    needs: [version, ci]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.version.outputs.beta_tag }}
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm exec electron-builder install-app-deps
+      - name: Build
+        env:
+          PRODUCT_NAME: ReYoGo Staging
+          UPDATE_FEED_URL: ${{ vars.STAGING_UPDATE_FEED_URL }}
+          VITE_APP_ENV: staging
+        run: |
+          pnpm run clean
+          pnpm run electron:build
+          pnpm exec electron-builder --win
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-win
+          path: release/
+          retention-days: 7
+
+  publish-staging:
+    name: Approve — upload to staging
+    needs: [version, build-mac, build-win]
+    runs-on: ubuntu-latest
+    environment: staging
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist-mac
+          path: artifacts/
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist-win
+          path: artifacts/
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-west-2
+      - name: Upload to S3 staging
+        run: aws s3 sync artifacts/ s3://reyogo-desktop-releases/staging/
+
+  promote:
+    name: Approve — promote to production
+    needs: [version, publish-staging]
+    runs-on: ubuntu-latest
+    environment: promote
+    permissions:
+      contents: write
+    steps:
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Create production tag
+        run: |
+          BETA_TAG="${{ needs.version.outputs.beta_tag }}"
+          PROD_VERSION=$(echo "$BETA_TAG" | sed 's/v//' | sed 's/-beta\.[0-9]*//')
+          PROD_TAG="v${PROD_VERSION}"
+          git config user.name "ReYoGo-bot[bot]"
+          git config user.email "ReYoGo-bot[bot]@users.noreply.github.com"
+          git fetch --tags
+          git tag "$PROD_TAG"
+          git push origin "$PROD_TAG"
