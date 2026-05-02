@@ -86,38 +86,6 @@ jobs:
     needs: version
     uses: ./.github/workflows/ci.yml
 
-  build-mac:
-    needs: [version, ci]
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.version.outputs.beta_tag }}
-      - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile --ignore-scripts
-      - run: pnpm exec electron-builder install-app-deps
-      - name: Build
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-          PRODUCT_NAME: ReYoGo Staging
-          UPDATE_FEED_URL: ${{ vars.STAGING_UPDATE_FEED_URL }}
-          VITE_APP_ENV: staging
-        run: |
-          pnpm run clean
-          pnpm run electron:build
-          pnpm exec electron-builder --mac --publish never
-      - uses: actions/upload-artifact@v7
-        with:
-          name: dist-mac
-          path: release/
-          retention-days: 7
-
   build-win:
     needs: [version, ci]
     runs-on: windows-latest
@@ -151,17 +119,13 @@ jobs:
 
   publish-staging:
     name: Approve — upload to staging
-    needs: [version, build-mac, build-win]
+    needs: [version, build-win]
     runs-on: ubuntu-latest
     environment: staging
     permissions:
       id-token: write
       contents: read
     steps:
-      - uses: actions/download-artifact@v8
-        with:
-          name: dist-mac
-          path: artifacts/
       - uses: actions/download-artifact@v8
         with:
           name: dist-win
