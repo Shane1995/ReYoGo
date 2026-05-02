@@ -1,4 +1,5 @@
 import { TopNav } from "@/components/TopNav";
+import UpdateToast from "@/components/UpdateToast";
 import VersionBar from "@/components/VersionBar";
 import { Outlet } from "react-router-dom";
 
@@ -10,6 +11,7 @@ const AppLayout = () => {
         <Outlet />
       </main>
       <VersionBar />
+      <UpdateToast />
     </div>
   );
 };
