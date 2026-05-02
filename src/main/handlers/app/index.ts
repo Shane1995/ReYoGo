@@ -18,8 +18,8 @@ export function registerAppHandlers(): void {
   ipcMain.handle(AppIPC.GET_VERSION, getVersion);
   ipcMain.handle(AppIPC.INSTALL_UPDATE, () => autoUpdater.quitAndInstall());
 
-  autoUpdater.on('update-downloaded', () => {
-    BrowserWindow.getAllWindows()[0]?.webContents.send('app:update-downloaded');
+  autoUpdater.once('update-downloaded', () => {
+    BrowserWindow.getAllWindows()[0]?.webContents.send(AppIPC.UPDATE_DOWNLOADED);
   });
 
   autoUpdater.on('error', (err) => {
