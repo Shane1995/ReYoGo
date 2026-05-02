@@ -17,5 +17,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   onUpdateDownloaded: (callback: () => void) => {
     ipcRenderer.on(UPDATE_DOWNLOADED_CHANNEL, callback);
+    return () => ipcRenderer.removeListener(UPDATE_DOWNLOADED_CHANNEL, callback);
   },
 });
