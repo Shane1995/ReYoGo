@@ -26,37 +26,6 @@ jobs:
             echo "is_release=true" >> $GITHUB_OUTPUT
           fi
 
-  build-mac:
-    needs: check
-    if: needs.check.outputs.is_release == 'true'
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile --ignore-scripts
-      - run: pnpm exec electron-builder install-app-deps
-      - name: Build
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-          PRODUCT_NAME: ReYoGo
-          UPDATE_FEED_URL: ${{ vars.PROD_UPDATE_FEED_URL }}
-          VITE_APP_ENV: production
-        run: |
-          pnpm run clean
-          pnpm run electron:build
-          pnpm exec electron-builder --mac
-      - uses: actions/upload-artifact@v7
-        with:
-          name: dist-mac
-          path: release/
-          retention-days: 7
-
   build-win:
     needs: check
     if: needs.check.outputs.is_release == 'true'
@@ -80,7 +49,7 @@ jobs:
         run: |
           pnpm run clean
           pnpm run electron:build
-          pnpm exec electron-builder --win
+          pnpm exec electron-builder --win --publish never
       - uses: actions/upload-artifact@v7
         with:
           name: dist-win
@@ -89,17 +58,13 @@ jobs:
 
   publish-production:
     name: Approve — upload to production
-    needs: [build-mac, build-win]
+    needs: [build-win]
     runs-on: ubuntu-latest
     environment: production
     permissions:
       id-token: write
       contents: write
     steps:
-      - uses: actions/download-artifact@v8
-        with:
-          name: dist-mac
-          path: artifacts/
       - uses: actions/download-artifact@v8
         with:
           name: dist-win
