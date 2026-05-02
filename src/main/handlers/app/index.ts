@@ -1,4 +1,5 @@
-import { app, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
+import { autoUpdater } from 'electron-updater';
 import { AppIPC } from '../../../shared/types/ipc';
 
 interface AppVersionInfo {
@@ -15,4 +16,13 @@ function getVersion(): AppVersionInfo {
 
 export function registerAppHandlers(): void {
   ipcMain.handle(AppIPC.GET_VERSION, getVersion);
+  ipcMain.handle(AppIPC.INSTALL_UPDATE, () => autoUpdater.quitAndInstall());
+
+  autoUpdater.on('update-downloaded', () => {
+    BrowserWindow.getAllWindows()[0]?.webContents.send('app:update-downloaded');
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('[updater]', err);
+  });
 }

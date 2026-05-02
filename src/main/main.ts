@@ -51,7 +51,7 @@ app.whenReady().then(() => {
   createWindow();
 
   if (app.isPackaged) {
-    autoUpdater.checkForUpdatesAndNotify();
+    autoUpdater.checkForUpdates();
   }
 
   let dbReady = false;
