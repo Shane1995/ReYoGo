@@ -35,7 +35,8 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "types": ["@testing-library/jest-dom"]
   },
   "include": [
     "src/renderer/src",

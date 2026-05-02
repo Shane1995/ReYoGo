@@ -1,5 +1,5 @@
 import { app, ipcMain } from 'electron';
-import { AppIPC } from '@shared/types/ipc';
+import { AppIPC } from '../../../shared/types/ipc';
 
 interface AppVersionInfo {
   version: string;

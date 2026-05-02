@@ -18,7 +18,13 @@ import type { ICOGSSummary, IItemCostHistory } from '../contract/stockMovements'
  * Maps each IPC channel to its argument tuple and return type.
  * Keys must match the values in inventory.ts / invoices.ts. Add entries when you add new handlers.
  */
+export interface AppVersionInfo {
+  version: string;
+  env: string;
+}
+
 export interface IPCInvokeMap {
+  'app:get-version': { args: []; return: AppVersionInfo };
   'inventory:get-categories': { args: []; return: IInventoryCategory[] };
   'inventory:get-items': { args: []; return: IInventoryItem[] };
   'inventory:upsert-category': { args: [category: IInventoryCategory]; return: void };

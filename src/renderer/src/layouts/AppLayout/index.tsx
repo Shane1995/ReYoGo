@@ -1,4 +1,5 @@
 import { TopNav } from "@/components/TopNav";
+import VersionBar from "@/components/VersionBar";
 import { Outlet } from "react-router-dom";
 
 const AppLayout = () => {
@@ -8,6 +9,7 @@ const AppLayout = () => {
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <Outlet />
       </main>
+      <VersionBar />
     </div>
   );
 };
