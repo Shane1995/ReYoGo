@@ -158,6 +158,10 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
       - name: Create production tag
         run: |
           BETA_TAG="${{ needs.version.outputs.beta_tag }}"
@@ -166,5 +170,8 @@ jobs:
           git config user.name "ReYoGo-bot[bot]"
           git config user.email "ReYoGo-bot[bot]@users.noreply.github.com"
           git fetch --tags
+          npm version "$PROD_VERSION" --no-git-tag-version
+          git add package.json
+          git commit -m "chore: release ${PROD_TAG}"
           git tag "$PROD_TAG"
-          git push origin "$PROD_TAG"
+          git push origin HEAD:main "$PROD_TAG"
