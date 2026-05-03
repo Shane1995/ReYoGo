@@ -30,7 +30,7 @@ jobs:
     needs: check
     if: needs.check.outputs.is_release == 'true'
     runs-on: windows-latest
-    environment: production-config
+    environment: production
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
@@ -58,7 +58,7 @@ jobs:
           retention-days: 7
 
   publish-production:
-    name: Approve — upload to production
+    name: Upload to production
     needs: [build-win]
     runs-on: ubuntu-latest
     environment: production
