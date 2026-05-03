@@ -111,7 +111,7 @@ jobs:
         run: |
           pnpm run clean
           pnpm run electron:build
-          pnpm exec electron-builder --win --publish never
+          pnpm exec electron-builder --win --publish never --config electron-builder.config.js
       - uses: actions/upload-artifact@v7
         with:
           name: dist-win
