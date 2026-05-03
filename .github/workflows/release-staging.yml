@@ -136,7 +136,7 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: eu-west-2
       - name: Upload to S3 staging
-        run: aws s3 sync artifacts/ s3://reyogo-desktop-releases/staging/win/
+        run: aws s3 sync artifacts/ s3://reyogo-desktop-releases/staging/win/ --exclude "win-unpacked/*" --exclude "builder-debug.yml"
 
   promote:
     name: Approve — promote to production
