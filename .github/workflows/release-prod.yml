@@ -2,7 +2,9 @@ name: Release to Production
 
 on:
   push:
-    tags: ['v*']
+    tags:
+      - 'v*'
+      - '!v*-beta.*'
 
 concurrency:
   group: release-prod
@@ -13,22 +15,7 @@ env:
   PNPM_VERSION: "9.15.0"
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
-    outputs:
-      is_release: ${{ steps.check.outputs.is_release }}
-    steps:
-      - id: check
-        run: |
-          if [[ "${{ github.ref_name }}" =~ -beta\. ]]; then
-            echo "is_release=false" >> $GITHUB_OUTPUT
-          else
-            echo "is_release=true" >> $GITHUB_OUTPUT
-          fi
-
   build-win:
-    needs: check
-    if: needs.check.outputs.is_release == 'true'
     runs-on: windows-latest
     environment: production
     steps:
