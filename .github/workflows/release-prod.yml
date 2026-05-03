@@ -30,7 +30,7 @@ jobs:
     needs: check
     if: needs.check.outputs.is_release == 'true'
     runs-on: windows-latest
-    environment: production
+    environment: production-config
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6

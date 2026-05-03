@@ -89,7 +89,7 @@ jobs:
   build-win:
     needs: [version, ci]
     runs-on: windows-latest
-    environment: staging
+    environment: staging-config
     steps:
       - uses: actions/checkout@v6
         with:
