@@ -28,7 +28,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ secrets.APP_ID }}
+          client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - uses: actions/checkout@v6
@@ -89,6 +89,7 @@ jobs:
   build-win:
     needs: [version, ci]
     runs-on: windows-latest
+    environment: staging
     steps:
       - uses: actions/checkout@v6
         with:
@@ -105,7 +106,7 @@ jobs:
       - name: Build
         env:
           PRODUCT_NAME: ReYoGo Staging
-          UPDATE_FEED_URL: ${{ vars.STAGING_UPDATE_FEED_URL }}
+          UPDATE_FEED_URL: ${{ vars.UPDATE_FEED_URL }}/win
           VITE_APP_ENV: staging
         run: |
           pnpm run clean
@@ -114,7 +115,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: dist-win
-          path: dist/
+          path: release/
           retention-days: 7
 
   publish-staging:
@@ -126,7 +127,7 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v7
         with:
           name: dist-win
           path: artifacts/
@@ -135,7 +136,7 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: eu-west-2
       - name: Upload to S3 staging
-        run: aws s3 sync artifacts/ s3://reyogo-desktop-releases/staging/
+        run: aws s3 sync artifacts/ s3://reyogo-desktop-releases/staging/win/
 
   promote:
     name: Approve — promote to production
@@ -149,7 +150,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ secrets.APP_ID }}
+          client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - uses: actions/checkout@v6

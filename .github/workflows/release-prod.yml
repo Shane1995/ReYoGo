@@ -30,6 +30,7 @@ jobs:
     needs: check
     if: needs.check.outputs.is_release == 'true'
     runs-on: windows-latest
+    environment: production
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
@@ -44,7 +45,7 @@ jobs:
       - name: Build
         env:
           PRODUCT_NAME: ReYoGo
-          UPDATE_FEED_URL: ${{ vars.PROD_UPDATE_FEED_URL }}
+          UPDATE_FEED_URL: ${{ vars.UPDATE_FEED_URL }}/win
           VITE_APP_ENV: production
         run: |
           pnpm run clean
@@ -74,7 +75,7 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: eu-west-2
       - name: Upload to S3 production
-        run: aws s3 sync artifacts/ s3://reyogo-desktop-releases/production/
+        run: aws s3 sync artifacts/ s3://reyogo-desktop-releases/production/win/
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
