@@ -58,7 +58,7 @@ jobs:
           retention-days: 7
 
   publish-production:
-    name: Approve — upload to production
+    name: Upload to production
     needs: [build-win]
     runs-on: ubuntu-latest
     environment: production

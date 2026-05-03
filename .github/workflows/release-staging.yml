@@ -119,7 +119,7 @@ jobs:
           retention-days: 7
 
   publish-staging:
-    name: Approve — upload to staging
+    name: Upload to staging
     needs: [version, build-win]
     runs-on: ubuntu-latest
     environment: staging
