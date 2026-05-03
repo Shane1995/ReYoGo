@@ -105,7 +105,7 @@ jobs:
       - name: Build
         env:
           PRODUCT_NAME: ReYoGo Staging
-          UPDATE_FEED_URL: ${{ vars.STAGING_UPDATE_FEED_URL }}
+          UPDATE_FEED_URL: ${{ vars.STAGING_UPDATE_FEED_URL }}/win
           VITE_APP_ENV: staging
         run: |
           pnpm run clean
@@ -114,7 +114,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: dist-win
-          path: dist/
+          path: release/
           retention-days: 7
 
   publish-staging:
@@ -135,7 +135,7 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: eu-west-2
       - name: Upload to S3 staging
-        run: aws s3 sync artifacts/ s3://reyogo-desktop-releases/staging/
+        run: aws s3 sync artifacts/ s3://reyogo-desktop-releases/staging/win/
 
   promote:
     name: Approve — promote to production
