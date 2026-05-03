@@ -89,6 +89,7 @@ jobs:
   build-win:
     needs: [version, ci]
     runs-on: windows-latest
+    environment: staging
     steps:
       - uses: actions/checkout@v6
         with:
@@ -105,7 +106,7 @@ jobs:
       - name: Build
         env:
           PRODUCT_NAME: ReYoGo Staging
-          UPDATE_FEED_URL: ${{ vars.STAGING_UPDATE_FEED_URL }}/win
+          UPDATE_FEED_URL: ${{ vars.UPDATE_FEED_URL }}/win
           VITE_APP_ENV: staging
         run: |
           pnpm run clean

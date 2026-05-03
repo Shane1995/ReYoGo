@@ -30,6 +30,7 @@ jobs:
     needs: check
     if: needs.check.outputs.is_release == 'true'
     runs-on: windows-latest
+    environment: production
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
@@ -44,7 +45,7 @@ jobs:
       - name: Build
         env:
           PRODUCT_NAME: ReYoGo
-          UPDATE_FEED_URL: ${{ vars.PROD_UPDATE_FEED_URL }}/win
+          UPDATE_FEED_URL: ${{ vars.UPDATE_FEED_URL }}/win
           VITE_APP_ENV: production
         run: |
           pnpm run clean
