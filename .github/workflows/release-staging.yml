@@ -114,7 +114,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: dist-win
-          path: release/
+          path: dist/
           retention-days: 7
 
   publish-staging:
