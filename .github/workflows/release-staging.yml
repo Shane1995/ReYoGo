@@ -73,10 +73,12 @@ jobs:
           NEW_VERSION="${NEW_BASE}-beta.${BETA_N}"
           BETA_TAG="v${NEW_VERSION}"
 
-          npm version "$NEW_VERSION" --no-git-tag-version
+          node -e "const p=require('./package.json');p.version='${NEW_VERSION}';require('fs').writeFileSync('./package.json',JSON.stringify(p,null,2)+'\n')"
           git add package.json
           git commit -m "chore: release ${BETA_TAG}"
           git tag "$BETA_TAG"
+          git fetch origin main
+          git rebase origin/main
           git push origin HEAD:main "$BETA_TAG"
 
           echo "beta_tag=$BETA_TAG" >> $GITHUB_OUTPUT
