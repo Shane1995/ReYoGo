@@ -141,9 +141,9 @@ jobs:
           aws s3 sync artifacts/ "s3://reyogo-desktop-releases/staging/win/${TAG}/" \
             --exclude "win-unpacked/*" \
             --exclude "builder-debug.yml"
-          sed -i "s|^path: |path: ${TAG}/|" artifacts/latest.yml
-          sed -i "s|- url: |- url: ${TAG}/|g" artifacts/latest.yml
-          aws s3 cp artifacts/latest.yml s3://reyogo-desktop-releases/staging/win/latest.yml
+          YML=$(find artifacts/ -maxdepth 1 -name "*.yml" ! -name "builder-debug.yml" | head -1)
+          sed "s|^path: |path: ${TAG}/|; s|- url: |- url: ${TAG}/|g" "$YML" > /tmp/manifest.yml
+          aws s3 cp /tmp/manifest.yml "s3://reyogo-desktop-releases/staging/win/$(basename "$YML")"
 
   promote:
     name: Approve — promote to production
