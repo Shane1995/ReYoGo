@@ -163,6 +163,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ needs.version.outputs.beta_tag }}
           token: ${{ steps.app-token.outputs.token }}
 
       - uses: actions/setup-node@v6
@@ -176,9 +177,11 @@ jobs:
           PROD_TAG="v${PROD_VERSION}"
           git config user.name "ReYoGo-bot[bot]"
           git config user.email "ReYoGo-bot[bot]@users.noreply.github.com"
-          git fetch --tags
-          npm version "$PROD_VERSION" --no-git-tag-version
+          git fetch --tags origin
+          node -e "const p=require('./package.json');p.version='${PROD_VERSION}';require('fs').writeFileSync('./package.json',JSON.stringify(p,null,2)+'\n')"
           git add package.json
           git commit -m "chore: release ${PROD_TAG}"
           git tag "$PROD_TAG"
-          git push origin HEAD:main "$PROD_TAG"
+          git push origin "$PROD_TAG"
+          git rebase origin/main
+          git push origin HEAD:main
