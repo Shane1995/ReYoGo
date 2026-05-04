@@ -12,6 +12,7 @@ function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
+    show: false,
     webPreferences: {
       preload: join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -20,6 +21,7 @@ function createWindow(): BrowserWindow {
   });
 
   window.once('ready-to-show', () => {
+    window.show();
     if (isDev || process.env.ROYOGO_DEBUG === '1') {
       window.webContents.openDevTools();
       // Note: "ReferenceError: dragEvent is not defined" in console is a known Chrome DevTools bug
