@@ -32,6 +32,7 @@ jobs:
       - name: Build
         env:
           PRODUCT_NAME: ReYoGo
+          RELEASE_VERSION: ${{ github.ref_name }}
           UPDATE_FEED_URL: ${{ vars.UPDATE_FEED_URL }}/win
           VITE_APP_ENV: production
         run: |
