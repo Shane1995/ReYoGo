@@ -183,9 +183,5 @@ jobs:
           git commit -m "chore: release ${PROD_TAG}"
           git tag "$PROD_TAG"
           git push origin "$PROD_TAG"
-          git fetch origin main
-          git checkout -B release-main origin/main
-          node -e "const p=require('./package.json');p.version='${PROD_VERSION}';require('fs').writeFileSync('./package.json',JSON.stringify(p,null,2)+'\n')"
-          git add package.json
-          git commit -m "chore: release ${PROD_TAG}"
+          git rebase origin/main
           git push origin HEAD:main
