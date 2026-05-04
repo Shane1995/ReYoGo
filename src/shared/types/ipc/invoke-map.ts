@@ -26,6 +26,7 @@ export interface AppVersionInfo {
 export interface IPCInvokeMap {
   'app:get-version': { args: []; return: AppVersionInfo };
   'app:install-update': { args: []; return: void };
+  'app:check-for-updates': { args: [], return: { hasUpdate: boolean } },
   'inventory:get-categories': { args: []; return: IInventoryCategory[] };
   'inventory:get-items': { args: []; return: IInventoryItem[] };
   'inventory:upsert-category': { args: [category: IInventoryCategory]; return: void };
