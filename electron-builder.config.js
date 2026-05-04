@@ -4,6 +4,9 @@ module.exports = {
   productName: process.env.PRODUCT_NAME || 'ReYoGo',
   npmRebuild: false,
   directories: { output: 'release' },
+  ...(process.env.RELEASE_VERSION && {
+    extraMetadata: { version: process.env.RELEASE_VERSION.replace(/^v/, '') },
+  }),
   files: ['dist/**/*', 'dist-electron/**/*', 'package.json'],
   asarUnpack: ['dist-electron/main/db/migrations/**'],
   win: {
