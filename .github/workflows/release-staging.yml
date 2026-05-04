@@ -176,8 +176,9 @@ jobs:
           PROD_TAG="v${PROD_VERSION}"
           git config user.name "ReYoGo-bot[bot]"
           git config user.email "ReYoGo-bot[bot]@users.noreply.github.com"
-          git fetch --tags
-          npm version "$PROD_VERSION" --no-git-tag-version
+          git fetch --tags origin
+          git rebase origin/main
+          node -e "const p=require('./package.json');p.version='$PROD_VERSION';require('fs').writeFileSync('./package.json',JSON.stringify(p,null,2)+'\n')"
           git add package.json
           git commit -m "chore: release ${PROD_TAG}"
           git tag "$PROD_TAG"
