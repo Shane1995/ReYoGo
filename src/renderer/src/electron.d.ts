@@ -8,6 +8,7 @@ export interface ElectronAPI {
   onAppReady: (callback: () => void) => void;
   requestAppReady: () => void;
   onUpdateDownloaded: (callback: () => void) => () => void;
+  onUpdateError: (callback: (message: string) => void) => () => void;
 }
 
 declare global {

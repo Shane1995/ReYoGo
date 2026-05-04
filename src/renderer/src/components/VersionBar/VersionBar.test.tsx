@@ -5,6 +5,8 @@ import VersionBar from './index';
 vi.mock('../../services/app', () => ({
   appService: {
     getVersion: vi.fn().mockResolvedValue({ version: '1.0.0-beta.1', env: 'staging' }),
+    checkForUpdates: vi.fn().mockResolvedValue({ hasUpdate: false }),
+    onUpdateError: vi.fn().mockReturnValue(() => {}),
   },
 }));
 
