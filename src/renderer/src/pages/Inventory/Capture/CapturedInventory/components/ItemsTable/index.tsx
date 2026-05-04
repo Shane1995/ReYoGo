@@ -56,7 +56,7 @@ export function ItemsTable({
           checked={allSelected}
           ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected; }}
           onChange={toggleAll}
-          className="size-4 cursor-pointer rounded border-border accent-primary [color-scheme:dark]"
+          className="size-4 cursor-pointer rounded border-border accent-primary"
           aria-label="Select all"
         />
       ),
@@ -66,7 +66,7 @@ export function ItemsTable({
           type="checkbox"
           checked={selectedIds.has(row.id)}
           onChange={() => toggleOne(row.id)}
-          className="size-4 cursor-pointer rounded border-border accent-primary [color-scheme:dark]"
+          className="size-4 cursor-pointer rounded border-border accent-primary"
           aria-label={`Select ${row.name}`}
         />
       ),
