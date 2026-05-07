@@ -131,12 +131,12 @@ jobs:
       - name: Upload to S3 staging
         run: |
           TAG="${{ needs.version.outputs.beta_tag }}"
-          aws s3 sync artifacts/ "s3://reyogo-desktop-releases/staging/win/${TAG}/" \
+          aws s3 sync artifacts/ "s3://reyogo-desktop/staging/win/${TAG}/" \
             --exclude "win-unpacked/*" \
             --exclude "builder-debug.yml"
           YML=$(find artifacts/ -maxdepth 1 -name "*.yml" ! -name "builder-debug.yml" | head -1)
           sed "s|^path: |path: ${TAG}/|; s|- url: |- url: ${TAG}/|g" "$YML" > /tmp/manifest.yml
-          aws s3 cp /tmp/manifest.yml "s3://reyogo-desktop-releases/staging/win/$(basename "$YML")"
+          aws s3 cp /tmp/manifest.yml "s3://reyogo-desktop/staging/win/$(basename "$YML")"
 
   promote:
     name: Approve — promote to production
