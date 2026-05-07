@@ -3,8 +3,8 @@ name: Release to Production
 on:
   push:
     tags:
-      - 'v*'
-      - '!v*-beta.*'
+      - "v*"
+      - "!v*-beta.*"
 
 concurrency:
   group: release-prod
@@ -47,7 +47,7 @@ jobs:
 
   publish-production:
     name: Upload to production
-    needs: [build-win]
+    needs: [ build-win ]
     runs-on: ubuntu-latest
     environment: production
     permissions:
@@ -65,12 +65,12 @@ jobs:
       - name: Upload to S3 production
         run: |
           TAG="${{ github.ref_name }}"
-          aws s3 sync artifacts/ "s3://reyogo-desktop-releases/production/win/${TAG}/" \
+          aws s3 sync artifacts/ "s3://reyogo-desktop/production/win/${TAG}/" \
             --exclude "win-unpacked/*" \
             --exclude "builder-debug.yml"
           YML=$(find artifacts/ -maxdepth 1 -name "*.yml" ! -name "builder-debug.yml" | head -1)
           sed "s|^path: |path: ${TAG}/|; s|- url: |- url: ${TAG}/|g" "$YML" > /tmp/manifest.yml
-          aws s3 cp /tmp/manifest.yml "s3://reyogo-desktop-releases/production/win/$(basename "$YML")"
+          aws s3 cp /tmp/manifest.yml "s3://reyogo-desktop/production/win/$(basename "$YML")"
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
