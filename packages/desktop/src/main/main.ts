@@ -36,8 +36,8 @@ function createWindow(): BrowserWindow {
 
   // In production: getAppPath() already points at app.asar (or its root); do not add 'app.asar' again
   const htmlPath = app.isPackaged
-    ? join(app.getAppPath(), 'dist', 'index.html')
-    : join(__dirname, '../../dist/index.html');
+    ? join(app.getAppPath(), 'out', 'renderer', 'index.html')
+    : join(__dirname, '../../out/renderer/index.html');
 
   registerRoute({
     id: 'main',
