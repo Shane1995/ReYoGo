@@ -20,6 +20,8 @@
   "ignorePatterns": [
     "dist",
     "dist-electron",
-    "node_modules"
+    "node_modules",
+    "packages/*/dist",
+    "packages/*/dist-electron"
   ]
 }

@@ -2,41 +2,56 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Monorepo Structure
+
+This is a pnpm workspace with Turborepo orchestration.
+
+```
+packages/
+  desktop/   Electron + React + TypeScript desktop app (@reyogo/desktop)
+```
+
 ## Commands
+
+Run from the **repo root** unless otherwise noted.
 
 ```bash
 # Development
-pnpm run electron:dev        # Start Vite dev server + Electron (hot reload on port 5173)
+pnpm electron:dev                          # Start Vite dev server + Electron (hot reload)
 
 # Build
-pnpm run build               # Full production build (clean + compile main + Vite + electron-builder)
-pnpm run electron:build      # Compile main process only (tsc + copy migrations + vite build)
+pnpm electron:build                        # Compile main process only (tsc + copy migrations + vite)
 
-# Database
-pnpm run db:generate         # Generate Drizzle migrations after schema changes
-pnpm run db:studio           # Open Drizzle interactive studio against dev DB
+# Turbo (all packages)
+pnpm run build                             # turbo run build
+pnpm run test                              # turbo run test
+pnpm run lint                              # turbo run lint
+pnpm run typecheck                         # turbo run typecheck
+pnpm run clean                             # turbo run clean
+
+# Filtered to desktop
+pnpm --filter @reyogo/desktop run <script>
+
+# Database (run from packages/desktop or via filter)
+pnpm --filter @reyogo/desktop run db:generate   # Generate Drizzle migrations
+pnpm --filter @reyogo/desktop run db:studio     # Open Drizzle studio against dev DB
 
 # Tests
-pnpm run test                # Vitest (jsdom)
-pnpm run test:ui             # Vitest with browser UI
-pnpm run test:coverage       # Coverage report (v8)
-# Run a single test file:
-pnpm vitest run src/renderer/src/path/to/file.test.ts
-
-# Lint
-pnpm run lint                # ESLint strict mode
+pnpm run test                              # All packages via turbo
+pnpm --filter @reyogo/desktop exec vitest run src/renderer/src/path/to/file.test.ts
 ```
 
 ## Architecture
 
-ReYoGo is an Electron + React + TypeScript desktop app (inventory/invoice management). The repo is a single package with three logical zones:
+ReYoGo is an Electron + React + TypeScript desktop app (inventory/invoice management).
 
-### Zone Layout
+### Package Layout
 
 ```
-src/main/        Electron main process — SQLite, IPC handlers, data access
-src/renderer/    React app (Vite, rendered in BrowserWindow)
-src/shared/      Types only — no runtime code, imported by both sides
+packages/desktop/
+  src/main/        Electron main process — SQLite, IPC handlers, data access
+  src/renderer/    React app (Vite, rendered in BrowserWindow)
+  src/shared/      Types only — no runtime code, imported by both sides
 ```
 
 ### IPC Data Flow
@@ -60,7 +75,7 @@ The preload script (`src/main/preload.ts`) is the security boundary — it expos
 
 ### Routing
 
-Routes live in `src/renderer/src/components/AppRoutes/routes.tsx`. The tree is layout-based — each section has a layout component (`InventoryLayout`, `InvoiceLayout`, `CostingLayout`, etc.) that wraps child routes via `<Outlet />`. The router uses `electron-router-dom` (not `react-router-dom` directly), configured in `src/main/lib/electron-router-dom.ts`.
+Routes live in `packages/desktop/src/renderer/src/components/AppRoutes/routes.tsx`. The tree is layout-based — each section has a layout component that wraps child routes via `<Outlet />`. The router uses `electron-router-dom` (not `react-router-dom` directly), configured in `src/main/lib/electron-router-dom.ts`.
 
 ### Database
 
@@ -70,22 +85,21 @@ Routes live in `src/renderer/src/components/AppRoutes/routes.tsx`. The tree is l
 - **Migrations:** auto-run on startup from `src/main/db/migrations/`; must be `asarUnpack`-ed in electron-builder config so they survive ASAR packaging
 - **Schema file:** `src/main/db/drizzle/schema.ts` — single source of truth; regenerate migrations with `db:generate` after any schema change
 
-Key tables: `inventoryItems`, `inventoryCategories`, `capturedInvoices`, `capturedInvoiceLines`, `stockMovements`, `unitsOfMeasure`, `appConfig`, `invoiceAuditLog`
-
 ### TypeScript Config Split
 
 | File | Purpose |
 |---|---|
-| `tsconfig.json` | Shared base (paths, strict, ESNext) |
-| `tsconfig.electron.json` | Main process override — CommonJS output to `dist-electron/main/` |
-| `vite.config.ts` | Renderer build — outputs to `dist/` for electron-builder |
+| `tsconfig.base.json` (root) | Shared strict base extended by all packages |
+| `packages/desktop/tsconfig.json` | Renderer + shared — extends base, adds DOM, JSX, path aliases |
+| `packages/desktop/tsconfig.electron.json` | Main process — CommonJS output to `dist-electron/main/` |
+| `packages/desktop/vite.config.ts` | Renderer build — outputs to `dist/` for electron-builder |
 
-Path aliases: `@/*` → `src/renderer/src/*`, `@main/*` → `src/main/*`, `@shared` → `src/shared`
+Path aliases (within `packages/desktop`): `@/*` → `src/renderer/src/*`, `@main/*` → `src/main/*`, `@shared` → `src/shared`
 
 ### UI Stack
 
 - Tailwind CSS + `tailwindcss-animate`
-- shadcn/ui components (`components.json` at root)
+- shadcn/ui components (`components.json` in `packages/desktop/`)
 - Lucide React icons
 - Recharts for data visualisation
 - No global state library — React Context where needed, `useState` otherwise

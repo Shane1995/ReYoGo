@@ -1,4 +1,4 @@
-name: Release to Staging
+name: Release Desktop to Staging
 
 on:
   workflow_dispatch:
@@ -16,6 +16,7 @@ concurrency:
 env:
   NODE_VERSION: "24"
   PNPM_VERSION: "9.15.0"
+  TURBO_TELEMETRY_DISABLED: "1"
 
 jobs:
   version:
@@ -94,21 +95,21 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile --ignore-scripts
-      - run: pnpm exec electron-builder install-app-deps
-      - name: Build
+      - run: pnpm --filter @reyogo/desktop exec electron-builder install-app-deps
+      - name: Build desktop
         env:
           PRODUCT_NAME: ReYoGo Staging
           RELEASE_VERSION: ${{ needs.version.outputs.new_version }}
           UPDATE_FEED_URL: ${{ vars.UPDATE_FEED_URL }}/win
           VITE_APP_ENV: staging
         run: |
-          pnpm run clean
-          pnpm run electron:build
-          pnpm exec electron-builder --win --publish never --config electron-builder.config.js
+          pnpm --filter @reyogo/desktop run clean
+          pnpm --filter @reyogo/desktop run electron:build
+          pnpm --filter @reyogo/desktop exec electron-builder --win --publish never --config electron-builder.config.js
       - uses: actions/upload-artifact@v7
         with:
           name: dist-win
-          path: release/
+          path: packages/desktop/release/
           retention-days: 7
 
   publish-staging:
