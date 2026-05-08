@@ -12,7 +12,7 @@
     "build:mac": "pnpm run clean && pnpm run electron:build && electron-builder --mac --publish never --config electron-builder.config.js",
     "build:all": "pnpm run clean && pnpm run electron:build && electron-builder --win --mac --publish never --config electron-builder.config.js",
     "preview": "vite preview",
-    "test": "vitest --passWithNoTests",
+    "test": "vitest run --passWithNoTests",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "electron:dev": "concurrently \"pnpm run dev\" \"wait-on http://localhost:5173 && NODE_ENV=development electron .\"",
@@ -56,6 +56,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@reyogo/config": "workspace:*",
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.5.1",

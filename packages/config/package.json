@@ -2,8 +2,27 @@
   "name": "@reyogo/config",
   "version": "0.1.0",
   "private": true,
-  "description": "Shared lint and format config for the reyogo monorepo",
+  "type": "module",
+  "description": "Shared lint, format, Tailwind, and Vite config for the reyogo monorepo",
   "exports": {
-    "./oxlint": "./oxlint.json"
+    "./oxlint": "./oxlint.json",
+    "./tailwind.preset": "./tailwind.preset.ts",
+    "./vite.base": "./vite.base.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint --config ./oxlint.json *.ts",
+    "format": "oxfmt *.ts",
+    "format:check": "oxfmt --check *.ts"
+  },
+  "dependencies": {
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "oxlint": "^1.61.0",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11"
   }
 }

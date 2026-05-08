@@ -1,13 +1,10 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { createViteConfig } from '@reyogo/config/vite.base';
 import { resolve } from 'path';
 
-export default defineConfig({
+export default createViteConfig({
   root: 'src/renderer',
-  plugins: [react()],
   base: './',
   build: {
-    // Must output to project root dist/ so electron-builder "files": ["dist/**/*"] includes it
     outDir: '../../dist',
     emptyOutDir: true,
   },
