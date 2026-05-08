@@ -12,7 +12,7 @@
     "build:mac": "pnpm run clean && pnpm run electron:build && electron-builder --mac --publish never --config electron-builder.config.js",
     "build:all": "pnpm run clean && pnpm run electron:build && electron-builder --win --mac --publish never --config electron-builder.config.js",
     "preview": "vite preview",
-    "test": "vitest --passWithNoTests",
+    "test": "vitest run --passWithNoTests",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "electron:dev": "concurrently \"pnpm run dev\" \"wait-on http://localhost:5173 && NODE_ENV=development electron .\"",
