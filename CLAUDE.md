@@ -17,10 +17,10 @@ Run from the **repo root** unless otherwise noted.
 
 ```bash
 # Development
-pnpm electron:dev                          # Start Vite dev server + Electron (hot reload)
+pnpm electron:dev                          # Start electron-vite dev server + Electron (built-in HMR)
 
 # Build
-pnpm electron:build                        # Compile main process only (tsc + copy migrations + vite)
+pnpm electron:build                        # Compile all three targets (main, preload, renderer) via electron-vite → out/
 
 # Turbo (all packages)
 pnpm run build                             # turbo run build
@@ -90,9 +90,12 @@ Routes live in `packages/desktop/src/renderer/src/components/AppRoutes/routes.ts
 | File | Purpose |
 |---|---|
 | `tsconfig.base.json` (root) | Shared strict base extended by all packages |
-| `packages/desktop/tsconfig.json` | Renderer + shared — extends base, adds DOM, JSX, path aliases |
-| `packages/desktop/tsconfig.electron.json` | Main process — CommonJS output to `dist-electron/main/` |
-| `packages/desktop/vite.config.ts` | Renderer build — outputs to `dist/` for electron-builder |
+| `packages/desktop/tsconfig.json` | Renderer + main + shared — extends base, adds DOM, JSX, path aliases |
+| `packages/desktop/electron.vite.config.ts` | Unified build config: main, preload, and renderer Vite sub-configs |
+
+**Removed:** `tsconfig.electron.json` (electron-vite handles main/preload transpilation via esbuild), `vite.config.ts` (replaced by `electron.vite.config.ts` renderer section).
+
+**Output layout:** `out/main/index.js`, `out/preload/index.js`, `out/renderer/index.html` (was `dist-electron/` + `dist/`).
 
 Path aliases (within `packages/desktop`): `@/*` → `src/renderer/src/*`, `@main/*` → `src/main/*`, `@shared` → `src/shared`
 
