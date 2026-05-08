@@ -42,7 +42,7 @@ export async function initDatabase(): Promise<void> {
 
   const migrationsFolder =
     app.isPackaged && __dirname.includes('app.asar')
-      ? join(__dirname.replace('app.asar', 'app.asar.unpacked'), 'migrations')
-      : join(__dirname, 'migrations');
+      ? join(__dirname.replace('app.asar', 'app.asar.unpacked'), 'db', 'migrations')
+      : join(__dirname, 'db', 'migrations');
   await migrate(_db, { migrationsFolder });
 }
