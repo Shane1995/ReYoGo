@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
 
 export default defineConfig({
   root: 'src/renderer',
@@ -20,5 +20,6 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    strictPort: true,
   },
-})
+});
