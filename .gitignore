@@ -19,6 +19,7 @@ packages/*/.turbo
 *.tsbuildinfo
 packages/*/dist
 packages/*/dist-electron
+packages/*/out
 packages/*/release
 packages/*/coverage
 packages/*/node_modules
