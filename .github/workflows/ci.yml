@@ -11,6 +11,9 @@ on:
       - 'turbo.json'
       - 'tsconfig.base.json'
       - '.github/workflows/ci.yml'
+      - 'README.md'
+      - 'CLAUDE.md'
+      - 'docs/**'
   workflow_call:
 
 concurrency:
