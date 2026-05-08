@@ -1,10 +1,16 @@
 {
-  "emeraldwalk.runonsave": {
-    "commands": [
-      {
-        "match": "packages/.*\\.(ts|tsx|js|cjs|mjs)$",
-        "cmd": "cd ${workspaceFolder} && ./node_modules/.bin/oxfmt ${file}"
-      }
-    ]
+  "editor.formatOnSave": true,
+  "oxc.format.experimental": true,
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   }
 }
