@@ -13,8 +13,11 @@ coverage
 .data
 docs/superpowers
 .turbo
+packages/*/.turbo
+*.tsbuildinfo
 packages/*/dist
 packages/*/dist-electron
 packages/*/release
 packages/*/coverage
 packages/*/node_modules
+packages/*/.data
