@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { join } from 'path';
-import { DB_REQUEST_READY_CHANNEL } from '../shared/ipc-events';
+import { DB_REQUEST_READY_CHANNEL } from '@shared/ipc-events';
 import { getDbReadyChannel, initDatabase } from './db';
 import { registerRoute } from './lib/electron-router-dom';
 import { registerIPC } from './ipc';

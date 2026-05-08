@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
-import { AppIPC } from '../../../shared/types/ipc';
+import { AppIPC } from '@shared/types/ipc';
 
 interface AppVersionInfo {
   version: string;
