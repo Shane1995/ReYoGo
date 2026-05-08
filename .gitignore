@@ -6,7 +6,8 @@ release
 *.log
 .DS_Store
 coverage
-.vscode
+.vscode/launch.json
+.vscode/*.code-snippets
 .idea
 *.local
 .env.local
