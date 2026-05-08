@@ -20,6 +20,9 @@
     "dev": "turbo run dev --filter @reyogo/desktop",
     "electron:dev": "pnpm --filter @reyogo/desktop run electron:dev",
     "electron:build": "pnpm --filter @reyogo/desktop run electron:build",
+    "web:dev": "pnpm --filter @reyogo/web run dev",
+    "web:build": "pnpm --filter @reyogo/web run build",
+    "web:preview": "pnpm --filter @reyogo/web run preview",
     "prepare": "husky"
   },
   "devDependencies": {
