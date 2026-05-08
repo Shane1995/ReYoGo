@@ -14,7 +14,7 @@ function createWindow(): BrowserWindow {
     height: 800,
     show: false,
     webPreferences: {
-      preload: join(__dirname, 'preload.js'),
+      preload: join(__dirname, '../preload/index.js'),
       nodeIntegration: false,
       contextIsolation: true,
     },
