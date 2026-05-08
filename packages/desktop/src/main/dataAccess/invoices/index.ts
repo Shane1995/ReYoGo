@@ -11,8 +11,20 @@ import type {
 } from '@reyogo/shared';
 import { getDb, schema } from '../../db';
 
-function toInvoice(row: { id: string; invoiceNumber?: string | null; invoiceDate?: Date | null; createdAt: Date; updatedAt?: Date | null }): ICapturedInvoice {
-  return { id: row.id, invoiceNumber: row.invoiceNumber ?? null, invoiceDate: row.invoiceDate ?? null, createdAt: row.createdAt, updatedAt: row.updatedAt ?? null };
+function toInvoice(row: {
+  id: string;
+  invoiceNumber?: string | null;
+  invoiceDate?: Date | null;
+  createdAt: Date;
+  updatedAt?: Date | null;
+}): ICapturedInvoice {
+  return {
+    id: row.id,
+    invoiceNumber: row.invoiceNumber ?? null,
+    invoiceDate: row.invoiceDate ?? null,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt ?? null,
+  };
 }
 
 function toLine(row: {
@@ -26,9 +38,10 @@ function toLine(row: {
   vatRate: number;
   totalVatExclude: number;
 }): ICapturedInvoiceLine {
-  const vatMode = (row.vatMode === 'inclusive' || row.vatMode === 'exclusive' || row.vatMode === 'non-taxable')
-    ? row.vatMode
-    : 'exclusive';
+  const vatMode =
+    row.vatMode === 'inclusive' || row.vatMode === 'exclusive' || row.vatMode === 'non-taxable'
+      ? row.vatMode
+      : 'exclusive';
   return {
     id: row.id,
     invoiceId: row.invoiceId,
@@ -46,14 +59,20 @@ function recalcItemCosts(db: ReturnType<typeof getDb>, itemIds: string[], now: D
   for (const itemId of itemIds) {
     const [agg] = db
       .select({
-        weightedAvgCost: sql<number | null>`CASE WHEN SUM(CASE WHEN type = 'IN' THEN quantity ELSE 0 END) > 0 THEN SUM(CASE WHEN type = 'IN' AND cost_at_time IS NOT NULL THEN quantity * cost_at_time ELSE 0 END) / SUM(CASE WHEN type = 'IN' THEN quantity ELSE 0 END) ELSE NULL END`,
+        weightedAvgCost: sql<
+          number | null
+        >`CASE WHEN SUM(CASE WHEN type = 'IN' THEN quantity ELSE 0 END) > 0 THEN SUM(CASE WHEN type = 'IN' AND cost_at_time IS NOT NULL THEN quantity * cost_at_time ELSE 0 END) / SUM(CASE WHEN type = 'IN' THEN quantity ELSE 0 END) ELSE NULL END`,
         totalStock: sql<number>`COALESCE(SUM(CASE WHEN type = 'IN' THEN quantity WHEN type = 'OUT' THEN -quantity ELSE 0 END), 0)`,
       })
       .from(schema.stockMovements)
       .where(eq(schema.stockMovements.itemId, itemId))
       .all();
     db.update(schema.inventoryItems)
-      .set({ weightedAvgCost: agg?.weightedAvgCost ?? null, totalStock: agg?.totalStock ?? 0, updatedAt: now })
+      .set({
+        weightedAvgCost: agg?.weightedAvgCost ?? null,
+        totalStock: agg?.totalStock ?? 0,
+        updatedAt: now,
+      })
       .where(eq(schema.inventoryItems.id, itemId))
       .run();
   }
@@ -64,29 +83,33 @@ export async function saveInvoice(payload: ISaveCapturedInvoicePayload): Promise
   const createdAt = new Date();
   let affectedItemIds: string[] = [];
   db.transaction((tx) => {
-    tx.insert(schema.capturedInvoices).values({
-      id: payload.id,
-      invoiceNumber: payload.invoiceNumber ?? null,
-      invoiceDate: payload.invoiceDate ?? null,
-      createdAt,
-    }).run();
+    tx.insert(schema.capturedInvoices)
+      .values({
+        id: payload.id,
+        invoiceNumber: payload.invoiceNumber ?? null,
+        invoiceDate: payload.invoiceDate ?? null,
+        createdAt,
+      })
+      .run();
     const validLines = payload.lines.filter(
-      (l) => l.itemId && l.itemNameSnapshot && l.quantity >= 0 && l.totalVatExclude >= 0
+      (l) => l.itemId && l.itemNameSnapshot && l.quantity >= 0 && l.totalVatExclude >= 0,
     );
     if (validLines.length > 0) {
-      tx.insert(schema.capturedInvoiceLines).values(
-        validLines.map((l) => ({
-          id: l.id,
-          invoiceId: payload.id,
-          itemId: l.itemId,
-          itemNameSnapshot: l.itemNameSnapshot,
-          unitOfMeasure: l.unitOfMeasure ?? null,
-          quantity: l.quantity,
-          vatMode: l.vatMode,
-          vatRate: l.vatRate,
-          totalVatExclude: l.totalVatExclude,
-        }))
-      ).run();
+      tx.insert(schema.capturedInvoiceLines)
+        .values(
+          validLines.map((l) => ({
+            id: l.id,
+            invoiceId: payload.id,
+            itemId: l.itemId,
+            itemNameSnapshot: l.itemNameSnapshot,
+            unitOfMeasure: l.unitOfMeasure ?? null,
+            quantity: l.quantity,
+            vatMode: l.vatMode,
+            vatRate: l.vatRate,
+            totalVatExclude: l.totalVatExclude,
+          })),
+        )
+        .run();
 
       const inMovements = validLines
         .filter((l) => l.quantity > 0)
@@ -115,7 +138,15 @@ export async function getInvoices(): Promise<ICapturedInvoice[]> {
     .select()
     .from(schema.capturedInvoices)
     .orderBy(desc(schema.capturedInvoices.createdAt));
-  return rows.map((r) => toInvoice({ id: r.id, invoiceNumber: r.invoiceNumber, invoiceDate: r.invoiceDate, createdAt: r.createdAt, updatedAt: r.updatedAt }));
+  return rows.map((r) =>
+    toInvoice({
+      id: r.id,
+      invoiceNumber: r.invoiceNumber,
+      invoiceDate: r.invoiceDate,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+    }),
+  );
 }
 
 export async function getLinesForAnalysis(): Promise<IInvoiceLineWithDate[]> {
@@ -137,15 +168,15 @@ export async function getLinesForAnalysis(): Promise<IInvoiceLineWithDate[]> {
     .from(schema.capturedInvoiceLines)
     .innerJoin(
       schema.capturedInvoices,
-      eq(schema.capturedInvoiceLines.invoiceId, schema.capturedInvoices.id)
+      eq(schema.capturedInvoiceLines.invoiceId, schema.capturedInvoices.id),
     )
     .leftJoin(
       schema.inventoryItems,
-      eq(schema.capturedInvoiceLines.itemId, schema.inventoryItems.id)
+      eq(schema.capturedInvoiceLines.itemId, schema.inventoryItems.id),
     )
     .leftJoin(
       schema.inventoryCategories,
-      eq(schema.inventoryItems.categoryId, schema.inventoryCategories.id)
+      eq(schema.inventoryItems.categoryId, schema.inventoryCategories.id),
     )
     .orderBy(asc(schema.capturedInvoices.createdAt));
 
@@ -166,9 +197,7 @@ export async function getInvoicesWithLines(): Promise<ICapturedInvoiceWithLines[
 
   if (invoiceRows.length === 0) return [];
 
-  const lineRows = await db
-    .select()
-    .from(schema.capturedInvoiceLines);
+  const lineRows = await db.select().from(schema.capturedInvoiceLines);
 
   const linesByInvoice = new Map<string, typeof lineRows>();
   for (const line of lineRows) {
@@ -209,7 +238,7 @@ export async function updateInvoice(payload: IUpdateCapturedInvoicePayload): Pro
   if (!current) throw new Error(`Invoice not found: ${payload.id}`);
 
   const validLines = payload.lines.filter(
-    (l) => l.itemId && l.itemNameSnapshot && l.quantity >= 0 && l.totalVatExclude >= 0
+    (l) => l.itemId && l.itemNameSnapshot && l.quantity >= 0 && l.totalVatExclude >= 0,
   );
 
   // Collect all affected item IDs (old + new) for recalc
@@ -217,36 +246,38 @@ export async function updateInvoice(payload: IUpdateCapturedInvoicePayload): Pro
 
   db.transaction((tx) => {
     // Write audit snapshot (before state)
-    tx.insert(schema.invoiceAuditLog).values({
-      id: randomUUID(),
-      invoiceId: payload.id,
-      editedAt,
-      note: payload.note ?? null,
-      snapshot: JSON.stringify(current),
-    }).run();
+    tx.insert(schema.invoiceAuditLog)
+      .values({
+        id: randomUUID(),
+        invoiceId: payload.id,
+        editedAt,
+        note: payload.note ?? null,
+        snapshot: JSON.stringify(current),
+      })
+      .run();
 
     tx.delete(schema.capturedInvoiceLines)
       .where(eq(schema.capturedInvoiceLines.invoiceId, payload.id))
       .run();
 
-    tx.delete(schema.stockMovements)
-      .where(eq(schema.stockMovements.referenceId, payload.id))
-      .run();
+    tx.delete(schema.stockMovements).where(eq(schema.stockMovements.referenceId, payload.id)).run();
 
     if (validLines.length > 0) {
-      tx.insert(schema.capturedInvoiceLines).values(
-        validLines.map((l) => ({
-          id: l.id,
-          invoiceId: payload.id,
-          itemId: l.itemId,
-          itemNameSnapshot: l.itemNameSnapshot,
-          unitOfMeasure: l.unitOfMeasure ?? null,
-          quantity: l.quantity,
-          vatMode: l.vatMode,
-          vatRate: l.vatRate,
-          totalVatExclude: l.totalVatExclude,
-        }))
-      ).run();
+      tx.insert(schema.capturedInvoiceLines)
+        .values(
+          validLines.map((l) => ({
+            id: l.id,
+            invoiceId: payload.id,
+            itemId: l.itemId,
+            itemNameSnapshot: l.itemNameSnapshot,
+            unitOfMeasure: l.unitOfMeasure ?? null,
+            quantity: l.quantity,
+            vatMode: l.vatMode,
+            vatRate: l.vatRate,
+            totalVatExclude: l.totalVatExclude,
+          })),
+        )
+        .run();
 
       const inMovements = validLines
         .filter((l) => l.quantity > 0)
@@ -287,7 +318,7 @@ export async function getLastUnitPrices(): Promise<Record<string, number>> {
     .from(schema.capturedInvoiceLines)
     .innerJoin(
       schema.capturedInvoices,
-      eq(schema.capturedInvoiceLines.invoiceId, schema.capturedInvoices.id)
+      eq(schema.capturedInvoiceLines.invoiceId, schema.capturedInvoices.id),
     )
     .where(gt(schema.capturedInvoiceLines.quantity, 0))
     .orderBy(desc(schema.capturedInvoices.createdAt));

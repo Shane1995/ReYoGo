@@ -20,10 +20,15 @@ export interface ImportReviewProps {
 
 const inputClass = cn(
   'h-7 rounded border border-input bg-background px-2 text-xs',
-  'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50'
+  'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50',
 );
 
-export function ImportReview({ review: initial, onCommit, onCancel, commitLabel = 'Commit to database' }: ImportReviewProps) {
+export function ImportReview({
+  review: initial,
+  onCommit,
+  onCancel,
+  commitLabel = 'Commit to database',
+}: ImportReviewProps) {
   const {
     units,
     categories,
@@ -70,18 +75,24 @@ export function ImportReview({ review: initial, onCommit, onCancel, commitLabel 
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 flex gap-3 text-sm">
           <AlertTriangleIcon className="size-4 shrink-0 text-amber-600 mt-0.5" />
           <div className="text-amber-800">
-            <span className="font-medium">{unresolvedCount} item{unresolvedCount !== 1 ? 's have' : ' has'} a category that wasn't found.</span>{' '}
-            Use the dropdown on each row to assign an existing category, or add the missing categories to your file and re-import.
+            <span className="font-medium">
+              {unresolvedCount} item{unresolvedCount !== 1 ? 's have' : ' has'} a category that
+              wasn't found.
+            </span>{' '}
+            Use the dropdown on each row to assign an existing category, or add the missing
+            categories to your file and re-import.
           </div>
         </div>
       )}
 
-      {initial.parseErrors.length > 0 && (
-        <ParseWarnings errors={initial.parseErrors} />
-      )}
+      {initial.parseErrors.length > 0 && <ParseWarnings errors={initial.parseErrors} />}
 
       {units.length > 0 && (
-        <Section title="Units of measure" count={units.length} defaultOpen={units.some((u) => u.status === 'new')}>
+        <Section
+          title="Units of measure"
+          count={units.length}
+          defaultOpen={units.some((u) => u.status === 'new')}
+        >
           {units.map((u) => (
             <ReviewRow
               key={u.name}
@@ -89,7 +100,12 @@ export function ImportReview({ review: initial, onCommit, onCancel, commitLabel 
               onToggle={() => toggleUnit(u.name)}
               disabled={u.status === 'exists'}
             >
-              <span className={cn('flex-1 font-medium', u.status === 'exists' && 'text-muted-foreground')}>
+              <span
+                className={cn(
+                  'flex-1 font-medium',
+                  u.status === 'exists' && 'text-muted-foreground',
+                )}
+              >
                 {u.name}
               </span>
               <StatusBadge status={u.status} />
@@ -103,7 +119,8 @@ export function ImportReview({ review: initial, onCommit, onCancel, commitLabel 
           <AlertTriangleIcon className="size-4 shrink-0 text-amber-600 mt-0.5" />
           <div className="text-amber-800">
             <span className="font-medium">
-              {typeWarningCount} categor{typeWarningCount !== 1 ? 'ies have' : 'y has'} an unrecognised type.
+              {typeWarningCount} categor{typeWarningCount !== 1 ? 'ies have' : 'y has'} an
+              unrecognised type.
             </span>{' '}
             Use the dropdown on each row to assign a valid type before committing.
           </div>
@@ -124,19 +141,34 @@ export function ImportReview({ review: initial, onCommit, onCancel, commitLabel 
               disabled={cat.status === 'exists'}
             >
               <div className="flex flex-1 items-center gap-3 min-w-0 flex-wrap">
-                <span className={cn('font-medium truncate', cat.status === 'exists' && 'text-muted-foreground')}>
+                <span
+                  className={cn(
+                    'font-medium truncate',
+                    cat.status === 'exists' && 'text-muted-foreground',
+                  )}
+                >
                   {cat.name}
                 </span>
                 {cat.typeWarning && cat.status !== 'exists' && goodTypes.length > 0 ? (
                   <select
                     value=""
-                    onChange={(e) => { e.stopPropagation(); fixCategoryType(cat.id, e.target.value); }}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      fixCategoryType(cat.id, e.target.value);
+                    }}
                     onClick={(e) => e.stopPropagation()}
-                    className={cn(inputClass, 'cursor-pointer shrink-0 max-w-[180px] border-amber-400')}
+                    className={cn(
+                      inputClass,
+                      'cursor-pointer shrink-0 max-w-[180px] border-amber-400',
+                    )}
                   >
-                    <option value="" disabled>{cat.type} (unknown)</option>
+                    <option value="" disabled>
+                      {cat.type} (unknown)
+                    </option>
                     {goodTypes.map((t) => (
-                      <option key={t} value={t}>{t}</option>
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
                     ))}
                   </select>
                 ) : (
@@ -168,7 +200,7 @@ export function ImportReview({ review: initial, onCommit, onCancel, commitLabel 
                   <span
                     className={cn(
                       'font-medium truncate',
-                      (item.status === 'exists' || isUnresolved) && 'text-muted-foreground'
+                      (item.status === 'exists' || isUnresolved) && 'text-muted-foreground',
                     )}
                   >
                     {item.name}
@@ -190,7 +222,9 @@ export function ImportReview({ review: initial, onCommit, onCancel, commitLabel 
                     >
                       <option value="">Assign category…</option>
                       {initial.availableCategories.map((c) => (
-                        <option key={c.name} value={c.name}>{c.name}</option>
+                        <option key={c.name} value={c.name}>
+                          {c.name}
+                        </option>
                       ))}
                     </select>
                   )}

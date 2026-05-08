@@ -1,18 +1,18 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
-import { DataTable } from "@/components/DataTable";
-import type { ColumnDef } from "@/components/DataTable";
-import { cn } from "@/lib/utils";
-import { getTypeConfig } from "../../utils/typeConfig";
-import { EditItemDialog } from "../EditItemDialog";
-import type { InventoryItem } from "../../types";
-import { InvoiceRoutes } from "@/components/AppRoutes/routes";
-import type { FlatItem, ItemsTableProps } from "./types";
-import { useItemFilters } from "./hooks/useItemFilters";
-import { useItemSelection } from "./hooks/useItemSelection";
-import { SelectionBar } from "./SelectionBar";
-import { ItemRowActions } from "./ItemRowActions";
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
+import { DataTable } from '@/components/DataTable';
+import type { ColumnDef } from '@/components/DataTable';
+import { cn } from '@/lib/utils';
+import { getTypeConfig } from '../../utils/typeConfig';
+import { EditItemDialog } from '../EditItemDialog';
+import type { InventoryItem } from '../../types';
+import { InvoiceRoutes } from '@/components/AppRoutes/routes';
+import type { FlatItem, ItemsTableProps } from './types';
+import { useItemFilters } from './hooks/useItemFilters';
+import { useItemSelection } from './hooks/useItemSelection';
+import { SelectionBar } from './SelectionBar';
+import { ItemRowActions } from './ItemRowActions';
 
 export function ItemsTable({
   items,
@@ -49,18 +49,20 @@ export function ItemsTable({
 
   const columns: ColumnDef<FlatItem>[] = [
     {
-      key: "select",
+      key: 'select',
       header: (
         <input
           type="checkbox"
           checked={allSelected}
-          ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected; }}
+          ref={(el) => {
+            if (el) el.indeterminate = someSelected && !allSelected;
+          }}
           onChange={toggleAll}
           className="size-4 cursor-pointer rounded border-border accent-primary"
           aria-label="Select all"
         />
       ),
-      width: "40px",
+      width: '40px',
       cell: (row) => (
         <input
           type="checkbox"
@@ -72,26 +74,26 @@ export function ItemsTable({
       ),
     },
     {
-      key: "name",
-      header: "Item Name",
+      key: 'name',
+      header: 'Item Name',
       cell: (row) => <span className="font-medium text-foreground">{row.name}</span>,
     },
     {
-      key: "type",
-      header: "Good Type",
+      key: 'type',
+      header: 'Good Type',
       cell: (row) => {
         const cfg = getTypeConfig(row.type, allTypes);
-        return <Badge className={cn("text-xs font-medium", cfg.badgeClass)}>{row.type}</Badge>;
+        return <Badge className={cn('text-xs font-medium', cfg.badgeClass)}>{row.type}</Badge>;
       },
     },
     {
-      key: "category",
-      header: "Category",
+      key: 'category',
+      header: 'Category',
       cell: (row) => <span className="text-muted-foreground">{row.categoryName}</span>,
     },
     {
-      key: "unit",
-      header: "Unit of Measure",
+      key: 'unit',
+      header: 'Unit of Measure',
       cell: (row) =>
         row.unitOfMeasure ? (
           <Badge variant="secondary" className="text-xs font-normal">
@@ -102,54 +104,52 @@ export function ItemsTable({
         ),
     },
     {
-      key: "cost",
-      header: "Last Cost / Unit",
-      align: "right",
+      key: 'cost',
+      header: 'Last Cost / Unit',
+      align: 'right',
       cell: (row) =>
         row.lastCostPerUnit !== undefined ? (
           <span className="font-mono text-foreground">
             {row.lastCostPerUnit.toFixed(2)}
-            {row.lastCostUom ? ` / ${row.lastCostUom}` : ""}
+            {row.lastCostUom ? ` / ${row.lastCostUom}` : ''}
           </span>
         ) : (
           <span className="text-muted-foreground/50">No data</span>
         ),
     },
     {
-      key: "weightedAvgCost",
-      header: "Weighted Avg Cost",
-      align: "right",
+      key: 'weightedAvgCost',
+      header: 'Weighted Avg Cost',
+      align: 'right',
       cell: (row) =>
         row.weightedAvgCost != null ? (
           <span className="font-mono text-foreground">
             {row.weightedAvgCost.toFixed(2)}
-            {row.unitOfMeasure ? ` / ${row.unitOfMeasure}` : ""}
+            {row.unitOfMeasure ? ` / ${row.unitOfMeasure}` : ''}
           </span>
         ) : (
           <span className="text-muted-foreground/50">—</span>
         ),
     },
     {
-      key: "stock",
-      header: "Stock",
-      align: "right",
+      key: 'stock',
+      header: 'Stock',
+      align: 'right',
       cell: (row) =>
         row.currentStock !== undefined ? (
           <span className="font-mono text-foreground">
-            {row.currentStock % 1 === 0
-              ? row.currentStock.toFixed(0)
-              : row.currentStock.toFixed(2)}
-            {row.unitOfMeasure ? ` ${row.unitOfMeasure}` : ""}
+            {row.currentStock % 1 === 0 ? row.currentStock.toFixed(0) : row.currentStock.toFixed(2)}
+            {row.unitOfMeasure ? ` ${row.unitOfMeasure}` : ''}
           </span>
         ) : (
           <span className="text-muted-foreground/50">—</span>
         ),
     },
     {
-      key: "actions",
-      header: "Actions",
-      align: "right",
-      width: "120px",
+      key: 'actions',
+      header: 'Actions',
+      align: 'right',
+      width: '120px',
       cell: (row) => (
         <ItemRowActions
           row={row}
@@ -159,7 +159,10 @@ export function ItemsTable({
           onViewInsights={onViewInsights}
           onRequestDelete={setConfirmDeleteId}
           onCancelDelete={() => setConfirmDeleteId(null)}
-          onConfirmDelete={(id) => { onDelete(id); setConfirmDeleteId(null); }}
+          onConfirmDelete={(id) => {
+            onDelete(id);
+            setConfirmDeleteId(null);
+          }}
         />
       ),
     },
@@ -176,7 +179,7 @@ export function ItemsTable({
               id: crypto.randomUUID(),
               itemId,
               quantity: 0,
-              vatMode: "exclusive" as const,
+              vatMode: 'exclusive' as const,
               vatRate: 15,
               totalVatExclude: 0,
             }));
@@ -198,8 +201,8 @@ export function ItemsTable({
         rowKey={(row) => row.id}
         emptyMessage={
           Object.values(filterValues).some((v) => (Array.isArray(v) ? v.length > 0 : Boolean(v)))
-            ? "No items match your filters."
-            : "No items yet. Use the + button to add your first item."
+            ? 'No items match your filters.'
+            : 'No items yet. Use the + button to add your first item.'
         }
       />
       {editingItem !== undefined && (

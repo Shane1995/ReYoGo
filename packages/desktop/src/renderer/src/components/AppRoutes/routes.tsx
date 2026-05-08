@@ -1,29 +1,25 @@
-import { Navigate, Route, Routes } from "react-router-dom";
-import AppLayout from "@/layouts/AppLayout";
-import InventoryLayout from "@/layouts/InventoryLayout";
-import { CapturedInventorySectionLayout } from "@/layouts/CapturedInventorySectionLayout";
-import { AnalysisSectionLayout } from "@/layouts/AnalysisSectionLayout";
-import InventoryOverview from "@/pages/Inventory/Overview";
-import { InventoryLayout as CapturedInventoryLayout } from "@/pages/Inventory/Capture/CapturedInventory/Layout/InventoryLayout";
-import CapturedInventoryIndex from "@/pages/Inventory/Capture/CapturedInventory";
-import ImportPage from "@/pages/Inventory/Capture/CapturedInventory/ImportPage";
-import AddItemsPage from "@/pages/Inventory/Capture/AddItemsPage";
-import AddCategoriesPage from "@/pages/Inventory/Capture/AddCategoriesPage";
-import ManageTypesPage from "@/pages/Inventory/Capture/ManageTypesPage";
-import { InvoiceLayout } from "@/pages/Inventory/Invoice/Layout";
-import InvoicePage from "@/pages/Inventory/Invoice";
-import InvoiceHistoryPage from "@/pages/Inventory/Invoice/History";
-import InventoryAnalysis from "@/pages/Inventory/Analysis";
-import ItemTrendPage from "@/pages/Inventory/Analysis/ItemTrendPage";
-import { CostingLayout } from "@/pages/Inventory/Costing/Layout";
-import CostingDashboard from "@/pages/Inventory/Costing/Dashboard";
-import PriceVariancePage from "@/pages/Inventory/Costing/PriceVariance";
-import CostReportPage from "@/pages/Inventory/Costing/CostReport";
-import {
-  ProductRoutes,
-  UserRoutes,
-  InventoryRouteSegments,
-} from "./routePaths";
+import { Navigate, Route, Routes } from 'react-router-dom';
+import AppLayout from '@/layouts/AppLayout';
+import InventoryLayout from '@/layouts/InventoryLayout';
+import { CapturedInventorySectionLayout } from '@/layouts/CapturedInventorySectionLayout';
+import { AnalysisSectionLayout } from '@/layouts/AnalysisSectionLayout';
+import InventoryOverview from '@/pages/Inventory/Overview';
+import { InventoryLayout as CapturedInventoryLayout } from '@/pages/Inventory/Capture/CapturedInventory/Layout/InventoryLayout';
+import CapturedInventoryIndex from '@/pages/Inventory/Capture/CapturedInventory';
+import ImportPage from '@/pages/Inventory/Capture/CapturedInventory/ImportPage';
+import AddItemsPage from '@/pages/Inventory/Capture/AddItemsPage';
+import AddCategoriesPage from '@/pages/Inventory/Capture/AddCategoriesPage';
+import ManageTypesPage from '@/pages/Inventory/Capture/ManageTypesPage';
+import { InvoiceLayout } from '@/pages/Inventory/Invoice/Layout';
+import InvoicePage from '@/pages/Inventory/Invoice';
+import InvoiceHistoryPage from '@/pages/Inventory/Invoice/History';
+import InventoryAnalysis from '@/pages/Inventory/Analysis';
+import ItemTrendPage from '@/pages/Inventory/Analysis/ItemTrendPage';
+import { CostingLayout } from '@/pages/Inventory/Costing/Layout';
+import CostingDashboard from '@/pages/Inventory/Costing/Dashboard';
+import PriceVariancePage from '@/pages/Inventory/Costing/PriceVariance';
+import CostReportPage from '@/pages/Inventory/Costing/CostReport';
+import { ProductRoutes, UserRoutes, InventoryRouteSegments } from './routePaths';
 
 export {
   ProductRoutes,
@@ -33,7 +29,7 @@ export {
   CostingRoutes,
   UserRoutes,
   InventoryRouteSegments,
-} from "./routePaths";
+} from './routePaths';
 
 export function AppRoutesComponent() {
   return (
@@ -45,7 +41,10 @@ export function AppRoutesComponent() {
 
           <Route element={<AnalysisSectionLayout />}>
             <Route path={InventoryRouteSegments.analysis} element={<InventoryAnalysis />} />
-            <Route path={`${InventoryRouteSegments.analysis}/item/:itemId`} element={<ItemTrendPage />} />
+            <Route
+              path={`${InventoryRouteSegments.analysis}/item/:itemId`}
+              element={<ItemTrendPage />}
+            />
           </Route>
 
           <Route element={<CapturedInventorySectionLayout />}>
@@ -60,7 +59,10 @@ export function AppRoutesComponent() {
 
           <Route path={InventoryRouteSegments.costing} element={<CostingLayout />}>
             <Route index element={<CostingDashboard />} />
-            <Route path={InventoryRouteSegments.costingPriceVariance} element={<PriceVariancePage />} />
+            <Route
+              path={InventoryRouteSegments.costingPriceVariance}
+              element={<PriceVariancePage />}
+            />
             <Route path={InventoryRouteSegments.costingCostReport} element={<CostReportPage />} />
           </Route>
 

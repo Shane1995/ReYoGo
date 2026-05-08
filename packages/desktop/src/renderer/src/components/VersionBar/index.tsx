@@ -50,7 +50,9 @@ export default function VersionBar() {
   return (
     <>
       <div className="flex items-center justify-between border-t border-border bg-background px-4 py-1 text-xs text-muted-foreground">
-        <span>v{info.version} • {envLabel}</span>
+        <span>
+          v{info.version} • {envLabel}
+        </span>
         <button
           type="button"
           onClick={handleCheck}

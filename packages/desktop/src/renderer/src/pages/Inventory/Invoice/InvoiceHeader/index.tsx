@@ -1,9 +1,9 @@
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { InvoiceRoutes } from "@/components/AppRoutes/routePaths";
-import { DatePicker } from "@/components/ui/date-picker";
-import { inputClass } from "../utils/inputClass";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
+import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
+import { DatePicker } from '@/components/ui/date-picker';
+import { inputClass } from '../utils/inputClass';
+import { cn } from '@/lib/utils';
 
 type Props = {
   invoiceNumber: string;
@@ -61,7 +61,7 @@ export function InvoiceHeader({
             value={invoiceNumber}
             onChange={(e) => onInvoiceNumberChange(e.target.value)}
             placeholder="e.g. INV-0042"
-            className={cn(inputClass, "w-36")}
+            className={cn(inputClass, 'w-36')}
           />
         </div>
         <div className="flex items-center gap-2">

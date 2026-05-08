@@ -13,22 +13,19 @@ async function getItems(): Promise<IInventoryItem[]> {
 
 async function upsertCategory(
   _event: Electron.IpcMainInvokeEvent,
-  category: IInventoryCategory
+  category: IInventoryCategory,
 ): Promise<void> {
   await inventoryDb.upsertCategory(category);
 }
 
 async function upsertItem(
   _event: Electron.IpcMainInvokeEvent,
-  item: IInventoryItem
+  item: IInventoryItem,
 ): Promise<void> {
   await inventoryDb.upsertItem(item);
 }
 
-async function deleteCategory(
-  _event: Electron.IpcMainInvokeEvent,
-  id: string
-): Promise<void> {
+async function deleteCategory(_event: Electron.IpcMainInvokeEvent, id: string): Promise<void> {
   await inventoryDb.deleteCategory(id);
 }
 
@@ -38,7 +35,7 @@ async function deleteItem(_event: Electron.IpcMainInvokeEvent, id: string): Prom
 
 async function submit(
   _event: Electron.IpcMainInvokeEvent,
-  payload: IInventorySubmitPayload
+  payload: IInventorySubmitPayload,
 ): Promise<void> {
   for (const c of payload.addedCategories) await inventoryDb.upsertCategory(c);
   for (const c of payload.updatedCategories) await inventoryDb.upsertCategory(c);

@@ -1,16 +1,16 @@
-import { useState, useCallback } from "react";
-import { XIcon, CheckIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useInventory } from "@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext";
-import type { ICapturedInvoiceWithLines } from "@reyogo/shared";
-import { ItemAutocomplete } from "../../ItemAutocomplete";
-import type { ProcessReceiptLine } from "../../types";
-import { getProcessLineComputed, DEFAULT_VAT_RATE } from "../../types";
-import { inputClass } from "../../utils/inputClass";
-import { formatMoney } from "../../utils/formatMoney";
-import { createEmptyLine } from "../../utils/createEmptyLine";
-import { lineToEditLine } from "../../utils/lineToEditLine";
-import { cn } from "@/lib/utils";
+import { useState, useCallback } from 'react';
+import { XIcon, CheckIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
+import type { ICapturedInvoiceWithLines } from '@reyogo/shared';
+import { ItemAutocomplete } from '../../ItemAutocomplete';
+import type { ProcessReceiptLine } from '../../types';
+import { getProcessLineComputed, DEFAULT_VAT_RATE } from '../../types';
+import { inputClass } from '../../utils/inputClass';
+import { formatMoney } from '../../utils/formatMoney';
+import { createEmptyLine } from '../../utils/createEmptyLine';
+import { lineToEditLine } from '../../utils/lineToEditLine';
+import { cn } from '@/lib/utils';
 
 type Props = {
   invoice: ICapturedInvoiceWithLines;
@@ -21,15 +21,15 @@ type Props = {
 export function EditPanel({ invoice, onSave, onCancel }: Props) {
   const { items, categories } = useInventory();
   const [lines, setLines] = useState<ProcessReceiptLine[]>(() =>
-    invoice.lines.length > 0 ? invoice.lines.map(lineToEditLine) : [createEmptyLine()]
+    invoice.lines.length > 0 ? invoice.lines.map(lineToEditLine) : [createEmptyLine()],
   );
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const itemsWithCategory = items.map((item) => {
     const cat = categories.find((c) => c.id === item.categoryId);
-    return { ...item, categoryName: cat?.name ?? "", typeLabel: cat?.type ?? "" };
+    return { ...item, categoryName: cat?.name ?? '', typeLabel: cat?.type ?? '' };
   });
 
   const updateLine = useCallback((id: string, updates: Partial<ProcessReceiptLine>) => {
@@ -44,12 +44,12 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
   }, []);
 
   const validLines = lines.filter(
-    (l) => l.itemId && Number(l.quantity) >= 0 && (l.totalVatExclude ?? 0) >= 0
+    (l) => l.itemId && Number(l.quantity) >= 0 && (l.totalVatExclude ?? 0) >= 0,
   );
 
   const handleSave = async () => {
     if (validLines.length === 0) {
-      setError("Add at least one line with an item.");
+      setError('Add at least one line with an item.');
       return;
     }
     setSaving(true);
@@ -57,7 +57,7 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
     try {
       await onSave(validLines, note);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save");
+      setError(e instanceof Error ? e.message : 'Failed to save');
       setSaving(false);
     }
   };
@@ -65,9 +65,13 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
   const summary = lines.reduce(
     (acc, l) => {
       const c = getProcessLineComputed(l);
-      return { excl: acc.excl + c.netTotal, vat: acc.vat + c.vatAmount, total: acc.total + c.grossTotal };
+      return {
+        excl: acc.excl + c.netTotal,
+        vat: acc.vat + c.vatAmount,
+        total: acc.total + c.grossTotal,
+      };
     },
-    { excl: 0, vat: 0, total: 0 }
+    { excl: 0, vat: 0, total: 0 },
   );
 
   return (
@@ -79,7 +83,7 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Optional reason for this edit (recorded in audit trail)"
-          className={cn(inputClass, "max-w-md")}
+          className={cn(inputClass, 'max-w-md')}
         />
       </div>
 
@@ -111,11 +115,13 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
                     type="number"
                     min={0}
                     step={1}
-                    value={line.quantity || ""}
+                    value={line.quantity || ''}
                     onChange={(e) =>
-                      updateLine(line.id, { quantity: e.target.value === "" ? 0 : Number(e.target.value) })
+                      updateLine(line.id, {
+                        quantity: e.target.value === '' ? 0 : Number(e.target.value),
+                      })
                     }
-                    className={cn(inputClass, "w-20")}
+                    className={cn(inputClass, 'w-20')}
                     placeholder="0"
                   />
                 </td>
@@ -123,9 +129,11 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
                   <select
                     value={line.vatMode}
                     onChange={(e) =>
-                      updateLine(line.id, { vatMode: e.target.value as ProcessReceiptLine["vatMode"] })
+                      updateLine(line.id, {
+                        vatMode: e.target.value as ProcessReceiptLine['vatMode'],
+                      })
                     }
-                    className={cn(inputClass, "min-w-[8rem] cursor-pointer")}
+                    className={cn(inputClass, 'min-w-[8rem] cursor-pointer')}
                   >
                     <option value="exclusive">No (add VAT)</option>
                     <option value="inclusive">Yes (incl.)</option>
@@ -138,12 +146,18 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
                     min={0}
                     max={100}
                     step={0.01}
-                    value={line.vatMode !== "non-taxable" ? line.vatRate : ""}
+                    value={line.vatMode !== 'non-taxable' ? line.vatRate : ''}
                     onChange={(e) =>
-                      updateLine(line.id, { vatRate: e.target.value === "" ? 0 : Number(e.target.value) })
+                      updateLine(line.id, {
+                        vatRate: e.target.value === '' ? 0 : Number(e.target.value),
+                      })
                     }
-                    disabled={line.vatMode === "non-taxable"}
-                    className={cn(inputClass, "w-20", line.vatMode === "non-taxable" && "opacity-40")}
+                    disabled={line.vatMode === 'non-taxable'}
+                    className={cn(
+                      inputClass,
+                      'w-20',
+                      line.vatMode === 'non-taxable' && 'opacity-40',
+                    )}
                     placeholder="15"
                   />
                 </td>
@@ -152,13 +166,13 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
                     type="number"
                     min={0}
                     step={1}
-                    value={line.totalVatExclude || ""}
+                    value={line.totalVatExclude || ''}
                     onChange={(e) =>
                       updateLine(line.id, {
-                        totalVatExclude: e.target.value === "" ? 0 : Number(e.target.value),
+                        totalVatExclude: e.target.value === '' ? 0 : Number(e.target.value),
                       })
                     }
-                    className={cn(inputClass, "w-28")}
+                    className={cn(inputClass, 'w-28')}
                     placeholder="0.00"
                   />
                 </td>
@@ -177,7 +191,19 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
         </table>
         <button
           type="button"
-          onClick={() => setLines((prev) => [...prev, { id: window.crypto.randomUUID(), itemId: "", quantity: 0, vatMode: "exclusive", vatRate: DEFAULT_VAT_RATE, totalVatExclude: 0 }])}
+          onClick={() =>
+            setLines((prev) => [
+              ...prev,
+              {
+                id: window.crypto.randomUUID(),
+                itemId: '',
+                quantity: 0,
+                vatMode: 'exclusive',
+                vatRate: DEFAULT_VAT_RATE,
+                totalVatExclude: 0,
+              },
+            ])
+          }
           className="mt-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
           + Add row
@@ -188,18 +214,38 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
 
       <div className="flex items-center justify-between gap-4 border-t border-[var(--nav-border)] bg-muted/10 px-4 py-2">
         <div className="flex gap-5 text-sm text-muted-foreground">
-          <span>Excl. <span className="font-mono font-medium text-foreground">{formatMoney(summary.excl)}</span></span>
-          <span>VAT <span className="font-mono font-medium text-foreground">{formatMoney(summary.vat)}</span></span>
-          <span>Total <span className="font-mono font-semibold text-foreground">{formatMoney(summary.total)}</span></span>
+          <span>
+            Excl.{' '}
+            <span className="font-mono font-medium text-foreground">
+              {formatMoney(summary.excl)}
+            </span>
+          </span>
+          <span>
+            VAT{' '}
+            <span className="font-mono font-medium text-foreground">
+              {formatMoney(summary.vat)}
+            </span>
+          </span>
+          <span>
+            Total{' '}
+            <span className="font-mono font-semibold text-foreground">
+              {formatMoney(summary.total)}
+            </span>
+          </span>
         </div>
         <div className="flex gap-2">
           <Button type="button" variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
             <XIcon className="size-3.5 mr-1" />
             Cancel
           </Button>
-          <Button type="button" size="sm" onClick={handleSave} disabled={saving || validLines.length === 0}>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSave}
+            disabled={saving || validLines.length === 0}
+          >
             <CheckIcon className="size-3.5 mr-1" />
-            {saving ? "Saving…" : "Save changes"}
+            {saving ? 'Saving…' : 'Save changes'}
           </Button>
         </div>
       </div>

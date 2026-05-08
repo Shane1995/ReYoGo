@@ -1,13 +1,13 @@
-import type { IInvoiceLineWithDate } from "@reyogo/shared";
-import type { ItemGroup } from "../types";
+import type { IInvoiceLineWithDate } from '@reyogo/shared';
+import type { ItemGroup } from '../types';
 
 export function buildItemGroups(
   lines: IInvoiceLineWithDate[],
   fromDate: string,
-  toDate: string
+  toDate: string,
 ): ItemGroup[] {
-  const from = fromDate ? new Date(fromDate + "T00:00:00") : null;
-  const to = toDate ? new Date(toDate + "T23:59:59") : null;
+  const from = fromDate ? new Date(fromDate + 'T00:00:00') : null;
+  const to = toDate ? new Date(toDate + 'T23:59:59') : null;
 
   const map = new Map<string, ItemGroup>();
   for (const line of lines) {
@@ -20,7 +20,7 @@ export function buildItemGroups(
       map.set(line.itemId, {
         itemId: line.itemId,
         name: line.itemNameSnapshot,
-        categoryType: line.categoryType ?? "other",
+        categoryType: line.categoryType ?? 'other',
         categoryName: line.categoryName ?? undefined,
         entries: [],
       });

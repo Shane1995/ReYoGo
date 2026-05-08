@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { invoiceService } from "@/services/invoice";
-import type { IInvoiceLineWithDate } from "@reyogo/shared";
+import { useEffect, useState } from 'react';
+import { invoiceService } from '@/services/invoice';
+import type { IInvoiceLineWithDate } from '@reyogo/shared';
 
 type ItemCost = {
   price: number;
@@ -35,7 +35,9 @@ export function useItemCosts(): Map<string, ItemCost> {
         // no invoice data available
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return costMap;

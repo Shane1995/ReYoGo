@@ -1,21 +1,21 @@
-import { useEffect, useRef, useState } from "react";
-import { XIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import type { InventoryCategory, InventoryItem } from "../../types";
+import { useEffect, useRef, useState } from 'react';
+import { XIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import type { InventoryCategory, InventoryItem } from '../../types';
 
 type Props = {
   item: InventoryItem | null;
   categories: InventoryCategory[];
   units: string[];
-  onSave: (id: string | null, values: Omit<InventoryItem, "id">) => void;
+  onSave: (id: string | null, values: Omit<InventoryItem, 'id'>) => void;
   onClose: () => void;
 };
 
 export function EditItemDialog({ item, categories, units, onSave, onClose }: Props) {
-  const [name, setName] = useState(item?.name ?? "");
-  const [categoryId, setCategoryId] = useState(item?.categoryId ?? "");
-  const [unitOfMeasure, setUnitOfMeasure] = useState(item?.unitOfMeasure ?? "");
+  const [name, setName] = useState(item?.name ?? '');
+  const [categoryId, setCategoryId] = useState(item?.categoryId ?? '');
+  const [unitOfMeasure, setUnitOfMeasure] = useState(item?.unitOfMeasure ?? '');
   const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export function EditItemDialog({ item, categories, units, onSave, onClose }: Pro
     onSave(item?.id ?? null, {
       name: name.trim(),
       categoryId,
-      type: selectedCategory?.type ?? "",
+      type: selectedCategory?.type ?? '',
       unitOfMeasure: unitOfMeasure || undefined,
     });
   };
@@ -40,12 +40,14 @@ export function EditItemDialog({ item, categories, units, onSave, onClose }: Pro
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="w-full max-w-md rounded-xl border border-border bg-background shadow-xl">
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h2 className="text-base font-semibold text-foreground">
-            {item ? "Edit item" : "Add item"}
+            {item ? 'Edit item' : 'Add item'}
           </h2>
           <button
             type="button"
@@ -79,25 +81,30 @@ export function EditItemDialog({ item, categories, units, onSave, onClose }: Pro
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
               className={cn(
-                "h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40",
-                !categoryId && "text-muted-foreground"
+                'h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40',
+                !categoryId && 'text-muted-foreground',
               )}
               required
             >
-              <option value="" disabled>Select a category…</option>
+              <option value="" disabled>
+                Select a category…
+              </option>
               {types.map((type) => (
                 <optgroup key={type} label={type}>
                   {namedCategories
                     .filter((c) => c.type === type)
                     .map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
                     ))}
                 </optgroup>
               ))}
             </select>
             {selectedCategory && (
               <p className="text-xs text-muted-foreground">
-                Good type: <span className="font-medium text-foreground">{selectedCategory.type}</span>
+                Good type:{' '}
+                <span className="font-medium text-foreground">{selectedCategory.type}</span>
               </p>
             )}
           </div>
@@ -113,7 +120,9 @@ export function EditItemDialog({ item, categories, units, onSave, onClose }: Pro
             >
               <option value="">None</option>
               {units.map((u) => (
-                <option key={u} value={u}>{u}</option>
+                <option key={u} value={u}>
+                  {u}
+                </option>
               ))}
             </select>
           </div>
@@ -123,7 +132,7 @@ export function EditItemDialog({ item, categories, units, onSave, onClose }: Pro
               Cancel
             </Button>
             <Button type="submit" size="sm" disabled={!name.trim() || !categoryId}>
-              {item ? "Save changes" : "Add item"}
+              {item ? 'Save changes' : 'Add item'}
             </Button>
           </div>
         </form>

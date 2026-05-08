@@ -1,4 +1,4 @@
-import type { FilterField, FilterValues } from "./types";
+import type { FilterField, FilterValues } from './types';
 
 type Props = {
   filters: FilterField[];

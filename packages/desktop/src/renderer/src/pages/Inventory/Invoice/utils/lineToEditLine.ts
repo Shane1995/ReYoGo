@@ -1,11 +1,11 @@
-import type { ICapturedInvoiceWithLines } from "@reyogo/shared";
-import type { ProcessReceiptLine } from "../types";
+import type { ICapturedInvoiceWithLines } from '@reyogo/shared';
+import type { ProcessReceiptLine } from '../types';
 
-export function lineToEditLine(l: ICapturedInvoiceWithLines["lines"][number]): ProcessReceiptLine {
+export function lineToEditLine(l: ICapturedInvoiceWithLines['lines'][number]): ProcessReceiptLine {
   // DB always stores net in totalVatExclude. For inclusive mode the edit input
   // expects gross (VAT-included), so convert net back to gross here.
   const totalVatExclude =
-    l.vatMode === "inclusive" && l.vatRate > 0
+    l.vatMode === 'inclusive' && l.vatRate > 0
       ? l.totalVatExclude * (1 + l.vatRate / 100)
       : l.totalVatExclude;
   return {

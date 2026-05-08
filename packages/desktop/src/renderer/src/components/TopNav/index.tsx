@@ -1,10 +1,8 @@
-import { Link, NavLink } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { ProductRoutes } from "@/components/AppRoutes/routePaths";
+import { Link, NavLink } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { ProductRoutes } from '@/components/AppRoutes/routePaths';
 
-const navItems = [
-  { label: "Inventory", path: ProductRoutes.Inventory },
-] as const;
+const navItems = [{ label: 'Inventory', path: ProductRoutes.Inventory }] as const;
 
 export const TopNav = () => {
   return (
@@ -28,10 +26,10 @@ export const TopNav = () => {
               end={false}
               className={({ isActive }) =>
                 cn(
-                  "-mb-px flex items-center gap-1.5 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors",
+                  '-mb-px flex items-center gap-1.5 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors',
                   isActive
-                    ? "border-[var(--nav-active-border)] text-[var(--nav-foreground)]"
-                    : "border-transparent text-[var(--nav-foreground-muted)] hover:border-[var(--nav-border)] hover:text-[var(--nav-foreground)]"
+                    ? 'border-[var(--nav-active-border)] text-[var(--nav-foreground)]'
+                    : 'border-transparent text-[var(--nav-foreground-muted)] hover:border-[var(--nav-border)] hover:text-[var(--nav-foreground)]',
                 )
               }
             >

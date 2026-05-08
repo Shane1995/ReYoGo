@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { fetchSetupStatus } from "../../utils/fetchSetupStatus";
-import { appService } from "@/services/app";
+import { useEffect, useState } from 'react';
+import { fetchSetupStatus } from '../../utils/fetchSetupStatus';
+import { appService } from '@/services/app';
 
 export function useAppReady() {
   const [isReady, setIsReady] = useState(false);

@@ -1,8 +1,15 @@
-import { Fragment } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { InvoiceRoutes } from "@/components/AppRoutes/routePaths";
-import { ReceiptIcon, ChevronDownIcon, ChevronRightIcon, PencilIcon, ClockIcon, CopyIcon } from "lucide-react";
+import { Fragment } from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
+import {
+  ReceiptIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  PencilIcon,
+  ClockIcon,
+  CopyIcon,
+} from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -10,14 +17,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { cn } from "@/lib/utils";
-import { EditPanel } from "./EditPanel";
-import { AuditPanel } from "./AuditPanel";
-import { useInvoiceHistory } from "./hooks/useInvoiceHistory";
-import { formatDate } from "../utils/formatDate";
-import { formatMoney } from "../utils/formatMoney";
-import { invoiceTotals } from "../utils/invoiceTotals";
+} from '@/components/ui/table';
+import { cn } from '@/lib/utils';
+import { EditPanel } from './EditPanel';
+import { AuditPanel } from './AuditPanel';
+import { useInvoiceHistory } from './hooks/useInvoiceHistory';
+import { formatDate } from '../utils/formatDate';
+import { formatMoney } from '../utils/formatMoney';
+import { invoiceTotals } from '../utils/invoiceTotals';
 
 export default function InvoiceHistoryPage() {
   const {
@@ -42,7 +49,8 @@ export default function InvoiceHistoryPage() {
           <div>
             <h1 className="text-lg font-semibold text-foreground">Invoice history</h1>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              Past captured invoices (goods received). Click a row to expand details, or edit with full audit trail.
+              Past captured invoices (goods received). Click a row to expand details, or edit with
+              full audit trail.
             </p>
           </div>
           <Button asChild size="sm">
@@ -67,7 +75,9 @@ export default function InvoiceHistoryPage() {
         ) : invoices.length === 0 ? (
           <div className="rounded-xl border border-border bg-muted/20 p-10 text-center text-sm text-muted-foreground">
             {search ? (
-              <p>No invoices contain an item matching <strong>"{search}"</strong>.</p>
+              <p>
+                No invoices contain an item matching <strong>"{search}"</strong>.
+              </p>
             ) : (
               <>
                 <p>No captured invoices yet.</p>
@@ -83,18 +93,30 @@ export default function InvoiceHistoryPage() {
               <TableHeader>
                 <TableRow className="bg-secondary hover:bg-secondary">
                   <TableHead className="w-8 p-2 text-xs font-semibold uppercase tracking-wider text-foreground/80" />
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80">Date captured</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80 w-16 text-right">Lines</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80 w-28 text-right">Excl.</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80 w-24 text-right">VAT</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80 w-28 text-right">Total</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80 w-36">Last edited</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80">
+                    Date captured
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80 w-16 text-right">
+                    Lines
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80 w-28 text-right">
+                    Excl.
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80 w-24 text-right">
+                    VAT
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80 w-28 text-right">
+                    Total
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80 w-36">
+                    Last edited
+                  </TableHead>
                   <TableHead className="w-36" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {invoices.map((inv, i) => {
-                  const mode = rowMode[inv.id]?.kind ?? "view";
+                  const mode = rowMode[inv.id]?.kind ?? 'view';
                   const detail = detailCache[inv.id];
                   const totals = detail ? invoiceTotals(detail.lines) : null;
 
@@ -102,39 +124,48 @@ export default function InvoiceHistoryPage() {
                     <Fragment key={inv.id}>
                       <TableRow
                         className={cn(
-                          "cursor-pointer hover:bg-muted/30",
-                          i % 2 === 1 && "bg-white/[0.06]",
-                          (mode === "detail" || mode === "edit" || mode === "audit") && "bg-muted/20"
+                          'cursor-pointer hover:bg-muted/30',
+                          i % 2 === 1 && 'bg-white/[0.06]',
+                          (mode === 'detail' || mode === 'edit' || mode === 'audit') &&
+                            'bg-muted/20',
                         )}
                         onClick={() => handleExpandDetail(inv.id)}
                       >
                         <TableCell className="w-8 p-2 align-middle">
-                          {mode === "detail" || mode === "edit" || mode === "audit" ? (
+                          {mode === 'detail' || mode === 'edit' || mode === 'audit' ? (
                             <ChevronDownIcon className="size-4 text-muted-foreground" />
                           ) : (
                             <ChevronRightIcon className="size-4 text-muted-foreground" />
                           )}
                         </TableCell>
                         <TableCell className="font-medium">
-                          {inv.invoiceDate ? formatDate(inv.invoiceDate) : formatDate(inv.createdAt)}
+                          {inv.invoiceDate
+                            ? formatDate(inv.invoiceDate)
+                            : formatDate(inv.createdAt)}
                           {inv.invoiceNumber && (
-                            <p className="text-xs text-muted-foreground mt-0.5">{inv.invoiceNumber}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {inv.invoiceNumber}
+                            </p>
                           )}
                         </TableCell>
                         <TableCell className="text-right text-muted-foreground">
-                          {detail ? detail.lines.length : "—"}
+                          {detail ? detail.lines.length : '—'}
                         </TableCell>
                         <TableCell className="text-right font-mono text-sm">
-                          {totals ? formatMoney(totals.excl) : "—"}
+                          {totals ? formatMoney(totals.excl) : '—'}
                         </TableCell>
                         <TableCell className="text-right font-mono text-sm text-muted-foreground">
-                          {totals ? formatMoney(totals.vat) : "—"}
+                          {totals ? formatMoney(totals.vat) : '—'}
                         </TableCell>
                         <TableCell className="text-right font-mono font-semibold">
-                          {totals ? formatMoney(totals.total) : "—"}
+                          {totals ? formatMoney(totals.total) : '—'}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {inv.updatedAt ? formatDate(inv.updatedAt) : <span className="italic opacity-50">Never</span>}
+                          {inv.updatedAt ? (
+                            formatDate(inv.updatedAt)
+                          ) : (
+                            <span className="italic opacity-50">Never</span>
+                          )}
                         </TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center gap-1 justify-end">
@@ -173,7 +204,7 @@ export default function InvoiceHistoryPage() {
                         </TableCell>
                       </TableRow>
 
-                      {mode === "detail" && detail && (
+                      {mode === 'detail' && detail && (
                         <TableRow className="border-border hover:bg-transparent">
                           <TableCell colSpan={8} className="p-0">
                             <div className="border-t border-border bg-muted/10 px-4 py-3">
@@ -187,7 +218,9 @@ export default function InvoiceHistoryPage() {
                                         <th className="pb-2 pr-4 text-left font-medium">Item</th>
                                         <th className="pb-2 pr-4 text-right font-medium">Qty</th>
                                         <th className="pb-2 pr-4 text-right font-medium">UoM</th>
-                                        <th className="pb-2 pr-4 text-right font-medium">Unit price</th>
+                                        <th className="pb-2 pr-4 text-right font-medium">
+                                          Unit price
+                                        </th>
                                         <th className="pb-2 pr-4 text-right font-medium">VAT</th>
                                         <th className="pb-2 text-right font-medium">Line total</th>
                                       </tr>
@@ -199,15 +232,19 @@ export default function InvoiceHistoryPage() {
                                         return (
                                           <tr key={line.id} className="border-b border-border/50">
                                             <td className="py-1.5 pr-4">{line.itemNameSnapshot}</td>
-                                            <td className="py-1.5 pr-4 text-right">{line.quantity}</td>
+                                            <td className="py-1.5 pr-4 text-right">
+                                              {line.quantity}
+                                            </td>
                                             <td className="py-1.5 pr-4 text-right text-muted-foreground">
-                                              {line.unitOfMeasure ?? "—"}
+                                              {line.unitOfMeasure ?? '—'}
                                             </td>
                                             <td className="py-1.5 pr-4 text-right font-mono">
                                               {formatMoney(unitPrice)}
                                             </td>
                                             <td className="py-1.5 pr-4 text-right">
-                                              {line.vatMode === "non-taxable" ? "—" : `${line.vatRate}%`}
+                                              {line.vatMode === 'non-taxable'
+                                                ? '—'
+                                                : `${line.vatRate}%`}
                                             </td>
                                             <td className="py-1.5 text-right font-mono">
                                               {formatMoney(line.totalVatExclude)}
@@ -221,9 +258,24 @@ export default function InvoiceHistoryPage() {
                                     const t = invoiceTotals(detail.lines);
                                     return (
                                       <div className="mt-3 flex gap-6 text-sm border-t border-border pt-3">
-                                        <span className="text-muted-foreground">Exclusive <span className="font-mono font-medium text-foreground">{formatMoney(t.excl)}</span></span>
-                                        <span className="text-muted-foreground">VAT <span className="font-mono font-medium text-foreground">{formatMoney(t.vat)}</span></span>
-                                        <span className="text-muted-foreground">Total <span className="font-mono font-semibold text-foreground">{formatMoney(t.total)}</span></span>
+                                        <span className="text-muted-foreground">
+                                          Exclusive{' '}
+                                          <span className="font-mono font-medium text-foreground">
+                                            {formatMoney(t.excl)}
+                                          </span>
+                                        </span>
+                                        <span className="text-muted-foreground">
+                                          VAT{' '}
+                                          <span className="font-mono font-medium text-foreground">
+                                            {formatMoney(t.vat)}
+                                          </span>
+                                        </span>
+                                        <span className="text-muted-foreground">
+                                          Total{' '}
+                                          <span className="font-mono font-semibold text-foreground">
+                                            {formatMoney(t.total)}
+                                          </span>
+                                        </span>
                                       </div>
                                     );
                                   })()}
@@ -234,24 +286,24 @@ export default function InvoiceHistoryPage() {
                         </TableRow>
                       )}
 
-                      {mode === "edit" && detail && (
+                      {mode === 'edit' && detail && (
                         <TableRow className="border-border hover:bg-transparent">
                           <TableCell colSpan={8} className="p-0">
                             <EditPanel
                               invoice={detail}
                               onSave={(lines, note) => handleSaveEdit(inv, lines, note)}
-                              onCancel={() => setMode(inv.id, { kind: "view" })}
+                              onCancel={() => setMode(inv.id, { kind: 'view' })}
                             />
                           </TableCell>
                         </TableRow>
                       )}
 
-                      {mode === "audit" && (
+                      {mode === 'audit' && (
                         <TableRow className="border-border hover:bg-transparent">
                           <TableCell colSpan={8} className="p-0">
                             <AuditPanel
                               invoiceId={inv.id}
-                              onClose={() => setMode(inv.id, { kind: "view" })}
+                              onClose={() => setMode(inv.id, { kind: 'view' })}
                             />
                           </TableCell>
                         </TableRow>

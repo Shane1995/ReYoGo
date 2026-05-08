@@ -1,4 +1,4 @@
-import { Trash2Icon } from "lucide-react";
+import { Trash2Icon } from 'lucide-react';
 
 export function DeleteButton({ onClick, label }: { onClick: () => void; label: string }) {
   return (

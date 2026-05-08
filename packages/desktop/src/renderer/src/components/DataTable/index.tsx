@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 import {
   Table,
   TableBody,
@@ -6,9 +6,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { FilterBar } from "./FilterBar";
-import type { ColumnDef, FilterField, FilterValues } from "./types";
+} from '@/components/ui/table';
+import { FilterBar } from './FilterBar';
+import type { ColumnDef, FilterField, FilterValues } from './types';
 
 export type { ColumnDef, FilterField, FilterValues };
 
@@ -23,10 +23,10 @@ type Props<T> = {
   rowKey: (row: T) => string;
 };
 
-const alignClass = (align?: "left" | "right" | "center") => {
-  if (align === "right") return "text-right";
-  if (align === "center") return "text-center";
-  return "text-left";
+const alignClass = (align?: 'left' | 'right' | 'center') => {
+  if (align === 'right') return 'text-right';
+  if (align === 'center') return 'text-center';
+  return 'text-left';
 };
 
 export function DataTable<T>({
@@ -36,7 +36,7 @@ export function DataTable<T>({
   filterValues = {},
   onFilterChange,
   onClearFilters,
-  emptyMessage = "No items found.",
+  emptyMessage = 'No items found.',
   rowKey,
 }: Props<T>) {
   return (
@@ -58,8 +58,8 @@ export function DataTable<T>({
                 key={col.key}
                 style={col.width ? { width: col.width } : undefined}
                 className={cn(
-                  "text-xs font-semibold uppercase tracking-wider text-foreground/80",
-                  alignClass(col.align)
+                  'text-xs font-semibold uppercase tracking-wider text-foreground/80',
+                  alignClass(col.align),
                 )}
               >
                 {col.header}
@@ -79,12 +79,9 @@ export function DataTable<T>({
             </TableRow>
           ) : (
             data.map((row, i) => (
-              <TableRow key={rowKey(row)} className={i % 2 === 1 ? "bg-white/[0.06]" : ""}>
+              <TableRow key={rowKey(row)} className={i % 2 === 1 ? 'bg-white/[0.06]' : ''}>
                 {columns.map((col) => (
-                  <TableCell
-                    key={col.key}
-                    className={cn("py-3 px-4", alignClass(col.align))}
-                  >
+                  <TableCell key={col.key} className={cn('py-3 px-4', alignClass(col.align))}>
                     {col.cell(row)}
                   </TableCell>
                 ))}

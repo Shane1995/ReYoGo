@@ -26,7 +26,7 @@ export function StatusBadge({ status }: { status: keyof typeof STATUS_CONFIG }) 
     <span
       className={cn(
         'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium',
-        cfg.className
+        cfg.className,
       )}
     >
       <Icon className="size-3 shrink-0" />

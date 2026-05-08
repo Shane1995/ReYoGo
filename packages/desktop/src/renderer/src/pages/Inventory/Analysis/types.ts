@@ -15,14 +15,14 @@ export type ItemGroup = {
   entries: ItemEntry[];
 };
 
-export type Metric = "price" | "change";
+export type Metric = 'price' | 'change';
 
-export const TYPE_ORDER = ["food", "drink", "non-perishable"];
+export const TYPE_ORDER = ['food', 'drink', 'non-perishable'];
 
 export const TYPE_LABELS: Record<string, string> = {
-  food: "Foods",
-  drink: "Drinks",
-  "non-perishable": "Non-perishable",
+  food: 'Foods',
+  drink: 'Drinks',
+  'non-perishable': 'Non-perishable',
 };
 
 export function typeLabel(t: string) {

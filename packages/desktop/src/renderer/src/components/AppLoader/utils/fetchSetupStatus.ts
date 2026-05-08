@@ -1,4 +1,4 @@
-import { setupService } from "@/services/setup";
+import { setupService } from '@/services/setup';
 
 export async function fetchSetupStatus(retries = 5, delayMs = 150): Promise<boolean> {
   for (let i = 0; i < retries; i++) {

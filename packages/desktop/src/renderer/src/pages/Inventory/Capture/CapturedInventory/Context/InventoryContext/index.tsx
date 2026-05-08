@@ -1,13 +1,16 @@
-import { createContext, useContext, useState, useCallback, useEffect } from "react";
-import type { IPCChannel } from "@shared/types/ipc";
-import { InventoryIPC } from "@shared/types/ipc";
-import type { InventoryCategory, InventoryItem } from "../../types";
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import type { IPCChannel } from '@shared/types/ipc';
+import { InventoryIPC } from '@shared/types/ipc';
+import type { InventoryCategory, InventoryItem } from '../../types';
 
 function invokeInventory(channel: IPCChannel, ...args: unknown[]): Promise<unknown> {
-  if (typeof window === "undefined" || !window.electronAPI?.ipcRenderer?.invoke) {
+  if (typeof window === 'undefined' || !window.electronAPI?.ipcRenderer?.invoke) {
     return Promise.resolve();
   }
-  const invoke = window.electronAPI.ipcRenderer.invoke as (ch: string, ...a: unknown[]) => Promise<unknown>;
+  const invoke = window.electronAPI.ipcRenderer.invoke as (
+    ch: string,
+    ...a: unknown[]
+  ) => Promise<unknown>;
   return invoke(channel, ...args);
 }
 
@@ -18,9 +21,9 @@ type InventoryContextValue = {
   goodTypes: string[];
   addGoodType: (type: string) => void;
   setGoodTypes: (types: string[]) => void;
-  addCategory: (category: Omit<InventoryCategory, "id">) => string;
+  addCategory: (category: Omit<InventoryCategory, 'id'>) => string;
   updateCategory: (id: string, updates: Partial<InventoryCategory>) => void;
-  addItem: (item: Omit<InventoryItem, "id">) => string;
+  addItem: (item: Omit<InventoryItem, 'id'>) => string;
   updateItem: (id: string, updates: Partial<InventoryItem>) => void;
   removeItem: (id: string) => void;
   deleteCategoryFromBackend: (id: string) => Promise<void>;
@@ -59,12 +62,14 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     setGoodTypes((prev) => {
       if (prev.includes(type)) return prev;
       const next = [...prev, type];
-      (window.electronAPI.ipcRenderer.invoke('setup:set-good-types', next) as Promise<void>).catch(console.error);
+      (window.electronAPI.ipcRenderer.invoke('setup:set-good-types', next) as Promise<void>).catch(
+        console.error,
+      );
       return next;
     });
   }, []);
 
-  const addCategory = useCallback((category: Omit<InventoryCategory, "id">): string => {
+  const addCategory = useCallback((category: Omit<InventoryCategory, 'id'>): string => {
     const id = crypto.randomUUID();
     const newCategory = { ...category, id };
     setCategories((prev) => [...prev, newCategory].sort((a, b) => a.name.localeCompare(b.name)));
@@ -76,7 +81,9 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
 
   const updateCategory = useCallback((id: string, updates: Partial<InventoryCategory>) => {
     setCategories((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, ...updates } : c)).sort((a, b) => a.name.localeCompare(b.name))
+      prev
+        .map((c) => (c.id === id ? { ...c, ...updates } : c))
+        .sort((a, b) => a.name.localeCompare(b.name)),
     );
     setCategories((prev) => {
       const toSave = prev.find((c) => c.id === id);
@@ -87,7 +94,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const addItem = useCallback((item: Omit<InventoryItem, "id">): string => {
+  const addItem = useCallback((item: Omit<InventoryItem, 'id'>): string => {
     const id = crypto.randomUUID();
     const newItem = { ...item, id };
     setItems((prev) => [...prev, newItem]);
@@ -145,15 +152,11 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     deleteItemFromBackend,
   };
 
-  return (
-    <InventoryContext.Provider value={value}>
-      {children}
-    </InventoryContext.Provider>
-  );
+  return <InventoryContext.Provider value={value}>{children}</InventoryContext.Provider>;
 }
 
 export function useInventory() {
   const ctx = useContext(InventoryContext);
-  if (!ctx) throw new Error("useInventory must be used within InventoryProvider");
+  if (!ctx) throw new Error('useInventory must be used within InventoryProvider');
   return ctx;
 }

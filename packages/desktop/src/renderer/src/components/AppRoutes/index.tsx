@@ -4,9 +4,9 @@ export {
   InvoiceRoutes,
   UserRoutes,
   InventoryRouteSegments,
-} from "./routePaths";
+} from './routePaths';
 
-export { AppRoutesComponent } from "./routes";
+export { AppRoutesComponent } from './routes';
 
-import { AppRoutesComponent } from "./routes";
+import { AppRoutesComponent } from './routes';
 export default AppRoutesComponent;

@@ -1,11 +1,11 @@
-import { useState, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import type { TypeValue, InventoryCategory, InventoryItem } from "../../types";
-import { cn } from "@/lib/utils";
+import { useState, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import type { TypeValue, InventoryCategory, InventoryItem } from '../../types';
+import { cn } from '@/lib/utils';
 
 const inputClass = cn(
-  "h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm",
-  "focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0"
+  'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm',
+  'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0',
 );
 
 type AddItemModalProps = {
@@ -13,31 +13,31 @@ type AddItemModalProps = {
   onClose: () => void;
   categories: InventoryCategory[];
   units: string[];
-  onSave: (item: Omit<InventoryItem, "id">) => void;
+  onSave: (item: Omit<InventoryItem, 'id'>) => void;
 };
 
 export function AddItemModal({ open, onClose, categories, units, onSave }: AddItemModalProps) {
-  const [name, setName] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [unitOfMeasure, setUnitOfMeasure] = useState("");
+  const [name, setName] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [unitOfMeasure, setUnitOfMeasure] = useState('');
 
   const category = categories.find((c) => c.id === categoryId);
-  const type: TypeValue = category?.type ?? "";
+  const type: TypeValue = category?.type ?? '';
 
   const handleSave = useCallback(() => {
     const trimmed = name.trim();
     if (!trimmed || !categoryId) return;
     onSave({ name: trimmed, categoryId, type, unitOfMeasure: unitOfMeasure || undefined });
-    setName("");
-    setCategoryId("");
-    setUnitOfMeasure("");
+    setName('');
+    setCategoryId('');
+    setUnitOfMeasure('');
     onClose();
   }, [name, categoryId, type, unitOfMeasure, onSave, onClose]);
 
   const handleClose = useCallback(() => {
-    setName("");
-    setCategoryId("");
-    setUnitOfMeasure("");
+    setName('');
+    setCategoryId('');
+    setUnitOfMeasure('');
     onClose();
   }, [onClose]);
 
@@ -62,7 +62,7 @@ export function AddItemModal({ open, onClose, categories, units, onSave }: AddIt
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSave()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
               className={inputClass}
               placeholder="Item name"
               autoFocus
@@ -73,7 +73,7 @@ export function AddItemModal({ open, onClose, categories, units, onSave }: AddIt
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className={cn(inputClass, "cursor-pointer")}
+              className={cn(inputClass, 'cursor-pointer')}
             >
               <option value="">Select category</option>
               {categories
@@ -86,22 +86,30 @@ export function AddItemModal({ open, onClose, categories, units, onSave }: AddIt
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Unit of measure</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Unit of measure
+            </label>
             <select
               value={unitOfMeasure}
               onChange={(e) => setUnitOfMeasure(e.target.value)}
-              className={cn(inputClass, "cursor-pointer")}
+              className={cn(inputClass, 'cursor-pointer')}
             >
               <option value="">— none —</option>
               {units.map((u) => (
-                <option key={u} value={u}>{u}</option>
+                <option key={u} value={u}>
+                  {u}
+                </option>
               ))}
             </select>
           </div>
         </div>
         <div className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
-          <Button type="button" onClick={handleSave} disabled={!name.trim() || !categoryId}>Save</Button>
+          <Button type="button" variant="outline" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={handleSave} disabled={!name.trim() || !categoryId}>
+            Save
+          </Button>
         </div>
       </div>
     </div>

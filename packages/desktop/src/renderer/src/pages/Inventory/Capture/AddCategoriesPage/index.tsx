@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { PlusIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { PlusIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -8,32 +8,32 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { useInventory } from "../CapturedInventory/Context/InventoryContext";
-import type { TypeValue } from "../CapturedInventory/types";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/table';
+import { useInventory } from '../CapturedInventory/Context/InventoryContext';
+import type { TypeValue } from '../CapturedInventory/types';
+import { cn } from '@/lib/utils';
 
 const inputClass = cn(
-  "h-8 w-full rounded-md border border-input bg-muted px-2.5 text-sm",
-  "focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0"
+  'h-8 w-full rounded-md border border-input bg-muted px-2.5 text-sm',
+  'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0',
 );
 
 type PendingRow = { id: string; name: string; type: TypeValue };
 
 function createEmptyRow(defaultType: string): PendingRow {
-  return { id: crypto.randomUUID(), name: "", type: defaultType };
+  return { id: crypto.randomUUID(), name: '', type: defaultType };
 }
 
 export default function AddCategoriesPage() {
   const { categories, addCategory, goodTypes } = useInventory();
   const defaultType = goodTypes[0] ?? '';
-  const [rows, setRows] = useState<PendingRow[]>([{ id: crypto.randomUUID(), name: "", type: '' }]);
+  const [rows, setRows] = useState<PendingRow[]>([{ id: crypto.randomUUID(), name: '', type: '' }]);
   const [lastAddedRowId, setLastAddedRowId] = useState<string | null>(null);
 
   // Once goodTypes loads, update any rows that still have no type
   useEffect(() => {
     if (!defaultType) return;
-    setRows((prev) => prev.map((r) => r.type ? r : { ...r, type: defaultType }));
+    setRows((prev) => prev.map((r) => (r.type ? r : { ...r, type: defaultType })));
   }, [defaultType]);
 
   useEffect(() => {
@@ -96,7 +96,8 @@ export default function AddCategoriesPage() {
       <header className="shrink-0 border-b border-[var(--nav-border)] bg-background px-6 py-4">
         <h1 className="text-xl font-semibold tracking-tight">Add categories</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Add categories with a name and type. They appear in the Captured Goods view and the Add Items dropdown.
+          Add categories with a name and type. They appear in the Captured Goods view and the Add
+          Items dropdown.
         </p>
       </header>
 
@@ -123,17 +124,19 @@ export default function AddCategoriesPage() {
                             value={row.name}
                             onChange={(e) => updateRow(row.id, { name: e.target.value })}
                             onKeyDown={(e) => {
-                              if (e.key === "Enter") addRow();
+                              if (e.key === 'Enter') addRow();
                             }}
                             className={cn(
                               inputClass,
-                              "min-w-[10rem]",
-                              isDupe && "border-destructive focus:ring-destructive/50"
+                              'min-w-[10rem]',
+                              isDupe && 'border-destructive focus:ring-destructive/50',
                             )}
                             placeholder="Category name"
                           />
                           {isDupe && (
-                            <span className="shrink-0 text-xs text-destructive">Already exists</span>
+                            <span className="shrink-0 text-xs text-destructive">
+                              Already exists
+                            </span>
                           )}
                         </div>
                       </TableCell>
@@ -142,16 +145,18 @@ export default function AddCategoriesPage() {
                           value={row.type}
                           onChange={(e) => updateRow(row.id, { type: e.target.value })}
                           onKeyDown={(e) => {
-                            if (e.key === "Tab") {
+                            if (e.key === 'Tab') {
                               e.preventDefault();
                               addRow();
                             }
                           }}
-                          className={cn(inputClass, "min-w-[8rem] cursor-pointer")}
+                          className={cn(inputClass, 'min-w-[8rem] cursor-pointer')}
                         >
                           {!row.type && <option value="">Select type</option>}
                           {goodTypes.map((t) => (
-                            <option key={t} value={t}>{t}</option>
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
                           ))}
                         </select>
                       </TableCell>
@@ -173,13 +178,23 @@ export default function AddCategoriesPage() {
             </Table>
             <div className="border-t border-[var(--nav-border)] bg-muted/10">
               <div className="flex justify-end px-3 py-2">
-                <Button type="button" variant="ghost" size="sm" onClick={addRow} className="gap-1.5">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={addRow}
+                  className="gap-1.5"
+                >
                   <PlusIcon className="size-4" aria-hidden />
                   Add row
                 </Button>
               </div>
               <div className="flex justify-end gap-2 border-t border-[var(--nav-border)] px-3 py-2">
-                <Button variant="outline" size="sm" onClick={() => setRows([createEmptyRow(defaultType)])}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setRows([createEmptyRow(defaultType)])}
+                >
                   Clear
                 </Button>
                 <Button size="sm" onClick={submit} disabled={!canSubmit}>

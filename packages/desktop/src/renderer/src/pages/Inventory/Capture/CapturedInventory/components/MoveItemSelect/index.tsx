@@ -1,10 +1,10 @@
-import { useRef, useEffect } from "react";
-import { cn } from "@/lib/utils";
-import type { TypeValue, InventoryCategory, InventoryItem } from "../../types";
+import { useRef, useEffect } from 'react';
+import { cn } from '@/lib/utils';
+import type { TypeValue, InventoryCategory, InventoryItem } from '../../types';
 
 const inputClass = cn(
-  "h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm",
-  "focus:outline-none focus:ring-2 focus:ring-ring/50 focus:ring-offset-0"
+  'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm',
+  'focus:outline-none focus:ring-2 focus:ring-ring/50 focus:ring-offset-0',
 );
 
 type MoveItemSelectProps = {
@@ -15,9 +15,17 @@ type MoveItemSelectProps = {
   onClose: () => void;
 };
 
-export function MoveItemSelect({ item, categories, allTypes, onMove, onClose }: MoveItemSelectProps) {
+export function MoveItemSelect({
+  item,
+  categories,
+  allTypes,
+  onMove,
+  onClose,
+}: MoveItemSelectProps) {
   const ref = useRef<HTMLSelectElement>(null);
-  useEffect(() => { ref.current?.focus(); }, []);
+  useEffect(() => {
+    ref.current?.focus();
+  }, []);
   const others = categories.filter((c) => c.id !== item.categoryId && c.name.trim());
   return (
     <div className="flex items-center gap-1.5">
@@ -25,21 +33,29 @@ export function MoveItemSelect({ item, categories, allTypes, onMove, onClose }: 
       <select
         ref={ref}
         defaultValue=""
-        className={cn(inputClass, "min-w-[11rem] cursor-pointer text-xs")}
+        className={cn(inputClass, 'min-w-[11rem] cursor-pointer text-xs')}
         onChange={(e) => {
           const target = categories.find((c) => c.id === e.target.value);
           if (target) onMove(target.id, target.type);
         }}
         onBlur={onClose}
-        onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') onClose();
+        }}
       >
-        <option value="" disabled>Select category…</option>
+        <option value="" disabled>
+          Select category…
+        </option>
         {allTypes.map((type) => {
           const cats = others.filter((c) => c.type === type);
           if (!cats.length) return null;
           return (
             <optgroup key={type} label={type}>
-              {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {cats.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
             </optgroup>
           );
         })}
@@ -47,7 +63,10 @@ export function MoveItemSelect({ item, categories, allTypes, onMove, onClose }: 
       <button
         type="button"
         className="text-xs text-muted-foreground hover:text-foreground"
-        onMouseDown={(e) => { e.preventDefault(); onClose(); }}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          onClose();
+        }}
       >
         ✕
       </button>

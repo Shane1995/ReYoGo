@@ -40,7 +40,7 @@ export async function getItems(): Promise<IInventoryItem[]> {
     .from(schema.inventoryItems)
     .innerJoin(
       schema.inventoryCategories,
-      eq(schema.inventoryItems.categoryId, schema.inventoryCategories.id)
+      eq(schema.inventoryItems.categoryId, schema.inventoryCategories.id),
     )
     .orderBy(asc(schema.inventoryItems.name));
   return rows.map((r) => toItem(r.item, r.categoryType as IInventoryCategory['type']));
@@ -105,13 +105,9 @@ export async function upsertItem(item: IInventoryItem): Promise<void> {
 }
 
 export async function deleteCategory(id: string): Promise<void> {
-  await getDb()
-    .delete(schema.inventoryCategories)
-    .where(eq(schema.inventoryCategories.id, id));
+  await getDb().delete(schema.inventoryCategories).where(eq(schema.inventoryCategories.id, id));
 }
 
 export async function deleteItem(id: string): Promise<void> {
-  await getDb()
-    .delete(schema.inventoryItems)
-    .where(eq(schema.inventoryItems.id, id));
+  await getDb().delete(schema.inventoryItems).where(eq(schema.inventoryItems.id, id));
 }

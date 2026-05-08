@@ -15,7 +15,7 @@ export function ReviewRow({
     <div
       className={cn(
         'flex items-center gap-3 px-4 py-2.5 text-sm',
-        disabled ? 'opacity-50' : 'hover:bg-muted/20 cursor-pointer'
+        disabled ? 'opacity-50' : 'hover:bg-muted/20 cursor-pointer',
       )}
       onClick={disabled ? undefined : onToggle}
     >

@@ -1,11 +1,11 @@
-import { Trash2Icon, XIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import type { TypeValue, InventoryCategory } from "../../types";
+import { Trash2Icon, XIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import type { TypeValue, InventoryCategory } from '../../types';
 
 const inputClass = cn(
-  "h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm",
-  "focus:outline-none focus:ring-2 focus:ring-ring/50 focus:ring-offset-0"
+  'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm',
+  'focus:outline-none focus:ring-2 focus:ring-ring/50 focus:ring-offset-0',
 );
 
 type BulkActionBarProps = {
@@ -41,14 +41,22 @@ export function BulkActionBar({
         {total} selected
         {itemCount > 0 && catCount > 0 && (
           <span className="text-muted-foreground font-normal">
-            {" "}({itemCount} item{itemCount !== 1 ? "s" : ""}, {catCount} categor{catCount !== 1 ? "ies" : "y"})
+            {' '}
+            ({itemCount} item{itemCount !== 1 ? 's' : ''}, {catCount} categor
+            {catCount !== 1 ? 'ies' : 'y'})
           </span>
         )}
         {itemCount > 0 && catCount === 0 && (
-          <span className="text-muted-foreground font-normal"> item{itemCount !== 1 ? "s" : ""}</span>
+          <span className="text-muted-foreground font-normal">
+            {' '}
+            item{itemCount !== 1 ? 's' : ''}
+          </span>
         )}
         {catCount > 0 && itemCount === 0 && (
-          <span className="text-muted-foreground font-normal"> categor{catCount !== 1 ? "ies" : "y"}</span>
+          <span className="text-muted-foreground font-normal">
+            {' '}
+            categor{catCount !== 1 ? 'ies' : 'y'}
+          </span>
         )}
       </span>
 
@@ -59,23 +67,32 @@ export function BulkActionBar({
           <span className="text-xs text-muted-foreground shrink-0">Move items to:</span>
           <select
             defaultValue=""
-            className={cn(inputClass, "w-auto min-w-[10rem] cursor-pointer text-xs h-7")}
+            className={cn(inputClass, 'w-auto min-w-[10rem] cursor-pointer text-xs h-7')}
             onChange={(e) => {
               const cat = categories.find((c) => c.id === e.target.value);
               if (cat) onBulkMoveItems(cat.id, cat.type);
-              e.target.value = "";
+              e.target.value = '';
             }}
             onKeyDown={(e) => {
-              if (e.key === "Enter") { e.preventDefault(); e.currentTarget.click(); }
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
             }}
           >
-            <option value="" disabled>Select category…</option>
+            <option value="" disabled>
+              Select category…
+            </option>
             {allTypes.map((type) => {
               const cats = categories.filter((c) => c.type === type && c.name.trim());
               if (!cats.length) return null;
               return (
                 <optgroup key={type} label={type}>
-                  {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {cats.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
                 </optgroup>
               );
             })}
@@ -88,18 +105,25 @@ export function BulkActionBar({
           <span className="text-xs text-muted-foreground shrink-0">Move categories to:</span>
           <select
             defaultValue=""
-            className={cn(inputClass, "w-auto min-w-[8rem] cursor-pointer text-xs h-7")}
+            className={cn(inputClass, 'w-auto min-w-[8rem] cursor-pointer text-xs h-7')}
             onChange={(e) => {
               onBulkMoveCategories(e.target.value as TypeValue);
-              e.target.value = "";
+              e.target.value = '';
             }}
             onKeyDown={(e) => {
-              if (e.key === "Enter") { e.preventDefault(); e.currentTarget.click(); }
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
             }}
           >
-            <option value="" disabled>Select type…</option>
+            <option value="" disabled>
+              Select type…
+            </option>
             {allTypes.map((t) => (
-              <option key={t} value={t}>{t}</option>
+              <option key={t} value={t}>
+                {t}
+              </option>
             ))}
           </select>
         </div>

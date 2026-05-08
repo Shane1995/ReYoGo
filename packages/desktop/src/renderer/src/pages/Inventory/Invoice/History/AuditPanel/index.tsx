@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
-import { XIcon, ClockIcon, ChevronDownIcon, ChevronRightIcon } from "lucide-react";
-import { InvoicesIPC } from "@shared/types/ipc";
-import type { ICapturedInvoiceAuditEntry } from "@reyogo/shared";
-import { formatDate } from "../../utils/formatDate";
-import { formatMoney } from "../../utils/formatMoney";
-import { invoiceTotals } from "../../utils/invoiceTotals";
+import { useState, useEffect } from 'react';
+import { XIcon, ClockIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
+import { InvoicesIPC } from '@shared/types/ipc';
+import type { ICapturedInvoiceAuditEntry } from '@reyogo/shared';
+import { formatDate } from '../../utils/formatDate';
+import { formatMoney } from '../../utils/formatMoney';
+import { invoiceTotals } from '../../utils/invoiceTotals';
 
 type Props = {
   invoiceId: string;
@@ -22,14 +22,16 @@ export function AuditPanel({ invoiceId, onClose }: Props) {
       try {
         const result = await window.electronAPI.ipcRenderer.invoke(
           InvoicesIPC.GET_INVOICE_AUDIT,
-          invoiceId
+          invoiceId,
         );
         if (!cancelled) setEntries(result);
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [invoiceId]);
 
   return (
@@ -39,7 +41,11 @@ export function AuditPanel({ invoiceId, onClose }: Props) {
           <ClockIcon className="size-3.5 text-muted-foreground" />
           Edit history
         </span>
-        <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground">
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-muted-foreground hover:text-foreground"
+        >
           <XIcon className="size-4" />
         </button>
       </div>
@@ -56,7 +62,10 @@ export function AuditPanel({ invoiceId, onClose }: Props) {
               const totals = invoiceTotals(snap.lines);
               const isOpen = expanded === entry.id;
               return (
-                <div key={entry.id} className="rounded-md border border-[var(--nav-border)] overflow-hidden">
+                <div
+                  key={entry.id}
+                  className="rounded-md border border-[var(--nav-border)] overflow-hidden"
+                >
                   <button
                     type="button"
                     onClick={() => setExpanded(isOpen ? null : entry.id)}
@@ -72,12 +81,15 @@ export function AuditPanel({ invoiceId, onClose }: Props) {
                       <span className="text-muted-foreground truncate">— {entry.note}</span>
                     )}
                     <span className="ml-auto shrink-0 font-mono text-muted-foreground">
-                      {snap.lines.length} line{snap.lines.length !== 1 ? "s" : ""} · {formatMoney(totals.total)}
+                      {snap.lines.length} line{snap.lines.length !== 1 ? 's' : ''} ·{' '}
+                      {formatMoney(totals.total)}
                     </span>
                   </button>
                   {isOpen && (
                     <div className="border-t border-[var(--nav-border)]/60 bg-muted/10 px-3 py-2">
-                      <p className="mb-1.5 text-xs text-muted-foreground">Snapshot before this edit:</p>
+                      <p className="mb-1.5 text-xs text-muted-foreground">
+                        Snapshot before this edit:
+                      </p>
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="border-b border-[var(--nav-border)]/50">
@@ -92,18 +104,35 @@ export function AuditPanel({ invoiceId, onClose }: Props) {
                             <tr key={l.id} className="border-b border-[var(--nav-border)]/30">
                               <td className="py-1 pr-3">{l.itemNameSnapshot}</td>
                               <td className="py-1 pr-3 text-right">{l.quantity}</td>
-                              <td className="py-1 pr-3 text-right font-mono">{formatMoney(l.totalVatExclude)}</td>
+                              <td className="py-1 pr-3 text-right font-mono">
+                                {formatMoney(l.totalVatExclude)}
+                              </td>
                               <td className="py-1 text-right">
-                                {l.vatMode === "non-taxable" ? "—" : `${l.vatRate}%`}
+                                {l.vatMode === 'non-taxable' ? '—' : `${l.vatRate}%`}
                               </td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                       <div className="mt-2 flex gap-4 text-xs text-muted-foreground">
-                        <span>Excl. <span className="font-mono text-foreground">{formatMoney(totals.excl)}</span></span>
-                        <span>VAT <span className="font-mono text-foreground">{formatMoney(totals.vat)}</span></span>
-                        <span>Total <span className="font-mono font-semibold text-foreground">{formatMoney(totals.total)}</span></span>
+                        <span>
+                          Excl.{' '}
+                          <span className="font-mono text-foreground">
+                            {formatMoney(totals.excl)}
+                          </span>
+                        </span>
+                        <span>
+                          VAT{' '}
+                          <span className="font-mono text-foreground">
+                            {formatMoney(totals.vat)}
+                          </span>
+                        </span>
+                        <span>
+                          Total{' '}
+                          <span className="font-mono font-semibold text-foreground">
+                            {formatMoney(totals.total)}
+                          </span>
+                        </span>
                       </div>
                     </div>
                   )}

@@ -1,14 +1,14 @@
-import { useMemo } from "react";
-import { PlusIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AddCategoryModal } from "@/pages/Inventory/Capture/CapturedInventory/components/AddCategoryModal";
-import { AddItemModal } from "@/pages/Inventory/Capture/CapturedInventory/components/AddItemModal";
-import { useInvoiceForm } from "./hooks/useInvoiceForm";
-import { InvoiceHeader } from "./InvoiceHeader";
-import { ReuseNotice } from "./ReuseNotice";
-import { InvoiceLineRow } from "./InvoiceLineRow";
-import { InvoiceSummaryFooter } from "./InvoiceSummaryFooter";
+import { useMemo } from 'react';
+import { PlusIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AddCategoryModal } from '@/pages/Inventory/Capture/CapturedInventory/components/AddCategoryModal';
+import { AddItemModal } from '@/pages/Inventory/Capture/CapturedInventory/components/AddItemModal';
+import { useInvoiceForm } from './hooks/useInvoiceForm';
+import { InvoiceHeader } from './InvoiceHeader';
+import { ReuseNotice } from './ReuseNotice';
+import { InvoiceLineRow } from './InvoiceLineRow';
+import { InvoiceSummaryFooter } from './InvoiceSummaryFooter';
 
 export default function InvoicePage() {
   const {
@@ -46,7 +46,7 @@ export default function InvoicePage() {
 
   const sortedItems = useMemo(
     () => [...itemsWithCategory].sort((a, b) => a.name.localeCompare(b.name)),
-    [itemsWithCategory]
+    [itemsWithCategory],
   );
 
   return (
@@ -107,7 +107,13 @@ export default function InvoicePage() {
               </TableBody>
             </Table>
             <div className="flex justify-end border-t border-[var(--nav-border)] bg-muted/10 px-3 py-2">
-              <Button type="button" variant="ghost" size="sm" onClick={() => addLine()} className="gap-1.5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => addLine()}
+                className="gap-1.5"
+              >
                 <PlusIcon className="size-4" aria-hidden />
                 Add row
               </Button>

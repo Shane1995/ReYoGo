@@ -5,7 +5,7 @@ import * as invoicesDb from '../../dataAccess/invoices';
 
 async function saveInvoice(
   _event: Electron.IpcMainInvokeEvent,
-  payload: ISaveCapturedInvoicePayload
+  payload: ISaveCapturedInvoicePayload,
 ): Promise<void> {
   await invoicesDb.saveInvoice(payload);
 }
@@ -14,36 +14,42 @@ async function getInvoices(): Promise<Awaited<ReturnType<typeof invoicesDb.getIn
   return invoicesDb.getInvoices();
 }
 
-async function getInvoicesWithLines(): Promise<Awaited<ReturnType<typeof invoicesDb.getInvoicesWithLines>>> {
+async function getInvoicesWithLines(): Promise<
+  Awaited<ReturnType<typeof invoicesDb.getInvoicesWithLines>>
+> {
   return invoicesDb.getInvoicesWithLines();
 }
 
 async function getInvoice(
   _event: Electron.IpcMainInvokeEvent,
-  id: string
+  id: string,
 ): Promise<Awaited<ReturnType<typeof invoicesDb.getInvoiceById>>> {
   return invoicesDb.getInvoiceById(id);
 }
 
-async function getLinesForAnalysis(): Promise<Awaited<ReturnType<typeof invoicesDb.getLinesForAnalysis>>> {
+async function getLinesForAnalysis(): Promise<
+  Awaited<ReturnType<typeof invoicesDb.getLinesForAnalysis>>
+> {
   return invoicesDb.getLinesForAnalysis();
 }
 
 async function updateInvoice(
   _event: Electron.IpcMainInvokeEvent,
-  payload: IUpdateCapturedInvoicePayload
+  payload: IUpdateCapturedInvoicePayload,
 ): Promise<void> {
   await invoicesDb.updateInvoice(payload);
 }
 
 async function getInvoiceAudit(
   _event: Electron.IpcMainInvokeEvent,
-  id: string
+  id: string,
 ): Promise<Awaited<ReturnType<typeof invoicesDb.getInvoiceAudit>>> {
   return invoicesDb.getInvoiceAudit(id);
 }
 
-async function getLastUnitPrices(): Promise<Awaited<ReturnType<typeof invoicesDb.getLastUnitPrices>>> {
+async function getLastUnitPrices(): Promise<
+  Awaited<ReturnType<typeof invoicesDb.getLastUnitPrices>>
+> {
   return invoicesDb.getLastUnitPrices();
 }
 

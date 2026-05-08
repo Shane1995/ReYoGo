@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { PlusIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { PlusIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -8,14 +8,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { useInventory } from "../CapturedInventory/Context/InventoryContext";
-import type { TypeValue } from "../CapturedInventory/types";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/table';
+import { useInventory } from '../CapturedInventory/Context/InventoryContext';
+import type { TypeValue } from '../CapturedInventory/types';
+import { cn } from '@/lib/utils';
 
 const inputClass = cn(
-  "h-8 w-full rounded-md border border-input bg-muted px-2.5 text-sm",
-  "focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0"
+  'h-8 w-full rounded-md border border-input bg-muted px-2.5 text-sm',
+  'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0',
 );
 
 type PendingRow = {
@@ -27,7 +27,7 @@ type PendingRow = {
 };
 
 function createEmptyRow(): PendingRow {
-  return { id: crypto.randomUUID(), name: "", categoryId: "", type: "", unitOfMeasure: "" };
+  return { id: crypto.randomUUID(), name: '', categoryId: '', type: '', unitOfMeasure: '' };
 }
 
 export default function AddItemsPage() {
@@ -134,17 +134,19 @@ export default function AddItemsPage() {
                             value={row.name}
                             onChange={(e) => updateRow(row.id, { name: e.target.value })}
                             onKeyDown={(e) => {
-                              if (e.key === "Enter") addRow();
+                              if (e.key === 'Enter') addRow();
                             }}
                             className={cn(
                               inputClass,
-                              "min-w-[10rem]",
-                              isDupe && "border-destructive focus:ring-destructive/50"
+                              'min-w-[10rem]',
+                              isDupe && 'border-destructive focus:ring-destructive/50',
                             )}
                             placeholder="Item name"
                           />
                           {isDupe && (
-                            <span className="shrink-0 text-xs text-destructive">Already exists</span>
+                            <span className="shrink-0 text-xs text-destructive">
+                              Already exists
+                            </span>
                           )}
                         </div>
                       </TableCell>
@@ -154,12 +156,15 @@ export default function AddItemsPage() {
                           onChange={(e) => {
                             const categoryId = e.target.value;
                             const cat = namedCategories.find((c) => c.id === categoryId);
-                            updateRow(row.id, cat ? { categoryId, type: cat.type } : { categoryId });
+                            updateRow(
+                              row.id,
+                              cat ? { categoryId, type: cat.type } : { categoryId },
+                            );
                           }}
                           className={cn(
                             inputClass,
-                            "min-w-[10rem] cursor-pointer",
-                            isIncomplete && "border-destructive focus:ring-destructive/50"
+                            'min-w-[10rem] cursor-pointer',
+                            isIncomplete && 'border-destructive focus:ring-destructive/50',
                           )}
                         >
                           <option value="">Select a category…</option>
@@ -168,7 +173,9 @@ export default function AddItemsPage() {
                               {namedCategories
                                 .filter((c) => c.type === type)
                                 .map((c) => (
-                                  <option key={c.id} value={c.id}>{c.name}</option>
+                                  <option key={c.id} value={c.id}>
+                                    {c.name}
+                                  </option>
                                 ))}
                             </optgroup>
                           ))}
@@ -180,20 +187,20 @@ export default function AddItemsPage() {
                       <TableCell className="py-2 px-3">
                         <select
                           value={row.unitOfMeasure}
-                          onChange={(e) =>
-                            updateRow(row.id, { unitOfMeasure: e.target.value })
-                          }
+                          onChange={(e) => updateRow(row.id, { unitOfMeasure: e.target.value })}
                           onKeyDown={(e) => {
-                            if (e.key === "Tab") {
+                            if (e.key === 'Tab') {
                               e.preventDefault();
                               addRow();
                             }
                           }}
-                          className={cn(inputClass, "min-w-[6rem] cursor-pointer")}
+                          className={cn(inputClass, 'min-w-[6rem] cursor-pointer')}
                         >
                           <option value="">— none —</option>
                           {units.map((u) => (
-                            <option key={u} value={u}>{u}</option>
+                            <option key={u} value={u}>
+                              {u}
+                            </option>
                           ))}
                         </select>
                       </TableCell>
@@ -215,7 +222,13 @@ export default function AddItemsPage() {
             </Table>
             <div className="border-t border-[var(--nav-border)] bg-muted/10">
               <div className="flex justify-end px-3 py-2">
-                <Button type="button" variant="ghost" size="sm" onClick={addRow} className="gap-1.5">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={addRow}
+                  className="gap-1.5"
+                >
                   <PlusIcon className="size-4" aria-hidden />
                   Add row
                 </Button>

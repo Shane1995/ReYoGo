@@ -89,7 +89,10 @@ export async function setGoodTypes(types: string[]): Promise<void> {
     .where(eq(schema.appConfig.key, GOOD_TYPES_KEY))
     .limit(1);
   if (existing.length > 0) {
-    await db.update(schema.appConfig).set({ value }).where(eq(schema.appConfig.key, GOOD_TYPES_KEY));
+    await db
+      .update(schema.appConfig)
+      .set({ value })
+      .where(eq(schema.appConfig.key, GOOD_TYPES_KEY));
   } else {
     await db.insert(schema.appConfig).values({ key: GOOD_TYPES_KEY, value });
   }

@@ -46,7 +46,10 @@ function parseUnitsSheet(sheet: XLSX.WorkSheet, result: ParseResult) {
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
   rows.forEach((row, i) => {
     const name = col(row, 'name', 'Name', 'unit', 'Unit');
-    if (!name) { result.errors.push(`Units row ${i + 2}: missing name`); return; }
+    if (!name) {
+      result.errors.push(`Units row ${i + 2}: missing name`);
+      return;
+    }
     result.units.push({ name });
   });
 }
@@ -55,7 +58,10 @@ function parseCategoriesSheet(sheet: XLSX.WorkSheet, result: ParseResult) {
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
   rows.forEach((row, i) => {
     const name = col(row, 'name', 'Name', 'category', 'Category');
-    if (!name) { result.errors.push(`Categories row ${i + 2}: missing name`); return; }
+    if (!name) {
+      result.errors.push(`Categories row ${i + 2}: missing name`);
+      return;
+    }
     const type = col(row, 'type', 'Type', 'category_type', 'Category Type').toLowerCase() || 'food';
     result.categories.push({ name, type });
   });
@@ -65,9 +71,15 @@ function parseItemsSheet(sheet: XLSX.WorkSheet, result: ParseResult) {
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
   rows.forEach((row, i) => {
     const name = col(row, 'name', 'Name', 'item', 'Item');
-    if (!name) { result.errors.push(`Items row ${i + 2}: missing name`); return; }
+    if (!name) {
+      result.errors.push(`Items row ${i + 2}: missing name`);
+      return;
+    }
     const categoryName = col(row, 'category_name', 'Category Name', 'category', 'Category');
-    if (!categoryName) { result.errors.push(`Items row ${i + 2}: "${name}" has no category`); return; }
+    if (!categoryName) {
+      result.errors.push(`Items row ${i + 2}: "${name}" has no category`);
+      return;
+    }
     const unit = col(row, 'unit', 'Unit', 'unit_of_measure', 'Unit of Measure') || undefined;
     result.items.push({ name, categoryName, unit });
   });
@@ -90,8 +102,14 @@ export function parseFile(file: File): Promise<ParseResult> {
           else if (key === 'items' || key === 'item') parseItemsSheet(sheet, result);
         });
 
-        if (result.units.length === 0 && result.categories.length === 0 && result.items.length === 0) {
-          result.errors.push('No recognised sheets found. Expected sheets named "Units", "Categories", and/or "Items".');
+        if (
+          result.units.length === 0 &&
+          result.categories.length === 0 &&
+          result.items.length === 0
+        ) {
+          result.errors.push(
+            'No recognised sheets found. Expected sheets named "Units", "Categories", and/or "Items".',
+          );
         }
 
         result.units = dedupe(result.units, (u) => u.name.toLowerCase());
@@ -111,13 +129,7 @@ export function parseFile(file: File): Promise<ParseResult> {
 export function downloadTemplate(goodTypes: string[] = ['food', 'drink', 'non-perishable']): void {
   const wb = XLSX.utils.book_new();
 
-  const unitsSheet = XLSX.utils.aoa_to_sheet([
-    ['name'],
-    ['litres'],
-    ['kgs'],
-    ['unit'],
-    ['pieces'],
-  ]);
+  const unitsSheet = XLSX.utils.aoa_to_sheet([['name'], ['litres'], ['kgs'], ['unit'], ['pieces']]);
   unitsSheet['!cols'] = [{ wch: 20 }];
   XLSX.utils.book_append_sheet(wb, unitsSheet, 'Units');
 

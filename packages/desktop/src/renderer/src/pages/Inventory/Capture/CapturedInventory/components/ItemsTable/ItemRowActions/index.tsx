@@ -1,6 +1,6 @@
-import { PencilIcon, Trash2Icon, LineChartIcon } from "lucide-react";
-import type { InventoryItem } from "../../../types";
-import type { FlatItem } from "../types";
+import { PencilIcon, Trash2Icon, LineChartIcon } from 'lucide-react';
+import type { InventoryItem } from '../../../types';
+import type { FlatItem } from '../types';
 
 type Props = {
   row: FlatItem;

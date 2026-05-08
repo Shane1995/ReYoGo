@@ -147,12 +147,8 @@
           "name": "captured_invoice_lines_invoice_id_captured_invoices_id_fk",
           "tableFrom": "captured_invoice_lines",
           "tableTo": "captured_invoices",
-          "columnsFrom": [
-            "invoice_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["invoice_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -160,12 +156,8 @@
           "name": "captured_invoice_lines_item_id_inventory_items_id_fk",
           "tableFrom": "captured_invoice_lines",
           "tableTo": "inventory_items",
-          "columnsFrom": [
-            "item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["item_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -330,12 +322,8 @@
           "name": "inventory_items_category_id_inventory_categories_id_fk",
           "tableFrom": "inventory_items",
           "tableTo": "inventory_categories",
-          "columnsFrom": [
-            "category_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["category_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -389,12 +377,8 @@
           "name": "invoice_audit_log_invoice_id_captured_invoices_id_fk",
           "tableFrom": "invoice_audit_log",
           "tableTo": "captured_invoices",
-          "columnsFrom": [
-            "invoice_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["invoice_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -483,12 +467,8 @@
           "name": "stock_movements_item_id_inventory_items_id_fk",
           "tableFrom": "stock_movements",
           "tableTo": "inventory_items",
-          "columnsFrom": [
-            "item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["item_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }

@@ -1,7 +1,7 @@
-import { Link } from "react-router-dom";
-import { ProductRoutes } from "@/components/AppRoutes/routePaths";
-import { Button } from "@/components/ui/button";
-import { PackageIcon } from "lucide-react";
+import { Link } from 'react-router-dom';
+import { ProductRoutes } from '@/components/AppRoutes/routePaths';
+import { Button } from '@/components/ui/button';
+import { PackageIcon } from 'lucide-react';
 
 const Home = () => (
   <div className="container mx-auto flex flex-col items-center justify-center gap-8 px-4 py-16">

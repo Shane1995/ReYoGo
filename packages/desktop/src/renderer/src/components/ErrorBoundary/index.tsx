@@ -1,5 +1,5 @@
-import { Component, type ErrorInfo, type ReactNode } from "react";
-import { Button } from "@/components/ui/button";
+import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
 
 type Props = {
   children: ReactNode;
@@ -22,7 +22,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error("ErrorBoundary caught an error:", error, errorInfo);
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
   handleReset = (): void => {
@@ -36,12 +36,8 @@ export class ErrorBoundary extends Component<Props, State> {
       }
       return (
         <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
-          <h1 className="text-xl font-semibold text-foreground">
-            Something went wrong
-          </h1>
-          <p className="max-w-md text-sm text-muted-foreground">
-            {this.state.error.message}
-          </p>
+          <h1 className="text-xl font-semibold text-foreground">Something went wrong</h1>
+          <p className="max-w-md text-sm text-muted-foreground">{this.state.error.message}</p>
           <Button onClick={this.handleReset} variant="outline">
             Try again
           </Button>

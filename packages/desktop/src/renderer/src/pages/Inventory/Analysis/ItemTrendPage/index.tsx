@@ -1,8 +1,8 @@
-import { useMemo, useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeftIcon } from "lucide-react";
-import { stockMovementsService } from "@/services/stockMovements";
-import type { IItemCostHistory } from "@reyogo/shared";
+import { useMemo, useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeftIcon } from 'lucide-react';
+import { stockMovementsService } from '@/services/stockMovements';
+import type { IItemCostHistory } from '@reyogo/shared';
 import {
   ResponsiveContainer,
   LineChart,
@@ -12,13 +12,13 @@ import {
   CartesianGrid,
   Tooltip,
   ReferenceLine,
-} from "recharts";
-import { useAnalysisLines } from "../hooks/useAnalysisLines";
-import { buildItemGroups } from "../utils/buildItemGroups";
-import { overallChangePct } from "../utils/stats";
-import { fmt, fmtDate, fmtDateShort, fmtPct } from "../utils/format";
-import { changeCls } from "../utils/styles";
-import { AnalysisRoutes } from "@/components/AppRoutes/routePaths";
+} from 'recharts';
+import { useAnalysisLines } from '../hooks/useAnalysisLines';
+import { buildItemGroups } from '../utils/buildItemGroups';
+import { overallChangePct } from '../utils/stats';
+import { fmt, fmtDate, fmtDateShort, fmtPct } from '../utils/format';
+import { changeCls } from '../utils/styles';
+import { AnalysisRoutes } from '@/components/AppRoutes/routePaths';
 
 export default function ItemTrendPage() {
   const { itemId } = useParams<{ itemId: string }>();
@@ -28,14 +28,15 @@ export default function ItemTrendPage() {
 
   useEffect(() => {
     if (!itemId) return;
-    stockMovementsService.getItemCostHistory(itemId)
+    stockMovementsService
+      .getItemCostHistory(itemId)
       .then(setCostHistory)
       .catch(() => {});
   }, [itemId]);
 
   const group = useMemo(() => {
     if (!itemId || !lines.length) return null;
-    const groups = buildItemGroups(lines, "", "");
+    const groups = buildItemGroups(lines, '', '');
     return groups.find((g) => g.itemId === itemId) ?? null;
   }, [lines, itemId]);
 
@@ -103,20 +104,31 @@ export default function ItemTrendPage() {
           <h1 className="text-lg font-semibold text-foreground">{group.name}</h1>
           <p className="text-sm text-muted-foreground">
             {group.categoryName ?? group.categoryType}
-            {stats?.uom ? ` · ${stats.uom}` : ""}
-            {" · "}{stats?.count} capture{stats?.count !== 1 ? "s" : ""}
+            {stats?.uom ? ` · ${stats.uom}` : ''}
+            {' · '}
+            {stats?.count} capture{stats?.count !== 1 ? 's' : ''}
           </p>
         </div>
       </div>
 
       {stats && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard label="First price" value={`${fmt(stats.first)}${stats.uom ? ` / ${stats.uom}` : ""}`} />
-          <StatCard label="Latest price" value={`${fmt(stats.last)}${stats.uom ? ` / ${stats.uom}` : ""}`} />
-          <StatCard label="Average price" value={`${fmt(stats.avg)}${stats.uom ? ` / ${stats.uom}` : ""}`} muted />
+          <StatCard
+            label="First price"
+            value={`${fmt(stats.first)}${stats.uom ? ` / ${stats.uom}` : ''}`}
+          />
+          <StatCard
+            label="Latest price"
+            value={`${fmt(stats.last)}${stats.uom ? ` / ${stats.uom}` : ''}`}
+          />
+          <StatCard
+            label="Average price"
+            value={`${fmt(stats.avg)}${stats.uom ? ` / ${stats.uom}` : ''}`}
+            muted
+          />
           <StatCard
             label="Overall change"
-            value={stats.change === null ? "—" : fmtPct(stats.change)}
+            value={stats.change === null ? '—' : fmtPct(stats.change)}
             className={changeCls(stats.change, true)}
           />
         </div>
@@ -126,14 +138,20 @@ export default function ItemTrendPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-2">
           <StatCard
             label="Weighted Avg Cost"
-            value={costHistory.weightedAvgCost != null ? `${fmt(costHistory.weightedAvgCost)}${stats?.uom ? ` / ${stats.uom}` : ""}` : "—"}
+            value={
+              costHistory.weightedAvgCost != null
+                ? `${fmt(costHistory.weightedAvgCost)}${stats?.uom ? ` / ${stats.uom}` : ''}`
+                : '—'
+            }
             muted
           />
           <StatCard
             label="Current Stock"
-            value={costHistory.totalStock != null
-              ? `${costHistory.totalStock % 1 === 0 ? costHistory.totalStock.toFixed(0) : costHistory.totalStock.toFixed(2)}${stats?.uom ? ` ${stats.uom}` : ""}`
-              : "—"}
+            value={
+              costHistory.totalStock != null
+                ? `${costHistory.totalStock % 1 === 0 ? costHistory.totalStock.toFixed(0) : costHistory.totalStock.toFixed(2)}${stats?.uom ? ` ${stats.uom}` : ''}`
+                : '—'
+            }
             muted
           />
         </div>
@@ -153,20 +171,18 @@ export default function ItemTrendPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 11, fill: "#9ca3af" }}
-                tickLine={{ stroke: "#4b5563" }}
-                axisLine={{ stroke: "#4b5563" }}
+                tick={{ fontSize: 11, fill: '#9ca3af' }}
+                tickLine={{ stroke: '#4b5563' }}
+                axisLine={{ stroke: '#4b5563' }}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: "#9ca3af" }}
-                tickLine={{ stroke: "#4b5563" }}
-                axisLine={{ stroke: "#4b5563" }}
+                tick={{ fontSize: 11, fill: '#9ca3af' }}
+                tickLine={{ stroke: '#4b5563' }}
+                axisLine={{ stroke: '#4b5563' }}
                 tickFormatter={(v) => fmt(v)}
                 width={52}
               />
-              <Tooltip
-                content={<PriceTip uom={group.uom} />}
-              />
+              <Tooltip content={<PriceTip uom={group.uom} />} />
               <ReferenceLine
                 y={avgPrice}
                 stroke="#6b7280"
@@ -178,8 +194,8 @@ export default function ItemTrendPage() {
                 dataKey="price"
                 stroke="#6366f1"
                 strokeWidth={2}
-                dot={{ r: 4, fill: "#6366f1", strokeWidth: 0 }}
-                activeDot={{ r: 5, fill: "#6366f1" }}
+                dot={{ r: 4, fill: '#6366f1', strokeWidth: 0 }}
+                activeDot={{ r: 5, fill: '#6366f1' }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -204,16 +220,17 @@ export default function ItemTrendPage() {
               const prev = i > 0 ? group.entries[i - 1].unitPrice : null;
               const diff = prev !== null && prev > 0 ? ((e.unitPrice - prev) / prev) * 100 : null;
               return (
-                <tr key={`${e.invoiceId}-${i}`} className={i % 2 === 1 ? "bg-white/[0.03]" : ""}>
+                <tr key={`${e.invoiceId}-${i}`} className={i % 2 === 1 ? 'bg-white/[0.03]' : ''}>
                   <td className="px-4 py-2.5 text-muted-foreground">{fmtDate(e.date)}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">
-                    {e.quantity}{e.uom ? ` ${e.uom}` : ""}
+                    {e.quantity}
+                    {e.uom ? ` ${e.uom}` : ''}
                   </td>
                   <td className="px-4 py-2.5 text-right font-mono font-medium text-foreground">
                     {fmt(e.unitPrice)}
                   </td>
                   <td className={`px-4 py-2.5 text-right ${changeCls(diff)}`}>
-                    {diff === null ? "—" : fmtPct(diff)}
+                    {diff === null ? '—' : fmtPct(diff)}
                   </td>
                 </tr>
               );
@@ -239,20 +256,33 @@ function StatCard({
   return (
     <div className="rounded-lg border border-border bg-background p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`mt-1 font-mono text-base font-semibold ${className ?? (muted ? "text-muted-foreground" : "text-foreground")}`}>
+      <p
+        className={`mt-1 font-mono text-base font-semibold ${className ?? (muted ? 'text-muted-foreground' : 'text-foreground')}`}
+      >
         {value}
       </p>
     </div>
   );
 }
 
-function PriceTip({ active, payload, uom }: { active?: boolean; payload?: {payload: {fullDate: string; price: number; qty: number}}[]; uom?: string }) {
+function PriceTip({
+  active,
+  payload,
+  uom,
+}: {
+  active?: boolean;
+  payload?: { payload: { fullDate: string; price: number; qty: number } }[];
+  uom?: string;
+}) {
   if (!active || !payload?.length) return null;
   const { fullDate, price, qty } = payload[0].payload;
   return (
     <div className="rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-md">
       <p className="text-muted-foreground">{fullDate}</p>
-      <p className="font-mono font-semibold text-foreground">{fmt(price)}{uom ? ` / ${uom}` : ""}</p>
+      <p className="font-mono font-semibold text-foreground">
+        {fmt(price)}
+        {uom ? ` / ${uom}` : ''}
+      </p>
       <p className="text-xs text-muted-foreground">qty: {qty}</p>
     </div>
   );

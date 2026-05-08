@@ -1,8 +1,8 @@
-import { useState, useCallback, useRef } from "react";
-import { PlusIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { DeleteButton } from "../components/DeleteButton";
-import { StepNav } from "../components/StepNav";
+import { useState, useCallback, useRef } from 'react';
+import { PlusIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DeleteButton } from '../components/DeleteButton';
+import { StepNav } from '../components/StepNav';
 import {
   Table,
   TableBody,
@@ -10,9 +10,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { cn } from "@/lib/utils";
-import { inputClass } from "../utils/inputClass";
+} from '@/components/ui/table';
+import { cn } from '@/lib/utils';
+import { inputClass } from '../utils/inputClass';
 
 export function GoodTypesStep({
   goodTypes,
@@ -25,7 +25,7 @@ export function GoodTypesStep({
   onNext: () => void;
   onBack: () => void;
 }) {
-  const [newName, setNewName] = useState("");
+  const [newName, setNewName] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const addType = useCallback(() => {
@@ -33,7 +33,7 @@ export function GoodTypesStep({
     if (!name) return;
     if (goodTypes.includes(name)) return;
     setGoodTypes([...goodTypes, name]);
-    setNewName("");
+    setNewName('');
     setTimeout(() => inputRef.current?.focus(), 50);
   }, [newName, goodTypes, setGoodTypes]);
 
@@ -41,7 +41,7 @@ export function GoodTypesStep({
     (type: string) => {
       setGoodTypes(goodTypes.filter((t) => t !== type));
     },
-    [goodTypes, setGoodTypes]
+    [goodTypes, setGoodTypes],
   );
 
   return (
@@ -49,7 +49,8 @@ export function GoodTypesStep({
       <div>
         <h2 className="text-lg font-semibold text-foreground">Good types</h2>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Define the primary types used to classify your inventory categories (e.g. food, drink, non-perishable).
+          Define the primary types used to classify your inventory categories (e.g. food, drink,
+          non-perishable).
         </p>
       </div>
 
@@ -85,10 +86,10 @@ export function GoodTypesStep({
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") addType();
+                if (e.key === 'Enter') addType();
               }}
               placeholder="e.g. bakery, alcohol…"
-              className={cn(inputClass, "flex-1")}
+              className={cn(inputClass, 'flex-1')}
             />
             <Button
               type="button"

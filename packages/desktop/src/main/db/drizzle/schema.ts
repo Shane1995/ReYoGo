@@ -70,7 +70,8 @@ export const capturedInvoiceLines = sqliteTable('captured_invoice_lines', {
   invoiceId: text('invoice_id')
     .notNull()
     .references(() => capturedInvoices.id, { onDelete: 'cascade' }),
-  itemId: text('item_id').notNull()
+  itemId: text('item_id')
+    .notNull()
     .references(() => inventoryItems.id, { onDelete: 'restrict' }),
   itemNameSnapshot: text('item_name_snapshot').notNull(),
   unitOfMeasure: text('unit_of_measure'),
@@ -124,7 +125,9 @@ export type AppConfigRow = typeof appConfig.$inferSelect;
 
 export const stockMovements = sqliteTable('stock_movements', {
   id: text('id').primaryKey(),
-  itemId: text('item_id').notNull().references(() => inventoryItems.id, { onDelete: 'restrict' }),
+  itemId: text('item_id')
+    .notNull()
+    .references(() => inventoryItems.id, { onDelete: 'restrict' }),
   itemNameSnapshot: text('item_name_snapshot').notNull(),
   type: text('type').notNull(),
   quantity: real('quantity').notNull(),

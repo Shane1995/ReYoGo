@@ -1,8 +1,8 @@
-import { useCallback } from "react";
-import { PlusIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { DeleteButton } from "../components/DeleteButton";
-import { StepNav } from "../components/StepNav";
+import { useCallback } from 'react';
+import { PlusIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DeleteButton } from '../components/DeleteButton';
+import { StepNav } from '../components/StepNav';
 import {
   Table,
   TableBody,
@@ -10,12 +10,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { cn } from "@/lib/utils";
-import type { IUnitOfMeasure } from "@reyogo/shared/setup";
-import { inputClass } from "../utils/inputClass";
-import { createEmptyItem } from "../utils/createEmpty";
-import type { PendingCategory, PendingItem } from "../utils/types";
+} from '@/components/ui/table';
+import { cn } from '@/lib/utils';
+import type { IUnitOfMeasure } from '@reyogo/shared/setup';
+import { inputClass } from '../utils/inputClass';
+import { createEmptyItem } from '../utils/createEmpty';
+import type { PendingCategory, PendingItem } from '../utils/types';
 
 export function ItemsStep({
   items,
@@ -42,14 +42,14 @@ export function ItemsStep({
     (id: string) => {
       setItems(items.filter((i) => i.id !== id));
     },
-    [items, setItems]
+    [items, setItems],
   );
 
   const updateRow = useCallback(
     (id: string, updates: Partial<PendingItem>) => {
       setItems(items.map((i) => (i.id === id ? { ...i, ...updates } : i)));
     },
-    [items, setItems]
+    [items, setItems],
   );
 
   const namedItems = items.filter((i) => i.name.trim());
@@ -86,10 +86,10 @@ export function ItemsStep({
                       value={item.name}
                       onChange={(e) => updateRow(item.id, { name: e.target.value })}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") addRow();
+                        if (e.key === 'Enter') addRow();
                       }}
                       placeholder="Item name"
-                      className={cn(inputClass, "min-w-[9rem]")}
+                      className={cn(inputClass, 'min-w-[9rem]')}
                     />
                   </TableCell>
                   <TableCell className="py-2 px-3">
@@ -98,8 +98,8 @@ export function ItemsStep({
                       onChange={(e) => updateRow(item.id, { categoryId: e.target.value })}
                       className={cn(
                         inputClass,
-                        "min-w-[9rem] cursor-pointer",
-                        isIncomplete && "border-destructive"
+                        'min-w-[9rem] cursor-pointer',
+                        isIncomplete && 'border-destructive',
                       )}
                     >
                       <option value="">Select category</option>
@@ -114,7 +114,7 @@ export function ItemsStep({
                     <select
                       value={item.unitId}
                       onChange={(e) => updateRow(item.id, { unitId: e.target.value })}
-                      className={cn(inputClass, "min-w-[7rem] cursor-pointer")}
+                      className={cn(inputClass, 'min-w-[7rem] cursor-pointer')}
                     >
                       <option value="">No unit</option>
                       {units.map((u) => (

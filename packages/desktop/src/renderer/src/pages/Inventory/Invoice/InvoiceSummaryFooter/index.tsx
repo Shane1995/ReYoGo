@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { formatMoney } from "../utils/formatMoney";
+import { Button } from '@/components/ui/button';
+import { formatMoney } from '../utils/formatMoney';
 
 type Summary = {
   lineCount: number;
@@ -24,22 +24,30 @@ export function InvoiceSummaryFooter({ summary, isSaving, hasValidLines, onSave 
       <div className="flex min-w-0 items-center justify-between gap-4 px-4 py-3">
         <div className="flex min-w-0 items-center gap-4 text-sm overflow-hidden">
           <span className="shrink-0 text-muted-foreground">
-            <span className="font-medium text-foreground">{summary.lineCount}</span>{" "}
-            line item{summary.lineCount !== 1 ? "s" : ""} added
+            <span className="font-medium text-foreground">{summary.lineCount}</span> line item
+            {summary.lineCount !== 1 ? 's' : ''} added
           </span>
           <span className="shrink-0 text-muted-foreground">
-            Excl. <span className="font-mono font-medium text-foreground">{formatMoney(summary.subtotal)}</span>
+            Excl.{' '}
+            <span className="font-mono font-medium text-foreground">
+              {formatMoney(summary.subtotal)}
+            </span>
           </span>
           <span className="shrink-0 text-muted-foreground">
-            VAT <span className="font-mono font-medium text-foreground">{formatMoney(summary.totalVat)}</span>
+            VAT{' '}
+            <span className="font-mono font-medium text-foreground">
+              {formatMoney(summary.totalVat)}
+            </span>
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-3">
           <Button type="button" size="sm" onClick={onSave} disabled={isSaving || !hasValidLines}>
-            {isSaving ? "Saving…" : "Save invoice"}
+            {isSaving ? 'Saving…' : 'Save invoice'}
           </Button>
           <span className="text-muted-foreground">Total:</span>
-          <span className="text-xl font-semibold font-mono text-foreground">{formatMoney(summary.grandTotal)}</span>
+          <span className="text-xl font-semibold font-mono text-foreground">
+            {formatMoney(summary.grandTotal)}
+          </span>
         </div>
       </div>
     </footer>

@@ -1,6 +1,6 @@
-import { useState, useCallback } from "react";
-import { PlusIcon, Trash2Icon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useCallback } from 'react';
+import { PlusIcon, Trash2Icon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -8,18 +8,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { cn } from "@/lib/utils";
-import { useInventory } from "../CapturedInventory/Context/InventoryContext";
+} from '@/components/ui/table';
+import { cn } from '@/lib/utils';
+import { useInventory } from '../CapturedInventory/Context/InventoryContext';
 
 const inputClass = cn(
-  "h-8 w-full rounded-md border border-input bg-muted px-2.5 text-sm",
-  "focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0"
+  'h-8 w-full rounded-md border border-input bg-muted px-2.5 text-sm',
+  'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0',
 );
 
 export default function ManageTypesPage() {
   const { goodTypes: types, setGoodTypes: setTypes } = useInventory();
-  const [newName, setNewName] = useState("");
+  const [newName, setNewName] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -28,14 +28,17 @@ export default function ManageTypesPage() {
     if (!name) return;
     if (types.includes(name)) return;
     setTypes([...types, name]);
-    setNewName("");
+    setNewName('');
     setSaved(false);
   }, [newName, types, setTypes]);
 
-  const removeType = useCallback((type: string) => {
-    setTypes(types.filter((t) => t !== type));
-    setSaved(false);
-  }, [types, setTypes]);
+  const removeType = useCallback(
+    (type: string) => {
+      setTypes(types.filter((t) => t !== type));
+      setSaved(false);
+    },
+    [types, setTypes],
+  );
 
   const save = useCallback(async () => {
     if (types.length === 0) return;
@@ -55,7 +58,8 @@ export default function ManageTypesPage() {
       <header className="shrink-0 border-b border-[var(--nav-border)] bg-background px-6 py-4">
         <h1 className="text-xl font-semibold tracking-tight">Good types</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Configure the primary types used to classify inventory categories (e.g. food, drink, non-perishable).
+          Configure the primary types used to classify inventory categories (e.g. food, drink,
+          non-perishable).
         </p>
       </header>
 
@@ -97,10 +101,15 @@ export default function ManageTypesPage() {
               <div className="flex gap-2">
                 <input
                   value={newName}
-                  onChange={(e) => { setNewName(e.target.value); setSaved(false); }}
-                  onKeyDown={(e) => { if (e.key === "Enter") addType(); }}
+                  onChange={(e) => {
+                    setNewName(e.target.value);
+                    setSaved(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') addType();
+                  }}
                   placeholder="e.g. bakery, alcohol…"
-                  className={cn(inputClass, "flex-1")}
+                  className={cn(inputClass, 'flex-1')}
                 />
                 <Button
                   type="button"
@@ -118,12 +127,10 @@ export default function ManageTypesPage() {
           </div>
 
           <div className="mt-4 flex items-center justify-between">
-            {saved && (
-              <span className="text-sm text-emerald-600 font-medium">Saved</span>
-            )}
+            {saved && <span className="text-sm text-emerald-600 font-medium">Saved</span>}
             <div className="ml-auto">
               <Button onClick={save} disabled={saving || types.length === 0} size="sm">
-                {saving ? "Saving…" : "Save changes"}
+                {saving ? 'Saving…' : 'Save changes'}
               </Button>
             </div>
           </div>

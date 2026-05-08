@@ -1,14 +1,14 @@
-import { useState, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { useInventory } from "../../Context/InventoryContext";
-import { cn } from "@/lib/utils";
+import { useState, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { useInventory } from '../../Context/InventoryContext';
+import { cn } from '@/lib/utils';
 
 const inputClass = cn(
-  "h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm",
-  "focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0"
+  'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm',
+  'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0',
 );
 
-type Tab = "item" | "category" | "goodType";
+type Tab = 'item' | 'category' | 'goodType';
 
 type Props = {
   open: boolean;
@@ -17,13 +17,13 @@ type Props = {
 
 function GoodTypeForm({ onDone }: { onDone: () => void }) {
   const { addGoodType } = useInventory();
-  const [name, setName] = useState("");
+  const [name, setName] = useState('');
 
   function handleSave() {
     const trimmed = name.trim();
     if (!trimmed) return;
     addGoodType(trimmed);
-    setName("");
+    setName('');
     onDone();
   }
 
@@ -34,7 +34,7 @@ function GoodTypeForm({ onDone }: { onDone: () => void }) {
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSave()}
+          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
           className={inputClass}
           placeholder="e.g. dairy, bakery"
           autoFocus
@@ -51,14 +51,14 @@ function GoodTypeForm({ onDone }: { onDone: () => void }) {
 
 function CategoryForm({ onDone }: { onDone: () => void }) {
   const { goodTypes, addCategory } = useInventory();
-  const [name, setName] = useState("");
-  const [type, setType] = useState(goodTypes[0] ?? "");
+  const [name, setName] = useState('');
+  const [type, setType] = useState(goodTypes[0] ?? '');
 
   function handleSave() {
     const trimmed = name.trim();
     if (!trimmed || !type) return;
     addCategory({ name: trimmed, type });
-    setName("");
+    setName('');
     onDone();
   }
 
@@ -69,7 +69,7 @@ function CategoryForm({ onDone }: { onDone: () => void }) {
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSave()}
+          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
           className={inputClass}
           placeholder="Category name"
           autoFocus
@@ -80,11 +80,13 @@ function CategoryForm({ onDone }: { onDone: () => void }) {
         <select
           value={type}
           onChange={(e) => setType(e.target.value)}
-          className={cn(inputClass, "cursor-pointer")}
+          className={cn(inputClass, 'cursor-pointer')}
         >
           {!type && <option value="">Select type</option>}
           {goodTypes.map((t) => (
-            <option key={t} value={t}>{t}</option>
+            <option key={t} value={t}>
+              {t}
+            </option>
           ))}
         </select>
       </div>
@@ -99,19 +101,24 @@ function CategoryForm({ onDone }: { onDone: () => void }) {
 
 function ItemForm({ onDone }: { onDone: () => void }) {
   const { categories, units, addItem } = useInventory();
-  const [name, setName] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [unitOfMeasure, setUnitOfMeasure] = useState("");
+  const [name, setName] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [unitOfMeasure, setUnitOfMeasure] = useState('');
 
   const category = categories.find((c) => c.id === categoryId);
 
   function handleSave() {
     const trimmed = name.trim();
     if (!trimmed || !categoryId || !category) return;
-    addItem({ name: trimmed, categoryId, type: category.type, unitOfMeasure: unitOfMeasure || undefined });
-    setName("");
-    setCategoryId("");
-    setUnitOfMeasure("");
+    addItem({
+      name: trimmed,
+      categoryId,
+      type: category.type,
+      unitOfMeasure: unitOfMeasure || undefined,
+    });
+    setName('');
+    setCategoryId('');
+    setUnitOfMeasure('');
     onDone();
   }
 
@@ -122,7 +129,7 @@ function ItemForm({ onDone }: { onDone: () => void }) {
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSave()}
+          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
           className={inputClass}
           placeholder="Item name"
           autoFocus
@@ -133,7 +140,7 @@ function ItemForm({ onDone }: { onDone: () => void }) {
         <select
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
-          className={cn(inputClass, "cursor-pointer")}
+          className={cn(inputClass, 'cursor-pointer')}
         >
           <option value="">Select category</option>
           {categories
@@ -151,11 +158,13 @@ function ItemForm({ onDone }: { onDone: () => void }) {
         <select
           value={unitOfMeasure}
           onChange={(e) => setUnitOfMeasure(e.target.value)}
-          className={cn(inputClass, "cursor-pointer")}
+          className={cn(inputClass, 'cursor-pointer')}
         >
           <option value="">— none —</option>
           {units.map((u) => (
-            <option key={u} value={u}>{u}</option>
+            <option key={u} value={u}>
+              {u}
+            </option>
           ))}
         </select>
       </div>
@@ -169,13 +178,13 @@ function ItemForm({ onDone }: { onDone: () => void }) {
 }
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "item", label: "Item" },
-  { id: "category", label: "Category" },
-  { id: "goodType", label: "Good Type" },
+  { id: 'item', label: 'Item' },
+  { id: 'category', label: 'Category' },
+  { id: 'goodType', label: 'Good Type' },
 ];
 
 export function AddInventoryModal({ open, onClose }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>("item");
+  const [activeTab, setActiveTab] = useState<Tab>('item');
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const handleDone = useCallback((label: string) => {
@@ -205,10 +214,10 @@ export function AddInventoryModal({ open, onClose }: Props) {
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "rounded-t-md px-3.5 py-2 text-xs font-medium transition-colors",
+                  'rounded-t-md px-3.5 py-2 text-xs font-medium transition-colors',
                   activeTab === tab.id
-                    ? "border-b-2 border-primary text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? 'border-b-2 border-primary text-foreground'
+                    : 'text-muted-foreground hover:text-foreground',
                 )}
               >
                 {tab.label}
@@ -224,13 +233,15 @@ export function AddInventoryModal({ open, onClose }: Props) {
             </div>
           )}
 
-          {activeTab === "item" && <ItemForm onDone={() => handleDone("Item")} />}
-          {activeTab === "category" && <CategoryForm onDone={() => handleDone("Category")} />}
-          {activeTab === "goodType" && <GoodTypeForm onDone={() => handleDone("Good type")} />}
+          {activeTab === 'item' && <ItemForm onDone={() => handleDone('Item')} />}
+          {activeTab === 'category' && <CategoryForm onDone={() => handleDone('Category')} />}
+          {activeTab === 'goodType' && <GoodTypeForm onDone={() => handleDone('Good type')} />}
         </div>
 
         <div className="flex justify-end border-t border-border px-6 py-4">
-          <Button type="button" variant="outline" onClick={onClose}>Close</Button>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Close
+          </Button>
         </div>
       </div>
     </div>

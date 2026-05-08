@@ -54,7 +54,10 @@ export function CsvImportButton({
       const review = enrichParseResult(parsed, existing);
       setPhase({ kind: 'review', parsed, review });
     } catch {
-      setPhase({ kind: 'error', message: 'Could not read the file. Make sure it is a valid .xlsx or .csv file.' });
+      setPhase({
+        kind: 'error',
+        message: 'Could not read the file. Make sure it is a valid .xlsx or .csv file.',
+      });
     }
   }, []);
 
@@ -65,7 +68,7 @@ export function CsvImportButton({
       setOpen(false);
       setPhase({ kind: 'idle' });
     },
-    [phase, onImport]
+    [phase, onImport],
   );
 
   const handleClose = useCallback(() => {
@@ -135,16 +138,22 @@ export function CsvImportButton({
                       Use the Excel template below. It has three sheets —{' '}
                       <span className="font-medium text-foreground">Units</span>,{' '}
                       <span className="font-medium text-foreground">Categories</span>, and{' '}
-                      <span className="font-medium text-foreground">Items</span>. Fill in only the sheets you need.
+                      <span className="font-medium text-foreground">Items</span>. Fill in only the
+                      sheets you need.
                     </p>
                     <div className="space-y-1.5 text-xs text-muted-foreground">
                       {[
                         { sheet: 'Units', cols: 'name' },
-                        { sheet: 'Categories', cols: 'name, type (matches your configured good types)' },
+                        {
+                          sheet: 'Categories',
+                          cols: 'name, type (matches your configured good types)',
+                        },
                         { sheet: 'Items', cols: 'name, category_name, unit (optional)' },
                       ].map((r) => (
                         <div key={r.sheet} className="flex items-start gap-2">
-                          <code className="bg-background border border-[var(--nav-border)] rounded px-1.5 py-0.5 shrink-0">{r.sheet}</code>
+                          <code className="bg-background border border-[var(--nav-border)] rounded px-1.5 py-0.5 shrink-0">
+                            {r.sheet}
+                          </code>
                           <span>{r.cols}</span>
                         </div>
                       ))}
@@ -152,7 +161,7 @@ export function CsvImportButton({
                     <button
                       type="button"
                       onClick={async () => {
-                        const types = await setupService.getGoodTypes() as string[];
+                        const types = (await setupService.getGoodTypes()) as string[];
                         downloadTemplate(types);
                       }}
                       className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--nav-active-border)] hover:underline"
@@ -174,13 +183,15 @@ export function CsvImportButton({
                     className={cn(
                       'w-full rounded-lg border-2 border-dashed border-[var(--nav-border)] p-8',
                       'flex flex-col items-center gap-3 text-center',
-                      'hover:border-[var(--nav-active-border)] hover:bg-muted/20 transition-colors'
+                      'hover:border-[var(--nav-active-border)] hover:bg-muted/20 transition-colors',
                     )}
                   >
                     <UploadIcon className="size-8 text-muted-foreground" />
                     <div>
                       <p className="text-sm font-medium text-foreground">Choose a file</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Supports .xlsx and .csv</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Supports .xlsx and .csv
+                      </p>
                     </div>
                   </button>
                 </div>

@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { PlusIcon, XIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { PlusIcon, XIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -8,14 +8,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import type { TypeValue, InventoryCategory, InventoryItem } from "../../types";
-import { AddCategoryModal } from "../AddCategoryModal";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/table';
+import type { TypeValue, InventoryCategory, InventoryItem } from '../../types';
+import { AddCategoryModal } from '../AddCategoryModal';
+import { cn } from '@/lib/utils';
 
 const inputClass = cn(
-  "h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm",
-  "focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0"
+  'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm',
+  'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0',
 );
 
 type PendingRow = {
@@ -27,15 +27,15 @@ type PendingRow = {
 };
 
 function createEmptyRow(): PendingRow {
-  return { id: crypto.randomUUID(), name: "", categoryId: "", type: "", unitOfMeasure: "" };
+  return { id: crypto.randomUUID(), name: '', categoryId: '', type: '', unitOfMeasure: '' };
 }
 
 type AddItemsSidebarProps = {
   categories: InventoryCategory[];
   items: InventoryItem[];
   units: string[];
-  onAddItem: (item: Omit<InventoryItem, "id">) => void;
-  onAddCategory: (category: Omit<InventoryCategory, "id">) => void;
+  onAddItem: (item: Omit<InventoryItem, 'id'>) => void;
+  onAddCategory: (category: Omit<InventoryCategory, 'id'>) => void;
   onClose: () => void;
 };
 
@@ -77,7 +77,7 @@ export function AddItemsSidebar({
 
   const existingNames = useMemo(
     () => new Set(items.map((i) => i.name.trim().toLowerCase())),
-    [items]
+    [items],
   );
 
   const duplicateIds = useMemo(() => {
@@ -165,13 +165,13 @@ export function AddItemsSidebar({
                         value={row.name}
                         onChange={(e) => updateRow(row.id, { name: e.target.value })}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") addRow();
+                          if (e.key === 'Enter') addRow();
                         }}
                         className={cn(
                           inputClass,
-                          "min-w-0",
+                          'min-w-0',
                           duplicateIds.has(row.id) &&
-                            "border-destructive focus:ring-destructive/50"
+                            'border-destructive focus:ring-destructive/50',
                         )}
                         placeholder="Item name"
                       />
@@ -188,7 +188,7 @@ export function AddItemsSidebar({
                         const cat = categories.find((c) => c.id === categoryId);
                         updateRow(row.id, cat ? { categoryId, type: cat.type } : { categoryId });
                       }}
-                      className={cn(inputClass, "min-w-0 cursor-pointer")}
+                      className={cn(inputClass, 'min-w-0 cursor-pointer')}
                     >
                       <option value="">Category</option>
                       {categories.map((c) => (
@@ -201,16 +201,14 @@ export function AddItemsSidebar({
                   <TableCell className="py-2 px-3">
                     <select
                       value={row.unitOfMeasure}
-                      onChange={(e) =>
-                        updateRow(row.id, { unitOfMeasure: e.target.value })
-                      }
+                      onChange={(e) => updateRow(row.id, { unitOfMeasure: e.target.value })}
                       onKeyDown={(e) => {
-                        if (e.key === "Tab") {
+                        if (e.key === 'Tab') {
                           e.preventDefault();
                           addRow();
                         }
                       }}
-                      className={cn(inputClass, "min-w-0 cursor-pointer")}
+                      className={cn(inputClass, 'min-w-0 cursor-pointer')}
                     >
                       <option value="">— none —</option>
                       {units.map((u) => (
@@ -236,7 +234,13 @@ export function AddItemsSidebar({
           </Table>
 
           <div className="border-t border-[var(--nav-border)] bg-muted/10 flex justify-end px-3 py-2">
-            <Button type="button" variant="ghost" size="sm" onClick={addRow} className="gap-1.5 text-xs h-7">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={addRow}
+              className="gap-1.5 text-xs h-7"
+            >
               <PlusIcon className="size-3.5" />
               Add row
             </Button>

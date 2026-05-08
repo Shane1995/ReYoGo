@@ -1,5 +1,5 @@
-import { UploadIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { UploadIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type DropZoneProps = {
   onClick: () => void;
@@ -11,9 +11,9 @@ export function DropZone({ onClick }: DropZoneProps) {
       type="button"
       onClick={onClick}
       className={cn(
-        "w-full rounded-xl border-2 border-dashed border-[var(--nav-border)] bg-muted p-12",
-        "flex flex-col items-center gap-4 text-center",
-        "hover:border-[var(--nav-active-border)] hover:bg-muted/80 transition-colors"
+        'w-full rounded-xl border-2 border-dashed border-[var(--nav-border)] bg-muted p-12',
+        'flex flex-col items-center gap-4 text-center',
+        'hover:border-[var(--nav-active-border)] hover:bg-muted/80 transition-colors',
       )}
     >
       <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[var(--nav-bg)] border border-[var(--nav-border)]">

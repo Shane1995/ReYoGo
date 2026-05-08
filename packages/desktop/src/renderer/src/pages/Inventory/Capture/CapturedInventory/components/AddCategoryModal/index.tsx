@@ -1,24 +1,24 @@
-import { useState, useCallback, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import type { TypeValue, InventoryCategory } from "../../types";
-import { useInventory } from "../../Context/InventoryContext";
-import { cn } from "@/lib/utils";
+import { useState, useCallback, useMemo } from 'react';
+import { Button } from '@/components/ui/button';
+import type { TypeValue, InventoryCategory } from '../../types';
+import { useInventory } from '../../Context/InventoryContext';
+import { cn } from '@/lib/utils';
 
 const inputClass = cn(
-  "h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm",
-  "focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0"
+  'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm',
+  'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0',
 );
 
 type AddCategoryModalProps = {
   open: boolean;
   onClose: () => void;
-  onSave: (category: Omit<InventoryCategory, "id">) => void;
+  onSave: (category: Omit<InventoryCategory, 'id'>) => void;
 };
 
 export function AddCategoryModal({ open, onClose, onSave }: AddCategoryModalProps) {
   const { goodTypes, categories } = useInventory();
-  const [name, setName] = useState("");
-  const [type, setType] = useState<TypeValue>("");
+  const [name, setName] = useState('');
+  const [type, setType] = useState<TypeValue>('');
 
   const allTypes = useMemo(() => {
     const fromCategories = categories.map((c) => c.type).filter(Boolean);
@@ -28,15 +28,15 @@ export function AddCategoryModal({ open, onClose, onSave }: AddCategoryModalProp
   const handleSave = useCallback(() => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    onSave({ name: trimmed, type: type || allTypes[0] || "" });
-    setName("");
-    setType("");
+    onSave({ name: trimmed, type: type || allTypes[0] || '' });
+    setName('');
+    setType('');
     onClose();
   }, [name, type, allTypes, onSave, onClose]);
 
   const handleClose = useCallback(() => {
-    setName("");
-    setType("");
+    setName('');
+    setType('');
     onClose();
   }, [onClose]);
 
@@ -61,7 +61,7 @@ export function AddCategoryModal({ open, onClose, onSave }: AddCategoryModalProp
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSave()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
               className={inputClass}
               placeholder="Category name"
               autoFocus
@@ -72,18 +72,24 @@ export function AddCategoryModal({ open, onClose, onSave }: AddCategoryModalProp
             <select
               value={type}
               onChange={(e) => setType(e.target.value as TypeValue)}
-              className={cn(inputClass, "cursor-pointer")}
+              className={cn(inputClass, 'cursor-pointer')}
             >
               {!type && <option value="">Select type</option>}
               {allTypes.map((t) => (
-                <option key={t} value={t}>{t}</option>
+                <option key={t} value={t}>
+                  {t}
+                </option>
               ))}
             </select>
           </div>
         </div>
         <div className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
-          <Button type="button" onClick={handleSave} disabled={!name.trim()}>Save</Button>
+          <Button type="button" variant="outline" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={handleSave} disabled={!name.trim()}>
+            Save
+          </Button>
         </div>
       </div>
     </div>

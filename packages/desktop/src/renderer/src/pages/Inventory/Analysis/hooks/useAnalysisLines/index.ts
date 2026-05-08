@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import type { IInvoiceLineWithDate } from "@reyogo/shared";
-import { invoiceService } from "@/services/invoice";
+import { useEffect, useState } from 'react';
+import type { IInvoiceLineWithDate } from '@reyogo/shared';
+import { invoiceService } from '@/services/invoice';
 
 export function useAnalysisLines() {
   const [lines, setLines] = useState<IInvoiceLineWithDate[]>([]);
@@ -15,7 +15,9 @@ export function useAnalysisLines() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
   return { lines, loading };
 }

@@ -1,8 +1,8 @@
-import { useCallback } from "react";
-import { PlusIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { DeleteButton } from "../components/DeleteButton";
-import { StepNav } from "../components/StepNav";
+import { useCallback } from 'react';
+import { PlusIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DeleteButton } from '../components/DeleteButton';
+import { StepNav } from '../components/StepNav';
 import {
   Table,
   TableBody,
@@ -10,11 +10,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { cn } from "@/lib/utils";
-import { inputClass } from "../utils/inputClass";
-import { createEmptyCategory } from "../utils/createEmpty";
-import type { PendingCategory } from "../utils/types";
+} from '@/components/ui/table';
+import { cn } from '@/lib/utils';
+import { inputClass } from '../utils/inputClass';
+import { createEmptyCategory } from '../utils/createEmpty';
+import type { PendingCategory } from '../utils/types';
 
 export function CategoriesStep({
   categories,
@@ -29,7 +29,7 @@ export function CategoriesStep({
   onNext: () => void;
   onBack: () => void;
 }) {
-  const defaultType = goodTypes[0] ?? "";
+  const defaultType = goodTypes[0] ?? '';
 
   const addRow = useCallback(() => {
     setCategories([...categories, createEmptyCategory(defaultType)]);
@@ -39,14 +39,14 @@ export function CategoriesStep({
     (id: string) => {
       setCategories(categories.filter((c) => c.id !== id));
     },
-    [categories, setCategories]
+    [categories, setCategories],
   );
 
   const updateRow = useCallback(
     (id: string, updates: Partial<PendingCategory>) => {
       setCategories(categories.map((c) => (c.id === id ? { ...c, ...updates } : c)));
     },
-    [categories, setCategories]
+    [categories, setCategories],
   );
 
   const hasValid = categories.some((c) => c.name.trim());
@@ -77,20 +77,22 @@ export function CategoriesStep({
                     value={cat.name}
                     onChange={(e) => updateRow(cat.id, { name: e.target.value })}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") addRow();
+                      if (e.key === 'Enter') addRow();
                     }}
                     placeholder="Category name"
-                    className={cn(inputClass, "min-w-[10rem]")}
+                    className={cn(inputClass, 'min-w-[10rem]')}
                   />
                 </TableCell>
                 <TableCell className="py-2 px-3">
                   <select
                     value={cat.type}
                     onChange={(e) => updateRow(cat.id, { type: e.target.value })}
-                    className={cn(inputClass, "min-w-[9rem] cursor-pointer")}
+                    className={cn(inputClass, 'min-w-[9rem] cursor-pointer')}
                   >
                     {goodTypes.map((t) => (
-                      <option key={t} value={t}>{t}</option>
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
                     ))}
                   </select>
                 </TableCell>

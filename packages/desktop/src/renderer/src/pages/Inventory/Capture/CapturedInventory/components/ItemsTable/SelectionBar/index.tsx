@@ -1,5 +1,5 @@
-import { ReceiptIcon, Trash2Icon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ReceiptIcon, Trash2Icon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 type Props = {
   selectedCount: number;
@@ -23,7 +23,7 @@ export function SelectionBar({
   return (
     <div className="mb-2 flex items-center gap-3 rounded-lg border border-primary/20 bg-secondary px-3 py-1.5">
       <span className="text-xs font-medium text-secondary-foreground">
-        {selectedCount} item{selectedCount !== 1 ? "s" : ""} selected
+        {selectedCount} item{selectedCount !== 1 ? 's' : ''} selected
       </span>
       <div className="h-3 w-px bg-border" />
       {confirmBulkDelete ? (

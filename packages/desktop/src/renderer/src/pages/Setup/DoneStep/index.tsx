@@ -1,7 +1,7 @@
-import { CheckIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import type { IUnitOfMeasure } from "@reyogo/shared/setup";
-import type { PendingCategory, PendingItem } from "../utils/types";
+import { CheckIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import type { IUnitOfMeasure } from '@reyogo/shared/setup';
+import type { PendingCategory, PendingItem } from '../utils/types';
 
 export function DoneStep({
   goodTypes,
@@ -34,10 +34,10 @@ export function DoneStep({
       </div>
       <div className="grid grid-cols-4 gap-3 w-full">
         {[
-          { count: goodTypes.length, label: "Types" },
-          { count: units.length, label: "Units" },
-          { count: validCategories, label: "Categories" },
-          { count: validItems, label: "Items" },
+          { count: goodTypes.length, label: 'Types' },
+          { count: units.length, label: 'Units' },
+          { count: validCategories, label: 'Categories' },
+          { count: validItems, label: 'Items' },
         ].map((s) => (
           <div
             key={s.label}
@@ -49,7 +49,7 @@ export function DoneStep({
         ))}
       </div>
       <Button onClick={onFinish} disabled={saving} className="min-w-[10rem]">
-        {saving ? "Saving…" : "Start using ReYoGo"}
+        {saving ? 'Saving…' : 'Start using ReYoGo'}
       </Button>
     </div>
   );

@@ -20,6 +20,12 @@
     "lint": {
       "outputs": []
     },
+    "format": {
+      "outputs": []
+    },
+    "format:check": {
+      "outputs": []
+    },
     "clean": {
       "cache": false
     },

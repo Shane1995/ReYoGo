@@ -1,22 +1,22 @@
-import type { IUnitOfMeasure } from "@reyogo/shared/setup";
+import type { IUnitOfMeasure } from '@reyogo/shared/setup';
 
-export type Step = "welcome" | "good-types" | "units" | "categories" | "items" | "done";
+export type Step = 'welcome' | 'good-types' | 'units' | 'categories' | 'items' | 'done';
 
 export const STEP_LABELS: Record<Step, string> = {
-  welcome: "Welcome",
-  "good-types": "Types",
-  units: "Units",
-  categories: "Categories",
-  items: "Items",
-  done: "Done",
+  welcome: 'Welcome',
+  'good-types': 'Types',
+  units: 'Units',
+  categories: 'Categories',
+  items: 'Items',
+  done: 'Done',
 };
 
-export const DEFAULT_GOOD_TYPES = ["food", "drink", "non-perishable"];
+export const DEFAULT_GOOD_TYPES = ['food', 'drink', 'non-perishable'];
 
 export const DEFAULT_UNITS: IUnitOfMeasure[] = [
-  { id: crypto.randomUUID(), name: "litres" },
-  { id: crypto.randomUUID(), name: "kgs" },
-  { id: crypto.randomUUID(), name: "unit" },
+  { id: crypto.randomUUID(), name: 'litres' },
+  { id: crypto.randomUUID(), name: 'kgs' },
+  { id: crypto.randomUUID(), name: 'unit' },
 ];
 
 export type PendingCategory = { id: string; name: string; type: string };

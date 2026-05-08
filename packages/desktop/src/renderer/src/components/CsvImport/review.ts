@@ -51,10 +51,7 @@ export interface ExistingInventory {
   goodTypes?: string[];
 }
 
-export function enrichParseResult(
-  result: ParseResult,
-  existing: ExistingInventory
-): ReviewResult {
+export function enrichParseResult(result: ParseResult, existing: ExistingInventory): ReviewResult {
   const { categoryNames, itemNames, unitNames } = existing;
   const goodTypes = existing.goodTypes ?? [];
 
@@ -64,7 +61,7 @@ export function enrichParseResult(
   });
 
   const importedCatLower = new Map<string, ParsedCategory>(
-    result.categories.map((c) => [c.name.toLowerCase(), c])
+    result.categories.map((c) => [c.name.toLowerCase(), c]),
   );
 
   const categories: ReviewCategory[] = result.categories.map((c) => {
@@ -80,10 +77,7 @@ export function enrichParseResult(
     };
   });
 
-  const willExistCatLower = new Set<string>([
-    ...categoryNames,
-    ...importedCatLower.keys(),
-  ]);
+  const willExistCatLower = new Set<string>([...categoryNames, ...importedCatLower.keys()]);
 
   const items: ReviewItem[] = result.items.map((item) => {
     const catKey = item.categoryName.toLowerCase();
@@ -123,10 +117,24 @@ export function enrichParseResult(
   availableCategories.sort((a, b) => a.name.localeCompare(b.name));
 
   const counts = {
-    newTotal: units.filter((u) => u.status === 'new').length + categories.filter((c) => c.status === 'new').length + items.filter((i) => i.status === 'new').length,
-    existsTotal: units.filter((u) => u.status === 'exists').length + categories.filter((c) => c.status === 'exists').length + items.filter((i) => i.status === 'exists').length,
+    newTotal:
+      units.filter((u) => u.status === 'new').length +
+      categories.filter((c) => c.status === 'new').length +
+      items.filter((i) => i.status === 'new').length,
+    existsTotal:
+      units.filter((u) => u.status === 'exists').length +
+      categories.filter((c) => c.status === 'exists').length +
+      items.filter((i) => i.status === 'exists').length,
     unresolvedTotal: items.filter((i) => i.status === 'unresolved').length,
   };
 
-  return { units, categories, items, parseErrors: result.errors, availableCategories, goodTypes, counts };
+  return {
+    units,
+    categories,
+    items,
+    parseErrors: result.errors,
+    availableCategories,
+    goodTypes,
+    counts,
+  };
 }

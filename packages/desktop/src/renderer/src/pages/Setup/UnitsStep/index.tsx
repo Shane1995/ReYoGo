@@ -1,8 +1,8 @@
-import { useState, useCallback, useRef } from "react";
-import { PlusIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { DeleteButton } from "../components/DeleteButton";
-import { StepNav } from "../components/StepNav";
+import { useState, useCallback, useRef } from 'react';
+import { PlusIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DeleteButton } from '../components/DeleteButton';
+import { StepNav } from '../components/StepNav';
 import {
   Table,
   TableBody,
@@ -10,10 +10,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { cn } from "@/lib/utils";
-import type { IUnitOfMeasure } from "@reyogo/shared/setup";
-import { inputClass } from "../utils/inputClass";
+} from '@/components/ui/table';
+import { cn } from '@/lib/utils';
+import type { IUnitOfMeasure } from '@reyogo/shared/setup';
+import { inputClass } from '../utils/inputClass';
 
 export function UnitsStep({
   units,
@@ -26,7 +26,7 @@ export function UnitsStep({
   onNext: () => void;
   onBack: () => void;
 }) {
-  const [newName, setNewName] = useState("");
+  const [newName, setNewName] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const addUnit = useCallback(() => {
@@ -35,7 +35,7 @@ export function UnitsStep({
     const duplicate = units.some((u) => u.name.toLowerCase() === name.toLowerCase());
     if (duplicate) return;
     setUnits([...units, { id: crypto.randomUUID(), name }]);
-    setNewName("");
+    setNewName('');
     setTimeout(() => inputRef.current?.focus(), 50);
   }, [newName, units, setUnits]);
 
@@ -43,7 +43,7 @@ export function UnitsStep({
     (id: string) => {
       setUnits(units.filter((u) => u.id !== id));
     },
-    [units, setUnits]
+    [units, setUnits],
   );
 
   return (
@@ -69,7 +69,10 @@ export function UnitsStep({
                 <TableRow key={unit.id} className="border-[var(--nav-border)] hover:bg-muted/30">
                   <TableCell className="py-2 px-3 font-medium">{unit.name}</TableCell>
                   <TableCell className="py-2 px-2 text-right">
-                    <DeleteButton onClick={() => removeUnit(unit.id)} label={`Remove ${unit.name}`} />
+                    <DeleteButton
+                      onClick={() => removeUnit(unit.id)}
+                      label={`Remove ${unit.name}`}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
@@ -87,10 +90,10 @@ export function UnitsStep({
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") addUnit();
+                if (e.key === 'Enter') addUnit();
               }}
               placeholder="e.g. pieces, boxes, bags…"
-              className={cn(inputClass, "flex-1")}
+              className={cn(inputClass, 'flex-1')}
             />
             <Button
               type="button"

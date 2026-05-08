@@ -1,4 +1,4 @@
-import { CopyIcon, XIcon } from "lucide-react";
+import { CopyIcon, XIcon } from 'lucide-react';
 
 type Props = {
   onDismiss: () => void;

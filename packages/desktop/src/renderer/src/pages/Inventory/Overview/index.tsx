@@ -1,32 +1,30 @@
-import { Link } from "react-router-dom";
-import { AnalysisRoutes, StockRoutes, InvoiceRoutes } from "@/components/AppRoutes/routePaths";
-import { Button } from "@/components/ui/button";
-import { PackagePlusIcon, ReceiptIcon, TrendingUpIcon } from "lucide-react";
+import { Link } from 'react-router-dom';
+import { AnalysisRoutes, StockRoutes, InvoiceRoutes } from '@/components/AppRoutes/routePaths';
+import { Button } from '@/components/ui/button';
+import { PackagePlusIcon, ReceiptIcon, TrendingUpIcon } from 'lucide-react';
 
 const quickLinkGroups = [
   {
-    title: "Capture",
+    title: 'Capture',
     icon: PackagePlusIcon,
     links: [
-      { label: "Captured Inventory", to: StockRoutes.Base },
-      { label: "Add items",          to: StockRoutes.AddItems },
-      { label: "Add categories",     to: StockRoutes.Categories },
+      { label: 'Captured Inventory', to: StockRoutes.Base },
+      { label: 'Add items', to: StockRoutes.AddItems },
+      { label: 'Add categories', to: StockRoutes.Categories },
     ],
   },
   {
-    title: "Process",
+    title: 'Process',
     icon: ReceiptIcon,
     links: [
-      { label: "Capture Invoice", to: InvoiceRoutes.Base },
-      { label: "Invoice history", to: InvoiceRoutes.History },
+      { label: 'Capture Invoice', to: InvoiceRoutes.Base },
+      { label: 'Invoice history', to: InvoiceRoutes.History },
     ],
   },
   {
-    title: "Analysis",
+    title: 'Analysis',
     icon: TrendingUpIcon,
-    links: [
-      { label: "Cost per unit", to: AnalysisRoutes.CostPerUnit },
-    ],
+    links: [{ label: 'Cost per unit', to: AnalysisRoutes.CostPerUnit }],
   },
 ] as const;
 

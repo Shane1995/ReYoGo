@@ -1,21 +1,21 @@
-import { useState, useRef } from "react";
-import { format, parse, parseISO, isValid } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { useState, useRef } from 'react';
+import { format, parse, parseISO, isValid } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
-const DISPLAY_FORMAT = "dd/MM/yyyy";
-const STORE_FORMAT = "yyyy-MM-dd";
+const DISPLAY_FORMAT = 'dd/MM/yyyy';
+const STORE_FORMAT = 'yyyy-MM-dd';
 
 const PARSE_FORMATS = [
-  "dd/MM/yyyy",
-  "d/M/yyyy",
-  "dd-MM-yyyy",
-  "d-M-yyyy",
-  "yyyy-MM-dd",
-  "dd MMM yyyy",
-  "d MMM yyyy",
+  'dd/MM/yyyy',
+  'd/M/yyyy',
+  'dd-MM-yyyy',
+  'd-M-yyyy',
+  'yyyy-MM-dd',
+  'dd MMM yyyy',
+  'd MMM yyyy',
 ];
 
 function tryParse(raw: string): Date | null {
@@ -34,10 +34,15 @@ interface DatePickerProps {
   className?: string;
 }
 
-export function DatePicker({ value, onChange, placeholder = "dd/mm/yyyy", className }: DatePickerProps) {
+export function DatePicker({
+  value,
+  onChange,
+  placeholder = 'dd/mm/yyyy',
+  className,
+}: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const [inputText, setInputText] = useState(() => {
-    if (!value) return "";
+    if (!value) return '';
     const d = parseISO(value);
     return isValid(d) ? format(d, DISPLAY_FORMAT) : value;
   });
@@ -48,7 +53,7 @@ export function DatePicker({ value, onChange, placeholder = "dd/mm/yyyy", classN
 
   function commitText(raw: string) {
     if (!raw.trim()) {
-      onChange("");
+      onChange('');
       return;
     }
     const d = tryParse(raw);
@@ -59,7 +64,7 @@ export function DatePicker({ value, onChange, placeholder = "dd/mm/yyyy", classN
   }
 
   return (
-    <div className={cn("flex items-center", className)}>
+    <div className={cn('flex items-center', className)}>
       <input
         ref={inputRef}
         type="text"
@@ -68,7 +73,7 @@ export function DatePicker({ value, onChange, placeholder = "dd/mm/yyyy", classN
         onChange={(e) => setInputText(e.target.value)}
         onBlur={(e) => commitText(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter") {
+          if (e.key === 'Enter') {
             commitText(inputText);
             e.currentTarget.blur();
           }

@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { createPortal } from "react-dom";
-import { cn } from "@/lib/utils";
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { cn } from '@/lib/utils';
 
 export type ItemOption = {
   id: string;
@@ -24,13 +24,13 @@ export function ItemAutocomplete({
   items,
   value,
   onChange,
-  placeholder = "Search or select item…",
+  placeholder = 'Search or select item…',
   className,
   disabled,
   inputId,
   onSelectComplete,
 }: Props) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const [listStyle, setListStyle] = useState({ top: 0, left: 0, width: 0 });
@@ -46,19 +46,19 @@ export function ItemAutocomplete({
     return sorted.filter((i) => i.name.toLowerCase().includes(q));
   }, [items, query]);
 
-  const displayValue = isOpen ? query : (selectedItem?.name ?? "");
+  const displayValue = isOpen ? query : (selectedItem?.name ?? '');
 
   useEffect(() => {
     if (!isOpen) return;
     setHighlightIndex(filteredItems.findIndex((i) => i.id === value));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, isOpen]);
 
   useEffect(() => {
     if (highlightIndex < 0) return;
     const highlighted = filteredItems[highlightIndex];
     if (!highlighted) return;
-    document.getElementById(`item-option-${highlighted.id}`)?.scrollIntoView({ block: "nearest" });
+    document.getElementById(`item-option-${highlighted.id}`)?.scrollIntoView({ block: 'nearest' });
   }, [highlightIndex, filteredItems]);
 
   const updateListPosition = useCallback(() => {
@@ -72,11 +72,11 @@ export function ItemAutocomplete({
     if (!isOpen) return;
     updateListPosition();
     const handler = () => updateListPosition();
-    window.addEventListener("scroll", handler, true);
-    window.addEventListener("resize", handler);
+    window.addEventListener('scroll', handler, true);
+    window.addEventListener('resize', handler);
     return () => {
-      window.removeEventListener("scroll", handler, true);
-      window.removeEventListener("resize", handler);
+      window.removeEventListener('scroll', handler, true);
+      window.removeEventListener('resize', handler);
     };
   }, [isOpen, query, updateListPosition]);
 
@@ -86,13 +86,13 @@ export function ItemAutocomplete({
       if (target.closest?.(`#${containerId}`) || target.closest?.(`#${listId}`)) return;
       setIsOpen(false);
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [containerId, listId]);
 
   const handleFocus = () => {
     setIsOpen(true);
-    setQuery("");
+    setQuery('');
   };
 
   const handleBlur = () => {
@@ -101,54 +101,57 @@ export function ItemAutocomplete({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen) {
-      if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
         setIsOpen(true);
-        setQuery("");
+        setQuery('');
       }
       return;
     }
-    if (e.key === "ArrowDown") {
+    if (e.key === 'ArrowDown') {
       e.preventDefault();
       setHighlightIndex((i) => (i + 1) % Math.max(1, filteredItems.length));
       return;
     }
-    if (e.key === "ArrowUp") {
+    if (e.key === 'ArrowUp') {
       e.preventDefault();
       setHighlightIndex((i) => (i <= 0 ? Math.max(0, filteredItems.length - 1) : i - 1));
       return;
     }
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
       const item = filteredItems[highlightIndex];
       if (item) {
         onChange(item.id);
-        setQuery("");
+        setQuery('');
         setIsOpen(false);
         onSelectComplete?.();
       }
       return;
     }
-    if (e.key === "Escape") {
+    if (e.key === 'Escape') {
       setIsOpen(false);
-      setQuery("");
+      setQuery('');
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     }
   };
 
   const handleSelect = (item: ItemOption) => {
     onChange(item.id);
-    setQuery("");
+    setQuery('');
     setIsOpen(false);
     onSelectComplete?.();
   };
 
   return (
-    <div id={containerId} className={cn("relative w-full min-w-[10rem]", className)}>
+    <div id={containerId} className={cn('relative w-full min-w-[10rem]', className)}>
       <input
         id={inputId}
         type="text"
         value={displayValue}
-        onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setIsOpen(true);
+        }}
         onFocus={handleFocus}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
@@ -160,8 +163,8 @@ export function ItemAutocomplete({
         aria-autocomplete="list"
         aria-controls={listId}
         className={cn(
-          "h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm",
-          "focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0"
+          'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm',
+          'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0',
         )}
       />
       {isOpen &&
@@ -169,7 +172,13 @@ export function ItemAutocomplete({
           <ul
             id={listId}
             role="listbox"
-            style={{ position: "fixed", top: listStyle.top, left: listStyle.left, width: listStyle.width, zIndex: 9999 }}
+            style={{
+              position: 'fixed',
+              top: listStyle.top,
+              left: listStyle.left,
+              width: listStyle.width,
+              zIndex: 9999,
+            }}
             className="max-h-64 overflow-auto rounded-md border border-[var(--nav-border)] bg-popover py-1 shadow-lg"
           >
             {filteredItems.length === 0 ? (
@@ -184,17 +193,20 @@ export function ItemAutocomplete({
                   role="option"
                   aria-selected={index === highlightIndex}
                   className={cn(
-                    "cursor-pointer px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground",
-                    index === highlightIndex && "bg-accent text-accent-foreground"
+                    'cursor-pointer px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground',
+                    index === highlightIndex && 'bg-accent text-accent-foreground',
                   )}
-                  onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSelect(item);
+                  }}
                 >
                   {item.name}
                 </li>
               ))
             )}
           </ul>,
-          document.body
+          document.body,
         )}
     </div>
   );

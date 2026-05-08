@@ -1,28 +1,28 @@
-import { useMemo, useState } from "react";
-import { useAnalysisLines } from "../useAnalysisLines";
-import { buildItemGroups } from "../../utils/buildItemGroups";
-import { TYPE_ORDER } from "../../types";
+import { useMemo, useState } from 'react';
+import { useAnalysisLines } from '../useAnalysisLines';
+import { buildItemGroups } from '../../utils/buildItemGroups';
+import { TYPE_ORDER } from '../../types';
 
-export type AnalysisTab = "all" | "by-type" | "by-category";
+export type AnalysisTab = 'all' | 'by-type' | 'by-category';
 
 export function useAnalysisData() {
   const { lines, loading } = useAnalysisLines();
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
-  const [search, setSearch] = useState("");
-  const [filterType, setFilterType] = useState("");
-  const [filterCategory, setFilterCategory] = useState("");
-  const [analysisTab, setAnalysisTab] = useState<AnalysisTab>("all");
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [analysisTab, setAnalysisTab] = useState<AnalysisTab>('all');
 
   const allGroups = useMemo(
     () => buildItemGroups(lines, fromDate, toDate),
-    [lines, fromDate, toDate]
+    [lines, fromDate, toDate],
   );
 
   const availableTypes = useMemo(() => {
     const seen = new Set(allGroups.map((g) => g.categoryType));
     return TYPE_ORDER.filter((t) => seen.has(t)).concat(
-      Array.from(seen).filter((t) => !TYPE_ORDER.includes(t))
+      Array.from(seen).filter((t) => !TYPE_ORDER.includes(t)),
     );
   }, [allGroups]);
 
@@ -52,11 +52,11 @@ export function useAnalysisData() {
   }, [allGroups, search, filterType, filterCategory]);
 
   const clearFilters = () => {
-    setSearch("");
-    setFromDate("");
-    setToDate("");
-    setFilterType("");
-    setFilterCategory("");
+    setSearch('');
+    setFromDate('');
+    setToDate('');
+    setFilterType('');
+    setFilterCategory('');
   };
 
   const hasFilters = !!(search || fromDate || toDate || filterType || filterCategory);
@@ -64,12 +64,18 @@ export function useAnalysisData() {
   return {
     lines,
     loading,
-    fromDate, setFromDate,
-    toDate, setToDate,
-    search, setSearch,
-    filterType, setFilterType,
-    filterCategory, setFilterCategory,
-    analysisTab, setAnalysisTab,
+    fromDate,
+    setFromDate,
+    toDate,
+    setToDate,
+    search,
+    setSearch,
+    filterType,
+    setFilterType,
+    filterCategory,
+    setFilterCategory,
+    analysisTab,
+    setAnalysisTab,
     allGroups,
     availableTypes,
     availableCategories,

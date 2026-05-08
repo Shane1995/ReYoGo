@@ -1,16 +1,16 @@
-import { cn } from "@/lib/utils";
-import { fmtPct } from "../utils/format";
-import { changeCls } from "../utils/styles";
-import type { GroupStats } from "../utils/stats";
+import { cn } from '@/lib/utils';
+import { fmtPct } from '../utils/format';
+import { changeCls } from '../utils/styles';
+import type { GroupStats } from '../utils/stats';
 
 export function InsightChips({ stats }: { stats: GroupStats }) {
   return (
     <div className="flex items-center gap-1.5 text-xs">
       <span className="text-muted-foreground">
-        {stats.count} item{stats.count !== 1 ? "s" : ""}
+        {stats.count} item{stats.count !== 1 ? 's' : ''}
       </span>
       {stats.avgChange !== null && (
-        <span className={cn("font-mono font-medium", changeCls(stats.avgChange))}>
+        <span className={cn('font-mono font-medium', changeCls(stats.avgChange))}>
           avg {fmtPct(stats.avgChange)}
         </span>
       )}

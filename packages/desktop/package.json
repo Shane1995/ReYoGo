@@ -22,7 +22,9 @@
     "db:studio": "drizzle-kit studio",
     "postinstall": "electron-builder install-app-deps",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit",
-    "lint": "oxlint src/"
+    "lint": "oxlint --config ../../packages/config/oxlint.json src/",
+    "format": "oxfmt src/",
+    "format:check": "oxfmt --check src/"
   },
   "dependencies": {
     "@reyogo/shared": "workspace:*",

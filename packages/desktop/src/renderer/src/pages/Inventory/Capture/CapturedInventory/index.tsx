@@ -1,24 +1,17 @@
-import { useCallback, useState } from "react";
-import { PlusIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { itemTrendPath } from "@/components/AppRoutes/routePaths";
-import { useInventory } from "./Context/InventoryContext";
-import { ItemsTable } from "./components/ItemsTable";
-import { AddInventoryModal } from "./components/AddInventoryModal";
-import { useItemCosts } from "./hooks/useItemCosts";
-import { useItemStock } from "./hooks/useItemStock/index";
-import { useWeightedAvgCosts } from "./hooks/useWeightedAvgCosts";
-import type { InventoryItem } from "./types";
+import { useCallback, useState } from 'react';
+import { PlusIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { itemTrendPath } from '@/components/AppRoutes/routePaths';
+import { useInventory } from './Context/InventoryContext';
+import { ItemsTable } from './components/ItemsTable';
+import { AddInventoryModal } from './components/AddInventoryModal';
+import { useItemCosts } from './hooks/useItemCosts';
+import { useItemStock } from './hooks/useItemStock/index';
+import { useWeightedAvgCosts } from './hooks/useWeightedAvgCosts';
+import type { InventoryItem } from './types';
 
 export default function InventoryIndex() {
-  const {
-    categories,
-    items,
-    units,
-    goodTypes,
-    updateItem,
-    deleteItemFromBackend,
-  } = useInventory();
+  const { categories, items, units, goodTypes, updateItem, deleteItemFromBackend } = useInventory();
 
   const navigate = useNavigate();
   const costMap = useItemCosts();
@@ -28,12 +21,12 @@ export default function InventoryIndex() {
 
   const handleViewInsights = useCallback(
     (itemId: string) => navigate(itemTrendPath(itemId)),
-    [navigate]
+    [navigate],
   );
 
   const handleUpdate = useCallback(
-    (id: string, values: Omit<InventoryItem, "id">) => updateItem(id, values),
-    [updateItem]
+    (id: string, values: Omit<InventoryItem, 'id'>) => updateItem(id, values),
+    [updateItem],
   );
 
   return (

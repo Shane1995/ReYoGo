@@ -1,8 +1,8 @@
-import { PackageIcon, DownloadIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { CsvImportButton, downloadTemplate } from "@/components/CsvImport";
-import type { ReviewResult } from "@/components/CsvImport/review";
-import { setupService } from "@/services/setup";
+import { PackageIcon, DownloadIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CsvImportButton, downloadTemplate } from '@/components/CsvImport';
+import type { ReviewResult } from '@/components/CsvImport/review';
+import { setupService } from '@/services/setup';
 
 export function WelcomeStep({
   onNext,
@@ -25,10 +25,10 @@ export function WelcomeStep({
       </div>
       <div className="flex flex-col gap-2 text-sm text-muted-foreground w-full max-w-xs">
         {[
-          { icon: "1", label: "Configure your good types" },
-          { icon: "2", label: "Set up your units of measure" },
-          { icon: "3", label: "Create inventory categories" },
-          { icon: "4", label: "Add your inventory items" },
+          { icon: '1', label: 'Configure your good types' },
+          { icon: '2', label: 'Set up your units of measure' },
+          { icon: '3', label: 'Create inventory categories' },
+          { icon: '4', label: 'Add your inventory items' },
         ].map((item) => (
           <div key={item.icon} className="flex items-center gap-3 text-left">
             <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--nav-bg)] border border-[var(--nav-border)] text-xs font-semibold text-[var(--nav-foreground)]">

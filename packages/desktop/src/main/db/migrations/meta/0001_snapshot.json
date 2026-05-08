@@ -147,12 +147,8 @@
           "name": "inventory_items_category_id_inventory_categories_id_fk",
           "tableFrom": "inventory_items",
           "tableTo": "inventory_categories",
-          "columnsFrom": [
-            "category_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["category_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }

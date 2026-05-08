@@ -4,28 +4,26 @@ export function FormatGuide() {
       <p className="font-semibold text-foreground">Expected format</p>
       <p className="text-muted-foreground">
         Use the Excel template — it has three sheets. Fill in only the sheets you need. Items that
-        reference a category not in the Categories sheet will be{" "}
-        <span className="font-medium text-amber-700">auto-created</span> (you can review before committing).
+        reference a category not in the Categories sheet will be{' '}
+        <span className="font-medium text-amber-700">auto-created</span> (you can review before
+        committing).
       </p>
       <div className="space-y-2">
         {[
           {
-            sheet: "Units",
-            cols: [{ name: "name", note: "e.g. litres, kgs, pieces" }],
+            sheet: 'Units',
+            cols: [{ name: 'name', note: 'e.g. litres, kgs, pieces' }],
           },
           {
-            sheet: "Categories",
-            cols: [
-              { name: "name" },
-              { name: "type", note: "food · drink · non-perishable" },
-            ],
+            sheet: 'Categories',
+            cols: [{ name: 'name' }, { name: 'type', note: 'food · drink · non-perishable' }],
           },
           {
-            sheet: "Items",
+            sheet: 'Items',
             cols: [
-              { name: "name" },
-              { name: "category_name", note: "must match a category name" },
-              { name: "unit", note: "optional" },
+              { name: 'name' },
+              { name: 'category_name', note: 'must match a category name' },
+              { name: 'unit', note: 'optional' },
             ],
           },
         ].map((s) => (
@@ -37,7 +35,7 @@ export function FormatGuide() {
               {s.cols.map((c) => (
                 <span key={c.name} className="text-xs text-muted-foreground">
                   <code className="text-foreground">{c.name}</code>
-                  {c.note ? ` — ${c.note}` : ""}
+                  {c.note ? ` — ${c.note}` : ''}
                 </span>
               ))}
             </div>

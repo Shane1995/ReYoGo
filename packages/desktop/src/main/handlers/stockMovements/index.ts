@@ -2,17 +2,21 @@ import { ipcMain } from 'electron';
 import { StockMovementsIPC } from '../../../shared/types/ipc';
 import * as stockMovementsDb from '../../dataAccess/stockMovements';
 
-async function getCurrentStock(): Promise<Awaited<ReturnType<typeof stockMovementsDb.getCurrentStockByItem>>> {
+async function getCurrentStock(): Promise<
+  Awaited<ReturnType<typeof stockMovementsDb.getCurrentStockByItem>>
+> {
   return stockMovementsDb.getCurrentStockByItem();
 }
 
-async function getWeightedAvgCosts(): Promise<Awaited<ReturnType<typeof stockMovementsDb.getWeightedAvgCosts>>> {
+async function getWeightedAvgCosts(): Promise<
+  Awaited<ReturnType<typeof stockMovementsDb.getWeightedAvgCosts>>
+> {
   return stockMovementsDb.getWeightedAvgCosts();
 }
 
 async function getItemCostHistory(
   _event: Electron.IpcMainInvokeEvent,
-  itemId: string
+  itemId: string,
 ): Promise<Awaited<ReturnType<typeof stockMovementsDb.getItemCostHistory>>> {
   return stockMovementsDb.getItemCostHistory(itemId);
 }
@@ -20,7 +24,7 @@ async function getItemCostHistory(
 async function getCOGS(
   _event: Electron.IpcMainInvokeEvent,
   fromDate?: string,
-  toDate?: string
+  toDate?: string,
 ): Promise<Awaited<ReturnType<typeof stockMovementsDb.getCOGS>>> {
   return stockMovementsDb.getCOGS(fromDate, toDate);
 }

@@ -1,5 +1,11 @@
 import { eq, sql, and, gte, lte } from 'drizzle-orm';
-import type { IItemCostHistory, ICOGSSummary, IStockMovement, StockMovementSource, StockMovementType } from '@reyogo/shared';
+import type {
+  IItemCostHistory,
+  ICOGSSummary,
+  IStockMovement,
+  StockMovementSource,
+  StockMovementType,
+} from '@reyogo/shared';
 import { getDb, schema } from '../../db';
 
 export async function getCurrentStockByItem(): Promise<Record<string, number>> {
@@ -36,7 +42,10 @@ export async function getMovementsForItem(itemId: string): Promise<IStockMovemen
 
 export async function getWeightedAvgCosts(): Promise<Record<string, number | null>> {
   const rows = await getDb()
-    .select({ id: schema.inventoryItems.id, weightedAvgCost: schema.inventoryItems.weightedAvgCost })
+    .select({
+      id: schema.inventoryItems.id,
+      weightedAvgCost: schema.inventoryItems.weightedAvgCost,
+    })
     .from(schema.inventoryItems);
   return Object.fromEntries(rows.map((r) => [r.id, r.weightedAvgCost ?? null]));
 }
@@ -44,7 +53,10 @@ export async function getWeightedAvgCosts(): Promise<Record<string, number | nul
 export async function getItemCostHistory(itemId: string): Promise<IItemCostHistory> {
   const db = getDb();
   const [item] = await db
-    .select({ weightedAvgCost: schema.inventoryItems.weightedAvgCost, totalStock: schema.inventoryItems.totalStock })
+    .select({
+      weightedAvgCost: schema.inventoryItems.weightedAvgCost,
+      totalStock: schema.inventoryItems.totalStock,
+    })
     .from(schema.inventoryItems)
     .where(eq(schema.inventoryItems.id, itemId));
 
@@ -71,7 +83,8 @@ export async function getItemCostHistory(itemId: string): Promise<IItemCostHisto
 export async function getCOGS(fromDate?: string, toDate?: string): Promise<ICOGSSummary> {
   const db = getDb();
   const conditions = [eq(schema.stockMovements.type, 'OUT')];
-  if (fromDate) conditions.push(gte(schema.stockMovements.createdAt, new Date(fromDate + 'T00:00:00')));
+  if (fromDate)
+    conditions.push(gte(schema.stockMovements.createdAt, new Date(fromDate + 'T00:00:00')));
   if (toDate) conditions.push(lte(schema.stockMovements.createdAt, new Date(toDate + 'T23:59:59')));
 
   const rows = await db
@@ -82,16 +95,27 @@ export async function getCOGS(fromDate?: string, toDate?: string): Promise<ICOGS
     })
     .from(schema.stockMovements)
     .leftJoin(schema.inventoryItems, eq(schema.stockMovements.itemId, schema.inventoryItems.id))
-    .leftJoin(schema.inventoryCategories, eq(schema.inventoryItems.categoryId, schema.inventoryCategories.id))
+    .leftJoin(
+      schema.inventoryCategories,
+      eq(schema.inventoryItems.categoryId, schema.inventoryCategories.id),
+    )
     .where(and(...conditions));
 
   let total = 0;
-  const catMap = new Map<string, { categoryId: string | null; categoryName: string | null; total: number }>();
+  const catMap = new Map<
+    string,
+    { categoryId: string | null; categoryName: string | null; total: number }
+  >();
   for (const row of rows) {
     const amount = row.cogsAmount ?? 0;
     total += amount;
     const key = row.categoryId ?? '__uncategorised';
-    if (!catMap.has(key)) catMap.set(key, { categoryId: row.categoryId ?? null, categoryName: row.categoryName ?? null, total: 0 });
+    if (!catMap.has(key))
+      catMap.set(key, {
+        categoryId: row.categoryId ?? null,
+        categoryName: row.categoryName ?? null,
+        total: 0,
+      });
     catMap.get(key)!.total += amount;
   }
 

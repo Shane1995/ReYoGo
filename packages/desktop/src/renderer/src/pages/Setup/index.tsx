@@ -1,11 +1,11 @@
-import { StepIndicator } from "./StepIndicator";
-import { WelcomeStep } from "./WelcomeStep";
-import { GoodTypesStep } from "./GoodTypesStep";
-import { UnitsStep } from "./UnitsStep";
-import { CategoriesStep } from "./CategoriesStep";
-import { ItemsStep } from "./ItemsStep";
-import { DoneStep } from "./DoneStep";
-import { useSetupWizard } from "./hooks/useSetupWizard";
+import { StepIndicator } from './StepIndicator';
+import { WelcomeStep } from './WelcomeStep';
+import { GoodTypesStep } from './GoodTypesStep';
+import { UnitsStep } from './UnitsStep';
+import { CategoriesStep } from './CategoriesStep';
+import { ItemsStep } from './ItemsStep';
+import { DoneStep } from './DoneStep';
+import { useSetupWizard } from './hooks/useSetupWizard';
 
 interface SetupWizardProps {
   onComplete: () => void;
@@ -33,52 +33,49 @@ export default function SetupWizard({ onComplete }: SetupWizardProps) {
       <div className="w-full max-w-2xl">
         <div className="mb-6 flex items-center justify-between">
           <span className="text-sm font-semibold text-[var(--nav-foreground)]">ReYoGo Setup</span>
-          {step !== "welcome" && step !== "done" && <StepIndicator current={step} />}
+          {step !== 'welcome' && step !== 'done' && <StepIndicator current={step} />}
         </div>
 
         <div className="rounded-2xl border border-[var(--nav-border)] bg-background shadow-sm p-8">
-          {step === "welcome" && (
-            <WelcomeStep
-              onNext={() => goTo("good-types")}
-              onImport={handleImport}
-            />
+          {step === 'welcome' && (
+            <WelcomeStep onNext={() => goTo('good-types')} onImport={handleImport} />
           )}
-          {step === "good-types" && (
+          {step === 'good-types' && (
             <GoodTypesStep
               goodTypes={goodTypes}
               setGoodTypes={setGoodTypes}
-              onNext={() => goTo("units")}
-              onBack={() => goTo("welcome")}
+              onNext={() => goTo('units')}
+              onBack={() => goTo('welcome')}
             />
           )}
-          {step === "units" && (
+          {step === 'units' && (
             <UnitsStep
               units={units}
               setUnits={setUnits}
-              onNext={() => goTo("categories")}
-              onBack={() => goTo("good-types")}
+              onNext={() => goTo('categories')}
+              onBack={() => goTo('good-types')}
             />
           )}
-          {step === "categories" && (
+          {step === 'categories' && (
             <CategoriesStep
               categories={categories}
               setCategories={setCategories}
               goodTypes={goodTypes}
-              onNext={() => goTo("items")}
-              onBack={() => goTo("units")}
+              onNext={() => goTo('items')}
+              onBack={() => goTo('units')}
             />
           )}
-          {step === "items" && (
+          {step === 'items' && (
             <ItemsStep
               items={items}
               setItems={setItems}
               categories={categories}
               units={units}
-              onNext={() => goTo("done")}
-              onBack={() => goTo("categories")}
+              onNext={() => goTo('done')}
+              onBack={() => goTo('categories')}
             />
           )}
-          {step === "done" && (
+          {step === 'done' && (
             <DoneStep
               goodTypes={goodTypes}
               units={units}

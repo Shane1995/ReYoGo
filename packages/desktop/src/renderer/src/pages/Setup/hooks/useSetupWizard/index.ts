@@ -1,15 +1,15 @@
-import { useState, useCallback } from "react";
-import type { IUnitOfMeasure } from "@reyogo/shared/setup";
-import type { IInventoryCategory, IInventoryItem } from "@reyogo/shared/inventory";
-import type { ReviewResult } from "@/components/CsvImport/review";
-import { setupService } from "@/services/setup";
-import { inventoryService } from "@/services/inventory";
-import { DEFAULT_GOOD_TYPES, DEFAULT_UNITS } from "../../utils/types";
-import { createEmptyCategory, createEmptyItem } from "../../utils/createEmpty";
-import type { Step, PendingCategory, PendingItem } from "../../utils/types";
+import { useState, useCallback } from 'react';
+import type { IUnitOfMeasure } from '@reyogo/shared/setup';
+import type { IInventoryCategory, IInventoryItem } from '@reyogo/shared/inventory';
+import type { ReviewResult } from '@/components/CsvImport/review';
+import { setupService } from '@/services/setup';
+import { inventoryService } from '@/services/inventory';
+import { DEFAULT_GOOD_TYPES, DEFAULT_UNITS } from '../../utils/types';
+import { createEmptyCategory, createEmptyItem } from '../../utils/createEmpty';
+import type { Step, PendingCategory, PendingItem } from '../../utils/types';
 
 export function useSetupWizard(onComplete: () => void) {
-  const [step, setStep] = useState<Step>("welcome");
+  const [step, setStep] = useState<Step>('welcome');
   const [goodTypes, setGoodTypes] = useState<string[]>(DEFAULT_GOOD_TYPES);
   const [units, setUnits] = useState<IUnitOfMeasure[]>(DEFAULT_UNITS);
   const [categories, setCategories] = useState<PendingCategory[]>([
@@ -22,7 +22,7 @@ export function useSetupWizard(onComplete: () => void) {
 
   const handleImport = useCallback(
     (_parsed: unknown, review: ReviewResult) => {
-      const selectedUnits = review.units.filter((u) => u.selected && u.status === "new");
+      const selectedUnits = review.units.filter((u) => u.selected && u.status === 'new');
       const existingUnitNames = new Set(units.map((u) => u.name.toLowerCase()));
       const newUnitObjects = selectedUnits
         .filter((u) => !existingUnitNames.has(u.name.toLowerCase()))
@@ -37,7 +37,7 @@ export function useSetupWizard(onComplete: () => void) {
         setUnits((prev) => [...prev, ...newUnitObjects]);
       }
 
-      const selectedCats = review.categories.filter((c) => c.selected && c.status !== "exists");
+      const selectedCats = review.categories.filter((c) => c.selected && c.status !== 'exists');
       if (selectedCats.length > 0) {
         setCategories((prev) => {
           const existingNames = new Set(prev.map((c) => c.name.toLowerCase()).filter(Boolean));
@@ -45,11 +45,11 @@ export function useSetupWizard(onComplete: () => void) {
             .filter((c) => !existingNames.has(c.name.toLowerCase()))
             .map((c) => ({ id: crypto.randomUUID(), name: c.name, type: c.type }));
           const withContent = prev.filter((c) => c.name.trim());
-          return [...withContent, ...newOnes, createEmptyCategory(goodTypes[0] ?? "")];
+          return [...withContent, ...newOnes, createEmptyCategory(goodTypes[0] ?? '')];
         });
       }
 
-      const selectedItems = review.items.filter((i) => i.selected && i.status === "new");
+      const selectedItems = review.items.filter((i) => i.selected && i.status === 'new');
       if (selectedItems.length > 0) {
         setCategories((currentCats) => {
           const catMap = new Map(currentCats.map((c) => [c.name.toLowerCase(), c.id]));
@@ -63,8 +63,8 @@ export function useSetupWizard(onComplete: () => void) {
               .map((i) => ({
                 id: crypto.randomUUID(),
                 name: i.name,
-                categoryId: catMap.get(i.categoryName.toLowerCase()) ?? "",
-                unitId: i.unit ? (unitNameToId.get(i.unit.toLowerCase()) ?? "") : "",
+                categoryId: catMap.get(i.categoryName.toLowerCase()) ?? '',
+                unitId: i.unit ? (unitNameToId.get(i.unit.toLowerCase()) ?? '') : '',
               }));
             const withContent = prev.filter((i) => i.name.trim());
             return [...withContent, ...newOnes, createEmptyItem()];
@@ -73,7 +73,7 @@ export function useSetupWizard(onComplete: () => void) {
         });
       }
     },
-    [units, goodTypes]
+    [units, goodTypes],
   );
 
   const handleFinish = useCallback(async () => {
@@ -111,7 +111,7 @@ export function useSetupWizard(onComplete: () => void) {
       await setupService.complete();
       onComplete();
     } catch (err) {
-      console.error("Setup failed", err);
+      console.error('Setup failed', err);
       setSaving(false);
     }
   }, [goodTypes, units, categories, items, onComplete]);

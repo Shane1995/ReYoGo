@@ -10,30 +10,34 @@ export function useImportReviewState(initial: ReviewResult) {
 
   const typeWarningCount = useMemo(
     () => categories.filter((c) => c.typeWarning && c.status !== 'exists').length,
-    [categories]
+    [categories],
   );
 
   const fixCategoryType = useCallback((id: string, type: string) => {
     setCategories((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, type, typeWarning: false } : c))
+      prev.map((c) => (c.id === id ? { ...c, type, typeWarning: false } : c)),
     );
   }, []);
 
   const toggleUnit = useCallback((name: string) => {
     setUnits((prev) =>
-      prev.map((u) => (u.name === name && u.status !== 'exists' ? { ...u, selected: !u.selected } : u))
+      prev.map((u) =>
+        u.name === name && u.status !== 'exists' ? { ...u, selected: !u.selected } : u,
+      ),
     );
   }, []);
 
   const toggleCategory = useCallback((id: string) => {
     setCategories((prev) =>
-      prev.map((c) => (c.id === id && c.status !== 'exists' ? { ...c, selected: !c.selected } : c))
+      prev.map((c) => (c.id === id && c.status !== 'exists' ? { ...c, selected: !c.selected } : c)),
     );
   }, []);
 
   const toggleItem = useCallback((name: string) => {
     setItems((prev) =>
-      prev.map((i) => (i.name === name && i.status === 'new' ? { ...i, selected: !i.selected } : i))
+      prev.map((i) =>
+        i.name === name && i.status === 'new' ? { ...i, selected: !i.selected } : i,
+      ),
     );
   }, []);
 
@@ -52,10 +56,10 @@ export function useImportReviewState(initial: ReviewResult) {
             status: 'unresolved',
             selected: false,
           };
-        })
+        }),
       );
     },
-    [initial.items]
+    [initial.items],
   );
 
   const selectedNew =
@@ -80,7 +84,7 @@ export function useImportReviewState(initial: ReviewResult) {
       goodTypes: initial.goodTypes,
       counts: initial.counts,
     }),
-    [units, categories, items, initial]
+    [units, categories, items, initial],
   );
 
   return {

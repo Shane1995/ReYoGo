@@ -3,13 +3,13 @@ export function fmt(n: number) {
 }
 
 export function fmtDate(d: Date) {
-  return new Date(d).toLocaleDateString(undefined, { dateStyle: "medium" });
+  return new Date(d).toLocaleDateString(undefined, { dateStyle: 'medium' });
 }
 
 export function fmtDateShort(d: Date) {
-  return new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 export function fmtPct(n: number) {
-  return `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
+  return `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
 }

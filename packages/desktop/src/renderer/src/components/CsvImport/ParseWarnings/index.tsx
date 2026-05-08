@@ -26,9 +26,11 @@ export function ParseWarnings({ errors }: { errors: string[] }) {
             — values were adjusted to match expected format
           </span>
         </div>
-        {open
-          ? <ChevronDownIcon className="size-4 text-amber-500 shrink-0" />
-          : <ChevronRightIcon className="size-4 text-amber-500 shrink-0" />}
+        {open ? (
+          <ChevronDownIcon className="size-4 text-amber-500 shrink-0" />
+        ) : (
+          <ChevronRightIcon className="size-4 text-amber-500 shrink-0" />
+        )}
       </button>
       {open && (
         <div className="border-t border-amber-200 divide-y divide-amber-100">

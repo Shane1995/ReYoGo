@@ -7,7 +7,6 @@ import { join } from 'path';
 import { DB_READY_CHANNEL } from '../../shared/ipc-events';
 import * as schema from './drizzle/schema';
 
-
 const isDev = !app.isPackaged || process.env.NODE_ENV === 'development';
 const DB_FILENAME = isDev ? 'app-dev.db' : 'app.db';
 
@@ -46,5 +45,4 @@ export async function initDatabase(): Promise<void> {
       ? join(__dirname.replace('app.asar', 'app.asar.unpacked'), 'migrations')
       : join(__dirname, 'migrations');
   await migrate(_db, { migrationsFolder });
-
 }

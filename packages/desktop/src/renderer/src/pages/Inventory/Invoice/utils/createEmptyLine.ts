@@ -1,12 +1,12 @@
-import type { ProcessReceiptLine } from "../types";
-import { DEFAULT_VAT_RATE } from "../types";
+import type { ProcessReceiptLine } from '../types';
+import { DEFAULT_VAT_RATE } from '../types';
 
 export function createEmptyLine(): ProcessReceiptLine {
   return {
     id: window.crypto.randomUUID(),
-    itemId: "",
+    itemId: '',
     quantity: 0,
-    vatMode: "exclusive",
+    vatMode: 'exclusive',
     vatRate: DEFAULT_VAT_RATE,
     totalVatExclude: 0,
   };

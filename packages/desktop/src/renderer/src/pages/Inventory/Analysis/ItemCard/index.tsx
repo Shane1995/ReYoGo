@@ -1,8 +1,8 @@
-import { cn } from "@/lib/utils";
-import { Sparkline } from "../Sparkline";
-import { fmt, fmtDate, fmtPct } from "../utils/format";
-import { overallChangePct } from "../utils/stats";
-import type { ItemGroup } from "../types";
+import { cn } from '@/lib/utils';
+import { Sparkline } from '../Sparkline';
+import { fmt, fmtDate, fmtPct } from '../utils/format';
+import { overallChangePct } from '../utils/stats';
+import type { ItemGroup } from '../types';
 
 export function ItemCard({ group, onSelect }: { group: ItemGroup; onSelect: () => void }) {
   const last = group.entries[group.entries.length - 1];
@@ -19,17 +19,19 @@ export function ItemCard({ group, onSelect }: { group: ItemGroup; onSelect: () =
       <div className="flex items-start justify-between gap-2 min-w-0">
         <div className="min-w-0">
           <p className="truncate font-medium text-sm text-foreground">{group.name}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{group.uom ?? "no UoM"}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{group.uom ?? 'no UoM'}</p>
         </div>
         {change !== null && (
-          <span className={cn(
-            "shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold font-mono",
-            change > 0
-              ? "bg-destructive/10 text-destructive"
-              : change < 0
-              ? "bg-green-600/10 text-green-600 dark:text-green-500"
-              : "bg-muted text-muted-foreground"
-          )}>
+          <span
+            className={cn(
+              'shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold font-mono',
+              change > 0
+                ? 'bg-destructive/10 text-destructive'
+                : change < 0
+                  ? 'bg-green-600/10 text-green-600 dark:text-green-500'
+                  : 'bg-muted text-muted-foreground',
+            )}
+          >
             {fmtPct(change)}
           </span>
         )}
@@ -44,7 +46,9 @@ export function ItemCard({ group, onSelect }: { group: ItemGroup; onSelect: () =
         </div>
         <div>
           <p className="text-muted-foreground">Range</p>
-          <p className="font-mono text-foreground mt-0.5">{fmt(minPrice)}–{fmt(maxPrice)}</p>
+          <p className="font-mono text-foreground mt-0.5">
+            {fmt(minPrice)}–{fmt(maxPrice)}
+          </p>
         </div>
         <div className="text-right">
           <p className="text-muted-foreground">Captures</p>
