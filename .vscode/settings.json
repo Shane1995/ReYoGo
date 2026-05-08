@@ -3,7 +3,7 @@
     "commands": [
       {
         "match": "packages/.*\\.(ts|tsx|js|cjs|mjs)$",
-        "cmd": "cd ${workspaceFolder} && pnpm oxfmt ${file}"
+        "cmd": "cd ${workspaceFolder} && ./node_modules/.bin/oxfmt ${file}"
       }
     ]
   }
