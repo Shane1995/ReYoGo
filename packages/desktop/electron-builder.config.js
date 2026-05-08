@@ -10,8 +10,8 @@ module.exports = {
       name: process.env.PRODUCT_NAME || 'ReYoGo',
     },
   }),
-  files: ['dist/**/*', 'dist-electron/**/*', 'package.json'],
-  asarUnpack: ['dist-electron/main/db/migrations/**'],
+  files: ['out/**/*', 'package.json'],
+  asarUnpack: ['out/main/db/migrations/**'],
   win: {
     target: [
       { target: 'nsis', arch: ['x64'] },
@@ -38,4 +38,4 @@ module.exports = {
       url: process.env.UPDATE_FEED_URL,
     },
   }),
-}
+};

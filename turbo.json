@@ -3,11 +3,11 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "dist-electron/**", "release/**"]
+      "outputs": ["out/**", "release/**"]
     },
     "electron:build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "dist-electron/**"]
+      "outputs": ["out/**"]
     },
     "test": {
       "dependsOn": ["^build"],
