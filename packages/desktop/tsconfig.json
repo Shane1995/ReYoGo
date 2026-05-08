@@ -35,10 +35,5 @@
     "src/renderer/src",
     "src/main",
     "src/shared"
-  ],
-  "references": [
-    {
-      "path": "./tsconfig.node.json"
-    }
   ]
 }
