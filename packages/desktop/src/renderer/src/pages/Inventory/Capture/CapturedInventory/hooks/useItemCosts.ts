@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { invoiceService } from "@/services/invoice";
-import type { IInvoiceLineWithDate } from "@shared/types/contract";
+import type { IInvoiceLineWithDate } from "@reyogo/shared";
 
 type ItemCost = {
   price: number;

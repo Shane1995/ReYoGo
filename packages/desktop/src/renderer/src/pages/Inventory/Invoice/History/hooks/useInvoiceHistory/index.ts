@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { InvoicesIPC } from "@shared/types/ipc";
-import type { ICapturedInvoice, ICapturedInvoiceWithLines } from "@shared/types/contract";
+import type { ICapturedInvoice, ICapturedInvoiceWithLines } from "@reyogo/shared";
 import { InvoiceRoutes } from "@/components/AppRoutes/routePaths";
 import { useInventory } from "@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext";
 import type { ProcessReceiptLine } from "../../../types";

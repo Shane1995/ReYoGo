@@ -1,4 +1,4 @@
-import type { ICapturedInvoiceWithLines } from "@shared/types/contract";
+import type { ICapturedInvoiceWithLines } from "@reyogo/shared";
 
 export function invoiceTotals(lines: ICapturedInvoiceWithLines["lines"]) {
   let excl = 0;

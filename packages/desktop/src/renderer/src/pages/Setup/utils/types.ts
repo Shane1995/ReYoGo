@@ -1,4 +1,4 @@
-import type { IUnitOfMeasure } from "@shared/types/contract/setup";
+import type { IUnitOfMeasure } from "@reyogo/shared/setup";
 
 export type Step = "welcome" | "good-types" | "units" | "categories" | "items" | "done";
 

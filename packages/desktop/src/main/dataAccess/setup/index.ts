@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import type { IUnitOfMeasure, ISetupStatus } from '@shared/types/contract';
+import type { IUnitOfMeasure, ISetupStatus } from '@reyogo/shared';
 import { getDb, schema } from '../../db';
 
 const SETUP_COMPLETE_KEY = 'setup_complete';

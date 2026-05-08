@@ -1,5 +1,5 @@
 import { eq, sql, and, gte, lte } from 'drizzle-orm';
-import type { IItemCostHistory, ICOGSSummary, IStockMovement, StockMovementSource, StockMovementType } from '@shared/types/contract';
+import type { IItemCostHistory, ICOGSSummary, IStockMovement, StockMovementSource, StockMovementType } from '@reyogo/shared';
 import { getDb, schema } from '../../db';
 
 export async function getCurrentStockByItem(): Promise<Record<string, number>> {

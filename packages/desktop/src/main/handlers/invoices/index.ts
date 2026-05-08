@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import type { ISaveCapturedInvoicePayload, IUpdateCapturedInvoicePayload } from '@shared/types/contract';
+import type { ISaveCapturedInvoicePayload, IUpdateCapturedInvoicePayload } from '@reyogo/shared';
 import { InvoicesIPC } from '../../../shared/types/ipc';
 import * as invoicesDb from '../../dataAccess/invoices';
 

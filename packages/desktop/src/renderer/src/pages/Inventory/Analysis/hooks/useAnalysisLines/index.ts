@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { IInvoiceLineWithDate } from "@shared/types/contract";
+import type { IInvoiceLineWithDate } from "@reyogo/shared";
 import { invoiceService } from "@/services/invoice";
 
 export function useAnalysisLines() {

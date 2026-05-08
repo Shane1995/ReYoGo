@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import type { IUnitOfMeasure } from "@shared/types/contract/setup";
+import type { IUnitOfMeasure } from "@reyogo/shared/setup";
 import { inputClass } from "../utils/inputClass";
 
 export function UnitsStep({

@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { XIcon, CheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useInventory } from "@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext";
-import type { ICapturedInvoiceWithLines } from "@shared/types/contract";
+import type { ICapturedInvoiceWithLines } from "@reyogo/shared";
 import { ItemAutocomplete } from "../../ItemAutocomplete";
 import type { ProcessReceiptLine } from "../../types";
 import { getProcessLineComputed, DEFAULT_VAT_RATE } from "../../types";

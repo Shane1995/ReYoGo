@@ -8,7 +8,7 @@ import type {
   IInvoiceLineWithDate,
   ISaveCapturedInvoicePayload,
   IUpdateCapturedInvoicePayload,
-} from '@shared/types/contract';
+} from '@reyogo/shared';
 import { getDb, schema } from '../../db';
 
 function toInvoice(row: { id: string; invoiceNumber?: string | null; invoiceDate?: Date | null; createdAt: Date; updatedAt?: Date | null }): ICapturedInvoice {
