@@ -1,9 +1,7 @@
-import react from '@vitejs/plugin-react';
+import { createViteConfig } from '@reyogo/config/vite.base';
 import { resolve } from 'path';
-import { defineConfig } from 'vite';
 
-export default defineConfig({
-  plugins: [react()],
+export default createViteConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
