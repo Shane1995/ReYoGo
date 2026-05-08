@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import type { ISaveCapturedInvoicePayload, IUpdateCapturedInvoicePayload } from '@reyogo/shared';
-import { InvoicesIPC } from '../../../shared/types/ipc';
+import { InvoicesIPC } from '@shared/types/ipc';
 import * as invoicesDb from '../../dataAccess/invoices';
 
 async function saveInvoice(

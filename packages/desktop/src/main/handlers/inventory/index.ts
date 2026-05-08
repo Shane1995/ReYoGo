@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import type { IInventoryCategory, IInventoryItem, IInventorySubmitPayload } from '@reyogo/shared';
-import { InventoryIPC } from '../../../shared/types/ipc';
+import { InventoryIPC } from '@shared/types/ipc';
 import * as inventoryDb from '../../dataAccess/inventory';
 
 async function getCategories(): Promise<IInventoryCategory[]> {

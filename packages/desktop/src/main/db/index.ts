@@ -4,7 +4,7 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { app } from 'electron';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { DB_READY_CHANNEL } from '../../shared/ipc-events';
+import { DB_READY_CHANNEL } from '@shared/ipc-events';
 import * as schema from './drizzle/schema';
 
 const isDev = !app.isPackaged || process.env.NODE_ENV === 'development';
