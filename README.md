@@ -1,148 +1,76 @@
 <p align="center">
-  <img src="src/renderer/public/logo.png" alt="ReYoGo logo" width="120" />
+  <img src="packages/desktop/src/renderer/public/logo.png" alt="ReYoGo logo" width="120" />
 </p>
 
 # ReYoGo
 
-An Electron application built with React, TypeScript, and Vite.
+Inventory and invoice management — Electron desktop app built with React, TypeScript, and Vite.
 
-## Features
+This repo is a **pnpm monorepo** orchestrated by Turborepo.
 
-- ⚡️ Vite for fast development and building
-- ⚛️ React 18 with TypeScript
-- 🧪 Vitest for testing
-- 🪟 Windows build support
-- 🔄 GitHub Actions for CI/CD
+```
+packages/
+  desktop/   @reyogo/desktop — Electron + React + TypeScript desktop app
+```
 
 ## Prerequisites
 
-- Node.js v25.5.0 (recommended: use nvm)
-- pnpm package manager
+- Node.js 24 (use `.node-version` or `nvm use`)
+- pnpm 9 (`corepack enable && corepack prepare pnpm@9.15.0 --activate`)
 
-### Installing Node.js with nvm
-
-If you have nvm installed, you can automatically use the correct Node.js version:
-
-```bash
-nvm use
-```
-
-Or install Node.js v25.5.0:
-
-```bash
-nvm install 25.5.0
-nvm use 25.5.0
-```
-
-### Installing pnpm
-
-Use Corepack (recommended, included with Node.js 16.10+):
-
-```bash
-corepack enable
-corepack prepare pnpm@9.15.0 --activate
-```
-
-Or install globally with npm:
-
-```bash
-npm install -g pnpm
-```
-
-Verify pnpm is installed:
-
-```bash
-pnpm --version
-```
-
-## Installation
-
-Install project dependencies:
+## Getting started
 
 ```bash
 pnpm install
+pnpm electron:dev     # Vite dev server + Electron with hot reload
 ```
 
-## Development
+## Commands
 
-Start the development server:
+All commands run from the repo root via Turborepo.
 
 ```bash
-pnpm run dev
+# Development
+pnpm electron:dev          # Start desktop app in dev mode
+
+# Quality
+pnpm run lint              # Lint all packages
+pnpm run typecheck         # Type-check all packages
+pnpm run test              # Run all tests
+
+# Build
+pnpm electron:build        # Compile main process + Vite renderer
+pnpm run build             # Full production build (includes electron-builder)
 ```
 
-Run Electron in development mode:
+### Desktop-specific commands
 
 ```bash
-pnpm run electron:dev
+pnpm --filter @reyogo/desktop run build:win    # Windows installer
+pnpm --filter @reyogo/desktop run build:mac    # macOS DMG
+pnpm --filter @reyogo/desktop run db:generate  # Generate Drizzle migrations
+pnpm --filter @reyogo/desktop run db:studio    # Open Drizzle Studio
 ```
 
-## Building
+## Architecture
 
-Build for Windows:
+ReYoGo is an Electron app with three logical zones inside `packages/desktop/src/`:
 
-```bash
-pnpm run build:win
-```
+| Zone | Purpose |
+|---|---|
+| `src/main/` | Electron main process — SQLite via better-sqlite3 + Drizzle ORM, IPC handlers |
+| `src/renderer/` | React 18 app rendered in BrowserWindow, built by Vite |
+| `src/shared/` | TypeScript types only — imported by both main and renderer |
 
-The built application will be in the `release` directory.
+**IPC data flow** (every feature):  
+`src/shared/types/ipc/` → `src/main/dataAccess/` → `src/main/handlers/` → `src/renderer/src/services/`
 
-## Testing
+The preload script (`src/main/preload.ts`) is the security boundary — it exposes `window.electronAPI` with `contextIsolation: true` and `nodeIntegration: false`.
 
-Run tests:
+## CI/CD
 
-```bash
-pnpm test
-```
-
-Run tests with UI:
-
-```bash
-pnpm run test:ui
-```
-
-Run tests with coverage:
-
-```bash
-pnpm run test:coverage
-```
-
-## Linting
-
-```bash
-pnpm run lint
-```
-
-## Project Structure
-
-```
-├── electron/              # Electron main process files
-│   ├── main.ts           # Main process entry point
-│   └── preload.ts        # Preload script
-├── src/                  # React application source
-│   ├── components/       # React components
-│   │   └── componentName/
-│   │       ├── index.tsx      # Component implementation
-│   │       ├── index.test.tsx # Component tests
-│   │       └── index.css      # Component styles (optional)
-│   ├── hooks/            # Custom React hooks
-│   │   └── hookName/
-│   │       ├── index.ts      # Hook implementation
-│   │       └── index.test.ts # Hook tests
-│   ├── utils/            # Utility functions
-│   │   └── utilName/
-│   │       ├── index.ts      # Utility implementation
-│   │       └── index.test.ts # Utility tests
-│   ├── pages/            # Page-level components
-│   │   └── pageName/
-│   │       ├── index.tsx     # Page implementation
-│   │       └── index.test.tsx # Page tests
-│   ├── main.tsx          # React entry point
-│   └── test/              # Test setup and utilities
-├── .github/              # GitHub Actions workflows
-└── dist/                 # Built React app (generated)
-```
-
-## License
-
-MIT
+| Workflow | Trigger |
+|---|---|
+| CI | PR to `main` — lint, typecheck, test, desktop build |
+| Release Desktop to Staging | Manual — bumps beta version tag, builds Windows installer, uploads to S3 staging, optionally promotes to production |
+| Release Desktop to Production | On non-beta `v*` tag push — builds Windows installer, uploads to S3 production, creates GitHub release |
