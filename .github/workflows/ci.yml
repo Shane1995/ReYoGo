@@ -3,6 +3,14 @@ name: CI
 on:
   pull_request:
     branches: [ main ]
+    paths:
+      - 'packages/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.json'
+      - 'tsconfig.base.json'
+      - '.github/workflows/ci.yml'
   workflow_call:
 
 concurrency:
@@ -12,6 +20,7 @@ concurrency:
 env:
   NODE_VERSION: "24"
   PNPM_VERSION: "9.15.0"
+  TURBO_TELEMETRY_DISABLED: "1"
 
 jobs:
   install:
@@ -27,7 +36,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile --ignore-scripts
 
-  validate:
+  lint:
     needs: install
     runs-on: ubuntu-latest
     steps:
@@ -72,8 +81,8 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm run typecheck
 
-  build:
-    needs: [ validate, test, typecheck ]
+  build-desktop:
+    needs: [ lint, test, typecheck ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -85,4 +94,4 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile --ignore-scripts
-      - run: pnpm run electron:build
+      - run: pnpm --filter @reyogo/desktop run electron:build

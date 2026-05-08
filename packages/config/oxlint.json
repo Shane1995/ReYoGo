@@ -1,0 +1,19 @@
+{
+  "plugins": ["react", "typescript"],
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2020": true
+  },
+  "rules": {
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": "error"
+  },
+  "ignorePatterns": [
+    "dist",
+    "dist-electron",
+    "node_modules",
+    "packages/*/dist",
+    "packages/*/dist-electron"
+  ]
+}
