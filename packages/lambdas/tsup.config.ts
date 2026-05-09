@@ -1,11 +1,11 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/handlers/**/index.ts'],
+  entry: ['src/**/index.ts'],
   outDir: 'dist',
   outExtension: () => ({ js: '.js' }),
   esbuildOptions: (options) => {
-    options.outbase = 'src/handlers';
+    options.outbase = 'src';
   },
   format: ['esm'],
   target: 'node22',
