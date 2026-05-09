@@ -1,0 +1,31 @@
+{
+  "name": "@reyogo/lambdas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint --config ../../packages/config/oxlint.json src/",
+    "format": "oxfmt src/",
+    "format:check": "oxfmt --check src/",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1045.0",
+    "@aws-sdk/lib-dynamodb": "^3.1045.0",
+    "@reyogo/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.161",
+    "aws-sdk-client-mock": "^4.1.0",
+    "tsup": "^8.5.1",
+    "oxlint": "^1.63.0",
+    "typescript": "^5.3.3",
+    "vitest": "^4.1.5"
+  }
+}
