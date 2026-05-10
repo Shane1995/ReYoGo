@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@reyogo/ui';
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboardIcon,

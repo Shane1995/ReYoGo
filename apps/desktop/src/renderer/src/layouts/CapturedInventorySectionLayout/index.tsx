@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { cn } from '@reyogo/ui';
 import { StockRoutes } from '@/components/AppRoutes/routePaths';
 import {
   PackagePlusIcon,

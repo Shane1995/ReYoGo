@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@reyogo/ui';
 import { DataTable } from '@/components/DataTable';
 import type { ColumnDef } from '@/components/DataTable';
-import { cn } from '@/lib/utils';
+import { cn } from '@reyogo/ui';
 import { getTypeConfig } from '../../utils/typeConfig';
 import { EditItemDialog } from '../EditItemDialog';
 import type { InventoryItem } from '../../types';

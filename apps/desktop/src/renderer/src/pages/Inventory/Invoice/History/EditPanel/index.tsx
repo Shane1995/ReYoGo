@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { XIcon, CheckIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@reyogo/ui';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
 import type { ICapturedInvoiceWithLines } from '@reyogo/shared';
 import { ItemAutocomplete } from '../../ItemAutocomplete';
@@ -10,7 +10,7 @@ import { inputClass } from '../../utils/inputClass';
 import { formatMoney } from '../../utils/formatMoney';
 import { createEmptyLine } from '../../utils/createEmptyLine';
 import { lineToEditLine } from '../../utils/lineToEditLine';
-import { cn } from '@/lib/utils';
+import { cn } from '@reyogo/ui';
 
 type Props = {
   invoice: ICapturedInvoiceWithLines;

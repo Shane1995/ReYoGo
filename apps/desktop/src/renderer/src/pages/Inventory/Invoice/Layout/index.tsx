@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { InventoryProvider } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
 import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
-import { cn } from '@/lib/utils';
+import { cn } from '@reyogo/ui';
 import { ChevronLeftIcon, ChevronRightIcon, HistoryIcon, ReceiptIcon } from 'lucide-react';
 
 const invoiceTabs = [

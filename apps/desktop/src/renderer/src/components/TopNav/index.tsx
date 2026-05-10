@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { cn } from '@reyogo/ui';
 import { ProductRoutes } from '@/components/AppRoutes/routePaths';
 
 const navItems = [{ label: 'Inventory', path: ProductRoutes.Inventory }] as const;

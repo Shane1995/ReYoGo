@@ -1,5 +1,5 @@
 import { ReceiptIcon, Trash2Icon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@reyogo/ui';
 
 type Props = {
   selectedCount: number;

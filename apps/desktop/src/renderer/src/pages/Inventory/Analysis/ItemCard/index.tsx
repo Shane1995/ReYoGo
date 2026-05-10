@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@reyogo/ui';
 import { Sparkline } from '../Sparkline';
 import { fmt, fmtDate, fmtPct } from '../utils/format';
 import { overallChangePct } from '../utils/stats';

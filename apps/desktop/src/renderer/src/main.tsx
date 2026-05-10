@@ -1,4 +1,5 @@
 import ReactDOM from 'react-dom/client';
+import '@reyogo/ui/src/globals.css';
 import './index.css';
 import App from './components/App';
 

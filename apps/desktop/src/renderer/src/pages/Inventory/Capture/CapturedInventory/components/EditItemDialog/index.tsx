@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { XIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from '@reyogo/ui';
+import { cn } from '@reyogo/ui';
 import type { InventoryCategory, InventoryItem } from '../../types';
 
 type Props = {

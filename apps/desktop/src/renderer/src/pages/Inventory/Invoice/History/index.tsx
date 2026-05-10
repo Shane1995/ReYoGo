@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { Button } from '@reyogo/ui';
 import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
 import {
   ReceiptIcon,
@@ -10,15 +10,8 @@ import {
   ClockIcon,
   CopyIcon,
 } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { cn } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
+import { cn } from '@reyogo/ui';
 import { EditPanel } from './EditPanel';
 import { AuditPanel } from './AuditPanel';
 import { useInvoiceHistory } from './hooks/useInvoiceHistory';

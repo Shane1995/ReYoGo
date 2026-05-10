@@ -1,14 +1,7 @@
 import { Fragment, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { cn } from '@reyogo/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { InsightChips } from '../InsightChips';
 import { fmt, fmtDate, fmtPct } from '../utils/format';
 import { overallChangePct, groupStats } from '../utils/stats';

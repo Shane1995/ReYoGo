@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@reyogo/ui';
 
 export const inputClass = cn(
   'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm',

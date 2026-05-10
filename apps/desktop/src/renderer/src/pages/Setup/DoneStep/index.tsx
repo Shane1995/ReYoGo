@@ -1,5 +1,5 @@
 import { CheckIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@reyogo/ui';
 import type { IUnitOfMeasure } from '@reyogo/shared/setup';
 import type { PendingCategory, PendingItem } from '../utils/types';
 

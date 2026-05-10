@@ -1,17 +1,10 @@
 import { useCallback } from 'react';
 import { PlusIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@reyogo/ui';
 import { DeleteButton } from '../components/DeleteButton';
 import { StepNav } from '../components/StepNav';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { cn } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
+import { cn } from '@reyogo/ui';
 import { inputClass } from '../utils/inputClass';
 import { createEmptyCategory } from '../utils/createEmpty';
 import type { PendingCategory } from '../utils/types';

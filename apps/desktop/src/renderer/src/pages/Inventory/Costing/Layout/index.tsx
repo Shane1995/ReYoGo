@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { cn } from '@reyogo/ui';
 import { CostingRoutes } from '@/components/AppRoutes/routePaths';
 import {
   ChevronLeftIcon,

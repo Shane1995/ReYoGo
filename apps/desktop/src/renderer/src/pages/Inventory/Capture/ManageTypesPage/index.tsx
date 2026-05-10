@@ -1,15 +1,8 @@
 import { useState, useCallback } from 'react';
 import { PlusIcon, Trash2Icon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { cn } from '@/lib/utils';
+import { Button } from '@reyogo/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
+import { cn } from '@reyogo/ui';
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
 
 const inputClass = cn(
