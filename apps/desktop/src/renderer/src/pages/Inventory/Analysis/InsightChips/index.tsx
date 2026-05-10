@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@reyogo/ui';
 import { fmtPct } from '../utils/format';
 import { changeCls } from '../utils/styles';
 import type { GroupStats } from '../utils/stats';

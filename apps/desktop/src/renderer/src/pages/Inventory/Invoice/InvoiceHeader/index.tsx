@@ -1,9 +1,9 @@
-import { Button } from '@/components/ui/button';
+import { Button } from '@reyogo/ui';
 import { Link } from 'react-router-dom';
 import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
-import { DatePicker } from '@/components/ui/date-picker';
+import { DatePicker } from '@reyogo/ui';
 import { inputClass } from '../utils/inputClass';
-import { cn } from '@/lib/utils';
+import { cn } from '@reyogo/ui';
 
 type Props = {
   invoiceNumber: string;

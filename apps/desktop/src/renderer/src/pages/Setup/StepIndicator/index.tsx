@@ -1,5 +1,5 @@
 import { CheckIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@reyogo/ui';
 import { STEP_LABELS } from '../utils/types';
 import type { Step } from '../utils/types';
 

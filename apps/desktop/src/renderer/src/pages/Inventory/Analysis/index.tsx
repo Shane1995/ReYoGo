@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@reyogo/ui';
 import { useAnalysisData } from './hooks/useAnalysisData';
 import type { AnalysisTab } from './hooks/useAnalysisData';
 import { SummaryTableView } from './SummaryTableView';

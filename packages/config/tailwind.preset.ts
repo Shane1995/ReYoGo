@@ -2,6 +2,7 @@ import tailwindcssAnimate from 'tailwindcss-animate';
 import type { Config } from 'tailwindcss';
 
 const preset: Partial<Config> = {
+  content: ['./node_modules/@reyogo/ui/src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       fontFamily: {

@@ -1,12 +1,5 @@
-import { cn } from '@/lib/utils';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { cn } from '@reyogo/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { FilterBar } from './FilterBar';
 import type { ColumnDef, FilterField, FilterValues } from './types';
 

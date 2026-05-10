@@ -1,6 +1,6 @@
 import { CheckCircle2Icon, AlertTriangleIcon, InfoIcon, XCircleIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from '@reyogo/ui';
+import { cn } from '@reyogo/ui';
 import type { ReviewResult, InventoryType } from './review';
 import { useImportReviewState } from './hooks/useImportReviewState';
 import { StatusBadge } from './StatusBadge';

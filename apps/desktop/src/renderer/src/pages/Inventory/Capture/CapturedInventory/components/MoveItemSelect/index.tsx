@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@reyogo/ui';
 import type { TypeValue, InventoryCategory, InventoryItem } from '../../types';
 
 const inputClass = cn(

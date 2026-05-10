@@ -1,17 +1,10 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { PlusIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Button } from '@reyogo/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
 import type { TypeValue } from '../CapturedInventory/types';
-import { cn } from '@/lib/utils';
+import { cn } from '@reyogo/ui';
 
 const inputClass = cn(
   'h-8 w-full rounded-md border border-input bg-muted px-2.5 text-sm',

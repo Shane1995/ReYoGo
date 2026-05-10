@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@reyogo/ui';
 import { useInventory } from '../../Context/InventoryContext';
-import { cn } from '@/lib/utils';
+import { cn } from '@reyogo/ui';
 
 const inputClass = cn(
   'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm',

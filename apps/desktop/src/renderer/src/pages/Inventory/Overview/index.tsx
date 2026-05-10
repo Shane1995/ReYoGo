@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { AnalysisRoutes, StockRoutes, InvoiceRoutes } from '@/components/AppRoutes/routePaths';
-import { Button } from '@/components/ui/button';
+import { Button } from '@reyogo/ui';
 import { PackagePlusIcon, ReceiptIcon, TrendingUpIcon } from 'lucide-react';
 
 const quickLinkGroups = [

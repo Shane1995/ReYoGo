@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ProductRoutes } from '@/components/AppRoutes/routePaths';
-import { Button } from '@/components/ui/button';
+import { Button } from '@reyogo/ui';
 import { PackageIcon } from 'lucide-react';
 
 const Home = () => (

@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UploadIcon, DownloadIcon, FileSpreadsheetIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
+import { Button } from '@reyogo/ui';
+import { Spinner } from '@reyogo/ui';
 import { parseFile, downloadTemplate } from '@/components/CsvImport/parser';
 import { enrichParseResult } from '@/components/CsvImport/review';
 import type { ReviewResult, ExistingInventory } from '@/components/CsvImport/review';

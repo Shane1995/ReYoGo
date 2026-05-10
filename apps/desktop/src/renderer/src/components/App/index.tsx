@@ -1,7 +1,7 @@
 import { Router } from '@main/lib/electron-router-dom';
 import AppLoader from '../AppLoader';
 import { Route } from 'react-router-dom';
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from '@reyogo/ui';
 
 const App = () => {
   return (

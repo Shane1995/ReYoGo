@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { PlusIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@reyogo/ui';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { AddCategoryModal } from '@/pages/Inventory/Capture/CapturedInventory/components/AddCategoryModal';
 import { AddItemModal } from '@/pages/Inventory/Capture/CapturedInventory/components/AddItemModal';
 import { useInvoiceForm } from './hooks/useInvoiceForm';

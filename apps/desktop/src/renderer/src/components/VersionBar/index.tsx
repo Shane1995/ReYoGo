@@ -1,12 +1,6 @@
 import { useEffect, useState } from 'react';
 import { appService, type AppVersionInfo } from '../../services/app';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@reyogo/ui';
 
 type CheckState = 'idle' | 'checking' | 'up-to-date' | 'downloading' | 'error';
 

@@ -1,5 +1,5 @@
 import { PackageIcon, DownloadIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@reyogo/ui';
 import { CsvImportButton, downloadTemplate } from '@/components/CsvImport';
 import type { ReviewResult } from '@/components/CsvImport/review';
 import { setupService } from '@/services/setup';

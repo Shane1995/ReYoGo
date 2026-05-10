@@ -1,17 +1,10 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { PlusIcon, XIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Button } from '@reyogo/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import type { TypeValue, InventoryCategory, InventoryItem } from '../../types';
 import { AddCategoryModal } from '../AddCategoryModal';
-import { cn } from '@/lib/utils';
+import { cn } from '@reyogo/ui';
 
 const inputClass = cn(
   'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm',

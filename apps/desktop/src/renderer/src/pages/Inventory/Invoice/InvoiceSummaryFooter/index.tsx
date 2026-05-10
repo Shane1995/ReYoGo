@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { Button } from '@reyogo/ui';
 import { formatMoney } from '../utils/formatMoney';
 
 type Summary = {

@@ -1,8 +1,8 @@
 import { useRef, useState, useCallback } from 'react';
 import { UploadIcon, DownloadIcon, FileSpreadsheetIcon, XIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
-import { cn } from '@/lib/utils';
+import { Button } from '@reyogo/ui';
+import { Spinner } from '@reyogo/ui';
+import { cn } from '@reyogo/ui';
 import { parseFile, downloadTemplate } from './parser';
 import type { ParseResult } from './parser';
 import { enrichParseResult } from './review';

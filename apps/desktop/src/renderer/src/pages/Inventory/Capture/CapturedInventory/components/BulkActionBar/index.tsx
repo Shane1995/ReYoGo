@@ -1,6 +1,6 @@
 import { Trash2Icon, XIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from '@reyogo/ui';
+import { cn } from '@reyogo/ui';
 import type { TypeValue, InventoryCategory } from '../../types';
 
 const inputClass = cn(

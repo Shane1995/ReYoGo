@@ -4,18 +4,18 @@
   "rsc": false,
   "tsx": true,
   "tailwind": {
-    "config": "tailwind.config.js",
-    "css": "src/renderer/src/index.css",
+    "config": "",
+    "css": "src/globals.css",
     "baseColor": "neutral",
     "cssVariables": true,
     "prefix": ""
   },
   "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
+    "components": "@reyogo/ui/components",
+    "utils": "@reyogo/ui/lib/utils",
+    "ui": "@reyogo/ui/components",
+    "lib": "@reyogo/ui/lib",
+    "hooks": "@reyogo/ui/hooks"
   },
   "iconLibrary": "lucide"
 }
