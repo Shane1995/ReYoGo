@@ -43,7 +43,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: dist-win
-          path: packages/desktop/release/
+          path: apps/desktop/release/
           retention-days: 7
 
   publish-production:
