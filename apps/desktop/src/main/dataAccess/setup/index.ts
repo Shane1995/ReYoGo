@@ -10,7 +10,7 @@ export async function getSetupStatus(): Promise<ISetupStatus> {
     .from(schema.appConfig)
     .where(eq(schema.appConfig.key, SETUP_COMPLETE_KEY))
     .limit(1);
-  return { isComplete: row.length > 0 && row[0].value === 'true' };
+  return { isComplete: row.length > 0 && row[0]!.value === 'true' };
 }
 
 export async function completeSetup(): Promise<void> {
@@ -74,7 +74,7 @@ export async function getGoodTypes(): Promise<string[]> {
     .limit(1);
   if (row.length === 0) return DEFAULT_GOOD_TYPES;
   try {
-    return JSON.parse(row[0].value) as string[];
+    return JSON.parse(row[0]!.value) as string[];
   } catch {
     return DEFAULT_GOOD_TYPES;
   }

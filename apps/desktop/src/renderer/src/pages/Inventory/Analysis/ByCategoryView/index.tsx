@@ -111,7 +111,7 @@ export function ByCategoryView({ groups }: { groups: ItemGroup[] }) {
 
                 {isExpanded &&
                   catGroups.map((group, gi) => {
-                    const last = group.entries[group.entries.length - 1];
+                    const last = group.entries[group.entries.length - 1]!;
                     const change = overallChangePct(group);
                     const minPrice = Math.min(...group.entries.map((e) => e.unitPrice));
                     const avgPrice =

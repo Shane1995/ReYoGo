@@ -60,7 +60,7 @@ export function TableView({ groups }: { groups: ItemGroup[] }) {
         </TableHeader>
         <TableBody>
           {groups.map((group, gi) => {
-            const last = group.entries[group.entries.length - 1];
+            const last = group.entries[group.entries.length - 1]!;
             const change = overallChangePct(group);
             const isExpanded = expanded.has(group.itemId);
             return (

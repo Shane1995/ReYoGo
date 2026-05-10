@@ -95,7 +95,7 @@ export function parseFile(file: File): Promise<ParseResult> {
         const result: ParseResult = { units: [], categories: [], items: [], errors: [] };
 
         wb.SheetNames.forEach((name) => {
-          const sheet = wb.Sheets[name];
+          const sheet = wb.Sheets[name]!;
           const key = name.toLowerCase();
           if (key === 'units' || key === 'unit') parseUnitsSheet(sheet, result);
           else if (key === 'categories' || key === 'category') parseCategoriesSheet(sheet, result);

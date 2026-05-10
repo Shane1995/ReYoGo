@@ -8,8 +8,8 @@ export type GroupStats = {
 };
 
 export function overallChangePct(group: ItemGroup): number | null {
-  const first = group.entries[0].unitPrice;
-  const last = group.entries[group.entries.length - 1].unitPrice;
+  const first = group.entries[0]!.unitPrice;
+  const last = group.entries[group.entries.length - 1]!.unitPrice;
   return group.entries.length > 1 && first > 0 ? ((last - first) / first) * 100 : null;
 }
 
