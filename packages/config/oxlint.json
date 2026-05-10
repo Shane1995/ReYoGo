@@ -7,13 +7,16 @@
   },
   "rules": {
     "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": "error"
+    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/no-explicit-any": "error"
   },
   "ignorePatterns": [
     "dist",
     "dist-electron",
     "node_modules",
     "packages/*/dist",
-    "packages/*/dist-electron"
+    "packages/*/dist-electron",
+    "apps/*/dist",
+    "apps/*/dist-electron"
   ]
 }

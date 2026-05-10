@@ -16,6 +16,7 @@ coverage
 docs/superpowers
 .turbo
 packages/*/.turbo
+apps/*/.turbo
 *.tsbuildinfo
 packages/*/dist
 packages/*/dist-electron
@@ -24,3 +25,10 @@ packages/*/release
 packages/*/coverage
 packages/*/node_modules
 packages/*/.data
+apps/*/dist
+apps/*/dist-electron
+apps/*/out
+apps/*/release
+apps/*/coverage
+apps/*/node_modules
+apps/*/.data

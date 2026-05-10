@@ -40,8 +40,8 @@ describe('UpdateToast', () => {
 
   it('calls installUpdate when Restart now is clicked', async () => {
     vi.mocked(useAutoUpdater).mockReturnValue({ updateReady: true });
-    vi.mocked(toast).mockImplementation((_msg, opts: any) => {
-      opts?.action?.onClick();
+    vi.mocked(toast).mockImplementation((_msg, opts?: Parameters<typeof toast>[1]) => {
+      (opts?.action as { onClick?: () => void } | undefined)?.onClick?.();
       return 'toast-id';
     });
     render(<UpdateToast />);
