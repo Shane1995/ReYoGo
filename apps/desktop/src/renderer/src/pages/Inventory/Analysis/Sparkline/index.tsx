@@ -36,7 +36,7 @@ export function Sparkline({ entries }: { entries: ItemEntry[] }) {
   const pathD = pts
     .map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
     .join(' ');
-  const areaD = `${pathD} L${pts[pts.length - 1].x.toFixed(1)} ${pad.t + h} L${pts[0].x.toFixed(1)} ${pad.t + h} Z`;
+  const areaD = `${pathD} L${pts[pts.length - 1]!.x.toFixed(1)} ${pad.t + h} L${pts[0]!.x.toFixed(1)} ${pad.t + h} Z`;
 
   const change = overallChangePct({ itemId: '', name: '', categoryType: '', entries });
   const color = change === null ? '#94a3b8' : change > 0 ? '#dc2626' : '#16a34a';

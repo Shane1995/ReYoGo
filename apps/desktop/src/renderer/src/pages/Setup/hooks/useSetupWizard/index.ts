@@ -13,7 +13,7 @@ export function useSetupWizard(onComplete: () => void) {
   const [goodTypes, setGoodTypes] = useState<string[]>(DEFAULT_GOOD_TYPES);
   const [units, setUnits] = useState<IUnitOfMeasure[]>(DEFAULT_UNITS);
   const [categories, setCategories] = useState<PendingCategory[]>([
-    createEmptyCategory(DEFAULT_GOOD_TYPES[0]),
+    createEmptyCategory(DEFAULT_GOOD_TYPES[0]!),
   ]);
   const [items, setItems] = useState<PendingItem[]>([createEmptyItem()]);
   const [saving, setSaving] = useState(false);

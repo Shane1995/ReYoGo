@@ -218,7 +218,7 @@ export async function getInvoiceById(id: string): Promise<ICapturedInvoiceWithLi
     .where(eq(schema.capturedInvoices.id, id))
     .limit(1);
   if (invoiceRows.length === 0) return null;
-  const inv = invoiceRows[0];
+  const inv = invoiceRows[0]!;
   const lineRows = await getDb()
     .select()
     .from(schema.capturedInvoiceLines)

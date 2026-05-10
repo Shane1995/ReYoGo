@@ -53,8 +53,8 @@ export default function ItemTrendPage() {
   const stats = useMemo(() => {
     if (!group || !group.entries.length) return null;
     const prices = group.entries.map((e) => e.unitPrice);
-    const first = prices[0];
-    const last = prices[prices.length - 1];
+    const first = prices[0]!;
+    const last = prices[prices.length - 1]!;
     return {
       min: Math.min(...prices),
       max: Math.max(...prices),
@@ -217,7 +217,7 @@ export default function ItemTrendPage() {
           </thead>
           <tbody>
             {group.entries.map((e, i) => {
-              const prev = i > 0 ? group.entries[i - 1].unitPrice : null;
+              const prev = i > 0 ? group.entries[i - 1]!.unitPrice : null;
               const diff = prev !== null && prev > 0 ? ((e.unitPrice - prev) / prev) * 100 : null;
               return (
                 <tr key={`${e.invoiceId}-${i}`} className={i % 2 === 1 ? 'bg-white/[0.03]' : ''}>
@@ -275,7 +275,7 @@ function PriceTip({
   uom?: string;
 }) {
   if (!active || !payload?.length) return null;
-  const { fullDate, price, qty } = payload[0].payload;
+  const { fullDate, price, qty } = payload[0]!.payload;
   return (
     <div className="rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-md">
       <p className="text-muted-foreground">{fullDate}</p>

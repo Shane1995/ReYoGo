@@ -22,7 +22,7 @@ export function ItemDetailChart({ group, metric }: { group: ItemGroup; metric: M
 
   const getYValue = (entry: ItemEntry) => {
     if (metric === 'price') return entry.unitPrice;
-    const baseline = group.entries[0].unitPrice;
+    const baseline = group.entries[0]!.unitPrice;
     if (baseline === 0) return 0;
     return ((entry.unitPrice - baseline) / baseline) * 100;
   };
@@ -57,7 +57,7 @@ export function ItemDetailChart({ group, metric }: { group: ItemGroup; metric: M
 
   const zeroY = metric === 'change' ? yScale(0) : null;
   const firstPriceY =
-    metric === 'price' && group.entries.length > 1 ? yScale(group.entries[0].unitPrice) : null;
+    metric === 'price' && group.entries.length > 1 ? yScale(group.entries[0]!.unitPrice) : null;
 
   const pts = group.entries.map((e) => ({
     x: xScale(e.date.getTime()),
@@ -70,7 +70,7 @@ export function ItemDetailChart({ group, metric }: { group: ItemGroup; metric: M
       ? pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')
       : null;
   const areaD = pathD
-    ? `${pathD} L${pts[pts.length - 1].x.toFixed(1)} ${DC.pt + dPlotH} L${pts[0].x.toFixed(1)} ${DC.pt + dPlotH} Z`
+    ? `${pathD} L${pts[pts.length - 1]!.x.toFixed(1)} ${DC.pt + dPlotH} L${pts[0]!.x.toFixed(1)} ${DC.pt + dPlotH} Z`
     : null;
 
   const lineColor = '#2563eb';
@@ -86,14 +86,14 @@ export function ItemDetailChart({ group, metric }: { group: ItemGroup; metric: M
     const entryIdx = group.entries.reduce(
       (bestI, e, i) =>
         Math.abs(e.date.getTime() - tAtMouse) <
-        Math.abs(group.entries[bestI].date.getTime() - tAtMouse)
+        Math.abs(group.entries[bestI]!.date.getTime() - tAtMouse)
           ? i
           : bestI,
       0,
     );
 
-    const entry = group.entries[entryIdx];
-    const prevEntry = entryIdx > 0 ? group.entries[entryIdx - 1] : null;
+    const entry = group.entries[entryIdx]!;
+    const prevEntry = entryIdx > 0 ? group.entries[entryIdx - 1]! : null;
 
     setTooltip({
       screenXPx,
@@ -101,8 +101,8 @@ export function ItemDetailChart({ group, metric }: { group: ItemGroup; metric: M
       entry,
       entryIdx,
       changeFromFirst:
-        group.entries[0].unitPrice > 0
-          ? ((entry.unitPrice - group.entries[0].unitPrice) / group.entries[0].unitPrice) * 100
+        group.entries[0]!.unitPrice > 0
+          ? ((entry.unitPrice - group.entries[0]!.unitPrice) / group.entries[0]!.unitPrice) * 100
           : null,
       changeFromPrev:
         prevEntry && prevEntry.unitPrice > 0

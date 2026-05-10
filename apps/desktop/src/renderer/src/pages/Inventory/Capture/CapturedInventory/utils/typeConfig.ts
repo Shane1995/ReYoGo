@@ -64,5 +64,5 @@ export const FALLBACK_PALETTE: TypeConfig[] = [
 export function getTypeConfig(type: string, allTypes: string[]): TypeConfig {
   if (KNOWN_TYPE_CONFIG[type]) return KNOWN_TYPE_CONFIG[type];
   const idx = allTypes.indexOf(type);
-  return FALLBACK_PALETTE[idx % FALLBACK_PALETTE.length] ?? FALLBACK_PALETTE[0];
+  return FALLBACK_PALETTE[idx % FALLBACK_PALETTE.length] ?? FALLBACK_PALETTE[0]!;
 }

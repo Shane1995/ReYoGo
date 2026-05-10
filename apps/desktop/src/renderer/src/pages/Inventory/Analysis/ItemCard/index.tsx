@@ -5,7 +5,7 @@ import { overallChangePct } from '../utils/stats';
 import type { ItemGroup } from '../types';
 
 export function ItemCard({ group, onSelect }: { group: ItemGroup; onSelect: () => void }) {
-  const last = group.entries[group.entries.length - 1];
+  const last = group.entries[group.entries.length - 1]!;
   const change = overallChangePct(group);
   const minPrice = Math.min(...group.entries.map((e) => e.unitPrice));
   const maxPrice = Math.max(...group.entries.map((e) => e.unitPrice));
