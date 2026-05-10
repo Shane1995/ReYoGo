@@ -5,8 +5,7 @@
   "description": "Shared lint, format, Tailwind, and Vite config for the reyogo monorepo",
   "exports": {
     "./oxlint": "./oxlint.json",
-    "./tailwind.preset": "./tailwind.preset.ts",
-    "./vite.base": "./vite.base.ts"
+    "./tailwind.preset": "./tailwind.preset.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -18,10 +17,8 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^5.1.4",
     "oxlint": "^1.61.0",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5.3.3",
-    "vite": "^6.4.2"
+    "typescript": "^5.3.3"
   }
 }
