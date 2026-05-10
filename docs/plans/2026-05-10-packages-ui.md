@@ -8,6 +8,8 @@
 
 **Tech Stack:** React 19, TypeScript, Tailwind CSS, shadcn/ui (new-york style), Radix UI, Vitest + jsdom, `@testing-library/react`
 
+> **Note:** `packages/ui` can depend on `packages/shared` by adding `"@reyogo/shared": "workspace:*"` to its dependencies. The 14 primitive components in this PR don't need it, but feature-specific components (e.g. `InvoiceTable`, `InventoryItemRow`) should import domain types from `@reyogo/shared` rather than re-declaring them.
+
 ---
 
 ## File Map
