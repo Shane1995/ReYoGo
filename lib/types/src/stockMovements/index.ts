@@ -1,16 +1,19 @@
-export type StockMovementType = 'IN' | 'OUT' | 'ADJUSTMENT';
-export type StockMovementSource = 'invoice' | 'usage' | 'adjustment';
+export type StockMovementType = 'IN' | 'OUT' | 'ADJUSTMENT' | 'WASTE' | 'RETURN';
+export type ReferenceType = 'invoice' | 'manual' | 'adjustment';
 
 export interface IStockMovement {
   id: string;
-  itemId: string;
-  itemNameSnapshot: string;
-  type: StockMovementType;
-  quantity: number;
-  source: StockMovementSource;
-  referenceId?: string | null;
-  costAtTime?: number | null;
-  cogsAmount?: number | null;
+  inventoryItemId: string;
+  movementType: StockMovementType;
+  qty: number;
+  unitCostAtTime: number | null;
+  totalCost: number | null;
+  weightedAvgCostAfter: number | null;
+  stockQtyAfter: number;
+  referenceType: ReferenceType | null;
+  referenceId: string | null;
+  notes: string | null;
+  occurredAt: Date;
   createdAt: Date;
 }
 
@@ -20,10 +23,13 @@ export interface IItemCostHistory {
   totalStock: number;
   movements: Array<{
     id: string;
-    type: StockMovementType;
-    quantity: number;
-    costAtTime: number | null;
-    cogsAmount: number | null;
+    movementType: StockMovementType;
+    qty: number;
+    unitCostAtTime: number | null;
+    totalCost: number | null;
+    weightedAvgCostAfter: number | null;
+    stockQtyAfter: number;
+    occurredAt: Date;
     createdAt: Date;
   }>;
 }
