@@ -39,36 +39,20 @@ export interface IInvoiceAuditEntry {
   snapshot: IInvoiceWithLines;
 }
 
+export type IInvoiceLinePayload = Omit<IInvoiceLine, 'invoiceId'>;
+
 export interface ISaveInvoicePayload {
   id: string;
   supplierId?: string | null;
   invoiceNumber?: string | null;
   invoiceDate?: Date | null;
-  lines: Array<{
-    id: string;
-    itemId: string;
-    itemNameSnapshot: string;
-    unitOfMeasure?: string | null;
-    quantity: number;
-    vatMode: VatMode;
-    vatRate: number;
-    totalVatExclude: number;
-  }>;
+  lines: IInvoiceLinePayload[];
 }
 
 export interface IUpdateInvoicePayload {
   id: string;
   note?: string;
-  lines: Array<{
-    id: string;
-    itemId: string;
-    itemNameSnapshot: string;
-    unitOfMeasure?: string | null;
-    quantity: number;
-    vatMode: VatMode;
-    vatRate: number;
-    totalVatExclude: number;
-  }>;
+  lines: IInvoiceLinePayload[];
 }
 
 export type ICapturedInvoiceLine = IInvoiceLine;

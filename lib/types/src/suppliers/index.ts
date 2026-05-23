@@ -1,11 +1,11 @@
-export interface ISupplier {
+import type { ITimestamped } from '../base';
+
+export interface ISupplier extends ITimestamped {
   id: string;
   name: string;
   contactName: string | null;
   phone: string | null;
   email: string | null;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface IUpsertSupplierPayload {
