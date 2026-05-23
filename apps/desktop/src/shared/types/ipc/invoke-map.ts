@@ -7,7 +7,7 @@ import type {
   ISaveInvoicePayload,
   IUpdateInvoicePayload,
 } from '@reyogo/types';
-import type { IUnitOfMeasure, ISetupStatus } from '@reyogo/types';
+import type { IUnitOfMeasure } from '@reyogo/types';
 import type { ICOGSSummary, IItemCostHistory } from '@reyogo/types';
 import type { ISupplier, IUpsertSupplierPayload } from '@reyogo/types';
 
@@ -39,8 +39,6 @@ export interface IPCInvokeMap {
   'stock-movements:get-weighted-avg-costs': { args: []; return: Record<string, number | null> };
   'stock-movements:get-item-cost-history': { args: [itemId: string]; return: IItemCostHistory };
   'stock-movements:get-cogs': { args: [fromDate?: string, toDate?: string]; return: ICOGSSummary };
-  'setup:get-status': { args: []; return: ISetupStatus };
-  'setup:complete': { args: []; return: void };
   'setup:get-units': { args: []; return: IUnitOfMeasure[] };
   'setup:upsert-unit': { args: [unit: IUnitOfMeasure]; return: void };
   'setup:delete-unit': { args: [id: string]; return: void };
