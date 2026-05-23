@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   CapturedInvoiceSchema,
   InvoiceLineInputSchema,
+  InvoiceSchema,
   SaveCapturedInvoicePayloadSchema,
+  SaveInvoicePayloadSchema,
   UpdateCapturedInvoicePayloadSchema,
   VatModeSchema,
 } from './invoices';
@@ -80,10 +82,11 @@ describe('InvoiceLineInputSchema', () => {
   });
 });
 
-describe('CapturedInvoiceSchema', () => {
+describe('InvoiceSchema', () => {
   it('accepts a valid invoice with optional nulls', () => {
-    const result = CapturedInvoiceSchema.parse({
+    const result = InvoiceSchema.parse({
       id: INVOICE_ID,
+      supplierId: null,
       invoiceNumber: null,
       invoiceDate: null,
       createdAt: '2026-05-08T10:00:00.000Z',
@@ -92,16 +95,36 @@ describe('CapturedInvoiceSchema', () => {
     expect(result.id).toBe(INVOICE_ID);
   });
 
+  it('accepts a supplierId', () => {
+    const result = InvoiceSchema.parse({
+      id: INVOICE_ID,
+      supplierId: '550e8400-e29b-41d4-a716-446655440099',
+      createdAt: '2026-05-08T10:00:00.000Z',
+    });
+    expect(result.supplierId).toBe('550e8400-e29b-41d4-a716-446655440099');
+  });
+
   it('rejects a non-ISO createdAt', () => {
     expect(() =>
-      CapturedInvoiceSchema.parse({ id: INVOICE_ID, createdAt: '8 May 2026' }),
+      InvoiceSchema.parse({ id: INVOICE_ID, supplierId: null, createdAt: '8 May 2026' }),
     ).toThrow();
   });
 });
 
-describe('SaveCapturedInvoicePayloadSchema', () => {
+describe('CapturedInvoiceSchema (backward-compat alias)', () => {
+  it('is the same as InvoiceSchema and accepts a valid invoice', () => {
+    const result = CapturedInvoiceSchema.parse({
+      id: INVOICE_ID,
+      supplierId: null,
+      createdAt: '2026-05-08T10:00:00.000Z',
+    });
+    expect(result.id).toBe(INVOICE_ID);
+  });
+});
+
+describe('SaveInvoicePayloadSchema', () => {
   it('accepts a valid save payload with lines', () => {
-    const result = SaveCapturedInvoicePayloadSchema.parse({
+    const result = SaveInvoicePayloadSchema.parse({
       id: INVOICE_ID,
       lines: [
         {
@@ -118,7 +141,28 @@ describe('SaveCapturedInvoicePayloadSchema', () => {
     expect(result.lines).toHaveLength(1);
   });
 
-  it('accepts an empty lines array', () => {
+  it('accepts a supplierId', () => {
+    const result = SaveInvoicePayloadSchema.parse({
+      id: INVOICE_ID,
+      supplierId: '550e8400-e29b-41d4-a716-446655440099',
+      lines: [],
+    });
+    expect(result.supplierId).toBe('550e8400-e29b-41d4-a716-446655440099');
+  });
+
+  it('accepts supplierId as null', () => {
+    const result = SaveInvoicePayloadSchema.parse({ id: INVOICE_ID, supplierId: null, lines: [] });
+    expect(result.supplierId).toBeNull();
+  });
+
+  it('accepts an empty lines array without supplierId', () => {
+    const result = SaveInvoicePayloadSchema.parse({ id: INVOICE_ID, lines: [] });
+    expect(result.lines).toHaveLength(0);
+  });
+});
+
+describe('SaveCapturedInvoicePayloadSchema (backward-compat alias)', () => {
+  it('accepts a valid save payload', () => {
     const result = SaveCapturedInvoicePayloadSchema.parse({ id: INVOICE_ID, lines: [] });
     expect(result.lines).toHaveLength(0);
   });

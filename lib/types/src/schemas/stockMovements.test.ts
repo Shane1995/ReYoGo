@@ -1,16 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ReferenceTypeSchema,
   StockMovementSchema,
-  StockMovementSourceSchema,
   StockMovementTypeSchema,
 } from './stockMovements';
 
 const ID = '550e8400-e29b-41d4-a716-446655440000';
-const ITEM_ID = '550e8400-e29b-41d4-a716-446655440001';
+const INVENTORY_ITEM_ID = '550e8400-e29b-41d4-a716-446655440001';
 const BASE = {
   id: ID,
-  itemId: ITEM_ID,
-  itemNameSnapshot: 'Full Cream Milk',
+  inventoryItemId: INVENTORY_ITEM_ID,
+  stockQtyAfter: 10,
+  referenceType: null,
+  referenceId: null,
+  notes: null,
+  unitCostAtTime: null,
+  totalCost: null,
+  weightedAvgCostAfter: null,
+  occurredAt: '2026-05-08T10:00:00.000Z',
   createdAt: '2026-05-08T10:00:00.000Z',
 };
 
@@ -19,6 +26,8 @@ describe('StockMovementTypeSchema', () => {
     expect(StockMovementTypeSchema.parse('IN')).toBe('IN');
     expect(StockMovementTypeSchema.parse('OUT')).toBe('OUT');
     expect(StockMovementTypeSchema.parse('ADJUSTMENT')).toBe('ADJUSTMENT');
+    expect(StockMovementTypeSchema.parse('WASTE')).toBe('WASTE');
+    expect(StockMovementTypeSchema.parse('RETURN')).toBe('RETURN');
   });
 
   it('rejects an invalid type', () => {
@@ -26,15 +35,15 @@ describe('StockMovementTypeSchema', () => {
   });
 });
 
-describe('StockMovementSourceSchema', () => {
-  it('accepts valid sources', () => {
-    expect(StockMovementSourceSchema.parse('invoice')).toBe('invoice');
-    expect(StockMovementSourceSchema.parse('usage')).toBe('usage');
-    expect(StockMovementSourceSchema.parse('adjustment')).toBe('adjustment');
+describe('ReferenceTypeSchema', () => {
+  it('accepts valid reference types', () => {
+    expect(ReferenceTypeSchema.parse('invoice')).toBe('invoice');
+    expect(ReferenceTypeSchema.parse('manual')).toBe('manual');
+    expect(ReferenceTypeSchema.parse('adjustment')).toBe('adjustment');
   });
 
-  it('rejects an invalid source', () => {
-    expect(() => StockMovementSourceSchema.parse('manual')).toThrow();
+  it('rejects an invalid reference type', () => {
+    expect(() => ReferenceTypeSchema.parse('usage')).toThrow();
   });
 });
 
@@ -42,50 +51,75 @@ describe('StockMovementSchema', () => {
   it('accepts a valid IN movement', () => {
     const result = StockMovementSchema.parse({
       ...BASE,
-      type: 'IN',
-      quantity: 10,
-      source: 'invoice',
+      movementType: 'IN',
+      qty: 10,
     });
-    expect(result.type).toBe('IN');
+    expect(result.movementType).toBe('IN');
   });
 
-  it('accepts an ADJUSTMENT with negative quantity', () => {
+  it('accepts a WASTE movement', () => {
     const result = StockMovementSchema.parse({
       ...BASE,
-      type: 'ADJUSTMENT',
-      quantity: -3,
-      source: 'adjustment',
+      movementType: 'WASTE',
+      qty: 3,
     });
-    expect(result.quantity).toBe(-3);
+    expect(result.movementType).toBe('WASTE');
+  });
+
+  it('accepts a RETURN movement', () => {
+    const result = StockMovementSchema.parse({
+      ...BASE,
+      movementType: 'RETURN',
+      qty: 1,
+    });
+    expect(result.movementType).toBe('RETURN');
   });
 
   it('accepts optional nullable fields as null', () => {
     const result = StockMovementSchema.parse({
       ...BASE,
-      type: 'OUT',
-      quantity: 2,
-      source: 'usage',
+      movementType: 'OUT',
+      qty: 2,
+      referenceType: null,
       referenceId: null,
-      costAtTime: null,
-      cogsAmount: null,
+      unitCostAtTime: null,
+      totalCost: null,
+      weightedAvgCostAfter: null,
+      notes: null,
     });
     expect(result.referenceId).toBeNull();
+    expect(result.unitCostAtTime).toBeNull();
   });
 
-  it('rejects a zero quantity', () => {
-    expect(() =>
-      StockMovementSchema.parse({ ...BASE, type: 'IN', quantity: 0, source: 'invoice' }),
-    ).toThrow();
+  it('accepts a referenceType and referenceId', () => {
+    const result = StockMovementSchema.parse({
+      ...BASE,
+      movementType: 'IN',
+      qty: 5,
+      referenceType: 'invoice',
+      referenceId: '550e8400-e29b-41d4-a716-446655440099',
+    });
+    expect(result.referenceType).toBe('invoice');
   });
 
   it('rejects a non-ISO createdAt', () => {
     expect(() =>
       StockMovementSchema.parse({
         ...BASE,
-        type: 'IN',
-        quantity: 1,
-        source: 'invoice',
+        movementType: 'IN',
+        qty: 1,
         createdAt: 'yesterday',
+      }),
+    ).toThrow();
+  });
+
+  it('rejects a non-ISO occurredAt', () => {
+    expect(() =>
+      StockMovementSchema.parse({
+        ...BASE,
+        movementType: 'IN',
+        qty: 1,
+        occurredAt: 'last week',
       }),
     ).toThrow();
   });
