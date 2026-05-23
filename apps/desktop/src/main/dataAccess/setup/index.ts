@@ -1,34 +1,6 @@
 import { eq } from 'drizzle-orm';
-import type { IUnitOfMeasure, ISetupStatus } from '@reyogo/types';
+import type { IUnitOfMeasure } from '@reyogo/types';
 import { getDb, schema } from '../../db';
-
-const SETUP_COMPLETE_KEY = 'setup_complete';
-
-export async function getSetupStatus(): Promise<ISetupStatus> {
-  const row = await getDb()
-    .select()
-    .from(schema.appConfig)
-    .where(eq(schema.appConfig.key, SETUP_COMPLETE_KEY))
-    .limit(1);
-  return { isComplete: row.length > 0 && row[0]!.value === 'true' };
-}
-
-export async function completeSetup(): Promise<void> {
-  const db = getDb();
-  const existing = await db
-    .select()
-    .from(schema.appConfig)
-    .where(eq(schema.appConfig.key, SETUP_COMPLETE_KEY))
-    .limit(1);
-  if (existing.length > 0) {
-    await db
-      .update(schema.appConfig)
-      .set({ value: 'true' })
-      .where(eq(schema.appConfig.key, SETUP_COMPLETE_KEY));
-  } else {
-    await db.insert(schema.appConfig).values({ key: SETUP_COMPLETE_KEY, value: 'true' });
-  }
-}
 
 export async function getUnits(): Promise<IUnitOfMeasure[]> {
   const rows = await getDb()
@@ -54,6 +26,7 @@ export async function upsertUnit(unit: IUnitOfMeasure): Promise<void> {
     await db.insert(schema.unitsOfMeasure).values({
       id: unit.id,
       name: unit.name,
+      accountId: 'default',
       createdAt: new Date(),
     });
   }

@@ -1,11 +1,11 @@
 import { ipcMain } from 'electron';
-import type { ISaveCapturedInvoicePayload, IUpdateCapturedInvoicePayload } from '@reyogo/types';
+import type { ISaveInvoicePayload, IUpdateInvoicePayload } from '@reyogo/types';
 import { InvoicesIPC } from '@shared/types/ipc';
 import * as invoicesDb from '../../dataAccess/invoices';
 
 async function saveInvoice(
   _event: Electron.IpcMainInvokeEvent,
-  payload: ISaveCapturedInvoicePayload,
+  payload: ISaveInvoicePayload,
 ): Promise<void> {
   await invoicesDb.saveInvoice(payload);
 }
@@ -35,7 +35,7 @@ async function getLinesForAnalysis(): Promise<
 
 async function updateInvoice(
   _event: Electron.IpcMainInvokeEvent,
-  payload: IUpdateCapturedInvoicePayload,
+  payload: IUpdateInvoicePayload,
 ): Promise<void> {
   await invoicesDb.updateInvoice(payload);
 }

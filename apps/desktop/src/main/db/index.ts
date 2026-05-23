@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import { eq } from 'drizzle-orm';
 import { app } from 'electron';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
@@ -45,4 +46,18 @@ export async function initDatabase(): Promise<void> {
       ? join(__dirname.replace('app.asar', 'app.asar.unpacked'), 'db', 'migrations')
       : join(__dirname, 'db', 'migrations');
   await migrate(_db, { migrationsFolder });
+
+  const existing = _db
+    .select()
+    .from(schema.accounts)
+    .where(eq(schema.accounts.id, 'default'))
+    .limit(1)
+    .get();
+  if (!existing) {
+    const now = new Date();
+    _db
+      .insert(schema.accounts)
+      .values({ id: 'default', name: 'Default', isCurrent: true, createdAt: now, updatedAt: now })
+      .run();
+  }
 }

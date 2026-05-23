@@ -3,6 +3,7 @@ import { registerInventoryHandlers } from './handlers/inventory';
 import { registerInvoicesHandlers } from './handlers/invoices';
 import { registerSetupHandlers } from './handlers/setup';
 import { registerStockMovementsHandlers } from './handlers/stockMovements';
+import { registerSuppliersHandlers } from './handlers/suppliers';
 
 export const registerIPC = () => {
   registerAppHandlers();
@@ -10,4 +11,5 @@ export const registerIPC = () => {
   registerInvoicesHandlers();
   registerSetupHandlers();
   registerStockMovementsHandlers();
+  registerSuppliersHandlers();
 };

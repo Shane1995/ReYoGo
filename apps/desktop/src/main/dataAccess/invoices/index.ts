@@ -1,25 +1,31 @@
 import { randomUUID } from 'crypto';
-import { eq, desc, asc, gt, sql } from 'drizzle-orm';
+import { eq, desc, asc, gt, and } from 'drizzle-orm';
 import type {
-  ICapturedInvoice,
-  ICapturedInvoiceAuditEntry,
-  ICapturedInvoiceLine,
-  ICapturedInvoiceWithLines,
+  IInvoice,
+  IInvoiceWithLines,
+  IInvoiceLine,
   IInvoiceLineWithDate,
-  ISaveCapturedInvoicePayload,
-  IUpdateCapturedInvoicePayload,
+  IInvoiceAuditEntry,
+  ISaveInvoicePayload,
+  IUpdateInvoicePayload,
 } from '@reyogo/types';
 import { getDb, schema } from '../../db';
 
+type TxDb = Parameters<ReturnType<typeof getDb>['transaction']>[0] extends (tx: infer T) => unknown
+  ? T
+  : never;
+
 function toInvoice(row: {
   id: string;
+  supplierId?: string | null;
   invoiceNumber?: string | null;
   invoiceDate?: Date | null;
   createdAt: Date;
   updatedAt?: Date | null;
-}): ICapturedInvoice {
+}): IInvoice {
   return {
     id: row.id,
+    supplierId: row.supplierId ?? null,
     invoiceNumber: row.invoiceNumber ?? null,
     invoiceDate: row.invoiceDate ?? null,
     createdAt: row.createdAt,
@@ -37,7 +43,7 @@ function toLine(row: {
   vatMode: string;
   vatRate: number;
   totalVatExclude: number;
-}): ICapturedInvoiceLine {
+}): IInvoiceLine {
   const vatMode =
     row.vatMode === 'inclusive' || row.vatMode === 'exclusive' || row.vatMode === 'non-taxable'
       ? row.vatMode
@@ -47,7 +53,7 @@ function toLine(row: {
     invoiceId: row.invoiceId,
     itemId: row.itemId,
     itemNameSnapshot: row.itemNameSnapshot,
-    unitOfMeasure: row.unitOfMeasure ?? undefined,
+    unitOfMeasure: row.unitOfMeasure ?? null,
     quantity: row.quantity,
     vatMode,
     vatRate: row.vatRate,
@@ -55,47 +61,101 @@ function toLine(row: {
   };
 }
 
-function recalcItemCosts(db: ReturnType<typeof getDb>, itemIds: string[], now: Date): void {
-  for (const itemId of itemIds) {
-    const [agg] = db
-      .select({
-        weightedAvgCost: sql<
-          number | null
-        >`CASE WHEN SUM(CASE WHEN type = 'IN' THEN quantity ELSE 0 END) > 0 THEN SUM(CASE WHEN type = 'IN' AND cost_at_time IS NOT NULL THEN quantity * cost_at_time ELSE 0 END) / SUM(CASE WHEN type = 'IN' THEN quantity ELSE 0 END) ELSE NULL END`,
-        totalStock: sql<number>`COALESCE(SUM(CASE WHEN type = 'IN' THEN quantity WHEN type = 'OUT' THEN -quantity ELSE 0 END), 0)`,
+function getLatestMovement(
+  tx: TxDb,
+  itemId: string,
+): { stockQtyAfter: number; weightedAvgCostAfter: number | null } | null {
+  const row = tx
+    .select({
+      stockQtyAfter: schema.stockMovements.stockQtyAfter,
+      weightedAvgCostAfter: schema.stockMovements.weightedAvgCostAfter,
+    })
+    .from(schema.stockMovements)
+    .where(eq(schema.stockMovements.inventoryItemId, itemId))
+    .orderBy(desc(schema.stockMovements.occurredAt), desc(schema.stockMovements.createdAt))
+    .limit(1)
+    .get();
+  return row ?? null;
+}
+
+function round4(x: number): number {
+  return Math.round(x * 10000) / 10000;
+}
+
+function computeWac(
+  prevQty: number,
+  prevWac: number | null,
+  inQty: number,
+  unitCost: number,
+): { newWac: number; newQtyAfter: number } {
+  if (prevQty === 0 || prevWac === null) {
+    return { newWac: unitCost, newQtyAfter: inQty };
+  }
+  const newWac = round4((prevQty * prevWac + inQty * unitCost) / (prevQty + inQty));
+  const newQtyAfter = prevQty + inQty;
+  return { newWac, newQtyAfter };
+}
+
+function insertMovementsForLines(
+  tx: TxDb,
+  lines: ISaveInvoicePayload['lines'],
+  referenceId: string,
+  occurredAt: Date,
+  createdAt: Date,
+): void {
+  const inLines = lines.filter((l) => l.quantity > 0);
+  for (const l of inLines) {
+    const unitCostAtTime = l.totalVatExclude / l.quantity;
+    const totalCost = l.quantity * unitCostAtTime;
+
+    const prev = getLatestMovement(tx, l.itemId);
+    const prevQty = prev?.stockQtyAfter ?? 0;
+    const prevWac = prev?.weightedAvgCostAfter ?? null;
+
+    const { newWac, newQtyAfter } = computeWac(prevQty, prevWac, l.quantity, unitCostAtTime);
+
+    tx.insert(schema.stockMovements)
+      .values({
+        id: randomUUID(),
+        inventoryItemId: l.itemId,
+        accountId: 'default',
+        movementType: 'IN',
+        qty: l.quantity,
+        unitCostAtTime,
+        totalCost,
+        weightedAvgCostAfter: newWac,
+        stockQtyAfter: newQtyAfter,
+        referenceType: 'invoice',
+        referenceId,
+        occurredAt,
+        createdAt,
       })
-      .from(schema.stockMovements)
-      .where(eq(schema.stockMovements.itemId, itemId))
-      .all();
-    db.update(schema.inventoryItems)
-      .set({
-        weightedAvgCost: agg?.weightedAvgCost ?? null,
-        totalStock: agg?.totalStock ?? 0,
-        updatedAt: now,
-      })
-      .where(eq(schema.inventoryItems.id, itemId))
       .run();
   }
 }
 
-export async function saveInvoice(payload: ISaveCapturedInvoicePayload): Promise<void> {
+export async function saveInvoice(payload: ISaveInvoicePayload): Promise<void> {
   const db = getDb();
   const createdAt = new Date();
-  let affectedItemIds: string[] = [];
+
   db.transaction((tx) => {
-    tx.insert(schema.capturedInvoices)
+    tx.insert(schema.invoices)
       .values({
         id: payload.id,
+        supplierId: payload.supplierId ?? null,
+        accountId: 'default',
         invoiceNumber: payload.invoiceNumber ?? null,
         invoiceDate: payload.invoiceDate ?? null,
         createdAt,
       })
       .run();
+
     const validLines = payload.lines.filter(
       (l) => l.itemId && l.itemNameSnapshot && l.quantity >= 0 && l.totalVatExclude >= 0,
     );
+
     if (validLines.length > 0) {
-      tx.insert(schema.capturedInvoiceLines)
+      tx.insert(schema.invoiceLineItems)
         .values(
           validLines.map((l) => ({
             id: l.id,
@@ -111,93 +171,105 @@ export async function saveInvoice(payload: ISaveCapturedInvoicePayload): Promise
         )
         .run();
 
-      const inMovements = validLines
-        .filter((l) => l.quantity > 0)
-        .map((l) => ({
-          id: randomUUID(),
-          itemId: l.itemId,
-          itemNameSnapshot: l.itemNameSnapshot,
-          type: 'IN' as const,
-          quantity: l.quantity,
-          source: 'invoice' as const,
-          referenceId: payload.id,
-          costAtTime: l.totalVatExclude / l.quantity,
-          createdAt,
-        }));
-      if (inMovements.length > 0) {
-        tx.insert(schema.stockMovements).values(inMovements).run();
-        affectedItemIds = [...new Set(inMovements.map((m) => m.itemId))];
-      }
+      insertMovementsForLines(
+        tx,
+        validLines,
+        payload.id,
+        payload.invoiceDate ?? createdAt,
+        createdAt,
+      );
     }
   });
-  if (affectedItemIds.length > 0) recalcItemCosts(db, affectedItemIds, createdAt);
 }
 
-export async function getInvoices(): Promise<ICapturedInvoice[]> {
-  const rows = await getDb()
-    .select()
-    .from(schema.capturedInvoices)
-    .orderBy(desc(schema.capturedInvoices.createdAt));
-  return rows.map((r) =>
-    toInvoice({
-      id: r.id,
-      invoiceNumber: r.invoiceNumber,
-      invoiceDate: r.invoiceDate,
-      createdAt: r.createdAt,
-      updatedAt: r.updatedAt,
-    }),
-  );
-}
-
-export async function getLinesForAnalysis(): Promise<IInvoiceLineWithDate[]> {
-  const rows = await getDb()
-    .select({
-      id: schema.capturedInvoiceLines.id,
-      invoiceId: schema.capturedInvoiceLines.invoiceId,
-      itemId: schema.capturedInvoiceLines.itemId,
-      itemNameSnapshot: schema.capturedInvoiceLines.itemNameSnapshot,
-      unitOfMeasure: schema.capturedInvoiceLines.unitOfMeasure,
-      quantity: schema.capturedInvoiceLines.quantity,
-      vatMode: schema.capturedInvoiceLines.vatMode,
-      vatRate: schema.capturedInvoiceLines.vatRate,
-      totalVatExclude: schema.capturedInvoiceLines.totalVatExclude,
-      createdAt: schema.capturedInvoices.createdAt,
-      categoryType: schema.inventoryCategories.type,
-      categoryName: schema.inventoryCategories.name,
-    })
-    .from(schema.capturedInvoiceLines)
-    .innerJoin(
-      schema.capturedInvoices,
-      eq(schema.capturedInvoiceLines.invoiceId, schema.capturedInvoices.id),
-    )
-    .leftJoin(
-      schema.inventoryItems,
-      eq(schema.capturedInvoiceLines.itemId, schema.inventoryItems.id),
-    )
-    .leftJoin(
-      schema.inventoryCategories,
-      eq(schema.inventoryItems.categoryId, schema.inventoryCategories.id),
-    )
-    .orderBy(asc(schema.capturedInvoices.createdAt));
-
-  return rows.map((r) => ({
-    ...toLine(r),
-    createdAt: r.createdAt,
-    categoryType: r.categoryType ?? null,
-    categoryName: r.categoryName ?? null,
-  }));
-}
-
-export async function getInvoicesWithLines(): Promise<ICapturedInvoiceWithLines[]> {
+export async function updateInvoice(payload: IUpdateInvoicePayload): Promise<void> {
   const db = getDb();
-  const invoiceRows = await db
+  const editedAt = new Date();
+
+  const current = await getInvoiceById(payload.id);
+  if (!current) throw new Error(`Invoice not found: ${payload.id}`);
+
+  const validLines = payload.lines.filter(
+    (l) => l.itemId && l.itemNameSnapshot && l.quantity >= 0 && l.totalVatExclude >= 0,
+  );
+
+  db.transaction((tx) => {
+    tx.insert(schema.invoiceAuditLog)
+      .values({
+        id: randomUUID(),
+        invoiceId: payload.id,
+        editedAt,
+        note: payload.note ?? null,
+        snapshot: JSON.stringify(current),
+      })
+      .run();
+
+    tx.delete(schema.stockMovements)
+      .where(
+        and(
+          eq(schema.stockMovements.referenceType, 'invoice'),
+          eq(schema.stockMovements.referenceId, payload.id),
+        ),
+      )
+      .run();
+
+    tx.delete(schema.invoiceLineItems)
+      .where(eq(schema.invoiceLineItems.invoiceId, payload.id))
+      .run();
+
+    if (validLines.length > 0) {
+      tx.insert(schema.invoiceLineItems)
+        .values(
+          validLines.map((l) => ({
+            id: l.id,
+            invoiceId: payload.id,
+            itemId: l.itemId,
+            itemNameSnapshot: l.itemNameSnapshot,
+            unitOfMeasure: l.unitOfMeasure ?? null,
+            quantity: l.quantity,
+            vatMode: l.vatMode,
+            vatRate: l.vatRate,
+            totalVatExclude: l.totalVatExclude,
+          })),
+        )
+        .run();
+
+      insertMovementsForLines(
+        tx,
+        validLines,
+        payload.id,
+        current.invoiceDate ?? editedAt,
+        editedAt,
+      );
+    }
+
+    tx.update(schema.invoices)
+      .set({ updatedAt: editedAt })
+      .where(eq(schema.invoices.id, payload.id))
+      .run();
+  });
+}
+
+export async function getInvoices(): Promise<IInvoice[]> {
+  const rows = getDb()
     .select()
-    .from(schema.capturedInvoices)
-    .orderBy(desc(schema.capturedInvoices.createdAt));
+    .from(schema.invoices)
+    .orderBy(desc(schema.invoices.createdAt))
+    .all();
+  return rows.map(toInvoice);
+}
+
+export async function getInvoicesWithLines(): Promise<IInvoiceWithLines[]> {
+  const db = getDb();
+  const invoiceRows = db
+    .select()
+    .from(schema.invoices)
+    .orderBy(desc(schema.invoices.createdAt))
+    .all();
 
   if (invoiceRows.length === 0) return [];
 
-  const lineRows = await db.select().from(schema.capturedInvoiceLines);
+  const lineRows = db.select().from(schema.invoiceLineItems).all();
 
   const linesByInvoice = new Map<string, typeof lineRows>();
   for (const line of lineRows) {
@@ -211,117 +283,69 @@ export async function getInvoicesWithLines(): Promise<ICapturedInvoiceWithLines[
   }));
 }
 
-export async function getInvoiceById(id: string): Promise<ICapturedInvoiceWithLines | null> {
-  const invoiceRows = await getDb()
+export async function getInvoiceById(id: string): Promise<IInvoiceWithLines | null> {
+  const db = getDb();
+  const inv = db.select().from(schema.invoices).where(eq(schema.invoices.id, id)).limit(1).get();
+  if (!inv) return null;
+
+  const lineRows = db
     .select()
-    .from(schema.capturedInvoices)
-    .where(eq(schema.capturedInvoices.id, id))
-    .limit(1);
-  if (invoiceRows.length === 0) return null;
-  const inv = invoiceRows[0]!;
-  const lineRows = await getDb()
-    .select()
-    .from(schema.capturedInvoiceLines)
-    .where(eq(schema.capturedInvoiceLines.invoiceId, id));
+    .from(schema.invoiceLineItems)
+    .where(eq(schema.invoiceLineItems.invoiceId, id))
+    .all();
+
   return {
     ...toInvoice(inv),
     lines: lineRows.map(toLine),
   };
 }
 
-export async function updateInvoice(payload: IUpdateCapturedInvoicePayload): Promise<void> {
-  const db = getDb();
-  const editedAt = new Date();
+export async function getLinesForAnalysis(): Promise<IInvoiceLineWithDate[]> {
+  const rows = getDb()
+    .select({
+      id: schema.invoiceLineItems.id,
+      invoiceId: schema.invoiceLineItems.invoiceId,
+      itemId: schema.invoiceLineItems.itemId,
+      itemNameSnapshot: schema.invoiceLineItems.itemNameSnapshot,
+      unitOfMeasure: schema.invoiceLineItems.unitOfMeasure,
+      quantity: schema.invoiceLineItems.quantity,
+      vatMode: schema.invoiceLineItems.vatMode,
+      vatRate: schema.invoiceLineItems.vatRate,
+      totalVatExclude: schema.invoiceLineItems.totalVatExclude,
+      createdAt: schema.invoices.createdAt,
+      categoryType: schema.inventoryCategories.type,
+      categoryName: schema.inventoryCategories.name,
+    })
+    .from(schema.invoiceLineItems)
+    .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
+    .leftJoin(schema.inventoryItems, eq(schema.invoiceLineItems.itemId, schema.inventoryItems.id))
+    .leftJoin(
+      schema.inventoryCategories,
+      eq(schema.inventoryItems.categoryId, schema.inventoryCategories.id),
+    )
+    .orderBy(asc(schema.invoices.createdAt))
+    .all();
 
-  // Load current state to snapshot before overwriting
-  const current = await getInvoiceById(payload.id);
-  if (!current) throw new Error(`Invoice not found: ${payload.id}`);
-
-  const validLines = payload.lines.filter(
-    (l) => l.itemId && l.itemNameSnapshot && l.quantity >= 0 && l.totalVatExclude >= 0,
-  );
-
-  // Collect all affected item IDs (old + new) for recalc
-  const affectedItemIds = new Set<string>(current.lines.map((l) => l.itemId));
-
-  db.transaction((tx) => {
-    // Write audit snapshot (before state)
-    tx.insert(schema.invoiceAuditLog)
-      .values({
-        id: randomUUID(),
-        invoiceId: payload.id,
-        editedAt,
-        note: payload.note ?? null,
-        snapshot: JSON.stringify(current),
-      })
-      .run();
-
-    tx.delete(schema.capturedInvoiceLines)
-      .where(eq(schema.capturedInvoiceLines.invoiceId, payload.id))
-      .run();
-
-    tx.delete(schema.stockMovements).where(eq(schema.stockMovements.referenceId, payload.id)).run();
-
-    if (validLines.length > 0) {
-      tx.insert(schema.capturedInvoiceLines)
-        .values(
-          validLines.map((l) => ({
-            id: l.id,
-            invoiceId: payload.id,
-            itemId: l.itemId,
-            itemNameSnapshot: l.itemNameSnapshot,
-            unitOfMeasure: l.unitOfMeasure ?? null,
-            quantity: l.quantity,
-            vatMode: l.vatMode,
-            vatRate: l.vatRate,
-            totalVatExclude: l.totalVatExclude,
-          })),
-        )
-        .run();
-
-      const inMovements = validLines
-        .filter((l) => l.quantity > 0)
-        .map((l) => ({
-          id: randomUUID(),
-          itemId: l.itemId,
-          itemNameSnapshot: l.itemNameSnapshot,
-          type: 'IN' as const,
-          quantity: l.quantity,
-          source: 'invoice' as const,
-          referenceId: payload.id,
-          costAtTime: l.totalVatExclude / l.quantity,
-          createdAt: editedAt,
-        }));
-      if (inMovements.length > 0) {
-        tx.insert(schema.stockMovements).values(inMovements).run();
-        for (const m of inMovements) affectedItemIds.add(m.itemId);
-      }
-    }
-
-    // Stamp updatedAt
-    tx.update(schema.capturedInvoices)
-      .set({ updatedAt: editedAt })
-      .where(eq(schema.capturedInvoices.id, payload.id))
-      .run();
-  });
-
-  if (affectedItemIds.size > 0) recalcItemCosts(db, [...affectedItemIds], editedAt);
+  return rows.map((r) => ({
+    ...toLine(r),
+    createdAt: r.createdAt,
+    categoryType: r.categoryType ?? null,
+    categoryName: r.categoryName ?? null,
+  }));
 }
 
 export async function getLastUnitPrices(): Promise<Record<string, number>> {
-  const rows = await getDb()
+  const rows = getDb()
     .select({
-      itemId: schema.capturedInvoiceLines.itemId,
-      quantity: schema.capturedInvoiceLines.quantity,
-      totalVatExclude: schema.capturedInvoiceLines.totalVatExclude,
+      itemId: schema.invoiceLineItems.itemId,
+      quantity: schema.invoiceLineItems.quantity,
+      totalVatExclude: schema.invoiceLineItems.totalVatExclude,
     })
-    .from(schema.capturedInvoiceLines)
-    .innerJoin(
-      schema.capturedInvoices,
-      eq(schema.capturedInvoiceLines.invoiceId, schema.capturedInvoices.id),
-    )
-    .where(gt(schema.capturedInvoiceLines.quantity, 0))
-    .orderBy(desc(schema.capturedInvoices.createdAt));
+    .from(schema.invoiceLineItems)
+    .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
+    .where(gt(schema.invoiceLineItems.quantity, 0))
+    .orderBy(desc(schema.invoices.createdAt))
+    .all();
 
   const result: Record<string, number> = {};
   for (const row of rows) {
@@ -332,18 +356,19 @@ export async function getLastUnitPrices(): Promise<Record<string, number>> {
   return result;
 }
 
-export async function getInvoiceAudit(invoiceId: string): Promise<ICapturedInvoiceAuditEntry[]> {
-  const rows = await getDb()
+export async function getInvoiceAudit(invoiceId: string): Promise<IInvoiceAuditEntry[]> {
+  const rows = getDb()
     .select()
     .from(schema.invoiceAuditLog)
     .where(eq(schema.invoiceAuditLog.invoiceId, invoiceId))
-    .orderBy(desc(schema.invoiceAuditLog.editedAt));
+    .orderBy(desc(schema.invoiceAuditLog.editedAt))
+    .all();
 
   return rows.map((r) => ({
     id: r.id,
     invoiceId: r.invoiceId,
     editedAt: r.editedAt,
     note: r.note,
-    snapshot: JSON.parse(r.snapshot) as ICapturedInvoiceWithLines,
+    snapshot: JSON.parse(r.snapshot) as IInvoiceWithLines,
   }));
 }
