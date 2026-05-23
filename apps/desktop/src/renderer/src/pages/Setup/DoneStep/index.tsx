@@ -1,6 +1,6 @@
 import { CheckIcon } from 'lucide-react';
 import { Button } from '@reyogo/ui';
-import type { IUnitOfMeasure } from '@reyogo/shared/setup';
+import type { IUnitOfMeasure } from '@reyogo/types/setup';
 import type { PendingCategory, PendingItem } from '../utils/types';
 
 export function DoneStep({

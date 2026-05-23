@@ -5,7 +5,7 @@ import type {
   IStockMovement,
   StockMovementSource,
   StockMovementType,
-} from '@reyogo/shared';
+} from '@reyogo/types';
 import { getDb, schema } from '../../db';
 
 export async function getCurrentStockByItem(): Promise<Record<string, number>> {

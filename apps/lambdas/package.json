@@ -10,7 +10,7 @@
     "build": "tsup",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "lint": "oxlint --config ../../packages/config/oxlint.json src/",
+    "lint": "oxlint --config ../../lib/config/oxlint.json src/",
     "format": "oxfmt src/",
     "format:check": "oxfmt --check src/",
     "clean": "rm -rf dist"
@@ -18,7 +18,7 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1045.0",
     "@aws-sdk/lib-dynamodb": "^3.1045.0",
-    "@reyogo/shared": "workspace:*"
+    "@reyogo/types": "workspace:*"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.161",

@@ -10,12 +10,12 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:ui": "vitest --ui",
-    "lint": "oxlint --config ../../packages/config/oxlint.json src/",
+    "lint": "oxlint --config ../../lib/config/oxlint.json src/",
     "format": "oxfmt src/",
     "format:check": "oxfmt --check src/"
   },
   "dependencies": {
-    "@reyogo/shared": "workspace:*",
+    "@reyogo/types": "workspace:*",
     "@reyogo/ui": "workspace:*",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"

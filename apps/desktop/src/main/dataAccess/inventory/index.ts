@@ -1,5 +1,5 @@
 import { asc, eq } from 'drizzle-orm';
-import type { IInventoryCategory, IInventoryItem } from '@reyogo/shared';
+import type { IInventoryCategory, IInventoryItem } from '@reyogo/types';
 import { getDb, schema } from '../../db';
 import type { InventoryCategoryRow, InventoryItemRow } from '../../db/drizzle/schema';
 

@@ -1,5 +1,5 @@
 import { InventoryIPC } from '@shared/types/ipc';
-import type { IInventoryCategory, IInventoryItem } from '@reyogo/shared/inventory';
+import type { IInventoryCategory, IInventoryItem } from '@reyogo/types/inventory';
 
 const invoke = () => window.electronAPI.ipcRenderer.invoke;
 

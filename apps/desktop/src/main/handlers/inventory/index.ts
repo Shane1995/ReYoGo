@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import type { IInventoryCategory, IInventoryItem, IInventorySubmitPayload } from '@reyogo/shared';
+import type { IInventoryCategory, IInventoryItem, IInventorySubmitPayload } from '@reyogo/types';
 import { InventoryIPC } from '@shared/types/ipc';
 import * as inventoryDb from '../../dataAccess/inventory';
 

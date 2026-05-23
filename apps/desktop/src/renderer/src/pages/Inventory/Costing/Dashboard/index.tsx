@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { stockMovementsService } from '@/services/stockMovements';
-import type { ICOGSSummary } from '@reyogo/shared';
+import type { ICOGSSummary } from '@reyogo/types';
 
 const inputClass =
   'h-8 rounded-md border border-input bg-muted px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40';

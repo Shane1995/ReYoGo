@@ -14,11 +14,11 @@
       "@shared/*": [
         "./src/shared/*"
       ],
-      "@reyogo/shared": [
-        "../../packages/shared/src/index.ts"
+      "@reyogo/types": [
+        "../../lib/types/src/index.ts"
       ],
-      "@reyogo/shared/*": [
-        "../../packages/shared/src/*"
+      "@reyogo/types/*": [
+        "../../lib/types/src/*"
       ]
     },
     "useDefineForClassFields": true,

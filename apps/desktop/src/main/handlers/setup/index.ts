@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import type { IUnitOfMeasure } from '@reyogo/shared';
+import type { IUnitOfMeasure } from '@reyogo/types';
 import { SetupIPC } from '@shared/types/ipc';
 import * as setupDb from '../../dataAccess/setup';
 
