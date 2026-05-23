@@ -1,4 +1,4 @@
-import type { IInvoiceLineWithDate } from '@reyogo/shared';
+import type { IInvoiceLineWithDate } from '@reyogo/types';
 import type { ItemGroup } from '../types';
 
 export function buildItemGroups(

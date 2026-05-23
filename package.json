@@ -34,6 +34,6 @@
     "turbo": "^2.5.3"
   },
   "lint-staged": {
-    "{packages,apps}/**/*.{ts,tsx,js,cjs,mjs}": ["oxfmt", "oxlint"]
+    "{lib,apps}/**/*.{ts,tsx,js,cjs,mjs}": ["oxfmt", "oxlint"]
   }
 }

@@ -1,4 +1,4 @@
-import type { IInventoryCategory } from '@reyogo/shared/inventory';
+import type { IInventoryCategory } from '@reyogo/types/inventory';
 
 function App() {
   const _typeCheck: IInventoryCategory | undefined = undefined;

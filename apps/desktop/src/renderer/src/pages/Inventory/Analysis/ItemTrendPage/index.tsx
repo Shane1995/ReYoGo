@@ -2,7 +2,7 @@ import { useMemo, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon } from 'lucide-react';
 import { stockMovementsService } from '@/services/stockMovements';
-import type { IItemCostHistory } from '@reyogo/shared';
+import type { IItemCostHistory } from '@reyogo/types';
 import {
   ResponsiveContainer,
   LineChart,

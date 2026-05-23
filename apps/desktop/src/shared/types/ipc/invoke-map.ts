@@ -1,4 +1,4 @@
-import type { IInventoryCategory, IInventoryItem, IInventorySubmitPayload } from '@reyogo/shared';
+import type { IInventoryCategory, IInventoryItem, IInventorySubmitPayload } from '@reyogo/types';
 import type {
   ICapturedInvoice,
   ICapturedInvoiceAuditEntry,
@@ -6,9 +6,9 @@ import type {
   IInvoiceLineWithDate,
   ISaveCapturedInvoicePayload,
   IUpdateCapturedInvoicePayload,
-} from '@reyogo/shared';
-import type { IUnitOfMeasure, ISetupStatus } from '@reyogo/shared';
-import type { ICOGSSummary, IItemCostHistory } from '@reyogo/shared';
+} from '@reyogo/types';
+import type { IUnitOfMeasure, ISetupStatus } from '@reyogo/types';
+import type { ICOGSSummary, IItemCostHistory } from '@reyogo/types';
 
 /**
  * Maps each IPC channel to its argument tuple and return type.

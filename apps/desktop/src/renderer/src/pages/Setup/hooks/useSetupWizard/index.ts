@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import type { IUnitOfMeasure } from '@reyogo/shared/setup';
-import type { IInventoryCategory, IInventoryItem } from '@reyogo/shared/inventory';
+import type { IUnitOfMeasure } from '@reyogo/types/setup';
+import type { IInventoryCategory, IInventoryItem } from '@reyogo/types/inventory';
 import type { ReviewResult } from '@/components/CsvImport/review';
 import { setupService } from '@/services/setup';
 import { inventoryService } from '@/services/inventory';

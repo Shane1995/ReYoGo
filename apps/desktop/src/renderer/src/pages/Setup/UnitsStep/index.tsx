@@ -5,7 +5,7 @@ import { DeleteButton } from '../components/DeleteButton';
 import { StepNav } from '../components/StepNav';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { cn } from '@reyogo/ui';
-import type { IUnitOfMeasure } from '@reyogo/shared/setup';
+import type { IUnitOfMeasure } from '@reyogo/types/setup';
 import { inputClass } from '../utils/inputClass';
 
 export function UnitsStep({

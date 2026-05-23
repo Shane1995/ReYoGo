@@ -2,7 +2,7 @@ import { InvoicesIPC } from '@shared/types/ipc';
 import type {
   ISaveCapturedInvoicePayload,
   IUpdateCapturedInvoicePayload,
-} from '@reyogo/shared/invoices';
+} from '@reyogo/types/invoices';
 
 const invoke = () => window.electronAPI.ipcRenderer.invoke;
 

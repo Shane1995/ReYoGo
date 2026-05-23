@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { IInventoryItem } from '@reyogo/shared';
+import type { IInventoryItem } from '@reyogo/types';
 import { handler } from './index.js';
 
 describe('health handler', () => {
@@ -8,7 +8,7 @@ describe('health handler', () => {
     expect(result).toEqual({ statusCode: 200, body: JSON.stringify({ status: 'ok' }) });
   });
 
-  it('@reyogo/shared workspace types resolve', () => {
+  it('@reyogo/types workspace types resolve', () => {
     const item: IInventoryItem = { id: 'a', name: 'b', categoryId: 'c', type: 'd' };
     expect(item.name).toBe('b');
   });

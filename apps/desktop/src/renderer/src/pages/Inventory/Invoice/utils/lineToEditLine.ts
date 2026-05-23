@@ -1,4 +1,4 @@
-import type { ICapturedInvoiceWithLines } from '@reyogo/shared';
+import type { ICapturedInvoiceWithLines } from '@reyogo/types';
 import type { ProcessReceiptLine } from '../types';
 
 export function lineToEditLine(l: ICapturedInvoiceWithLines['lines'][number]): ProcessReceiptLine {

@@ -12,7 +12,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "lint": "oxlint --config ../../packages/config/oxlint.json src/",
+    "lint": "oxlint --config ../../lib/config/oxlint.json src/",
     "format": "oxfmt src/",
     "format:check": "oxfmt --check src/"
   },
