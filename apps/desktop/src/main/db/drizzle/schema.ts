@@ -1,4 +1,5 @@
 import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import type { StockMovementType, ReferenceType } from '@reyogo/types';
 
 export const accounts = sqliteTable('accounts', {
   id: text('id').primaryKey(),
@@ -137,13 +138,13 @@ export const stockMovements = sqliteTable(
     inventoryItemId: text('inventory_item_id')
       .notNull()
       .references(() => inventoryItems.id, { onDelete: 'restrict' }),
-    movementType: text('movement_type').notNull(),
+    movementType: text('movement_type').$type<StockMovementType>().notNull(),
     qty: real('qty').notNull(),
     unitCostAtTime: real('unit_cost_at_time'),
     totalCost: real('total_cost'),
     weightedAvgCostAfter: real('weighted_avg_cost_after'),
     stockQtyAfter: real('stock_qty_after').notNull(),
-    referenceType: text('reference_type'),
+    referenceType: text('reference_type').$type<ReferenceType>(),
     referenceId: text('reference_id'),
     notes: text('notes'),
     occurredAt: integer('occurred_at', { mode: 'timestamp' }).notNull(),

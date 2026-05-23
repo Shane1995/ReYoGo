@@ -9,7 +9,7 @@ function toCategory(row: InventoryCategoryRow): IInventoryCategory {
   return {
     id: row.id,
     name: row.name,
-    type: row.type as IInventoryCategory['type'],
+    type: row.type,
   };
 }
 
@@ -43,7 +43,7 @@ export async function getItems(): Promise<IInventoryItem[]> {
       eq(schema.inventoryItems.categoryId, schema.inventoryCategories.id),
     )
     .orderBy(asc(schema.inventoryItems.name));
-  return rows.map((r) => toItem(r.item, r.categoryType as IInventoryCategory['type']));
+  return rows.map((r) => toItem(r.item, r.categoryType));
 }
 
 export async function upsertCategory(category: IInventoryCategory): Promise<void> {
