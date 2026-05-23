@@ -66,6 +66,7 @@ export async function upsertCategory(category: IInventoryCategory): Promise<void
   } else {
     await db.insert(schema.inventoryCategories).values({
       id: category.id,
+      accountId: 'default',
       name: category.name,
       type: category.type,
       createdAt: ts,
@@ -95,6 +96,7 @@ export async function upsertItem(item: IInventoryItem): Promise<void> {
   } else {
     await db.insert(schema.inventoryItems).values({
       id: item.id,
+      accountId: 'default',
       name: item.name,
       categoryId: item.categoryId,
       unitOfMeasure: item.unitOfMeasure ?? null,
