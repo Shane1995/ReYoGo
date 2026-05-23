@@ -47,54 +47,28 @@ export async function getItems(): Promise<IInventoryItem[]> {
 }
 
 export async function upsertCategory(category: IInventoryCategory): Promise<void> {
-  const db = getDb();
-  const existing = await db
-    .select()
-    .from(schema.inventoryCategories)
-    .where(eq(schema.inventoryCategories.id, category.id))
-    .limit(1);
   const ts = now();
-  if (existing.length > 0) {
-    await db
-      .update(schema.inventoryCategories)
-      .set({
-        name: category.name,
-        type: category.type,
-        updatedAt: ts,
-      })
-      .where(eq(schema.inventoryCategories.id, category.id));
-  } else {
-    await db.insert(schema.inventoryCategories).values({
+  await getDb()
+    .insert(schema.inventoryCategories)
+    .values({
       id: category.id,
       accountId: 'default',
       name: category.name,
       type: category.type,
       createdAt: ts,
       updatedAt: ts,
+    })
+    .onConflictDoUpdate({
+      target: schema.inventoryCategories.id,
+      set: { name: category.name, type: category.type, updatedAt: ts },
     });
-  }
 }
 
 export async function upsertItem(item: IInventoryItem): Promise<void> {
-  const db = getDb();
-  const existing = await db
-    .select()
-    .from(schema.inventoryItems)
-    .where(eq(schema.inventoryItems.id, item.id))
-    .limit(1);
   const ts = now();
-  if (existing.length > 0) {
-    await db
-      .update(schema.inventoryItems)
-      .set({
-        name: item.name,
-        categoryId: item.categoryId,
-        unitOfMeasure: item.unitOfMeasure ?? null,
-        updatedAt: ts,
-      })
-      .where(eq(schema.inventoryItems.id, item.id));
-  } else {
-    await db.insert(schema.inventoryItems).values({
+  await getDb()
+    .insert(schema.inventoryItems)
+    .values({
       id: item.id,
       accountId: 'default',
       name: item.name,
@@ -102,8 +76,16 @@ export async function upsertItem(item: IInventoryItem): Promise<void> {
       unitOfMeasure: item.unitOfMeasure ?? null,
       createdAt: ts,
       updatedAt: ts,
+    })
+    .onConflictDoUpdate({
+      target: schema.inventoryItems.id,
+      set: {
+        name: item.name,
+        categoryId: item.categoryId,
+        unitOfMeasure: item.unitOfMeasure ?? null,
+        updatedAt: ts,
+      },
     });
-  }
 }
 
 export async function deleteCategory(id: string): Promise<void> {
