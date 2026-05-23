@@ -18,7 +18,7 @@ CREATE TABLE `costing_snapshots` (
 	`weighted_avg_cost` real,
 	`stock_qty` real,
 	`created_at` integer NOT NULL,
-	FOREIGN KEY (`inventory_item_id`) REFERENCES `inventory_items`(`id`) ON UPDATE no action ON DELETE cascade
+	FOREIGN KEY (`inventory_item_id`) REFERENCES `inventory_items`(`id`) ON UPDATE no action ON DELETE restrict
 );
 --> statement-breakpoint
 CREATE TABLE `inventory_categories` (

@@ -146,7 +146,7 @@ export const costingSnapshots = sqliteTable('costing_snapshots', {
   id: text('id').primaryKey(),
   inventoryItemId: text('inventory_item_id')
     .notNull()
-    .references(() => inventoryItems.id, { onDelete: 'cascade' }),
+    .references(() => inventoryItems.id, { onDelete: 'restrict' }),
   snapshotDate: integer('snapshot_date', { mode: 'timestamp' }).notNull(),
   weightedAvgCost: real('weighted_avg_cost'),
   stockQty: real('stock_qty'),
