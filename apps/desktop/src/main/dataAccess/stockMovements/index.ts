@@ -13,7 +13,6 @@ export async function getCurrentStockByItem(): Promise<Record<string, number>> {
     .orderBy(asc(schema.stockMovements.occurredAt));
 
   const result: Record<string, number> = {};
-  // Iterate in order; last write wins → keeps latest occurredAt per item
   for (const row of rows) {
     result[row.inventoryItemId] = row.stockQtyAfter;
   }
@@ -45,7 +44,6 @@ export async function getMovementsForItem(itemId: string): Promise<IStockMovemen
     .where(eq(schema.stockMovements.inventoryItemId, itemId))
     .orderBy(schema.stockMovements.occurredAt);
 
-  // Sort descending in JS (avoids importing desc)
   rows.sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime());
 
   return rows.map((r) => ({
@@ -68,7 +66,6 @@ export async function getMovementsForItem(itemId: string): Promise<IStockMovemen
 export async function getItemCostHistory(itemId: string): Promise<IItemCostHistory> {
   const movements = await getMovementsForItem(itemId);
 
-  // movements are already sorted DESC by occurredAt
   const latestInMovement = movements.find((m) => m.movementType === 'IN');
   const weightedAvgCost = latestInMovement?.weightedAvgCostAfter ?? null;
   const latestMovement = movements.at(0);

@@ -11,10 +11,6 @@ import type { IUnitOfMeasure, ISetupStatus } from '@reyogo/types';
 import type { ICOGSSummary, IItemCostHistory } from '@reyogo/types';
 import type { ISupplier, IUpsertSupplierPayload } from '@reyogo/types';
 
-/**
- * Maps each IPC channel to its argument tuple and return type.
- * Keys must match the values in inventory.ts / invoices.ts. Add entries when you add new handlers.
- */
 export interface AppVersionInfo {
   version: string;
   env: string;

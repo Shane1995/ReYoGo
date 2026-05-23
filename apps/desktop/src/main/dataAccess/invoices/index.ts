@@ -11,14 +11,9 @@ import type {
 } from '@reyogo/types';
 import { getDb, schema } from '../../db';
 
-// The transaction callback's first argument type
 type TxDb = Parameters<ReturnType<typeof getDb>['transaction']>[0] extends (tx: infer T) => unknown
   ? T
   : never;
-
-// ---------------------------------------------------------------------------
-// Mapper helpers
-// ---------------------------------------------------------------------------
 
 function toInvoice(row: {
   id: string;
@@ -66,10 +61,6 @@ function toLine(row: {
   };
 }
 
-// ---------------------------------------------------------------------------
-// WAC helpers (module-private)
-// ---------------------------------------------------------------------------
-
 function getLatestMovement(
   tx: TxDb,
   itemId: string,
@@ -81,10 +72,7 @@ function getLatestMovement(
     })
     .from(schema.stockMovements)
     .where(eq(schema.stockMovements.inventoryItemId, itemId))
-    .orderBy(
-      desc(schema.stockMovements.occurredAt),
-      desc(schema.stockMovements.createdAt),
-    )
+    .orderBy(desc(schema.stockMovements.occurredAt), desc(schema.stockMovements.createdAt))
     .limit(1)
     .get();
   return row ?? null;
@@ -107,10 +95,6 @@ function computeWac(
   const newQtyAfter = prevQty + inQty;
   return { newWac, newQtyAfter };
 }
-
-// ---------------------------------------------------------------------------
-// Insert movements for a set of valid lines (shared between save and update)
-// ---------------------------------------------------------------------------
 
 function insertMovementsForLines(
   tx: TxDb,
@@ -149,10 +133,6 @@ function insertMovementsForLines(
       .run();
   }
 }
-
-// ---------------------------------------------------------------------------
-// Exported data access functions
-// ---------------------------------------------------------------------------
 
 export async function saveInvoice(payload: ISaveInvoicePayload): Promise<void> {
   const db = getDb();
@@ -206,7 +186,6 @@ export async function updateInvoice(payload: IUpdateInvoicePayload): Promise<voi
   const db = getDb();
   const editedAt = new Date();
 
-  // Snapshot current state BEFORE the transaction (getInvoiceById is async)
   const current = await getInvoiceById(payload.id);
   if (!current) throw new Error(`Invoice not found: ${payload.id}`);
 
@@ -215,7 +194,6 @@ export async function updateInvoice(payload: IUpdateInvoicePayload): Promise<voi
   );
 
   db.transaction((tx) => {
-    // 1. Write audit entry with pre-edit snapshot
     tx.insert(schema.invoiceAuditLog)
       .values({
         id: randomUUID(),
@@ -226,7 +204,6 @@ export async function updateInvoice(payload: IUpdateInvoicePayload): Promise<voi
       })
       .run();
 
-    // 2. Delete old movements for this invoice
     tx.delete(schema.stockMovements)
       .where(
         and(
@@ -236,12 +213,10 @@ export async function updateInvoice(payload: IUpdateInvoicePayload): Promise<voi
       )
       .run();
 
-    // 3. Delete old line items
     tx.delete(schema.invoiceLineItems)
       .where(eq(schema.invoiceLineItems.invoiceId, payload.id))
       .run();
 
-    // 4. Re-insert lines
     if (validLines.length > 0) {
       tx.insert(schema.invoiceLineItems)
         .values(
@@ -259,7 +234,6 @@ export async function updateInvoice(payload: IUpdateInvoicePayload): Promise<voi
         )
         .run();
 
-      // 5. Re-compute WAC movements (uses current snapshot's invoiceDate)
       insertMovementsForLines(
         tx,
         validLines,
@@ -269,7 +243,6 @@ export async function updateInvoice(payload: IUpdateInvoicePayload): Promise<voi
       );
     }
 
-    // 6. Stamp updatedAt
     tx.update(schema.invoices)
       .set({ updatedAt: editedAt })
       .where(eq(schema.invoices.id, payload.id))
@@ -312,12 +285,7 @@ export async function getInvoicesWithLines(): Promise<IInvoiceWithLines[]> {
 
 export async function getInvoiceById(id: string): Promise<IInvoiceWithLines | null> {
   const db = getDb();
-  const inv = db
-    .select()
-    .from(schema.invoices)
-    .where(eq(schema.invoices.id, id))
-    .limit(1)
-    .get();
+  const inv = db.select().from(schema.invoices).where(eq(schema.invoices.id, id)).limit(1).get();
   if (!inv) return null;
 
   const lineRows = db
@@ -350,10 +318,7 @@ export async function getLinesForAnalysis(): Promise<IInvoiceLineWithDate[]> {
     })
     .from(schema.invoiceLineItems)
     .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
-    .leftJoin(
-      schema.inventoryItems,
-      eq(schema.invoiceLineItems.itemId, schema.inventoryItems.id),
-    )
+    .leftJoin(schema.inventoryItems, eq(schema.invoiceLineItems.itemId, schema.inventoryItems.id))
     .leftJoin(
       schema.inventoryCategories,
       eq(schema.inventoryItems.categoryId, schema.inventoryCategories.id),

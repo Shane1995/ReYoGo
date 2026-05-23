@@ -137,13 +137,13 @@ export const stockMovements = sqliteTable(
     inventoryItemId: text('inventory_item_id')
       .notNull()
       .references(() => inventoryItems.id, { onDelete: 'restrict' }),
-    movementType: text('movement_type').notNull(), // 'IN' | 'OUT' | 'ADJUSTMENT' | 'WASTE' | 'RETURN'
+    movementType: text('movement_type').notNull(),
     qty: real('qty').notNull(),
     unitCostAtTime: real('unit_cost_at_time'),
     totalCost: real('total_cost'),
     weightedAvgCostAfter: real('weighted_avg_cost_after'),
     stockQtyAfter: real('stock_qty_after').notNull(),
-    referenceType: text('reference_type'), // 'invoice' | 'manual' | 'adjustment'
+    referenceType: text('reference_type'),
     referenceId: text('reference_id'),
     notes: text('notes'),
     occurredAt: integer('occurred_at', { mode: 'timestamp' }).notNull(),

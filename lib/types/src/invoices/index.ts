@@ -71,7 +71,6 @@ export interface IUpdateInvoicePayload {
   }>;
 }
 
-// Backward-compat aliases — remove once renderer is fully updated in Task 15
 export type ICapturedInvoiceLine = IInvoiceLine;
 export type ICapturedInvoice = IInvoice;
 export type ICapturedInvoiceWithLines = IInvoiceWithLines;

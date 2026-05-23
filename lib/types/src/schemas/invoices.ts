@@ -50,7 +50,6 @@ export type InvoiceWithLines = z.infer<typeof InvoiceWithLinesSchema>;
 export type SaveInvoicePayload = z.infer<typeof SaveInvoicePayloadSchema>;
 export type UpdateInvoicePayload = z.infer<typeof UpdateInvoicePayloadSchema>;
 
-// Backward-compat re-exports — remove once renderer is fully updated
 export const CapturedInvoiceSchema = InvoiceSchema;
 export const CapturedInvoiceLineSchema = InvoiceLineSchema;
 export const CapturedInvoiceWithLinesSchema = InvoiceWithLinesSchema;
