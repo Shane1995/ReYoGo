@@ -1,1 +1,0 @@
-ALTER TABLE `captured_invoice_lines` ADD COLUMN `unit_of_measure` text;
