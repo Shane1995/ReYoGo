@@ -2,6 +2,7 @@
   "name": "@reyogo/config",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Shared lint, format, Tailwind, and Vite config for the reyogo monorepo",
   "exports": {
     "./oxlint": "./oxlint.json",
