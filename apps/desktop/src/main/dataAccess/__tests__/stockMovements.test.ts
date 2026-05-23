@@ -9,8 +9,8 @@ vi.mock('../../db', () => ({ getDb: () => db, schema }));
 
 import { getCurrentStockByItem, getWeightedAvgCosts } from '../stockMovements';
 
-beforeEach(() => {
-  db = createTestDb();
+beforeEach(async () => {
+  db = await createTestDb();
 });
 
 // Helper to seed prerequisite category + item

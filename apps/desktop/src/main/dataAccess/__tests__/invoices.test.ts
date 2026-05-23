@@ -19,8 +19,8 @@ function round4(x: number): number {
   return Math.round(x * 10000) / 10000;
 }
 
-beforeEach(() => {
-  db = createTestDb();
+beforeEach(async () => {
+  db = await createTestDb();
   // Seed category + two items for all invoice tests
   db.insert(schema.inventoryCategories)
     .values({

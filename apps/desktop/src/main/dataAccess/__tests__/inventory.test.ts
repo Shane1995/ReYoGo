@@ -16,8 +16,8 @@ import {
   deleteItem,
 } from '../inventory';
 
-beforeEach(() => {
-  db = createTestDb();
+beforeEach(async () => {
+  db = await createTestDb();
 });
 
 describe('inventory data access', () => {

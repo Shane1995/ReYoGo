@@ -9,8 +9,8 @@ vi.mock('../../db', () => ({ getDb: () => db, schema }));
 
 import { upsertSupplier, getSuppliers, deleteSupplier } from '../suppliers';
 
-beforeEach(() => {
-  db = createTestDb();
+beforeEach(async () => {
+  db = await createTestDb();
 });
 
 describe('suppliers data access', () => {
