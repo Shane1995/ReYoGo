@@ -54,6 +54,7 @@ export async function upsertUnit(unit: IUnitOfMeasure): Promise<void> {
     await db.insert(schema.unitsOfMeasure).values({
       id: unit.id,
       name: unit.name,
+      accountId: 'default',
       createdAt: new Date(),
     });
   }
