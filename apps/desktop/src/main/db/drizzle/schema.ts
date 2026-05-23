@@ -18,6 +18,9 @@ export type AppConfigRow = typeof appConfig.$inferSelect;
 
 export const unitsOfMeasure = sqliteTable('units_of_measure', {
   id: text('id').primaryKey(),
+  accountId: text('account_id')
+    .notNull()
+    .references(() => accounts.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
@@ -26,6 +29,9 @@ export type NewUnitOfMeasureRow = typeof unitsOfMeasure.$inferInsert;
 
 export const inventoryCategories = sqliteTable('inventory_categories', {
   id: text('id').primaryKey(),
+  accountId: text('account_id')
+    .notNull()
+    .references(() => accounts.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   type: text('type').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
@@ -36,6 +42,9 @@ export type NewInventoryCategoryRow = typeof inventoryCategories.$inferInsert;
 
 export const inventoryItems = sqliteTable('inventory_items', {
   id: text('id').primaryKey(),
+  accountId: text('account_id')
+    .notNull()
+    .references(() => accounts.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   categoryId: text('category_id')
     .notNull()
@@ -49,6 +58,9 @@ export type NewInventoryItemRow = typeof inventoryItems.$inferInsert;
 
 export const suppliers = sqliteTable('suppliers', {
   id: text('id').primaryKey(),
+  accountId: text('account_id')
+    .notNull()
+    .references(() => accounts.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   contactName: text('contact_name'),
   phone: text('phone'),
@@ -63,6 +75,9 @@ export const invoices = sqliteTable(
   'invoices',
   {
     id: text('id').primaryKey(),
+    accountId: text('account_id')
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
     supplierId: text('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
     invoiceNumber: text('invoice_number'),
     invoiceDate: integer('invoice_date', { mode: 'timestamp' }),
@@ -116,6 +131,9 @@ export const stockMovements = sqliteTable(
   'stock_movements',
   {
     id: text('id').primaryKey(),
+    accountId: text('account_id')
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
     inventoryItemId: text('inventory_item_id')
       .notNull()
       .references(() => inventoryItems.id, { onDelete: 'restrict' }),
@@ -144,6 +162,9 @@ export type NewStockMovementRow = typeof stockMovements.$inferInsert;
 
 export const costingSnapshots = sqliteTable('costing_snapshots', {
   id: text('id').primaryKey(),
+  accountId: text('account_id')
+    .notNull()
+    .references(() => accounts.id, { onDelete: 'cascade' }),
   inventoryItemId: text('inventory_item_id')
     .notNull()
     .references(() => inventoryItems.id, { onDelete: 'restrict' }),

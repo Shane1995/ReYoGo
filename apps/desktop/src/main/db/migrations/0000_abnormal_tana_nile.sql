@@ -13,29 +13,35 @@ CREATE TABLE `app_config` (
 --> statement-breakpoint
 CREATE TABLE `costing_snapshots` (
 	`id` text PRIMARY KEY NOT NULL,
+	`account_id` text NOT NULL,
 	`inventory_item_id` text NOT NULL,
 	`snapshot_date` integer NOT NULL,
 	`weighted_avg_cost` real,
 	`stock_qty` real,
 	`created_at` integer NOT NULL,
+	FOREIGN KEY (`account_id`) REFERENCES `accounts`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`inventory_item_id`) REFERENCES `inventory_items`(`id`) ON UPDATE no action ON DELETE restrict
 );
 --> statement-breakpoint
 CREATE TABLE `inventory_categories` (
 	`id` text PRIMARY KEY NOT NULL,
+	`account_id` text NOT NULL,
 	`name` text NOT NULL,
 	`type` text NOT NULL,
 	`created_at` integer NOT NULL,
-	`updated_at` integer NOT NULL
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`account_id`) REFERENCES `accounts`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `inventory_items` (
 	`id` text PRIMARY KEY NOT NULL,
+	`account_id` text NOT NULL,
 	`name` text NOT NULL,
 	`category_id` text NOT NULL,
 	`unit_of_measure` text,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`account_id`) REFERENCES `accounts`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`category_id`) REFERENCES `inventory_categories`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
@@ -65,17 +71,20 @@ CREATE TABLE `invoice_line_items` (
 CREATE INDEX `invoice_lines_invoice_idx` ON `invoice_line_items` (`invoice_id`);--> statement-breakpoint
 CREATE TABLE `invoices` (
 	`id` text PRIMARY KEY NOT NULL,
+	`account_id` text NOT NULL,
 	`supplier_id` text,
 	`invoice_number` text,
 	`invoice_date` integer,
 	`created_at` integer NOT NULL,
 	`updated_at` integer,
+	FOREIGN KEY (`account_id`) REFERENCES `accounts`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`supplier_id`) REFERENCES `suppliers`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
 CREATE INDEX `invoices_supplier_idx` ON `invoices` (`supplier_id`);--> statement-breakpoint
 CREATE TABLE `stock_movements` (
 	`id` text PRIMARY KEY NOT NULL,
+	`account_id` text NOT NULL,
 	`inventory_item_id` text NOT NULL,
 	`movement_type` text NOT NULL,
 	`qty` real NOT NULL,
@@ -88,6 +97,7 @@ CREATE TABLE `stock_movements` (
 	`notes` text,
 	`occurred_at` integer NOT NULL,
 	`created_at` integer NOT NULL,
+	FOREIGN KEY (`account_id`) REFERENCES `accounts`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`inventory_item_id`) REFERENCES `inventory_items`(`id`) ON UPDATE no action ON DELETE restrict
 );
 --> statement-breakpoint
@@ -95,16 +105,20 @@ CREATE INDEX `stock_movements_item_time_idx` ON `stock_movements` (`inventory_it
 CREATE INDEX `stock_movements_ref_idx` ON `stock_movements` (`reference_type`,`reference_id`);--> statement-breakpoint
 CREATE TABLE `suppliers` (
 	`id` text PRIMARY KEY NOT NULL,
+	`account_id` text NOT NULL,
 	`name` text NOT NULL,
 	`contact_name` text,
 	`phone` text,
 	`email` text,
 	`created_at` integer NOT NULL,
-	`updated_at` integer NOT NULL
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`account_id`) REFERENCES `accounts`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `units_of_measure` (
 	`id` text PRIMARY KEY NOT NULL,
+	`account_id` text NOT NULL,
 	`name` text NOT NULL,
-	`created_at` integer NOT NULL
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`account_id`) REFERENCES `accounts`(`id`) ON UPDATE no action ON DELETE cascade
 );
