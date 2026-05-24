@@ -29,11 +29,6 @@
     "clean": {
       "cache": false
     },
-    "electron:dev": {
-      "dependsOn": ["^build"],
-      "cache": false,
-      "persistent": true
-    },
     "dev": {
       "cache": false,
       "persistent": true
