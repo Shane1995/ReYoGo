@@ -42,8 +42,6 @@ export interface IPCInvokeMap {
   'setup:get-units': { args: []; return: IUnitOfMeasure[] };
   'setup:upsert-unit': { args: [unit: IUnitOfMeasure]; return: void };
   'setup:delete-unit': { args: [id: string]; return: void };
-  'setup:get-good-types': { args: []; return: string[] };
-  'setup:set-good-types': { args: [types: string[]]; return: void };
   'suppliers:get-suppliers': { args: []; return: ISupplier[] };
   'suppliers:upsert-supplier': { args: [payload: IUpsertSupplierPayload]; return: void };
   'suppliers:delete-supplier': { args: [id: string]; return: void };

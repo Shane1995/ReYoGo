@@ -9,7 +9,6 @@ import { enrichParseResult } from './review';
 import type { ReviewResult } from './review';
 import { ImportReview } from './ImportReview';
 import { fetchExisting } from './utils/fetchExisting';
-import { setupService } from '@/services/setup';
 
 export { downloadTemplate };
 
@@ -160,10 +159,7 @@ export function CsvImportButton({
                     </div>
                     <button
                       type="button"
-                      onClick={async () => {
-                        const types = (await setupService.getGoodTypes()) as string[];
-                        downloadTemplate(types);
-                      }}
+                      onClick={() => downloadTemplate()}
                       className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--nav-active-border)] hover:underline"
                     >
                       <DownloadIcon className="size-3.5" />

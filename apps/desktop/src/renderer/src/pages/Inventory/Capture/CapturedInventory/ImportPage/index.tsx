@@ -122,12 +122,7 @@ export default function ImportPage() {
               variant="ghost"
               size="sm"
               className="gap-1.5 text-muted-foreground"
-              onClick={async () => {
-                const types = (await window.electronAPI.ipcRenderer.invoke(
-                  'setup:get-good-types',
-                )) as string[];
-                downloadTemplate(types);
-              }}
+              onClick={() => downloadTemplate()}
             >
               <DownloadIcon className="size-3.5" />
               Template

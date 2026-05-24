@@ -1,4 +1,5 @@
-export type InventoryType = 'food' | 'beverage' | 'non-food';
+export const INVENTORY_TYPES = ['food', 'beverage', 'non-food'] as const;
+export type InventoryType = (typeof INVENTORY_TYPES)[number];
 
 export interface IInventoryCategory {
   id: string;

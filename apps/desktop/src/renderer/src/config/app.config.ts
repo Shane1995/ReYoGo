@@ -11,7 +11,6 @@ export interface RouteConfig {
   'stock.import': string;
   'stock.addItems': string;
   'stock.categories': string;
-  'stock.types': string;
   'stock.analysis': string;
   invoices: string;
   'invoices.history': string;
@@ -59,7 +58,6 @@ export const appConfig: AppConfig = {
     'stock.import': '/stock/import',
     'stock.addItems': '/stock/add-items',
     'stock.categories': '/stock/categories',
-    'stock.types': '/stock/types',
     'stock.analysis': '/stock/analysis',
     invoices: '/invoices',
     'invoices.history': '/invoices/history',
@@ -80,7 +78,6 @@ export const appConfig: AppConfig = {
       { label: 'Captured Inventory', pathKey: 'stock', icon: 'PackagePlus', end: true },
       { label: 'Add Items', pathKey: 'stock.addItems', icon: 'ListPlus', end: true },
       { label: 'Add Categories', pathKey: 'stock.categories', icon: 'FolderPlus', end: true },
-      { label: 'Good Types', pathKey: 'stock.types', icon: 'Tags', end: true },
       { label: 'Import', pathKey: 'stock.import', icon: 'Upload', end: false },
       { label: 'Analysis', pathKey: 'stock.analysis', icon: 'TrendingUp', end: false },
     ],

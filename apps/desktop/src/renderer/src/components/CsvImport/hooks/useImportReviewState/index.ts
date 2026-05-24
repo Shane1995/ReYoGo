@@ -6,8 +6,6 @@ export function useImportReviewState(initial: ReviewResult) {
   const [categories, setCategories] = useState<ReviewCategory[]>(initial.categories);
   const [items, setItems] = useState<ReviewItem[]>(initial.items);
 
-  const goodTypes = initial.goodTypes ?? [];
-
   const typeWarningCount = useMemo(
     () => categories.filter((c) => c.typeWarning && c.status !== 'exists').length,
     [categories],
@@ -81,7 +79,6 @@ export function useImportReviewState(initial: ReviewResult) {
       items,
       parseErrors: initial.parseErrors,
       availableCategories: initial.availableCategories,
-      goodTypes: initial.goodTypes,
       counts: initial.counts,
     }),
     [units, categories, items, initial],
@@ -91,7 +88,6 @@ export function useImportReviewState(initial: ReviewResult) {
     units,
     categories,
     items,
-    goodTypes,
     typeWarningCount,
     selectedNew,
     existsCount,

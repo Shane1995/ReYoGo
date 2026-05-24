@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { INVENTORY_TYPES } from '@reyogo/types';
 
 export type InventoryType = string;
 
@@ -126,7 +127,7 @@ export function parseFile(file: File): Promise<ParseResult> {
   });
 }
 
-export function downloadTemplate(goodTypes: string[] = ['food', 'drink', 'non-perishable']): void {
+export function downloadTemplate(): void {
   const wb = XLSX.utils.book_new();
 
   const unitsSheet = XLSX.utils.aoa_to_sheet([['name'], ['litres'], ['kgs'], ['unit'], ['pieces']]);
@@ -134,9 +135,9 @@ export function downloadTemplate(goodTypes: string[] = ['food', 'drink', 'non-pe
   XLSX.utils.book_append_sheet(wb, unitsSheet, 'Units');
 
   const catRows: (string | undefined)[][] = [['name', 'type']];
-  if (goodTypes.length >= 1) catRows.push(['Dairy', goodTypes[0]]);
-  if (goodTypes.length >= 2) catRows.push(['Beverages', goodTypes[1]]);
-  if (goodTypes.length >= 3) catRows.push(['Cleaning Supplies', goodTypes[2]]);
+  catRows.push(['Dairy', INVENTORY_TYPES[0]]);
+  catRows.push(['Beverages', INVENTORY_TYPES[1]]);
+  catRows.push(['Cleaning Supplies', INVENTORY_TYPES[2]]);
   const catsSheet = XLSX.utils.aoa_to_sheet(catRows);
   catsSheet['!cols'] = [{ wch: 24 }, { wch: 18 }];
   XLSX.utils.book_append_sheet(wb, catsSheet, 'Categories');

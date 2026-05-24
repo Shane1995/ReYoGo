@@ -48,24 +48,4 @@ describe('createSetupRepo', () => {
       expect(await db.select().from(schema.unitsOfMeasure)).toHaveLength(0);
     });
   });
-
-  describe('getGoodTypes', () => {
-    it('returns default types when none have been stored', async () => {
-      const types = await repo.getGoodTypes();
-      expect(types).toEqual(['food', 'drink', 'non-perishable']);
-    });
-  });
-
-  describe('setGoodTypes', () => {
-    it('persists and retrieves custom types', async () => {
-      await repo.setGoodTypes(['spirits', 'draught', 'wine']);
-      expect(await repo.getGoodTypes()).toEqual(['spirits', 'draught', 'wine']);
-    });
-
-    it('overwrites previously stored types', async () => {
-      await repo.setGoodTypes(['a', 'b']);
-      await repo.setGoodTypes(['c']);
-      expect(await repo.getGoodTypes()).toEqual(['c']);
-    });
-  });
 });

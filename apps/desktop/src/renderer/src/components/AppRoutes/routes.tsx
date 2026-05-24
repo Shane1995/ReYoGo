@@ -6,7 +6,6 @@ import CapturedInventoryIndex from '@/pages/Inventory/Capture/CapturedInventory'
 import ImportPage from '@/pages/Inventory/Capture/CapturedInventory/ImportPage';
 import AddItemsPage from '@/pages/Inventory/Capture/AddItemsPage';
 import AddCategoriesPage from '@/pages/Inventory/Capture/AddCategoriesPage';
-import ManageTypesPage from '@/pages/Inventory/Capture/ManageTypesPage';
 import { InvoiceLayout } from '@/pages/Inventory/Invoice/Layout';
 import InvoicePage from '@/pages/Inventory/Invoice';
 import InvoiceHistoryPage from '@/pages/Inventory/Invoice/History';
@@ -54,13 +53,9 @@ export function AppRoutesComponent() {
             <Route path={StockRouteSegments.import} element={<ImportPage />} />
             <Route path={StockRouteSegments.addItems} element={<AddItemsPage />} />
             <Route path={StockRouteSegments.categories} element={<AddCategoriesPage />} />
-            <Route path={StockRouteSegments.types} element={<ManageTypesPage />} />
           </Route>
           <Route path={StockRouteSegments.analysis} element={<InventoryAnalysis />} />
-          <Route
-            path={`${StockRouteSegments.analysis}/item/:itemId`}
-            element={<ItemTrendPage />}
-          />
+          <Route path={`${StockRouteSegments.analysis}/item/:itemId`} element={<ItemTrendPage />} />
         </Route>
 
         <Route path={InvoiceRouteSegments.root} element={<InvoiceLayout />}>

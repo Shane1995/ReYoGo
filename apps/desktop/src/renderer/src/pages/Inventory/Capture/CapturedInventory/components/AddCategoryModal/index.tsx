@@ -1,7 +1,7 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from '@reyogo/ui';
+import { INVENTORY_TYPES } from '@reyogo/types';
 import type { TypeValue, InventoryCategory } from '../../types';
-import { useInventory } from '../../Context/InventoryContext';
 import { cn } from '@reyogo/ui';
 
 const inputClass = cn(
@@ -16,23 +16,17 @@ type AddCategoryModalProps = {
 };
 
 export function AddCategoryModal({ open, onClose, onSave }: AddCategoryModalProps) {
-  const { goodTypes, categories } = useInventory();
   const [name, setName] = useState('');
   const [type, setType] = useState<TypeValue>('');
-
-  const allTypes = useMemo(() => {
-    const fromCategories = categories.map((c) => c.type).filter(Boolean);
-    return Array.from(new Set([...goodTypes, ...fromCategories]));
-  }, [goodTypes, categories]);
 
   const handleSave = useCallback(() => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    onSave({ name: trimmed, type: type || allTypes[0] || '' });
+    onSave({ name: trimmed, type: (type || INVENTORY_TYPES[0]) as string });
     setName('');
     setType('');
     onClose();
-  }, [name, type, allTypes, onSave, onClose]);
+  }, [name, type, onSave, onClose]);
 
   const handleClose = useCallback(() => {
     setName('');
@@ -75,7 +69,7 @@ export function AddCategoryModal({ open, onClose, onSave }: AddCategoryModalProp
               className={cn(inputClass, 'cursor-pointer')}
             >
               {!type && <option value="">Select type</option>}
-              {allTypes.map((t) => (
+              {INVENTORY_TYPES.map((t) => (
                 <option key={t} value={t}>
                   {t}
                 </option>

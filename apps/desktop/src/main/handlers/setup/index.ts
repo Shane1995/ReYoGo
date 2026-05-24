@@ -9,8 +9,4 @@ export function registerSetupHandlers(): void {
     getRepos().setup.upsertUnit(unit),
   );
   ipcMain.handle(SetupIPC.DELETE_UNIT, (_e, id: string) => getRepos().setup.deleteUnit(id));
-  ipcMain.handle(SetupIPC.GET_GOOD_TYPES, () => getRepos().setup.getGoodTypes());
-  ipcMain.handle(SetupIPC.SET_GOOD_TYPES, (_e, types: string[]) =>
-    getRepos().setup.setGoodTypes(types),
-  );
 }

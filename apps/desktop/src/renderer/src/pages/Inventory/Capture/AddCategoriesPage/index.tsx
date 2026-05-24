@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { PlusIcon } from 'lucide-react';
 import { Button, PageHeader } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
+import { INVENTORY_TYPES } from '@reyogo/types';
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
 import type { TypeValue } from '../CapturedInventory/types';
 import { cn } from '@reyogo/ui';
@@ -18,16 +19,12 @@ function createEmptyRow(defaultType: string): PendingRow {
 }
 
 export default function AddCategoriesPage() {
-  const { categories, addCategory, goodTypes } = useInventory();
-  const defaultType = goodTypes[0] ?? '';
-  const [rows, setRows] = useState<PendingRow[]>([{ id: crypto.randomUUID(), name: '', type: '' }]);
+  const { categories, addCategory } = useInventory();
+  const defaultType: string = INVENTORY_TYPES[0];
+  const [rows, setRows] = useState<PendingRow[]>([
+    { id: crypto.randomUUID(), name: '', type: defaultType },
+  ]);
   const [lastAddedRowId, setLastAddedRowId] = useState<string | null>(null);
-
-  // Once goodTypes loads, update any rows that still have no type
-  useEffect(() => {
-    if (!defaultType) return;
-    setRows((prev) => prev.map((r) => (r.type ? r : { ...r, type: defaultType })));
-  }, [defaultType]);
 
   useEffect(() => {
     if (!lastAddedRowId) return;
@@ -142,8 +139,7 @@ export default function AddCategoriesPage() {
                           }}
                           className={cn(inputClass, 'min-w-[8rem] cursor-pointer')}
                         >
-                          {!row.type && <option value="">Select type</option>}
-                          {goodTypes.map((t) => (
+                          {INVENTORY_TYPES.map((t) => (
                             <option key={t} value={t}>
                               {t}
                             </option>
