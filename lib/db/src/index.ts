@@ -7,3 +7,4 @@ export * from './repositories/inventory';
 export * from './repositories/suppliers';
 export * from './repositories/stockMovements';
 export * from './repositories/invoices';
+export * from './repositories/setup';
