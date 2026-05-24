@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { PlusIcon } from 'lucide-react';
-import { Button } from '@reyogo/ui';
+import { Button, PageHeader } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
 import type { TypeValue } from '../CapturedInventory/types';
@@ -95,12 +95,10 @@ export default function AddItemsPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="shrink-0 border-b border-[var(--nav-border)] bg-background px-6 py-4">
-        <h1 className="text-xl font-semibold tracking-tight">Add items</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Add items with a name, category and unit. Add a category first if needed.
-        </p>
-      </header>
+      <PageHeader
+        title="Add items"
+        description="Add items with a name, category and unit. Add a category first if needed."
+      />
 
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-6 my-5">

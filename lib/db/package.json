@@ -14,7 +14,10 @@
     },
     "./package.json": "./package.json"
   },
-  "files": ["dist", "migrations"],
+  "files": [
+    "dist",
+    "migrations"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -34,6 +37,7 @@
   },
   "devDependencies": {
     "@reyogo/config": "workspace:*",
+    "@types/node": "^25.0.0",
     "drizzle-kit": "0.31.8",
     "oxlint": "^1.61.0",
     "tsup": "^8.0.0",

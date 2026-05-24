@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@reyogo/ui';
+import { Button, PageHeader } from '@reyogo/ui';
 import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
 import {
   ReceiptIcon,
@@ -37,22 +37,18 @@ export default function InvoiceHistoryPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="shrink-0 border-b border-border bg-background px-4 py-3 space-y-2">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">Invoice history</h1>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              Past captured invoices (goods received). Click a row to expand details, or edit with
-              full audit trail.
-            </p>
-          </div>
+      <PageHeader
+        title="Invoice history"
+        description="Past captured invoices (goods received). Click a row to expand details, or edit with full audit trail."
+        actions={
           <Button asChild size="sm">
             <Link to={InvoiceRoutes.Base} className="inline-flex items-center gap-2">
               <ReceiptIcon className="size-4" aria-hidden />
               Capture new invoice
             </Link>
           </Button>
-        </div>
+        }
+      >
         <input
           type="search"
           placeholder="Search by item name…"
@@ -60,7 +56,7 @@ export default function InvoiceHistoryPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
         />
-      </header>
+      </PageHeader>
 
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {loading ? (

@@ -1,9 +1,6 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import AppLayout from '@/layouts/AppLayout';
-import InventoryLayout from '@/layouts/InventoryLayout';
 import { CapturedInventorySectionLayout } from '@/layouts/CapturedInventorySectionLayout';
-import { AnalysisSectionLayout } from '@/layouts/AnalysisSectionLayout';
-import InventoryOverview from '@/pages/Inventory/Overview';
 import { InventoryLayout as CapturedInventoryLayout } from '@/pages/Inventory/Capture/CapturedInventory/Layout/InventoryLayout';
 import CapturedInventoryIndex from '@/pages/Inventory/Capture/CapturedInventory';
 import ImportPage from '@/pages/Inventory/Capture/CapturedInventory/ImportPage';
@@ -19,58 +16,65 @@ import { CostingLayout } from '@/pages/Inventory/Costing/Layout';
 import CostingDashboard from '@/pages/Inventory/Costing/Dashboard';
 import PriceVariancePage from '@/pages/Inventory/Costing/PriceVariance';
 import CostReportPage from '@/pages/Inventory/Costing/CostReport';
-import { ProductRoutes, UserRoutes, InventoryRouteSegments } from './routePaths';
+import DashboardPage from '@/pages/Dashboard';
+import SuppliersPage from '@/pages/Suppliers';
+import {
+  UserRoutes,
+  StockRouteSegments,
+  InvoiceRouteSegments,
+  CostingRouteSegments,
+  SuppliersRouteSegments,
+} from './routePaths';
 
 export {
-  ProductRoutes,
   StockRoutes,
   InvoiceRoutes,
-  AnalysisRoutes,
   CostingRoutes,
+  SuppliersRoutes,
   UserRoutes,
-  InventoryRouteSegments,
+  StockRouteSegments,
+  InvoiceRouteSegments,
+  CostingRouteSegments,
+  SuppliersRouteSegments,
+  // Backward-compat aliases
+  AnalysisRoutes,
+  ProductRoutes,
+  itemTrendPath,
 } from './routePaths';
 
 export function AppRoutesComponent() {
   return (
     <Routes>
       <Route path={UserRoutes.Home} element={<AppLayout />}>
-        <Route index element={<Navigate to={ProductRoutes.Inventory} replace />} />
-        <Route path={InventoryRouteSegments.root} element={<InventoryLayout />}>
-          <Route index element={<InventoryOverview />} />
+        <Route index element={<DashboardPage />} />
 
-          <Route element={<AnalysisSectionLayout />}>
-            <Route path={InventoryRouteSegments.analysis} element={<InventoryAnalysis />} />
-            <Route
-              path={`${InventoryRouteSegments.analysis}/item/:itemId`}
-              element={<ItemTrendPage />}
-            />
+        <Route path={StockRouteSegments.root} element={<CapturedInventorySectionLayout />}>
+          <Route element={<CapturedInventoryLayout />}>
+            <Route index element={<CapturedInventoryIndex />} />
+            <Route path={StockRouteSegments.import} element={<ImportPage />} />
+            <Route path={StockRouteSegments.addItems} element={<AddItemsPage />} />
+            <Route path={StockRouteSegments.categories} element={<AddCategoriesPage />} />
+            <Route path={StockRouteSegments.types} element={<ManageTypesPage />} />
           </Route>
-
-          <Route element={<CapturedInventorySectionLayout />}>
-            <Route path={InventoryRouteSegments.stock} element={<CapturedInventoryLayout />}>
-              <Route index element={<CapturedInventoryIndex />} />
-              <Route path={InventoryRouteSegments.import} element={<ImportPage />} />
-              <Route path={InventoryRouteSegments.addItems} element={<AddItemsPage />} />
-              <Route path={InventoryRouteSegments.categories} element={<AddCategoriesPage />} />
-              <Route path={InventoryRouteSegments.types} element={<ManageTypesPage />} />
-            </Route>
-          </Route>
-
-          <Route path={InventoryRouteSegments.costing} element={<CostingLayout />}>
-            <Route index element={<CostingDashboard />} />
-            <Route
-              path={InventoryRouteSegments.costingPriceVariance}
-              element={<PriceVariancePage />}
-            />
-            <Route path={InventoryRouteSegments.costingCostReport} element={<CostReportPage />} />
-          </Route>
-
-          <Route path={InventoryRouteSegments.invoices} element={<InvoiceLayout />}>
-            <Route index element={<InvoicePage />} />
-            <Route path={InventoryRouteSegments.invoiceHistory} element={<InvoiceHistoryPage />} />
-          </Route>
+          <Route path={StockRouteSegments.analysis} element={<InventoryAnalysis />} />
+          <Route
+            path={`${StockRouteSegments.analysis}/item/:itemId`}
+            element={<ItemTrendPage />}
+          />
         </Route>
+
+        <Route path={InvoiceRouteSegments.root} element={<InvoiceLayout />}>
+          <Route index element={<InvoicePage />} />
+          <Route path={InvoiceRouteSegments.history} element={<InvoiceHistoryPage />} />
+        </Route>
+
+        <Route path={CostingRouteSegments.root} element={<CostingLayout />}>
+          <Route index element={<CostingDashboard />} />
+          <Route path={CostingRouteSegments.priceVariance} element={<PriceVariancePage />} />
+          <Route path={CostingRouteSegments.costReport} element={<CostReportPage />} />
+        </Route>
+
+        <Route path={SuppliersRouteSegments.root} element={<SuppliersPage />} />
       </Route>
     </Routes>
   );

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { format, parse, parseISO, isValid } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { Calendar } from './calendar';
@@ -47,6 +47,15 @@ export function DatePicker({
     return isValid(d) ? format(d, DISPLAY_FORMAT) : value;
   });
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!value) {
+      setInputText('');
+    } else {
+      const d = parseISO(value);
+      if (isValid(d)) setInputText(format(d, DISPLAY_FORMAT));
+    }
+  }, [value]);
 
   const selected = value ? parseISO(value) : undefined;
   const validSelected = selected && isValid(selected) ? selected : undefined;

@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react';
 import { PlusIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button, PageHeader } from '@reyogo/ui';
 import { itemTrendPath } from '@/components/AppRoutes/routePaths';
 import { useInventory } from './Context/InventoryContext';
 import { ItemsTable } from './components/ItemsTable';
@@ -30,9 +32,18 @@ export default function InventoryIndex() {
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <PageHeader
+        title="Captured Inventory"
+        actions={
+          <Button size="sm" onClick={() => setAddModalOpen(true)}>
+            <PlusIcon className="size-3.5" />
+            Add Item
+          </Button>
+        }
+      />
       <div className="min-h-0 flex-1 overflow-auto">
-        <div className="mx-6 my-5 pb-20">
+        <div className="mx-6 my-5">
           <ItemsTable
             items={items}
             categories={categories}
@@ -48,14 +59,28 @@ export default function InventoryIndex() {
         </div>
       </div>
 
-      <button
-        type="button"
-        title="Add to inventory"
-        onClick={() => setAddModalOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors"
-      >
-        <PlusIcon className="size-5" />
-      </button>
+      <AnimatePresence>
+        {!addModalOpen && (
+          <motion.button
+            type="button"
+            title="Add to inventory"
+            onClick={() => setAddModalOpen(true)}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="fixed bottom-6 right-6 z-40 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
+          >
+            <motion.span
+              animate={{ rotate: addModalOpen ? 45 : 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+              className="flex"
+            >
+              <PlusIcon className="size-5" />
+            </motion.span>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       <AddInventoryModal open={addModalOpen} onClose={() => setAddModalOpen(false)} />
     </div>

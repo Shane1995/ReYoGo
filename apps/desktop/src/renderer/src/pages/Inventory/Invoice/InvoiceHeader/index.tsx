@@ -1,4 +1,4 @@
-import { Button } from '@reyogo/ui';
+import { Button, PageHeader } from '@reyogo/ui';
 import { Link } from 'react-router-dom';
 import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
 import { DatePicker } from '@reyogo/ui';
@@ -27,9 +27,9 @@ export function InvoiceHeader({
   onClear,
 }: Props) {
   return (
-    <header className="shrink-0 border-b border-[var(--nav-border)] bg-background px-4 py-3 space-y-3">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-lg font-semibold text-foreground">Capture Invoice</h1>
+    <PageHeader
+      title="Capture Invoice"
+      actions={
         <div className="flex gap-2">
           <Button asChild variant="ghost" size="sm">
             <Link to={InvoiceRoutes.History}>View history</Link>
@@ -52,7 +52,8 @@ export function InvoiceHeader({
             Add item
           </Button>
         </div>
-      </div>
+      }
+    >
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <label className="text-sm text-muted-foreground whitespace-nowrap">Invoice #</label>
@@ -69,6 +70,6 @@ export function InvoiceHeader({
           <DatePicker value={invoiceDate} onChange={onInvoiceDateChange} />
         </div>
       </div>
-    </header>
+    </PageHeader>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { appService } from '../services/app';
+import { appService } from '../../services/app';
 
 export function useAutoUpdater(): { updateReady: boolean } {
   const [updateReady, setUpdateReady] = useState(false);
