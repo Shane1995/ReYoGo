@@ -12,12 +12,6 @@ export const accounts = sqliteTable('accounts', {
 export type Account = typeof accounts.$inferSelect;
 export type NewAccount = typeof accounts.$inferInsert;
 
-export const appConfig = sqliteTable('app_config', {
-  key: text('key').primaryKey(),
-  value: text('value').notNull(),
-});
-export type AppConfigRow = typeof appConfig.$inferSelect;
-
 export const unitsOfMeasure = sqliteTable('units_of_measure', {
   id: text('id').primaryKey(),
   accountId: text('account_id')
