@@ -1,4 +1,5 @@
 export * from './client';
+export * as schema from './schema';
 export * from './schema';
 export * from './utils/wac';
 export * from './utils/timestamps';

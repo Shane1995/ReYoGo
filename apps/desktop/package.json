@@ -27,6 +27,7 @@
     "format:check": "oxfmt --check src/"
   },
   "dependencies": {
+    "@reyogo/db": "workspace:*",
     "@reyogo/types": "workspace:*",
     "@reyogo/ui": "workspace:*",
     "@tanstack/react-table": "^8.21.3",
