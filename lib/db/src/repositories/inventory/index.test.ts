@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { InventoryType } from '@reyogo/types';
 import { createTestDb, type DbClient } from '../../__tests__/helpers';
 import { createInventoryRepo } from '.';
 import * as schema from '../../schema';
@@ -14,15 +15,15 @@ beforeEach(async () => {
 describe('createInventoryRepo', () => {
   describe('upsertCategory', () => {
     it('creates a new category', async () => {
-      await repo.upsertCategory({ id: 'cat-1', name: 'Beverages', type: 'beverage' });
+      await repo.upsertCategory({ id: 'cat-1', name: 'Beverages', type: InventoryType.Beverage });
       const rows = await db.select().from(schema.inventoryCategories);
       expect(rows).toHaveLength(1);
       expect(rows[0]!.name).toBe('Beverages');
     });
 
     it('updates an existing category', async () => {
-      await repo.upsertCategory({ id: 'cat-1', name: 'Beverages', type: 'beverage' });
-      await repo.upsertCategory({ id: 'cat-1', name: 'Drinks', type: 'beverage' });
+      await repo.upsertCategory({ id: 'cat-1', name: 'Beverages', type: InventoryType.Beverage });
+      await repo.upsertCategory({ id: 'cat-1', name: 'Drinks', type: InventoryType.Beverage });
       const rows = await db.select().from(schema.inventoryCategories);
       expect(rows).toHaveLength(1);
       expect(rows[0]!.name).toBe('Drinks');
@@ -31,8 +32,8 @@ describe('createInventoryRepo', () => {
 
   describe('getCategories', () => {
     it('returns categories sorted by name', async () => {
-      await repo.upsertCategory({ id: 'cat-2', name: 'Produce', type: 'food' });
-      await repo.upsertCategory({ id: 'cat-1', name: 'Beverages', type: 'beverage' });
+      await repo.upsertCategory({ id: 'cat-2', name: 'Produce', type: InventoryType.Food });
+      await repo.upsertCategory({ id: 'cat-1', name: 'Beverages', type: InventoryType.Beverage });
       const cats = await repo.getCategories();
       expect(cats.map((c) => c.name)).toEqual(['Beverages', 'Produce']);
     });
@@ -43,14 +44,14 @@ describe('createInventoryRepo', () => {
   });
 
   describe('upsertItem', () => {
-    beforeEach(() => repo.upsertCategory({ id: 'cat-1', name: 'Food', type: 'food' }));
+    beforeEach(() => repo.upsertCategory({ id: 'cat-1', name: 'Food', type: InventoryType.Food }));
 
     it('creates a new item', async () => {
       await repo.upsertItem({
         id: 'item-1',
         name: 'Chips',
         categoryId: 'cat-1',
-        type: 'food',
+        type: InventoryType.Food,
         unitOfMeasure: 'kg',
       });
       const rows = await db.select().from(schema.inventoryItems);
@@ -59,12 +60,17 @@ describe('createInventoryRepo', () => {
     });
 
     it('updates an existing item', async () => {
-      await repo.upsertItem({ id: 'item-1', name: 'OJ', categoryId: 'cat-1', type: 'food' });
+      await repo.upsertItem({
+        id: 'item-1',
+        name: 'OJ',
+        categoryId: 'cat-1',
+        type: InventoryType.Food,
+      });
       await repo.upsertItem({
         id: 'item-1',
         name: 'Apple Juice',
         categoryId: 'cat-1',
-        type: 'food',
+        type: InventoryType.Food,
       });
       const rows = await db.select().from(schema.inventoryItems);
       expect(rows).toHaveLength(1);
@@ -74,8 +80,13 @@ describe('createInventoryRepo', () => {
 
   describe('getItems', () => {
     it('returns items sorted by name with category type', async () => {
-      await repo.upsertCategory({ id: 'cat-1', name: 'Beverages', type: 'beverage' });
-      await repo.upsertItem({ id: 'item-1', name: 'OJ', categoryId: 'cat-1', type: 'beverage' });
+      await repo.upsertCategory({ id: 'cat-1', name: 'Beverages', type: InventoryType.Beverage });
+      await repo.upsertItem({
+        id: 'item-1',
+        name: 'OJ',
+        categoryId: 'cat-1',
+        type: InventoryType.Beverage,
+      });
       const items = await repo.getItems();
       expect(items).toHaveLength(1);
       expect(items[0]!.type).toBe('beverage');
@@ -88,7 +99,7 @@ describe('createInventoryRepo', () => {
 
   describe('deleteCategory', () => {
     it('removes the category', async () => {
-      await repo.upsertCategory({ id: 'cat-1', name: 'Food', type: 'food' });
+      await repo.upsertCategory({ id: 'cat-1', name: 'Food', type: InventoryType.Food });
       await repo.deleteCategory('cat-1');
       expect(await db.select().from(schema.inventoryCategories)).toHaveLength(0);
     });
@@ -96,8 +107,13 @@ describe('createInventoryRepo', () => {
 
   describe('deleteItem', () => {
     it('removes the item', async () => {
-      await repo.upsertCategory({ id: 'cat-1', name: 'Food', type: 'food' });
-      await repo.upsertItem({ id: 'item-1', name: 'Chips', categoryId: 'cat-1', type: 'food' });
+      await repo.upsertCategory({ id: 'cat-1', name: 'Food', type: InventoryType.Food });
+      await repo.upsertItem({
+        id: 'item-1',
+        name: 'Chips',
+        categoryId: 'cat-1',
+        type: InventoryType.Food,
+      });
       await repo.deleteItem('item-1');
       expect(await db.select().from(schema.inventoryItems)).toHaveLength(0);
     });

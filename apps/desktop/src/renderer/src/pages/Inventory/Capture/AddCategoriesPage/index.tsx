@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { PlusIcon } from 'lucide-react';
 import { Button, PageHeader } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
-import { INVENTORY_TYPES } from '@reyogo/types';
+import { INVENTORY_TYPES, InventoryType } from '@reyogo/types';
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
 import type { TypeValue } from '../CapturedInventory/types';
 import { cn } from '@reyogo/ui';
@@ -20,7 +20,7 @@ function createEmptyRow(defaultType: string): PendingRow {
 
 export default function AddCategoriesPage() {
   const { categories, addCategory } = useInventory();
-  const defaultType: string = INVENTORY_TYPES[0];
+  const defaultType = InventoryType.Food;
   const [rows, setRows] = useState<PendingRow[]>([
     { id: crypto.randomUUID(), name: '', type: defaultType },
   ]);

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { InventoryType } from '@reyogo/types';
 import type { IInventoryItem } from '@reyogo/types';
 import { handler } from './index.js';
 
@@ -9,7 +10,7 @@ describe('health handler', () => {
   });
 
   it('@reyogo/types workspace types resolve', () => {
-    const item: IInventoryItem = { id: 'a', name: 'b', categoryId: 'c', type: 'food' };
+    const item: IInventoryItem = { id: 'a', name: 'b', categoryId: 'c', type: InventoryType.Food };
     expect(item.name).toBe('b');
   });
 });

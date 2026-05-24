@@ -20,12 +20,11 @@ describe('CapturedInventorySectionLayout', () => {
     expect(screen.getByText('Captured Inventory')).toBeInTheDocument();
   });
 
-  it('renders all six stock section nav items', () => {
+  it('renders all five stock section nav items', () => {
     renderLayout();
     expect(screen.getByText('Captured Inventory')).toBeInTheDocument();
     expect(screen.getByText('Add Items')).toBeInTheDocument();
     expect(screen.getByText('Add Categories')).toBeInTheDocument();
-    expect(screen.getByText('Good Types')).toBeInTheDocument();
     expect(screen.getByText('Import')).toBeInTheDocument();
     expect(screen.getByText('Analysis')).toBeInTheDocument();
   });

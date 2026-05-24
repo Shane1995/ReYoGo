@@ -154,7 +154,7 @@ export function ImportReview({
                     value=""
                     onChange={(e) => {
                       e.stopPropagation();
-                      fixCategoryType(cat.id, e.target.value);
+                      fixCategoryType(cat.id, e.target.value as InventoryType);
                     }}
                     onClick={(e) => e.stopPropagation()}
                     className={cn(

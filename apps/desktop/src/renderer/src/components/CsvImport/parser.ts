@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
-import { INVENTORY_TYPES } from '@reyogo/types';
+import { InventoryType } from '@reyogo/types';
 
-export type InventoryType = string;
+export type { InventoryType };
 
 export interface ParsedUnit {
   name: string;
@@ -63,7 +63,8 @@ function parseCategoriesSheet(sheet: XLSX.WorkSheet, result: ParseResult) {
       result.errors.push(`Categories row ${i + 2}: missing name`);
       return;
     }
-    const type = col(row, 'type', 'Type', 'category_type', 'Category Type').toLowerCase() || 'food';
+    const type = (col(row, 'type', 'Type', 'category_type', 'Category Type').toLowerCase() ||
+      InventoryType.Food) as InventoryType;
     result.categories.push({ name, type });
   });
 }
@@ -135,9 +136,9 @@ export function downloadTemplate(): void {
   XLSX.utils.book_append_sheet(wb, unitsSheet, 'Units');
 
   const catRows: (string | undefined)[][] = [['name', 'type']];
-  catRows.push(['Dairy', INVENTORY_TYPES[0]]);
-  catRows.push(['Beverages', INVENTORY_TYPES[1]]);
-  catRows.push(['Cleaning Supplies', INVENTORY_TYPES[2]]);
+  catRows.push(['Dairy', InventoryType.Food]);
+  catRows.push(['Beverages', InventoryType.Beverage]);
+  catRows.push(['Cleaning Supplies', InventoryType.NonFood]);
   const catsSheet = XLSX.utils.aoa_to_sheet(catRows);
   catsSheet['!cols'] = [{ wch: 24 }, { wch: 18 }];
   XLSX.utils.book_append_sheet(wb, catsSheet, 'Categories');

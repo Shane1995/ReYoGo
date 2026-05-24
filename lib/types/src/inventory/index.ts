@@ -1,5 +1,10 @@
-export const INVENTORY_TYPES = ['food', 'beverage', 'non-food'] as const;
-export type InventoryType = (typeof INVENTORY_TYPES)[number];
+export enum InventoryType {
+  Food = 'food',
+  Beverage = 'beverage',
+  NonFood = 'non-food',
+}
+
+export const INVENTORY_TYPES = Object.values(InventoryType);
 
 export interface IInventoryCategory {
   id: string;

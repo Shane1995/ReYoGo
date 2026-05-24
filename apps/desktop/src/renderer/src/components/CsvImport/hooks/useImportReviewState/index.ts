@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
+import { InventoryType } from '@reyogo/types';
 import type { ReviewResult, ReviewUnit, ReviewCategory, ReviewItem } from '../../review';
 
 export function useImportReviewState(initial: ReviewResult) {
@@ -11,7 +12,7 @@ export function useImportReviewState(initial: ReviewResult) {
     [categories],
   );
 
-  const fixCategoryType = useCallback((id: string, type: string) => {
+  const fixCategoryType = useCallback((id: string, type: InventoryType) => {
     setCategories((prev) =>
       prev.map((c) => (c.id === id ? { ...c, type, typeWarning: false } : c)),
     );

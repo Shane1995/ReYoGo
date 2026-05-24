@@ -5,7 +5,7 @@ import { Button } from '@reyogo/ui';
 import { Spinner } from '@reyogo/ui';
 import { parseFile, downloadTemplate } from '@/components/CsvImport/parser';
 import { enrichParseResult } from '@/components/CsvImport/review';
-import type { ReviewResult, ExistingInventory } from '@/components/CsvImport/review';
+import type { ReviewResult, ExistingInventory, InventoryType } from '@/components/CsvImport/review';
 import { ImportReview } from '@/components/CsvImport/ImportReview';
 import { StockRoutes } from '@/components/AppRoutes/routePaths';
 import { useInventory } from '../Context/InventoryContext';
@@ -40,7 +40,7 @@ export default function ImportPage() {
           categoryNames: new Set(existingCats.map((c) => c.name.toLowerCase())),
           itemNames: new Set(existingItems.map((i) => i.name.toLowerCase())),
           unitNames: new Set((units as { name: string }[]).map((u) => u.name.toLowerCase())),
-          categoryList: existingCats.map((c) => ({ name: c.name, type: c.type })),
+          categoryList: existingCats.map((c) => ({ name: c.name, type: c.type as InventoryType })),
         };
         const review = enrichParseResult(parsed, existing);
         setState({ phase: 'review', review });

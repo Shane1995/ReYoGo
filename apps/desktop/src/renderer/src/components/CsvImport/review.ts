@@ -64,8 +64,7 @@ export function enrichParseResult(result: ParseResult, existing: ExistingInvento
 
   const categories: ReviewCategory[] = result.categories.map((c) => {
     const exists = categoryNames.has(c.name.toLowerCase());
-    const typeWarning =
-      !exists && !INVENTORY_TYPES.includes(c.type as (typeof INVENTORY_TYPES)[number]);
+    const typeWarning = !exists && !INVENTORY_TYPES.includes(c.type as InventoryType);
     return {
       id: crypto.randomUUID(),
       name: c.name,

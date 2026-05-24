@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Button } from '@reyogo/ui';
-import { INVENTORY_TYPES } from '@reyogo/types';
+import { INVENTORY_TYPES, InventoryType } from '@reyogo/types';
 import type { TypeValue, InventoryCategory } from '../../types';
 import { cn } from '@reyogo/ui';
 
@@ -22,7 +22,7 @@ export function AddCategoryModal({ open, onClose, onSave }: AddCategoryModalProp
   const handleSave = useCallback(() => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    onSave({ name: trimmed, type: (type || INVENTORY_TYPES[0]) as string });
+    onSave({ name: trimmed, type: type || InventoryType.Food });
     setName('');
     setType('');
     onClose();

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Button } from '@reyogo/ui';
-import { INVENTORY_TYPES } from '@reyogo/types';
+import { INVENTORY_TYPES, InventoryType } from '@reyogo/types';
 import { useInventory } from '../../Context/InventoryContext';
 import { cn } from '@reyogo/ui';
 
@@ -19,7 +19,7 @@ type Props = {
 function CategoryForm({ onDone }: { onDone: () => void }) {
   const { addCategory } = useInventory();
   const [name, setName] = useState('');
-  const [type, setType] = useState<string>(INVENTORY_TYPES[0]);
+  const [type, setType] = useState(InventoryType.Food);
 
   function handleSave() {
     const trimmed = name.trim();
@@ -46,7 +46,7 @@ function CategoryForm({ onDone }: { onDone: () => void }) {
         <label className="mb-1.5 block text-sm font-medium text-foreground">Good type</label>
         <select
           value={type}
-          onChange={(e) => setType(e.target.value)}
+          onChange={(e) => setType(e.target.value as InventoryType)}
           className={cn(inputClass, 'cursor-pointer')}
         >
           {INVENTORY_TYPES.map((t) => (
