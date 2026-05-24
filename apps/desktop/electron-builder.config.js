@@ -11,7 +11,7 @@ module.exports = {
     },
   }),
   files: ['dist/**/*', 'dist-electron/**/*', 'package.json'],
-  asarUnpack: ['out/main/db/migrations/**'],
+  asarUnpack: ['out/main/db/migrations/**', '**/node_modules/@libsql/**'],
   win: {
     target: [
       { target: 'nsis', arch: ['x64'] },
