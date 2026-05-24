@@ -33,9 +33,10 @@ function copyDir(src: string, dest: string): void {
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin(), copyMigrationsPlugin()],
+    plugins: [externalizeDepsPlugin({ exclude: ['@reyogo/db'] }), copyMigrationsPlugin()],
     resolve: {
       alias: {
+        '@reyogo/db': resolve(__dirname, '../../lib/db/src/index.ts'),
         '@main': resolve(__dirname, './src/main'),
         '@shared': resolve(__dirname, './src/shared'),
       },
