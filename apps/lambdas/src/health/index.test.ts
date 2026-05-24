@@ -9,7 +9,7 @@ describe('health handler', () => {
   });
 
   it('@reyogo/types workspace types resolve', () => {
-    const item: IInventoryItem = { id: 'a', name: 'b', categoryId: 'c', type: 'd' };
+    const item: IInventoryItem = { id: 'a', name: 'b', categoryId: 'c', type: 'food' };
     expect(item.name).toBe('b');
   });
 });

@@ -1,4 +1,4 @@
-export type InventoryType = string;
+export type InventoryType = 'food' | 'beverage' | 'non-food';
 
 export interface IInventoryCategory {
   id: string;
@@ -12,6 +12,10 @@ export interface IInventoryItem {
   categoryId: string;
   type: InventoryType;
   unitOfMeasure?: string;
+  yieldFactor?: number;
+  parLevel?: number | null;
+  reorderPoint?: number | null;
+  reorderQty?: number | null;
 }
 
 export interface IInventorySubmitPayload {

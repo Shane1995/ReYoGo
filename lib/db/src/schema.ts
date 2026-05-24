@@ -1,5 +1,6 @@
-import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import type { StockMovementType, ReferenceType } from '@reyogo/types';
+import { check, index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { sql } from 'drizzle-orm';
+import type { StockMovementType, ReferenceType, StocktakeSessionStatus } from '@reyogo/types';
 
 export const accounts = sqliteTable('accounts', {
   id: text('id').primaryKey(),
@@ -28,16 +29,25 @@ export const unitsOfMeasure = sqliteTable('units_of_measure', {
 export type UnitOfMeasureRow = typeof unitsOfMeasure.$inferSelect;
 export type NewUnitOfMeasureRow = typeof unitsOfMeasure.$inferInsert;
 
-export const inventoryCategories = sqliteTable('inventory_categories', {
-  id: text('id').primaryKey(),
-  accountId: text('account_id')
-    .notNull()
-    .references(() => accounts.id, { onDelete: 'cascade' }),
-  name: text('name').notNull(),
-  type: text('type').notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
-});
+export const inventoryCategories = sqliteTable(
+  'inventory_categories',
+  {
+    id: text('id').primaryKey(),
+    accountId: text('account_id')
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    type: text('type').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => ({
+    typeCheck: check(
+      'inventory_categories_type_check',
+      sql`${t.type} IN ('food', 'beverage', 'non-food')`,
+    ),
+  }),
+);
 export type InventoryCategoryRow = typeof inventoryCategories.$inferSelect;
 export type NewInventoryCategoryRow = typeof inventoryCategories.$inferInsert;
 
@@ -51,6 +61,10 @@ export const inventoryItems = sqliteTable('inventory_items', {
     .notNull()
     .references(() => inventoryCategories.id, { onDelete: 'cascade' }),
   unitOfMeasure: text('unit_of_measure'),
+  yieldFactor: real('yield_factor').notNull().default(1.0),
+  parLevel: real('par_level'),
+  reorderPoint: real('reorder_point'),
+  reorderQty: real('reorder_qty'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });
@@ -160,6 +174,39 @@ export const stockMovements = sqliteTable(
 );
 export type StockMovementRow = typeof stockMovements.$inferSelect;
 export type NewStockMovementRow = typeof stockMovements.$inferInsert;
+
+export const stockCountSessions = sqliteTable('stock_count_sessions', {
+  id: text('id').primaryKey(),
+  accountId: text('account_id')
+    .notNull()
+    .references(() => accounts.id, { onDelete: 'cascade' }),
+  label: text('label'),
+  status: text('status').$type<StocktakeSessionStatus>().notNull().default('open'),
+  completedAt: integer('completed_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});
+export type StockCountSessionRow = typeof stockCountSessions.$inferSelect;
+export type NewStockCountSessionRow = typeof stockCountSessions.$inferInsert;
+
+export const stockCountLines = sqliteTable(
+  'stock_count_lines',
+  {
+    id: text('id').primaryKey(),
+    sessionId: text('session_id')
+      .notNull()
+      .references(() => stockCountSessions.id, { onDelete: 'cascade' }),
+    inventoryItemId: text('inventory_item_id')
+      .notNull()
+      .references(() => inventoryItems.id, { onDelete: 'restrict' }),
+    countedQty: real('counted_qty').notNull(),
+    notes: text('notes'),
+  },
+  (t) => ({
+    linesBySession: index('stock_count_lines_session_idx').on(t.sessionId),
+  }),
+);
+export type StockCountLineRow = typeof stockCountLines.$inferSelect;
+export type NewStockCountLineRow = typeof stockCountLines.$inferInsert;
 
 export const costingSnapshots = sqliteTable('costing_snapshots', {
   id: text('id').primaryKey(),
