@@ -1,66 +1,69 @@
-export enum UserRoutes {
-  Home = '/',
-}
+import { appConfig } from '@/config/app.config';
 
-export enum StockRoutes {
-  Base = '/stock',
-  Import = '/stock/import',
-  AddItems = '/stock/add-items',
-  Categories = '/stock/categories',
-  Types = '/stock/types',
-  Analysis = '/stock/analysis',
-}
+const r = appConfig.routes;
+const lastSeg = (path: string) => path.split('/').at(-1)!;
+
+export const UserRoutes = {
+  Home: r.home,
+} as const;
+
+export const StockRoutes = {
+  Base: r.stock,
+  Import: r['stock.import'],
+  AddItems: r['stock.addItems'],
+  Categories: r['stock.categories'],
+  Types: r['stock.types'],
+  Analysis: r['stock.analysis'],
+} as const;
 
 export function itemTrendPath(itemId: string) {
-  return `/stock/analysis/item/${itemId}`;
+  return `${r['stock.analysis']}/item/${itemId}`;
 }
 
-export enum InvoiceRoutes {
-  Base = '/invoices',
-  History = '/invoices/history',
-}
+export const InvoiceRoutes = {
+  Base: r.invoices,
+  History: r['invoices.history'],
+} as const;
 
-export enum CostingRoutes {
-  Base = '/costing',
-  PriceVariance = '/costing/price-variance',
-  CostReport = '/costing/cost-report',
-}
+export const CostingRoutes = {
+  Base: r.costing,
+  PriceVariance: r['costing.priceVariance'],
+  CostReport: r['costing.costReport'],
+} as const;
 
-export enum SuppliersRoutes {
-  Base = '/suppliers',
-}
+export const SuppliersRoutes = {
+  Base: r.suppliers,
+} as const;
 
-// Backward-compat aliases — kept so existing pages compile without changes
 export const AnalysisRoutes = {
-  CostPerUnit: StockRoutes.Analysis,
-  ItemTrend: '/stock/analysis/item/:itemId',
+  CostPerUnit: r['stock.analysis'],
+  ItemTrend: `${r['stock.analysis']}/item/:itemId`,
 } as const;
 
 export const ProductRoutes = {
-  Inventory: UserRoutes.Home,
+  Inventory: r.home,
 } as const;
 
-// Route segments — used as <Route path="..."> values
-export enum StockRouteSegments {
-  root = 'stock',
-  import = 'import',
-  addItems = 'add-items',
-  categories = 'categories',
-  types = 'types',
-  analysis = 'analysis',
-}
+export const StockRouteSegments = {
+  root: lastSeg(r.stock),
+  import: lastSeg(r['stock.import']),
+  addItems: lastSeg(r['stock.addItems']),
+  categories: lastSeg(r['stock.categories']),
+  types: lastSeg(r['stock.types']),
+  analysis: lastSeg(r['stock.analysis']),
+} as const;
 
-export enum InvoiceRouteSegments {
-  root = 'invoices',
-  history = 'history',
-}
+export const InvoiceRouteSegments = {
+  root: lastSeg(r.invoices),
+  history: lastSeg(r['invoices.history']),
+} as const;
 
-export enum CostingRouteSegments {
-  root = 'costing',
-  priceVariance = 'price-variance',
-  costReport = 'cost-report',
-}
+export const CostingRouteSegments = {
+  root: lastSeg(r.costing),
+  priceVariance: lastSeg(r['costing.priceVariance']),
+  costReport: lastSeg(r['costing.costReport']),
+} as const;
 
-export enum SuppliersRouteSegments {
-  root = 'suppliers',
-}
+export const SuppliersRouteSegments = {
+  root: lastSeg(r.suppliers),
+} as const;

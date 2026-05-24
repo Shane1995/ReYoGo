@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { resolveIcon, resolvePath, iconRegistry, pathRegistry } from '.';
+import { resolveIcon, resolvePath, iconRegistry } from '.';
+import { appConfig } from '@/config/app.config';
 
 describe('resolveIcon', () => {
   it('returns a defined component for a known icon key', () => {
@@ -34,8 +35,8 @@ describe('resolvePath', () => {
     expect(() => resolvePath('nonexistent.path')).toThrow('Unknown path key');
   });
 
-  it('resolves every key registered in the path registry', () => {
-    Object.keys(pathRegistry).forEach((key) => {
+  it('resolves every key registered in the route config', () => {
+    Object.keys(appConfig.routes).forEach((key) => {
       expect(() => resolvePath(key)).not.toThrow();
     });
   });

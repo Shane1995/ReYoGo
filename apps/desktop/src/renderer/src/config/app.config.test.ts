@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { appConfig } from './app.config';
-import { iconRegistry, pathRegistry } from './resolvers';
+import { iconRegistry } from './resolvers';
 
 describe('appConfig.nav', () => {
   const allNavItems = [
@@ -16,9 +16,9 @@ describe('appConfig.nav', () => {
     });
   });
 
-  it('every nav item path key exists in the path registry', () => {
+  it('every nav item path key exists in the route config', () => {
     allNavItems.forEach((item) => {
-      expect(pathRegistry).toHaveProperty(item.pathKey);
+      expect(appConfig.routes).toHaveProperty(item.pathKey);
     });
   });
 

@@ -18,13 +18,7 @@ import {
   AlertTriangleIcon,
   TrashIcon,
 } from 'lucide-react';
-import {
-  UserRoutes,
-  StockRoutes,
-  InvoiceRoutes,
-  CostingRoutes,
-  SuppliersRoutes,
-} from '@/components/AppRoutes/routePaths';
+import { appConfig } from '@/config/app.config';
 
 export const iconRegistry: Readonly<Record<string, LucideIcon>> = {
   LayoutDashboard: LayoutDashboardIcon,
@@ -46,22 +40,6 @@ export const iconRegistry: Readonly<Record<string, LucideIcon>> = {
   Trash: TrashIcon,
 };
 
-export const pathRegistry: Readonly<Record<string, string>> = {
-  home: UserRoutes.Home,
-  stock: StockRoutes.Base,
-  'stock.addItems': StockRoutes.AddItems,
-  'stock.categories': StockRoutes.Categories,
-  'stock.types': StockRoutes.Types,
-  'stock.import': StockRoutes.Import,
-  'stock.analysis': StockRoutes.Analysis,
-  invoices: InvoiceRoutes.Base,
-  'invoices.history': InvoiceRoutes.History,
-  costing: CostingRoutes.Base,
-  'costing.priceVariance': CostingRoutes.PriceVariance,
-  'costing.costReport': CostingRoutes.CostReport,
-  suppliers: SuppliersRoutes.Base,
-};
-
 export function resolveIcon(name: string): LucideIcon {
   const icon = iconRegistry[name];
   if (!icon) throw new Error(`Unknown icon key: "${name}"`);
@@ -69,7 +47,7 @@ export function resolveIcon(name: string): LucideIcon {
 }
 
 export function resolvePath(name: string): string {
-  const path = pathRegistry[name];
+  const path = appConfig.routes[name];
   if (!path) throw new Error(`Unknown path key: "${name}"`);
   return path;
 }

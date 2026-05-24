@@ -5,6 +5,23 @@ export interface NavItemConfig {
   end: boolean;
 }
 
+export interface RouteConfig {
+  home: string;
+  stock: string;
+  'stock.import': string;
+  'stock.addItems': string;
+  'stock.categories': string;
+  'stock.types': string;
+  'stock.analysis': string;
+  invoices: string;
+  'invoices.history': string;
+  costing: string;
+  'costing.priceVariance': string;
+  'costing.costReport': string;
+  suppliers: string;
+  [key: string]: string;
+}
+
 export interface DynamicStatCardConfig {
   label: string;
   dataKey: 'totalStockValue' | 'monthlySpend';
@@ -23,6 +40,7 @@ export interface StaticStatCardConfig {
 export type StatCardConfig = DynamicStatCardConfig | StaticStatCardConfig;
 
 export interface AppConfig {
+  routes: RouteConfig;
   nav: {
     primary: NavItemConfig[];
     stock: NavItemConfig[];
@@ -35,6 +53,21 @@ export interface AppConfig {
 }
 
 export const appConfig: AppConfig = {
+  routes: {
+    home: '/',
+    stock: '/stock',
+    'stock.import': '/stock/import',
+    'stock.addItems': '/stock/add-items',
+    'stock.categories': '/stock/categories',
+    'stock.types': '/stock/types',
+    'stock.analysis': '/stock/analysis',
+    invoices: '/invoices',
+    'invoices.history': '/invoices/history',
+    costing: '/costing',
+    'costing.priceVariance': '/costing/price-variance',
+    'costing.costReport': '/costing/cost-report',
+    suppliers: '/suppliers',
+  },
   nav: {
     primary: [
       { label: 'Dashboard', pathKey: 'home', icon: 'LayoutDashboard', end: true },
@@ -57,16 +90,43 @@ export const appConfig: AppConfig = {
     ],
     costing: [
       { label: 'Dashboard', pathKey: 'costing', icon: 'LayoutDashboard', end: true },
-      { label: 'Price Variance', pathKey: 'costing.priceVariance', icon: 'ArrowUpDown', end: false },
+      {
+        label: 'Price Variance',
+        pathKey: 'costing.priceVariance',
+        icon: 'ArrowUpDown',
+        end: false,
+      },
       { label: 'Cost Report', pathKey: 'costing.costReport', icon: 'FileBarChart2', end: false },
     ],
   },
   dashboard: {
     statCards: [
-      { label: 'Total Stock Value', dataKey: 'totalStockValue', format: 'ZAR', icon: 'Package', iconClassName: 'bg-[#E6FAF5]' },
-      { label: 'Monthly Spend', dataKey: 'monthlySpend', format: 'ZAR', icon: 'ShoppingCart', iconClassName: 'bg-[#E0F2FE]' },
-      { label: 'Low Stock Items', staticValue: 0, icon: 'AlertTriangle', iconClassName: 'bg-[#FFF3CD]' },
-      { label: 'Waste — 30 days', staticValue: 'R 0.00', icon: 'Trash', iconClassName: 'bg-[#FEE2E2]' },
+      {
+        label: 'Total Stock Value',
+        dataKey: 'totalStockValue',
+        format: 'ZAR',
+        icon: 'Package',
+        iconClassName: 'bg-[#E6FAF5]',
+      },
+      {
+        label: 'Monthly Spend',
+        dataKey: 'monthlySpend',
+        format: 'ZAR',
+        icon: 'ShoppingCart',
+        iconClassName: 'bg-[#E0F2FE]',
+      },
+      {
+        label: 'Low Stock Items',
+        staticValue: 0,
+        icon: 'AlertTriangle',
+        iconClassName: 'bg-[#FFF3CD]',
+      },
+      {
+        label: 'Waste — 30 days',
+        staticValue: 'R 0.00',
+        icon: 'Trash',
+        iconClassName: 'bg-[#FEE2E2]',
+      },
     ],
   },
 };
