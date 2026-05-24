@@ -6,6 +6,7 @@ export interface ElectronAPI {
     invoke: TypedInvoke;
   };
   onAppReady: (callback: () => void) => void;
+  onAppInitError: (callback: (message: string) => void) => void;
   requestAppReady: () => void;
   onUpdateDownloaded: (callback: () => void) => () => void;
   onUpdateError: (callback: (message: string) => void) => () => void;

@@ -5,6 +5,8 @@ export type { AppVersionInfo };
 
 export const appService = {
   onAppReady: (callback: () => void) => window.electronAPI.onAppReady(callback),
+  onAppInitError: (callback: (message: string) => void) =>
+    window.electronAPI.onAppInitError(callback),
   requestAppReady: () => window.electronAPI.requestAppReady(),
   getVersion: (): Promise<AppVersionInfo> =>
     window.electronAPI.ipcRenderer.invoke(AppIPC.GET_VERSION),
