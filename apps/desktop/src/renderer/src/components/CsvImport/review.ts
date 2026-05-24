@@ -18,7 +18,7 @@ export interface ReviewCategory {
   type: InventoryType;
   status: CategoryStatus;
   selected: boolean;
-  typeWarning?: boolean; // type doesn't match any configured good type
+  typeWarning?: boolean;
 }
 
 export interface ReviewItem {

@@ -103,8 +103,7 @@ export function EditItemDialog({ item, categories, units, onSave, onClose }: Pro
             </select>
             {selectedCategory && (
               <p className="text-xs text-muted-foreground">
-                Good type:{' '}
-                <span className="font-medium text-foreground">{selectedCategory.type}</span>
+                Type: <span className="font-medium text-foreground">{selectedCategory.type}</span>
               </p>
             )}
           </div>

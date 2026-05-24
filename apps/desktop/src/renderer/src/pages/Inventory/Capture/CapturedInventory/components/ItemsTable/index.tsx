@@ -79,7 +79,7 @@ export function ItemsTable({
     },
     {
       key: 'type',
-      header: 'Good Type',
+      header: 'Type',
       cell: (row) => {
         const cfg = getTypeConfig(row.type, allTypes);
         return <Badge className={cn('text-xs font-medium', cfg.badgeClass)}>{row.type}</Badge>;

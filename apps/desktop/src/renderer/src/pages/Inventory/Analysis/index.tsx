@@ -14,7 +14,7 @@ const selectClass =
 
 const TAB_LABELS: { key: AnalysisTab; label: string }[] = [
   { key: 'all', label: 'All Items' },
-  { key: 'by-type', label: 'By Good Type' },
+  { key: 'by-type', label: 'By Type' },
   { key: 'by-category', label: 'By Category' },
 ];
 
@@ -57,7 +57,7 @@ export default function InventoryAnalysis() {
             onChange={(e) => setFilterType(e.target.value)}
             className={cn(selectClass, filterType && 'text-foreground')}
           >
-            <option value="">All Good Types</option>
+            <option value="">All Types</option>
             {availableTypes.map((t) => (
               <option key={t} value={t}>
                 {typeLabel(t)}

@@ -145,7 +145,7 @@ export function CsvImportButton({
                         { sheet: 'Units', cols: 'name' },
                         {
                           sheet: 'Categories',
-                          cols: 'name, type (matches your configured good types)',
+                          cols: 'name, type (food, beverage, or non-food)',
                         },
                         { sheet: 'Items', cols: 'name, category_name, unit (optional)' },
                       ].map((r) => (

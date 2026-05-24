@@ -43,7 +43,7 @@ function CategoryForm({ onDone }: { onDone: () => void }) {
         />
       </div>
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-foreground">Good type</label>
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Type</label>
         <select
           value={type}
           onChange={(e) => setType(e.target.value as InventoryType)}
