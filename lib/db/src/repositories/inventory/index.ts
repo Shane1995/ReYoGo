@@ -1,12 +1,12 @@
 import { asc, eq } from 'drizzle-orm';
 import type { IInventoryCategory, IInventoryItem } from '@reyogo/types';
-import type { DbClient } from '../client';
-import * as schema from '../schema';
-import type { InventoryCategoryRow, InventoryItemRow } from '../schema';
-import { now } from '../utils/timestamps';
+import type { DbClient } from '../../client';
+import * as schema from '../../schema';
+import type { InventoryCategoryRow, InventoryItemRow } from '../../schema';
+import { now } from '../../utils/timestamps';
 
 function toCategory(row: InventoryCategoryRow): IInventoryCategory {
-  return { id: row.id, name: row.name, type: row.type };
+  return { id: row.id, name: row.name, type: row.type as IInventoryCategory['type'] };
 }
 
 function toItem(row: InventoryItemRow, type: IInventoryCategory['type']): IInventoryItem {
@@ -16,6 +16,10 @@ function toItem(row: InventoryItemRow, type: IInventoryCategory['type']): IInven
     categoryId: row.categoryId,
     type,
     unitOfMeasure: (row.unitOfMeasure as IInventoryItem['unitOfMeasure']) ?? undefined,
+    yieldFactor: row.yieldFactor,
+    parLevel: row.parLevel ?? null,
+    reorderPoint: row.reorderPoint ?? null,
+    reorderQty: row.reorderQty ?? null,
   };
 }
 
@@ -38,7 +42,7 @@ export function createInventoryRepo(db: DbClient) {
           eq(schema.inventoryItems.categoryId, schema.inventoryCategories.id),
         )
         .orderBy(asc(schema.inventoryItems.name));
-      return rows.map((r) => toItem(r.item, r.categoryType));
+      return rows.map((r) => toItem(r.item, r.categoryType as IInventoryCategory['type']));
     },
 
     async upsertCategory(category: IInventoryCategory): Promise<void> {
@@ -69,6 +73,10 @@ export function createInventoryRepo(db: DbClient) {
           name: item.name,
           categoryId: item.categoryId,
           unitOfMeasure: item.unitOfMeasure ?? null,
+          yieldFactor: item.yieldFactor ?? 1.0,
+          parLevel: item.parLevel ?? null,
+          reorderPoint: item.reorderPoint ?? null,
+          reorderQty: item.reorderQty ?? null,
           createdAt: ts,
           updatedAt: ts,
         })
@@ -78,6 +86,10 @@ export function createInventoryRepo(db: DbClient) {
             name: item.name,
             categoryId: item.categoryId,
             unitOfMeasure: item.unitOfMeasure ?? null,
+            yieldFactor: item.yieldFactor ?? 1.0,
+            parLevel: item.parLevel ?? null,
+            reorderPoint: item.reorderPoint ?? null,
+            reorderQty: item.reorderQty ?? null,
             updatedAt: ts,
           },
         });

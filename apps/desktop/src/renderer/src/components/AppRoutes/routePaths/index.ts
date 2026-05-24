@@ -12,7 +12,6 @@ export const StockRoutes = {
   Import: r['stock.import'],
   AddItems: r['stock.addItems'],
   Categories: r['stock.categories'],
-  Types: r['stock.types'],
   Analysis: r['stock.analysis'],
 } as const;
 
@@ -49,7 +48,6 @@ export const StockRouteSegments = {
   import: lastSeg(r['stock.import']),
   addItems: lastSeg(r['stock.addItems']),
   categories: lastSeg(r['stock.categories']),
-  types: lastSeg(r['stock.types']),
   analysis: lastSeg(r['stock.analysis']),
 } as const;
 

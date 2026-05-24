@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
+import { InventoryType } from '@reyogo/types';
 import type { ReviewResult, ReviewUnit, ReviewCategory, ReviewItem } from '../../review';
 
 export function useImportReviewState(initial: ReviewResult) {
@@ -6,14 +7,12 @@ export function useImportReviewState(initial: ReviewResult) {
   const [categories, setCategories] = useState<ReviewCategory[]>(initial.categories);
   const [items, setItems] = useState<ReviewItem[]>(initial.items);
 
-  const goodTypes = initial.goodTypes ?? [];
-
   const typeWarningCount = useMemo(
     () => categories.filter((c) => c.typeWarning && c.status !== 'exists').length,
     [categories],
   );
 
-  const fixCategoryType = useCallback((id: string, type: string) => {
+  const fixCategoryType = useCallback((id: string, type: InventoryType) => {
     setCategories((prev) =>
       prev.map((c) => (c.id === id ? { ...c, type, typeWarning: false } : c)),
     );
@@ -81,7 +80,6 @@ export function useImportReviewState(initial: ReviewResult) {
       items,
       parseErrors: initial.parseErrors,
       availableCategories: initial.availableCategories,
-      goodTypes: initial.goodTypes,
       counts: initial.counts,
     }),
     [units, categories, items, initial],
@@ -91,7 +89,6 @@ export function useImportReviewState(initial: ReviewResult) {
     units,
     categories,
     items,
-    goodTypes,
     typeWarningCount,
     selectedNew,
     existsCount,

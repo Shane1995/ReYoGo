@@ -1,4 +1,5 @@
 import type { ParseResult, ParsedCategory, InventoryType } from './parser';
+import { INVENTORY_TYPES } from '@reyogo/types';
 export type { InventoryType };
 
 export type UnitStatus = 'new' | 'exists';
@@ -17,7 +18,7 @@ export interface ReviewCategory {
   type: InventoryType;
   status: CategoryStatus;
   selected: boolean;
-  typeWarning?: boolean; // type doesn't match any configured good type
+  typeWarning?: boolean;
 }
 
 export interface ReviewItem {
@@ -35,7 +36,6 @@ export interface ReviewResult {
   items: ReviewItem[];
   parseErrors: string[];
   availableCategories: { name: string; type: InventoryType }[];
-  goodTypes: string[];
   counts: {
     newTotal: number;
     existsTotal: number;
@@ -48,12 +48,10 @@ export interface ExistingInventory {
   itemNames: Set<string>;
   unitNames: Set<string>;
   categoryList?: { name: string; type: InventoryType }[];
-  goodTypes?: string[];
 }
 
 export function enrichParseResult(result: ParseResult, existing: ExistingInventory): ReviewResult {
   const { categoryNames, itemNames, unitNames } = existing;
-  const goodTypes = existing.goodTypes ?? [];
 
   const units: ReviewUnit[] = result.units.map((u) => {
     const exists = unitNames.has(u.name.toLowerCase());
@@ -66,7 +64,7 @@ export function enrichParseResult(result: ParseResult, existing: ExistingInvento
 
   const categories: ReviewCategory[] = result.categories.map((c) => {
     const exists = categoryNames.has(c.name.toLowerCase());
-    const typeWarning = !exists && goodTypes.length > 0 && !goodTypes.includes(c.type);
+    const typeWarning = !exists && !INVENTORY_TYPES.includes(c.type as InventoryType);
     return {
       id: crypto.randomUUID(),
       name: c.name,
@@ -134,7 +132,6 @@ export function enrichParseResult(result: ParseResult, existing: ExistingInvento
     items,
     parseErrors: result.errors,
     availableCategories,
-    goodTypes,
     counts,
   };
 }

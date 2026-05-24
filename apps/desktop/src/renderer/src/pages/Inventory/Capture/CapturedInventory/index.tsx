@@ -13,7 +13,7 @@ import { useWeightedAvgCosts } from './hooks/useWeightedAvgCosts';
 import type { InventoryItem } from './types';
 
 export default function InventoryIndex() {
-  const { categories, items, units, goodTypes, updateItem, deleteItemFromBackend } = useInventory();
+  const { categories, items, units, updateItem, deleteItemFromBackend } = useInventory();
 
   const navigate = useNavigate();
   const costMap = useItemCosts();
@@ -48,7 +48,6 @@ export default function InventoryIndex() {
             items={items}
             categories={categories}
             units={units}
-            goodTypes={goodTypes}
             costMap={costMap}
             stockMap={stockMap}
             weightedAvgMap={weightedAvgMap}

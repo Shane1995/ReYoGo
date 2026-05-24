@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
+import { InventoryType } from '@reyogo/types';
 
-export type InventoryType = string;
+export type { InventoryType };
 
 export interface ParsedUnit {
   name: string;
@@ -62,7 +63,8 @@ function parseCategoriesSheet(sheet: XLSX.WorkSheet, result: ParseResult) {
       result.errors.push(`Categories row ${i + 2}: missing name`);
       return;
     }
-    const type = col(row, 'type', 'Type', 'category_type', 'Category Type').toLowerCase() || 'food';
+    const type = (col(row, 'type', 'Type', 'category_type', 'Category Type').toLowerCase() ||
+      InventoryType.Food) as InventoryType;
     result.categories.push({ name, type });
   });
 }
@@ -126,7 +128,7 @@ export function parseFile(file: File): Promise<ParseResult> {
   });
 }
 
-export function downloadTemplate(goodTypes: string[] = ['food', 'drink', 'non-perishable']): void {
+export function downloadTemplate(): void {
   const wb = XLSX.utils.book_new();
 
   const unitsSheet = XLSX.utils.aoa_to_sheet([['name'], ['litres'], ['kgs'], ['unit'], ['pieces']]);
@@ -134,9 +136,9 @@ export function downloadTemplate(goodTypes: string[] = ['food', 'drink', 'non-pe
   XLSX.utils.book_append_sheet(wb, unitsSheet, 'Units');
 
   const catRows: (string | undefined)[][] = [['name', 'type']];
-  if (goodTypes.length >= 1) catRows.push(['Dairy', goodTypes[0]]);
-  if (goodTypes.length >= 2) catRows.push(['Beverages', goodTypes[1]]);
-  if (goodTypes.length >= 3) catRows.push(['Cleaning Supplies', goodTypes[2]]);
+  catRows.push(['Dairy', InventoryType.Food]);
+  catRows.push(['Beverages', InventoryType.Beverage]);
+  catRows.push(['Cleaning Supplies', InventoryType.NonFood]);
   const catsSheet = XLSX.utils.aoa_to_sheet(catRows);
   catsSheet['!cols'] = [{ wch: 24 }, { wch: 18 }];
   XLSX.utils.book_append_sheet(wb, catsSheet, 'Categories');
@@ -150,5 +152,9 @@ export function downloadTemplate(goodTypes: string[] = ['food', 'drink', 'non-pe
   itemsSheet['!cols'] = [{ wch: 28 }, { wch: 24 }, { wch: 16 }];
   XLSX.utils.book_append_sheet(wb, itemsSheet, 'Items');
 
-  XLSX.writeFile(wb, 'reyogo-import-template.xlsx');
+  const buf = Array.from(XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as Uint8Array);
+  window.electronAPI.ipcRenderer.invoke('shell:save-file', {
+    filename: 'reyogo-import-template.xlsx',
+    data: buf,
+  });
 }

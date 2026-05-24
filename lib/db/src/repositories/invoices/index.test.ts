@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createTestDb, type DbClient } from './helpers';
-import { createInvoicesRepo } from '../repositories/invoices';
-import * as schema from '../schema';
+import { createTestDb, type DbClient } from '../../__tests__/helpers';
+import { createInvoicesRepo } from '.';
+import * as schema from '../../schema';
 
 let db: DbClient;
 let repo: ReturnType<typeof createInvoicesRepo>;
@@ -13,16 +13,14 @@ function round4(x: number) {
 beforeEach(async () => {
   db = await createTestDb();
   repo = createInvoicesRepo(db);
-  await db
-    .insert(schema.inventoryCategories)
-    .values({
-      id: 'cat-1',
-      accountId: 'default',
-      name: 'Ingredients',
-      type: 'ingredient',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+  await db.insert(schema.inventoryCategories).values({
+    id: 'cat-1',
+    accountId: 'default',
+    name: 'Food',
+    type: 'food',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
   await db.insert(schema.inventoryItems).values([
     {
       id: 'item-1',
@@ -45,7 +43,7 @@ beforeEach(async () => {
 
 describe('createInvoicesRepo', () => {
   describe('saveInvoice', () => {
-    it('creates invoice and line items', async () => {
+    it('creates the invoice and its line items', async () => {
       await repo.saveInvoice({
         id: 'inv-1',
         invoiceNumber: 'INV-001',
@@ -64,11 +62,10 @@ describe('createInvoicesRepo', () => {
       const invoices = await db.select().from(schema.invoices);
       expect(invoices).toHaveLength(1);
       expect(invoices[0]!.invoiceNumber).toBe('INV-001');
-      const lines = await db.select().from(schema.invoiceLineItems);
-      expect(lines).toHaveLength(1);
+      expect(await db.select().from(schema.invoiceLineItems)).toHaveLength(1);
     });
 
-    it('creates stock movements with WAC', async () => {
+    it('creates a stock movement with correct WAC on first purchase', async () => {
       await repo.saveInvoice({
         id: 'inv-1',
         lines: [
@@ -90,7 +87,7 @@ describe('createInvoicesRepo', () => {
       expect(movements[0]!.stockQtyAfter).toBe(10);
     });
 
-    it('blends WAC across two invoices', async () => {
+    it('blends WAC correctly across two purchases', async () => {
       await repo.saveInvoice({
         id: 'inv-1',
         invoiceDate: new Date('2024-01-01'),
@@ -128,6 +125,24 @@ describe('createInvoicesRepo', () => {
       expect(movements[1]!.weightedAvgCostAfter).toBe(round4((10 * 10 + 10 * 20) / 20));
       expect(movements[1]!.stockQtyAfter).toBe(20);
     });
+
+    it('skips lines with zero quantity', async () => {
+      await repo.saveInvoice({
+        id: 'inv-1',
+        lines: [
+          {
+            id: 'l-1',
+            itemId: 'item-1',
+            itemNameSnapshot: 'Flour',
+            quantity: 0,
+            vatMode: 'exclusive',
+            vatRate: 0,
+            totalVatExclude: 0,
+          },
+        ],
+      });
+      expect(await db.select().from(schema.stockMovements)).toHaveLength(0);
+    });
   });
 
   describe('updateInvoice', () => {
@@ -150,7 +165,7 @@ describe('createInvoicesRepo', () => {
       }),
     );
 
-    it('replaces movements with new lines', async () => {
+    it('replaces old movements with movements for the new lines', async () => {
       await repo.updateInvoice({
         id: 'inv-1',
         lines: [
@@ -170,34 +185,38 @@ describe('createInvoicesRepo', () => {
       expect(movements[0]!.inventoryItemId).toBe('item-2');
     });
 
-    it('creates audit log entry with previous snapshot', async () => {
+    it('writes an audit log entry with the previous invoice snapshot', async () => {
       await repo.updateInvoice({ id: 'inv-1', note: 'Correction', lines: [] });
       const audit = await db.select().from(schema.invoiceAuditLog);
       expect(audit).toHaveLength(1);
       expect(audit[0]!.note).toBe('Correction');
-      const snap = JSON.parse(audit[0]!.snapshot) as { id: string };
-      expect(snap.id).toBe('inv-1');
+      expect((JSON.parse(audit[0]!.snapshot) as { id: string }).id).toBe('inv-1');
+    });
+
+    it('throws when the invoice does not exist', async () => {
+      await expect(repo.updateInvoice({ id: 'nope', lines: [] })).rejects.toThrow();
     });
   });
 
   describe('getInvoices', () => {
-    it('returns empty array when none exist', async () => {
+    it('returns empty array when no invoices exist', async () => {
       expect(await repo.getInvoices()).toEqual([]);
     });
 
-    it('returns all invoices', async () => {
+    it('returns all invoices ordered by createdAt descending', async () => {
       await repo.saveInvoice({ id: 'inv-1', lines: [] });
       await repo.saveInvoice({ id: 'inv-2', lines: [] });
-      expect(await repo.getInvoices()).toHaveLength(2);
+      const invoices = await repo.getInvoices();
+      expect(invoices).toHaveLength(2);
     });
   });
 
   describe('getInvoiceById', () => {
-    it('returns null for unknown id', async () => {
+    it('returns null for an unknown id', async () => {
       expect(await repo.getInvoiceById('nope')).toBeNull();
     });
 
-    it('returns invoice with lines', async () => {
+    it('returns the invoice with its lines', async () => {
       await repo.saveInvoice({
         id: 'inv-1',
         invoiceNumber: 'INV-001',
@@ -220,7 +239,7 @@ describe('createInvoicesRepo', () => {
   });
 
   describe('getLastUnitPrices', () => {
-    it('returns per-item unit price from most recent line', async () => {
+    it('returns the most recent unit price per item', async () => {
       await repo.saveInvoice({
         id: 'inv-1',
         lines: [
@@ -235,8 +254,11 @@ describe('createInvoicesRepo', () => {
           },
         ],
       });
-      const prices = await repo.getLastUnitPrices();
-      expect(prices['item-1']).toBe(10);
+      expect((await repo.getLastUnitPrices())['item-1']).toBe(10);
+    });
+
+    it('returns empty object when no lines exist', async () => {
+      expect(await repo.getLastUnitPrices()).toEqual({});
     });
   });
 });

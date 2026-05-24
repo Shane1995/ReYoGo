@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Button } from '@reyogo/ui';
+import { INVENTORY_TYPES, InventoryType } from '@reyogo/types';
 import { useInventory } from '../../Context/InventoryContext';
 import { cn } from '@reyogo/ui';
 
@@ -8,51 +9,17 @@ const inputClass = cn(
   'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0',
 );
 
-type Tab = 'item' | 'category' | 'goodType';
+type Tab = 'item' | 'category';
 
 type Props = {
   open: boolean;
   onClose: () => void;
 };
 
-function GoodTypeForm({ onDone }: { onDone: () => void }) {
-  const { addGoodType } = useInventory();
-  const [name, setName] = useState('');
-
-  function handleSave() {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    addGoodType(trimmed);
-    setName('');
-    onDone();
-  }
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-foreground">Name</label>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-          className={inputClass}
-          placeholder="e.g. dairy, bakery"
-          autoFocus
-        />
-      </div>
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" onClick={handleSave} disabled={!name.trim()}>
-          Add good type
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 function CategoryForm({ onDone }: { onDone: () => void }) {
-  const { goodTypes, addCategory } = useInventory();
+  const { addCategory } = useInventory();
   const [name, setName] = useState('');
-  const [type, setType] = useState(goodTypes[0] ?? '');
+  const [type, setType] = useState(InventoryType.Food);
 
   function handleSave() {
     const trimmed = name.trim();
@@ -76,14 +43,13 @@ function CategoryForm({ onDone }: { onDone: () => void }) {
         />
       </div>
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-foreground">Good type</label>
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Type</label>
         <select
           value={type}
-          onChange={(e) => setType(e.target.value)}
+          onChange={(e) => setType(e.target.value as InventoryType)}
           className={cn(inputClass, 'cursor-pointer')}
         >
-          {!type && <option value="">Select type</option>}
-          {goodTypes.map((t) => (
+          {INVENTORY_TYPES.map((t) => (
             <option key={t} value={t}>
               {t}
             </option>
@@ -180,7 +146,6 @@ function ItemForm({ onDone }: { onDone: () => void }) {
 const TABS: { id: Tab; label: string }[] = [
   { id: 'item', label: 'Item' },
   { id: 'category', label: 'Category' },
-  { id: 'goodType', label: 'Good Type' },
 ];
 
 export function AddInventoryModal({ open, onClose }: Props) {
@@ -235,7 +200,6 @@ export function AddInventoryModal({ open, onClose }: Props) {
 
           {activeTab === 'item' && <ItemForm onDone={() => handleDone('Item')} />}
           {activeTab === 'category' && <CategoryForm onDone={() => handleDone('Category')} />}
-          {activeTab === 'goodType' && <GoodTypeForm onDone={() => handleDone('Good type')} />}
         </div>
 
         <div className="flex justify-end border-t border-border px-6 py-4">

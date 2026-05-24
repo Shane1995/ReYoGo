@@ -18,9 +18,6 @@ type InventoryContextValue = {
   categories: InventoryCategory[];
   items: InventoryItem[];
   units: string[];
-  goodTypes: string[];
-  addGoodType: (type: string) => void;
-  setGoodTypes: (types: string[]) => void;
   addCategory: (category: Omit<InventoryCategory, 'id'>) => string;
   updateCategory: (id: string, updates: Partial<InventoryCategory>) => void;
   addItem: (item: Omit<InventoryItem, 'id'>) => string;
@@ -36,14 +33,10 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [units, setUnits] = useState<string[]>([]);
-  const [goodTypes, setGoodTypes] = useState<string[]>([]);
 
   useEffect(() => {
     (window.electronAPI.ipcRenderer.invoke('setup:get-units') as Promise<{ name: string }[]>)
       .then((data) => setUnits(data.map((u) => u.name)))
-      .catch(console.error);
-    (window.electronAPI.ipcRenderer.invoke('setup:get-good-types') as Promise<string[]>)
-      .then((data) => setGoodTypes(data))
       .catch(console.error);
     invokeInventory(InventoryIPC.GET_CATEGORIES)
       .then((data) => {
@@ -56,17 +49,6 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         setItems(Array.isArray(data) ? (data as InventoryItem[]) : []);
       })
       .catch(console.error);
-  }, []);
-
-  const addGoodType = useCallback((type: string) => {
-    setGoodTypes((prev) => {
-      if (prev.includes(type)) return prev;
-      const next = [...prev, type];
-      (window.electronAPI.ipcRenderer.invoke('setup:set-good-types', next) as Promise<void>).catch(
-        console.error,
-      );
-      return next;
-    });
   }, []);
 
   const addCategory = useCallback((category: Omit<InventoryCategory, 'id'>): string => {
@@ -140,9 +122,6 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     categories,
     items,
     units,
-    goodTypes,
-    addGoodType,
-    setGoodTypes,
     addCategory,
     updateCategory,
     addItem,

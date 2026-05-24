@@ -1,6 +1,7 @@
 import { CheckCircle2Icon, AlertTriangleIcon, InfoIcon, XCircleIcon } from 'lucide-react';
 import { Button } from '@reyogo/ui';
 import { cn } from '@reyogo/ui';
+import { INVENTORY_TYPES } from '@reyogo/types';
 import type { ReviewResult, InventoryType } from './review';
 import { useImportReviewState } from './hooks/useImportReviewState';
 import { StatusBadge } from './StatusBadge';
@@ -33,7 +34,6 @@ export function ImportReview({
     units,
     categories,
     items,
-    goodTypes,
     typeWarningCount,
     selectedNew,
     existsCount,
@@ -149,12 +149,12 @@ export function ImportReview({
                 >
                   {cat.name}
                 </span>
-                {cat.typeWarning && cat.status !== 'exists' && goodTypes.length > 0 ? (
+                {cat.typeWarning && cat.status !== 'exists' ? (
                   <select
                     value=""
                     onChange={(e) => {
                       e.stopPropagation();
-                      fixCategoryType(cat.id, e.target.value);
+                      fixCategoryType(cat.id, e.target.value as InventoryType);
                     }}
                     onClick={(e) => e.stopPropagation()}
                     className={cn(
@@ -165,7 +165,7 @@ export function ImportReview({
                     <option value="" disabled>
                       {cat.type} (unknown)
                     </option>
-                    {goodTypes.map((t) => (
+                    {INVENTORY_TYPES.map((t) => (
                       <option key={t} value={t}>
                         {t}
                       </option>

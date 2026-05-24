@@ -8,6 +8,20 @@
       "when": 1779596413841,
       "tag": "0000_misty_titanium_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1779639497709,
+      "tag": "0001_wakeful_blizzard",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1779655817078,
+      "tag": "0002_cynical_the_order",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { INVENTORY_TYPES } from '@reyogo/types';
 import type { FilterField, FilterValues } from '@/components/DataTable';
 import type { InventoryCategory, InventoryItem } from '../../../../types';
 import type { FlatItem, ItemCost } from '../../types';
@@ -6,26 +7,15 @@ import type { FlatItem, ItemCost } from '../../types';
 type Props = {
   items: InventoryItem[];
   categories: InventoryCategory[];
-  goodTypes: string[];
   costMap: Map<string, ItemCost>;
   stockMap: Map<string, number>;
   weightedAvgMap: Map<string, number | null>;
 };
 
-export function useItemFilters({
-  items,
-  categories,
-  goodTypes,
-  costMap,
-  stockMap,
-  weightedAvgMap,
-}: Props) {
+export function useItemFilters({ items, categories, costMap, stockMap, weightedAvgMap }: Props) {
   const [filterValues, setFilterValues] = useState<FilterValues>({});
 
-  const allTypes = useMemo(() => {
-    const fromCategories = categories.map((c) => c.type).filter(Boolean);
-    return Array.from(new Set([...goodTypes, ...fromCategories]));
-  }, [goodTypes, categories]);
+  const allTypes = useMemo(() => [...INVENTORY_TYPES], []);
 
   const flatItems = useMemo<FlatItem[]>(() => {
     return items.map((item) => {
@@ -82,7 +72,7 @@ export function useItemFilters({
     { key: 'search', label: 'Items', type: 'search', placeholder: 'Search items…' },
     {
       key: 'type',
-      label: 'Good Types',
+      label: 'Type',
       type: 'select',
       options: allTypes.map((t) => ({ value: t, label: t })),
     },

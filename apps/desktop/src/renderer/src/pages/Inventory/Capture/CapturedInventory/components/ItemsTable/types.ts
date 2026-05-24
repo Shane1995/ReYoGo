@@ -19,7 +19,6 @@ export type ItemsTableProps = {
   items: InventoryItem[];
   categories: InventoryCategory[];
   units: string[];
-  goodTypes: string[];
   costMap: Map<string, ItemCost>;
   stockMap: Map<string, number>;
   weightedAvgMap: Map<string, number | null>;

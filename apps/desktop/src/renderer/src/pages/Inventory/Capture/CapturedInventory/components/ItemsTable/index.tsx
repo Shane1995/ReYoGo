@@ -18,7 +18,6 @@ export function ItemsTable({
   items,
   categories,
   units,
-  goodTypes,
   costMap,
   stockMap,
   weightedAvgMap,
@@ -31,7 +30,7 @@ export function ItemsTable({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const { filterValues, filteredItems, filters, allTypes, handleFilterChange, clearFilters } =
-    useItemFilters({ items, categories, goodTypes, costMap, stockMap, weightedAvgMap });
+    useItemFilters({ items, categories, costMap, stockMap, weightedAvgMap });
 
   const filteredIds = useMemo(() => filteredItems.map((i) => i.id), [filteredItems]);
 
@@ -80,7 +79,7 @@ export function ItemsTable({
     },
     {
       key: 'type',
-      header: 'Good Type',
+      header: 'Type',
       cell: (row) => {
         const cfg = getTypeConfig(row.type, allTypes);
         return <Badge className={cn('text-xs font-medium', cfg.badgeClass)}>{row.type}</Badge>;

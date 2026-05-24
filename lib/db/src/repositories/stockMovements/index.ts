@@ -1,7 +1,7 @@
 import { and, asc, eq, gte, lte } from 'drizzle-orm';
 import type { ICOGSSummary, IItemCostHistory, IStockMovement } from '@reyogo/types';
-import type { DbClient } from '../client';
-import * as schema from '../schema';
+import type { DbClient } from '../../client';
+import * as schema from '../../schema';
 
 export function createStockMovementsRepo(db: DbClient) {
   return {
