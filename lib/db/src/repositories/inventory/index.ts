@@ -1,9 +1,9 @@
 import { asc, eq } from 'drizzle-orm';
 import type { IInventoryCategory, IInventoryItem } from '@reyogo/types';
-import type { DbClient } from '../client';
-import * as schema from '../schema';
-import type { InventoryCategoryRow, InventoryItemRow } from '../schema';
-import { now } from '../utils/timestamps';
+import type { DbClient } from '../../client';
+import * as schema from '../../schema';
+import type { InventoryCategoryRow, InventoryItemRow } from '../../schema';
+import { now } from '../../utils/timestamps';
 
 function toCategory(row: InventoryCategoryRow): IInventoryCategory {
   return { id: row.id, name: row.name, type: row.type };

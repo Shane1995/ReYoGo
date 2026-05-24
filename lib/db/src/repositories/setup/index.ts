@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
 import type { IUnitOfMeasure } from '@reyogo/types';
-import type { DbClient } from '../client';
-import * as schema from '../schema';
-import { now } from '../utils/timestamps';
+import type { DbClient } from '../../client';
+import * as schema from '../../schema';
+import { now } from '../../utils/timestamps';
 
 const GOOD_TYPES_KEY = 'good_types';
 const DEFAULT_GOOD_TYPES = ['food', 'drink', 'non-perishable'];

@@ -1,9 +1,9 @@
 import { asc, eq } from 'drizzle-orm';
 import type { ISupplier, IUpsertSupplierPayload } from '@reyogo/types';
-import type { DbClient } from '../client';
-import * as schema from '../schema';
-import type { SupplierRow } from '../schema';
-import { now } from '../utils/timestamps';
+import type { DbClient } from '../../client';
+import * as schema from '../../schema';
+import type { SupplierRow } from '../../schema';
+import { now } from '../../utils/timestamps';
 
 function toSupplier(row: SupplierRow): ISupplier {
   return {

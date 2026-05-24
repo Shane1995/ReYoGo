@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createTestDb, type DbClient } from './helpers';
-import { createSuppliersRepo } from '../repositories/suppliers';
-import * as schema from '../schema';
+import { createTestDb, type DbClient } from '../../__tests__/helpers';
+import { createSuppliersRepo } from '.';
+import * as schema from '../../schema';
 
 let db: DbClient;
 let repo: ReturnType<typeof createSuppliersRepo>;
@@ -43,17 +43,21 @@ describe('createSuppliersRepo', () => {
       expect(suppliers.map((s) => s.name)).toEqual(['Alpine', 'Zesty']);
     });
 
-    it('returns null optional fields when not set', async () => {
+    it('returns null for unset optional fields', async () => {
       await repo.upsertSupplier({ id: 'sup-1', name: 'Basic' });
       const [s] = await repo.getSuppliers();
       expect(s!.contactName).toBeNull();
       expect(s!.phone).toBeNull();
       expect(s!.email).toBeNull();
     });
+
+    it('returns empty array when no suppliers exist', async () => {
+      expect(await repo.getSuppliers()).toEqual([]);
+    });
   });
 
   describe('deleteSupplier', () => {
-    it('removes a supplier', async () => {
+    it('removes the supplier', async () => {
       await repo.upsertSupplier({ id: 'sup-1', name: 'Fresh Foods' });
       await repo.deleteSupplier('sup-1');
       expect(await db.select().from(schema.suppliers)).toHaveLength(0);
