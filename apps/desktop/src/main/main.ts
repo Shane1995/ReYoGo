@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { join } from 'path';
-import { DB_REQUEST_READY_CHANNEL } from '@shared/ipc-events';
+import { DB_REQUEST_READY_CHANNEL, DB_INIT_ERROR_CHANNEL } from '@shared/ipc-events';
 import { getDbReadyChannel, initDatabase } from './db';
 import { registerRoute } from './lib/electron-router-dom';
 import { registerIPC } from './ipc';
@@ -57,11 +57,18 @@ app.whenReady().then(() => {
   }
 
   let dbReady = false;
+  let dbError: string | null = null;
   let pendingSender: Electron.WebContents | null = null;
 
   const trySendDbReady = () => {
-    if (dbReady && pendingSender && !pendingSender.isDestroyed()) {
-      pendingSender.send(getDbReadyChannel());
+    if (pendingSender && !pendingSender.isDestroyed()) {
+      if (dbError !== null) {
+        pendingSender.send(DB_INIT_ERROR_CHANNEL, dbError);
+      } else if (dbReady) {
+        pendingSender.send(getDbReadyChannel());
+      } else {
+        return;
+      }
       pendingSender = null;
     }
   };
@@ -77,8 +84,8 @@ app.whenReady().then(() => {
       trySendDbReady();
     })
     .catch((err) => {
-      console.error('Failed to init database', err);
-      dbReady = true;
+      console.error('[ReYoGo] Failed to initialize database:', err);
+      dbError = err instanceof Error ? err.message : String(err);
       trySendDbReady();
     });
 
