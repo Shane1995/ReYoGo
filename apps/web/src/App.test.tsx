@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import App from './App';
 
 describe('App', () => {
-  it('renders the ReYoGo Web heading', () => {
+  it('renders the ReYoGo heading', () => {
     render(<App />);
-    expect(screen.getByRole('heading', { name: /reyogo web/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /reyogo/i })).toBeInTheDocument();
   });
 });
