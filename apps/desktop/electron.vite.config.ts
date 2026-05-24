@@ -1,7 +1,10 @@
+import { createRequire } from 'module';
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import react from '@vitejs/plugin-react';
 import { copyFileSync, mkdirSync, readdirSync, statSync } from 'fs';
 import { join, resolve } from 'path';
+
+const require = createRequire(import.meta.url);
 
 function copyMigrationsPlugin() {
   return {
