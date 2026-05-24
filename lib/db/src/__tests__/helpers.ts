@@ -20,3 +20,5 @@ export async function createTestDb(): Promise<DbClient> {
   });
   return db;
 }
+
+export type { DbClient } from '../client';
