@@ -45,6 +45,7 @@ export interface IPCInvokeMap {
   'suppliers:get-suppliers': { args: []; return: ISupplier[] };
   'suppliers:upsert-supplier': { args: [payload: IUpsertSupplierPayload]; return: void };
   'suppliers:delete-supplier': { args: [id: string]; return: void };
+  'shell:save-file': { args: [payload: { filename: string; data: number[] }]; return: string };
 }
 
 export type IPCChannel = keyof IPCInvokeMap;

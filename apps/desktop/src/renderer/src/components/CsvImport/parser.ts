@@ -152,14 +152,9 @@ export function downloadTemplate(): void {
   itemsSheet['!cols'] = [{ wch: 28 }, { wch: 24 }, { wch: 16 }];
   XLSX.utils.book_append_sheet(wb, itemsSheet, 'Items');
 
-  const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
-  const blob = new Blob([buf], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  const buf = Array.from(XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as Uint8Array);
+  window.electronAPI.ipcRenderer.invoke('shell:save-file', {
+    filename: 'reyogo-import-template.xlsx',
+    data: buf,
   });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'reyogo-import-template.xlsx';
-  a.click();
-  URL.revokeObjectURL(url);
 }
