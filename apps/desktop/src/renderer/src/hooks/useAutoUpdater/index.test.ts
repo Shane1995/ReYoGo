@@ -1,14 +1,14 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { useAutoUpdater } from './useAutoUpdater';
+import { useAutoUpdater } from '.';
 
-vi.mock('../services/app', () => ({
+vi.mock('../../services/app', () => ({
   appService: {
     onUpdateDownloaded: vi.fn(),
   },
 }));
 
-import { appService } from '../services/app';
+import { appService } from '../../services/app';
 
 describe('useAutoUpdater', () => {
   it('returns updateReady false initially', () => {

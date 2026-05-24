@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { PlusIcon, Trash2Icon } from 'lucide-react';
-import { Button } from '@reyogo/ui';
+import { Button, PageHeader } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { cn } from '@reyogo/ui';
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
@@ -48,13 +48,10 @@ export default function ManageTypesPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="shrink-0 border-b border-[var(--nav-border)] bg-background px-6 py-4">
-        <h1 className="text-xl font-semibold tracking-tight">Good types</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Configure the primary types used to classify inventory categories (e.g. food, drink,
-          non-perishable).
-        </p>
-      </header>
+      <PageHeader
+        title="Good types"
+        description="Configure the primary types used to classify inventory categories (e.g. food, drink, non-perishable)."
+      />
 
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-6 my-5 max-w-lg">

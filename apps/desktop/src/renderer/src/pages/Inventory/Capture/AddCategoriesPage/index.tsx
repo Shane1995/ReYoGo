@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { PlusIcon } from 'lucide-react';
-import { Button } from '@reyogo/ui';
+import { Button, PageHeader } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
 import type { TypeValue } from '../CapturedInventory/types';
@@ -86,13 +86,10 @@ export default function AddCategoriesPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="shrink-0 border-b border-[var(--nav-border)] bg-background px-6 py-4">
-        <h1 className="text-xl font-semibold tracking-tight">Add categories</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Add categories with a name and type. They appear in the Captured Goods view and the Add
-          Items dropdown.
-        </p>
-      </header>
+      <PageHeader
+        title="Add categories"
+        description="Add categories with a name and type. They appear in the Captured Goods view and the Add Items dropdown."
+      />
 
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-6 my-5">

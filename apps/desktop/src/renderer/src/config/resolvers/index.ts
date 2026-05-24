@@ -1,0 +1,75 @@
+import type { LucideIcon } from 'lucide-react';
+import {
+  LayoutDashboardIcon,
+  PackageIcon,
+  ReceiptIcon,
+  CoinsIcon,
+  TruckIcon,
+  PackagePlusIcon,
+  UploadIcon,
+  ListPlusIcon,
+  FolderPlusIcon,
+  TagsIcon,
+  TrendingUpIcon,
+  HistoryIcon,
+  ArrowUpDownIcon,
+  FileBarChart2Icon,
+  ShoppingCartIcon,
+  AlertTriangleIcon,
+  TrashIcon,
+} from 'lucide-react';
+import {
+  UserRoutes,
+  StockRoutes,
+  InvoiceRoutes,
+  CostingRoutes,
+  SuppliersRoutes,
+} from '@/components/AppRoutes/routePaths';
+
+export const iconRegistry: Readonly<Record<string, LucideIcon>> = {
+  LayoutDashboard: LayoutDashboardIcon,
+  Package: PackageIcon,
+  Receipt: ReceiptIcon,
+  Coins: CoinsIcon,
+  Truck: TruckIcon,
+  PackagePlus: PackagePlusIcon,
+  Upload: UploadIcon,
+  ListPlus: ListPlusIcon,
+  FolderPlus: FolderPlusIcon,
+  Tags: TagsIcon,
+  TrendingUp: TrendingUpIcon,
+  History: HistoryIcon,
+  ArrowUpDown: ArrowUpDownIcon,
+  FileBarChart2: FileBarChart2Icon,
+  ShoppingCart: ShoppingCartIcon,
+  AlertTriangle: AlertTriangleIcon,
+  Trash: TrashIcon,
+};
+
+export const pathRegistry: Readonly<Record<string, string>> = {
+  home: UserRoutes.Home,
+  stock: StockRoutes.Base,
+  'stock.addItems': StockRoutes.AddItems,
+  'stock.categories': StockRoutes.Categories,
+  'stock.types': StockRoutes.Types,
+  'stock.import': StockRoutes.Import,
+  'stock.analysis': StockRoutes.Analysis,
+  invoices: InvoiceRoutes.Base,
+  'invoices.history': InvoiceRoutes.History,
+  costing: CostingRoutes.Base,
+  'costing.priceVariance': CostingRoutes.PriceVariance,
+  'costing.costReport': CostingRoutes.CostReport,
+  suppliers: SuppliersRoutes.Base,
+};
+
+export function resolveIcon(name: string): LucideIcon {
+  const icon = iconRegistry[name];
+  if (!icon) throw new Error(`Unknown icon key: "${name}"`);
+  return icon;
+}
+
+export function resolvePath(name: string): string {
+  const path = pathRegistry[name];
+  if (!path) throw new Error(`Unknown path key: "${name}"`);
+  return path;
+}

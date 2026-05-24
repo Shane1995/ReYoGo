@@ -1,9 +1,16 @@
 export {
-  ProductRoutes,
   StockRoutes,
   InvoiceRoutes,
+  CostingRoutes,
+  SuppliersRoutes,
   UserRoutes,
-  InventoryRouteSegments,
+  StockRouteSegments,
+  InvoiceRouteSegments,
+  CostingRouteSegments,
+  SuppliersRouteSegments,
+  AnalysisRoutes,
+  ProductRoutes,
+  itemTrendPath,
 } from './routePaths';
 
 export { AppRoutesComponent } from './routes';

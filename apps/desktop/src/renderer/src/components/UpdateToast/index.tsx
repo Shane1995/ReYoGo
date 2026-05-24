@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { toast } from 'sonner';
-import { useAutoUpdater } from '../../hooks/useAutoUpdater';
+import { useAutoUpdater } from '../../hooks/useAutoUpdater/index';
 import { appService } from '../../services/app';
 
 export default function UpdateToast() {

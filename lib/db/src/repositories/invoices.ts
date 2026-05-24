@@ -164,15 +164,13 @@ export function createInvoicesRepo(db: DbClient) {
         (l) => l.itemId && l.itemNameSnapshot && l.quantity >= 0 && l.totalVatExclude >= 0,
       );
       await db.transaction(async (tx) => {
-        await tx
-          .insert(schema.invoiceAuditLog)
-          .values({
-            id: generateId(),
-            invoiceId: payload.id,
-            editedAt,
-            note: payload.note ?? null,
-            snapshot: JSON.stringify(current),
-          });
+        await tx.insert(schema.invoiceAuditLog).values({
+          id: generateId(),
+          invoiceId: payload.id,
+          editedAt,
+          note: payload.note ?? null,
+          snapshot: JSON.stringify(current),
+        });
         await tx
           .delete(schema.stockMovements)
           .where(

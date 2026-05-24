@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PageHeader } from '@reyogo/ui';
 import { stockMovementsService } from '@/services/stockMovements';
 import type { ICOGSSummary } from '@reyogo/types';
 
@@ -30,43 +31,40 @@ export default function CostingDashboard() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="shrink-0 border-b border-[var(--nav-border)] bg-background px-4 py-3">
-        <h1 className="text-lg font-semibold text-foreground">Costing Dashboard</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">Cost of Goods Used (COGS) summary.</p>
-      </header>
-
-      <div className="shrink-0 border-b border-border bg-background px-4 py-3 flex flex-wrap items-center gap-2.5">
-        <div className="flex items-center gap-1.5 text-sm">
-          <label className="text-muted-foreground shrink-0">From</label>
-          <input
-            type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-            className={inputClass}
-          />
+      <PageHeader title="Costing Dashboard" description="Cost of Goods Used (COGS) summary.">
+        <div className="flex flex-wrap items-center gap-2.5 text-sm">
+          <div className="flex items-center gap-1.5">
+            <label className="text-muted-foreground shrink-0">From</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <label className="text-muted-foreground shrink-0">To</label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          {(fromDate || toDate) && (
+            <button
+              type="button"
+              onClick={() => {
+                setFromDate('');
+                setToDate('');
+              }}
+              className="text-xs text-muted-foreground underline hover:text-foreground"
+            >
+              Clear
+            </button>
+          )}
         </div>
-        <div className="flex items-center gap-1.5 text-sm">
-          <label className="text-muted-foreground shrink-0">To</label>
-          <input
-            type="date"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-            className={inputClass}
-          />
-        </div>
-        {(fromDate || toDate) && (
-          <button
-            type="button"
-            onClick={() => {
-              setFromDate('');
-              setToDate('');
-            }}
-            className="text-xs text-muted-foreground underline hover:text-foreground"
-          >
-            Clear
-          </button>
-        )}
-      </div>
+      </PageHeader>
 
       <div className="min-h-0 flex-1 overflow-auto p-4 space-y-4">
         {loading ? (

@@ -14,3 +14,6 @@ export * from './components/sonner';
 export * from './components/spinner';
 export * from './components/table';
 export * from './components/tabs';
+export * from './components/stat-card';
+export * from './components/page-header';
+export { navLinkClass } from './components/nav-link-class';

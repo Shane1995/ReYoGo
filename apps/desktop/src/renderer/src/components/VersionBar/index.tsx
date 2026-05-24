@@ -2,29 +2,42 @@ import { useEffect, useState } from 'react';
 import { appService, type AppVersionInfo } from '../../services/app';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@reyogo/ui';
 
-type CheckState = 'idle' | 'checking' | 'up-to-date' | 'downloading' | 'error';
+enum CheckState {
+  Idle = 'idle',
+  Checking = 'checking',
+  UpToDate = 'up-to-date',
+  Downloading = 'downloading',
+  Error = 'error',
+}
+
+const checkLabel: Record<CheckState, string> = {
+  [CheckState.Idle]: 'Check for updates',
+  [CheckState.Checking]: 'Checking…',
+  [CheckState.UpToDate]: "You're up to date ✓",
+  [CheckState.Downloading]: 'Downloading…',
+  [CheckState.Error]: 'Check failed',
+};
 
 export default function VersionBar() {
   const [info, setInfo] = useState<AppVersionInfo | null>(null);
-  const [checkState, setCheckState] = useState<CheckState>('idle');
+  const [checkState, setCheckState] = useState<CheckState>(CheckState.Idle);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     appService.getVersion().then(setInfo);
-    const cleanup = appService.onUpdateError((message) => {
+    return appService.onUpdateError((message) => {
       setErrorMessage(message);
     });
-    return cleanup;
   }, []);
 
   async function handleCheck() {
-    setCheckState('checking');
+    setCheckState(CheckState.Checking);
     try {
       const { hasUpdate } = await appService.checkForUpdates();
-      setCheckState(hasUpdate ? 'downloading' : 'up-to-date');
-      if (!hasUpdate) setTimeout(() => setCheckState('idle'), 3000);
+      setCheckState(hasUpdate ? CheckState.Downloading : CheckState.UpToDate);
+      if (!hasUpdate) setTimeout(() => setCheckState(CheckState.Idle), 3000);
     } catch (err) {
-      setCheckState('idle');
+      setCheckState(CheckState.Idle);
       setErrorMessage(err instanceof Error ? err.message : 'Unknown error');
     }
   }
@@ -32,14 +45,6 @@ export default function VersionBar() {
   if (!info) return null;
 
   const envLabel = info.env.charAt(0).toUpperCase() + info.env.slice(1);
-
-  const checkLabel: Record<CheckState, string> = {
-    idle: 'Check for updates',
-    checking: 'Checking…',
-    'up-to-date': "You're up to date ✓",
-    downloading: 'Downloading…',
-    error: 'Check failed',
-  };
 
   return (
     <>
@@ -50,7 +55,7 @@ export default function VersionBar() {
         <button
           type="button"
           onClick={handleCheck}
-          disabled={checkState === 'checking' || checkState === 'downloading'}
+          disabled={checkState === CheckState.Checking || checkState === CheckState.Downloading}
           className="hover:text-foreground disabled:opacity-50 transition-colors"
         >
           {checkLabel[checkState]}
