@@ -1,5 +1,6 @@
-import { cn } from '@reyogo/ui';
-import { NavLink, Outlet } from 'react-router-dom';
+import { cn, fadeUp } from '@reyogo/ui';
+import { AnimatePresence, motion } from 'framer-motion';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   LayoutDashboardIcon,
   PackagePlusIcon,
@@ -31,20 +32,34 @@ const tabClass = ({ isActive }: { isActive: boolean }) =>
       : 'border-transparent text-[var(--nav-foreground-muted)] hover:border-[var(--nav-border)] hover:text-[var(--nav-foreground)]',
   );
 
-const InventoryLayout = () => (
-  <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-    <nav className="flex shrink-0 items-end gap-0 overflow-x-auto bg-[var(--nav-bg)] px-4 border-b border-[var(--nav-border)]">
-      {subNavItems.map((item) => (
-        <NavLink key={item.path} to={item.path} end={item.end} className={tabClass}>
-          <item.icon className="size-3.5 shrink-0" aria-hidden />
-          {item.label}
-        </NavLink>
-      ))}
-    </nav>
-    <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--content-tint)]">
-      <Outlet />
-    </main>
-  </div>
-);
+const InventoryLayout = () => {
+  const location = useLocation();
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <nav className="flex shrink-0 items-end gap-0 overflow-x-auto bg-[var(--nav-bg)] px-4 border-b border-[var(--nav-border)]">
+        {subNavItems.map((item) => (
+          <NavLink key={item.path} to={item.path} end={item.end} className={tabClass}>
+            <item.icon className="size-3.5 shrink-0" aria-hidden />
+            {item.label}
+          </NavLink>
+        ))}
+      </nav>
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--content-tint)]">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
+      </main>
+    </div>
+  );
+};
 
 export default InventoryLayout;

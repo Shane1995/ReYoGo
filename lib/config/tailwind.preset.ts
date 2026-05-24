@@ -43,6 +43,16 @@ const preset: Partial<Config> = {
           DEFAULT: 'var(--card)',
           foreground: 'var(--card-foreground)',
         },
+        success: {
+          DEFAULT: 'var(--success)',
+          foreground: 'var(--success-foreground)',
+        },
+        warning: {
+          DEFAULT: 'var(--warning)',
+          foreground: 'var(--warning-foreground)',
+          soft: 'var(--warning-soft)',
+          'soft-foreground': 'var(--warning-soft-foreground)',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',

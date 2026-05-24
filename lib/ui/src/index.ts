@@ -1,4 +1,5 @@
 export { cn } from './lib/utils';
+export { fadeUp, staggerChildren, slideIn, drawOn, useCountUp } from './lib/motion';
 export * from './components/badge';
 export * from './components/button';
 export * from './components/calendar';
