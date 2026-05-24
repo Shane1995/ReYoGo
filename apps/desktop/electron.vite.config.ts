@@ -1,13 +1,17 @@
+import { createRequire } from 'module';
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import react from '@vitejs/plugin-react';
 import { copyFileSync, mkdirSync, readdirSync, statSync } from 'fs';
 import { join, resolve } from 'path';
 
+const require = createRequire(import.meta.url);
+
 function copyMigrationsPlugin() {
   return {
     name: 'copy-migrations',
     closeBundle() {
-      const src = resolve(__dirname, 'src/main/db/migrations');
+      const pkgJson = require.resolve('@reyogo/db/package.json');
+      const src = resolve(pkgJson, '..', 'migrations');
       const dest = resolve(__dirname, 'out/main/db/migrations');
       copyDir(src, dest);
     },

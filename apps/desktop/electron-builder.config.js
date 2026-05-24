@@ -11,7 +11,7 @@ module.exports = {
     },
   }),
   files: ['dist/**/*', 'dist-electron/**/*', 'package.json'],
-  asarUnpack: ['dist-electron/main/db/migrations/**'],
+  asarUnpack: ['out/main/db/migrations/**'],
   win: {
     target: [
       { target: 'nsis', arch: ['x64'] },
@@ -38,4 +38,4 @@ module.exports = {
       url: process.env.UPDATE_FEED_URL,
     },
   }),
-}
+};

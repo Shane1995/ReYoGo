@@ -14,6 +14,8 @@
       "@shared/*": [
         "./src/shared/*"
       ],
+      "@reyogo/db": ["../../lib/db/src/index.ts"],
+      "@reyogo/db/*": ["../../lib/db/src/*"],
       "@reyogo/types": [
         "../../lib/types/src/index.ts"
       ],
