@@ -10,7 +10,7 @@ module.exports = {
       name: process.env.PRODUCT_NAME || 'ReYoGo',
     },
   }),
-  files: ['dist/**/*', 'dist-electron/**/*', 'package.json'],
+  files: ['out/**/*', 'package.json'],
   asarUnpack: ['out/main/db/migrations/**', '**/node_modules/@libsql/**'],
   win: {
     target: [
