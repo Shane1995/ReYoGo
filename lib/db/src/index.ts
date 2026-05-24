@@ -5,3 +5,4 @@ export * from './utils/timestamps';
 export * from './utils/ids';
 export * from './repositories/inventory';
 export * from './repositories/suppliers';
+export * from './repositories/stockMovements';
