@@ -51,7 +51,10 @@ describe('createInventoryRepo', () => {
         id: 'item-1',
         name: 'Chips',
         categoryId: 'cat-1',
-        type: InventoryType.Food,
+        unitOfMeasureId: null,
+        sku: null,
+        reorderPoint: null,
+        reorderQty: null,
       });
       const rows = await db.select().from(schema.inventoryItems);
       expect(rows).toHaveLength(1);
@@ -63,13 +66,19 @@ describe('createInventoryRepo', () => {
         id: 'item-1',
         name: 'OJ',
         categoryId: 'cat-1',
-        type: InventoryType.Food,
+        unitOfMeasureId: null,
+        sku: null,
+        reorderPoint: null,
+        reorderQty: null,
       });
       await repo.upsertItem({
         id: 'item-1',
         name: 'Apple Juice',
         categoryId: 'cat-1',
-        type: InventoryType.Food,
+        unitOfMeasureId: null,
+        sku: null,
+        reorderPoint: null,
+        reorderQty: null,
       });
       const rows = await db.select().from(schema.inventoryItems);
       expect(rows).toHaveLength(1);
@@ -78,17 +87,21 @@ describe('createInventoryRepo', () => {
   });
 
   describe('getItems', () => {
-    it('returns items sorted by name with category type', async () => {
+    it('returns items sorted by name with stock quantities', async () => {
       await repo.upsertCategory({ id: 'cat-1', name: 'Beverages', type: InventoryType.Beverage });
       await repo.upsertItem({
         id: 'item-1',
         name: 'OJ',
         categoryId: 'cat-1',
-        type: InventoryType.Beverage,
+        unitOfMeasureId: null,
+        sku: null,
+        reorderPoint: null,
+        reorderQty: null,
       });
       const items = await repo.getItems();
       expect(items).toHaveLength(1);
-      expect(items[0]!.type).toBe('beverage');
+      expect(items[0]!.currentStockQty).toBe(0);
+      expect(items[0]!.currentWeightedAvgCost).toBeNull();
     });
 
     it('returns empty array when no items exist', async () => {
@@ -111,10 +124,29 @@ describe('createInventoryRepo', () => {
         id: 'item-1',
         name: 'Chips',
         categoryId: 'cat-1',
-        type: InventoryType.Food,
+        unitOfMeasureId: null,
+        sku: null,
+        reorderPoint: null,
+        reorderQty: null,
       });
       await repo.deleteItem('item-1');
       expect(await db.select().from(schema.inventoryItems)).toHaveLength(0);
+    });
+  });
+
+  describe('submitInventory', () => {
+    it('adds and deletes categories and items atomically', async () => {
+      await repo.upsertCategory({ id: 'cat-old', name: 'Old', type: InventoryType.Food });
+      await repo.submitInventory({
+        addedCategories: [{ id: 'cat-new', name: 'New', type: InventoryType.Beverage }],
+        updatedCategories: [],
+        addedItems: [],
+        updatedItems: [],
+        deletedCategoryIds: ['cat-old'],
+        deletedItemIds: [],
+      });
+      const cats = await repo.getCategories();
+      expect(cats.map((c) => c.id)).toEqual(['cat-new']);
     });
   });
 });

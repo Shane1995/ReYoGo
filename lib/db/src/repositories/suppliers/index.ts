@@ -1,11 +1,11 @@
 import { asc, eq } from 'drizzle-orm';
-import type { ISupplier, IUpsertSupplierPayload } from '@reyogo/types';
+import type { Supplier, UpsertSupplierPayload } from '@reyogo/types';
 import type { DbClient } from '../../client';
 import * as schema from '../../schema';
 import type { SupplierRow } from '../../schema';
 import { now } from '../../utils/timestamps';
 
-function toSupplier(row: SupplierRow): ISupplier {
+function toSupplier(row: SupplierRow): Supplier {
   return {
     id: row.id,
     name: row.name,
@@ -19,12 +19,12 @@ function toSupplier(row: SupplierRow): ISupplier {
 
 export function createSuppliersRepo(db: DbClient) {
   return {
-    async getSuppliers(): Promise<ISupplier[]> {
+    async getSuppliers(): Promise<Supplier[]> {
       const rows = await db.select().from(schema.suppliers).orderBy(asc(schema.suppliers.name));
       return rows.map(toSupplier);
     },
 
-    async upsertSupplier(payload: IUpsertSupplierPayload): Promise<void> {
+    async upsertSupplier(payload: UpsertSupplierPayload): Promise<void> {
       const ts = now();
       await db
         .insert(schema.suppliers)

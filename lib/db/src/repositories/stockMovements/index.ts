@@ -1,5 +1,5 @@
 import { and, asc, eq, gte, lte } from 'drizzle-orm';
-import type { ICOGSSummary, IItemCostHistory, IStockMovement, MovementType } from '@reyogo/types';
+import type { COGSSummary, ItemCostHistory, StockMovement, MovementType } from '@reyogo/types';
 import type { DbClient } from '../../client';
 import * as schema from '../../schema';
 
@@ -34,7 +34,7 @@ export function createStockMovementsRepo(db: DbClient) {
       return result;
     },
 
-    async getMovementsForItem(itemId: string): Promise<IStockMovement[]> {
+    async getMovementsForItem(itemId: string): Promise<StockMovement[]> {
       const rows = await db
         .select()
         .from(schema.stockMovements)
@@ -58,7 +58,7 @@ export function createStockMovementsRepo(db: DbClient) {
       }));
     },
 
-    async getItemCostHistory(itemId: string): Promise<IItemCostHistory> {
+    async getItemCostHistory(itemId: string): Promise<ItemCostHistory> {
       const movements = await this.getMovementsForItem(itemId);
       const latestIn = movements.find((m) => m.movementType === 'IN');
       const latest = movements.at(0);
@@ -80,7 +80,7 @@ export function createStockMovementsRepo(db: DbClient) {
       };
     },
 
-    async getCOGS(fromDate?: string, toDate?: string): Promise<ICOGSSummary> {
+    async getCOGS(fromDate?: string, toDate?: string): Promise<COGSSummary> {
       const conditions = [eq(schema.stockMovements.movementType, 'OUT' as MovementType)];
       if (fromDate)
         conditions.push(gte(schema.stockMovements.occurredAt, new Date(fromDate + 'T00:00:00')));
