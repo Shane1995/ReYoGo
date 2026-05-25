@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
-import { Button } from '@reyogo/ui';
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@reyogo/ui';
 import { TableCell, TableRow } from '@reyogo/ui';
 import { ItemAutocomplete, type ItemOption } from '../ItemAutocomplete';
 import type { ProcessReceiptLine } from '../../types';
@@ -126,25 +126,19 @@ export function InvoiceLineRow({
         </TableCell>
 
         <TableCell className="py-2 px-3">
-          <select
-            id={`invoice-vat-${line.id}`}
+          <Select
             value={line.vatMode}
-            onChange={(e) => onUpdate({ vatMode: e.target.value as ProcessReceiptLine['vatMode'] })}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                e.currentTarget.click();
-              } else if (e.key === 'Tab') {
-                e.preventDefault();
-                document.getElementById(`invoice-vatrate-${line.id}`)?.focus();
-              }
-            }}
-            className={cn(inputClass, 'min-w-[6rem] cursor-pointer')}
+            onValueChange={(v) => onUpdate({ vatMode: v as ProcessReceiptLine['vatMode'] })}
           >
-            <option value="exclusive">No (add VAT)</option>
-            <option value="inclusive">Yes (VAT included)</option>
-            <option value="non-taxable">Non-taxable</option>
-          </select>
+            <SelectTrigger id={`invoice-vat-${line.id}`} className={cn(inputClass, 'min-w-[6rem]')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="exclusive">No (add VAT)</SelectItem>
+              <SelectItem value="inclusive">Yes (VAT included)</SelectItem>
+              <SelectItem value="non-taxable">Non-taxable</SelectItem>
+            </SelectContent>
+          </Select>
         </TableCell>
 
         <TableCell className="py-2 px-3">

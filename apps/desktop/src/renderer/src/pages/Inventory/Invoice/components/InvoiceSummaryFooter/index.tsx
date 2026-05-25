@@ -12,10 +12,11 @@ type Props = {
   summary: Summary;
   isSaving: boolean;
   hasValidLines: boolean;
+  isDirty: boolean;
   onSave: () => void;
 };
 
-export function InvoiceSummaryFooter({ summary, isSaving, hasValidLines, onSave }: Props) {
+export function InvoiceSummaryFooter({ summary, isSaving, hasValidLines, isDirty, onSave }: Props) {
   return (
     <footer
       className="shrink-0 sticky bottom-0 left-0 right-0 z-10 border-t border-[var(--nav-border)] bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.08)]"
@@ -23,6 +24,11 @@ export function InvoiceSummaryFooter({ summary, isSaving, hasValidLines, onSave 
     >
       <div className="flex min-w-0 items-center justify-between gap-4 px-4 py-3">
         <div className="flex min-w-0 items-center gap-4 text-sm overflow-hidden">
+          {isDirty && (
+            <span className="shrink-0 bg-[var(--nav-accent)] text-[var(--nav-accent-foreground)] text-xs px-2 py-0.5 rounded-full">
+              Unsaved changes
+            </span>
+          )}
           <span className="shrink-0 text-muted-foreground">
             <span className="font-medium text-foreground">{summary.lineCount}</span> line item
             {summary.lineCount !== 1 ? 's' : ''} added

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PlusIcon } from 'lucide-react';
 import { Button } from '@reyogo/ui';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@reyogo/ui';
@@ -9,8 +9,14 @@ import { InvoiceHeader } from './components/InvoiceHeader';
 import { ReuseNotice } from './components/ReuseNotice';
 import { InvoiceLineRow } from './components/InvoiceLineRow';
 import { InvoiceSummaryFooter } from './components/InvoiceSummaryFooter';
+import { suppliersService } from '@/services/suppliers';
+import type { Supplier } from '@reyogo/types';
 
 export default function InvoicePage() {
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [itemModalOpen, setItemModalOpen] = useState(false);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+
   const {
     units,
     categories,
@@ -21,10 +27,8 @@ export default function InvoicePage() {
     setInvoiceNumber,
     invoiceDate,
     setInvoiceDate,
-    categoryModalOpen,
-    setCategoryModalOpen,
-    itemModalOpen,
-    setItemModalOpen,
+    supplierId,
+    setSupplierId,
     expandedResultLineIds,
     isReused,
     reuseNoticeDismissed,
@@ -44,6 +48,10 @@ export default function InvoicePage() {
     handleSave,
   } = useInvoiceForm();
 
+  useEffect(() => {
+    suppliersService.getSuppliers().then((s) => setSuppliers(s as Supplier[]));
+  }, []);
+
   const sortedItems = useMemo(
     () => [...itemsWithCategory].sort((a, b) => a.name.localeCompare(b.name)),
     [itemsWithCategory],
@@ -56,6 +64,9 @@ export default function InvoicePage() {
         onInvoiceNumberChange={setInvoiceNumber}
         invoiceDate={invoiceDate}
         onInvoiceDateChange={setInvoiceDate}
+        supplierId={supplierId}
+        onSupplierChange={setSupplierId}
+        suppliers={suppliers}
         onAddCategory={() => setCategoryModalOpen(true)}
         onAddItem={() => setItemModalOpen(true)}
         isDirty={isDirty}
@@ -74,10 +85,10 @@ export default function InvoicePage() {
                 <TableRow className="border-[var(--nav-border)] hover:bg-transparent">
                   <TableHead className="w-8 p-2" />
                   <TableHead className="font-medium text-foreground">Item</TableHead>
-                  <TableHead className="font-medium text-foreground w-24">Quantity</TableHead>
+                  <TableHead className="font-medium text-foreground w-20">Quantity</TableHead>
                   <TableHead className="font-medium text-foreground w-28">VAT</TableHead>
-                  <TableHead className="font-medium text-foreground w-24">VAT Rate %</TableHead>
-                  <TableHead className="font-medium text-foreground w-32">Total</TableHead>
+                  <TableHead className="font-medium text-foreground w-20">VAT Rate %</TableHead>
+                  <TableHead className="font-medium text-foreground w-28">Total</TableHead>
                   <TableHead className="w-20" />
                 </TableRow>
               </TableHeader>
@@ -106,13 +117,13 @@ export default function InvoicePage() {
                 ))}
               </TableBody>
             </Table>
-            <div className="flex justify-end border-t border-[var(--nav-border)] bg-muted/10 px-3 py-2">
+            <div className="flex justify-start border-t border-[var(--nav-border)] bg-muted/10 px-3 py-2">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 onClick={() => addLine()}
-                className="gap-1.5"
+                className="gap-1.5 text-primary hover:text-primary"
               >
                 <PlusIcon className="size-4" aria-hidden />
                 Add row
@@ -132,6 +143,7 @@ export default function InvoicePage() {
         summary={invoiceSummary}
         isSaving={isSaving}
         hasValidLines={validLines.length > 0}
+        isDirty={isDirty}
         onSave={handleSave}
       />
 

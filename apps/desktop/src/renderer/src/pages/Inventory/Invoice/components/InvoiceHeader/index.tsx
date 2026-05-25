@@ -2,6 +2,7 @@ import { Button, PageHeader } from '@reyogo/ui';
 import { Link } from 'react-router-dom';
 import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
 import { DatePicker } from '@reyogo/ui';
+import type { Supplier } from '@reyogo/types';
 import { inputClass } from '../../utils/inputClass';
 import { cn } from '@reyogo/ui';
 
@@ -10,6 +11,9 @@ type Props = {
   onInvoiceNumberChange: (v: string) => void;
   invoiceDate: string;
   onInvoiceDateChange: (v: string) => void;
+  supplierId: string;
+  onSupplierChange: (id: string) => void;
+  suppliers: Supplier[];
   onAddCategory: () => void;
   onAddItem: () => void;
   isDirty: boolean;
@@ -21,6 +25,9 @@ export function InvoiceHeader({
   onInvoiceNumberChange,
   invoiceDate,
   onInvoiceDateChange,
+  supplierId,
+  onSupplierChange,
+  suppliers,
   onAddCategory,
   onAddItem,
   isDirty,
@@ -68,6 +75,21 @@ export function InvoiceHeader({
         <div className="flex items-center gap-2">
           <label className="text-sm text-muted-foreground whitespace-nowrap">Invoice date</label>
           <DatePicker value={invoiceDate} onChange={onInvoiceDateChange} />
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-muted-foreground whitespace-nowrap">Supplier</label>
+          <select
+            value={supplierId}
+            onChange={(e) => onSupplierChange(e.target.value)}
+            className={cn(inputClass, 'w-44')}
+          >
+            <option value="">No supplier</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
     </PageHeader>

@@ -1,12 +1,14 @@
 import { useMemo } from 'react';
-import type { Category, InventoryItem } from '@reyogo/types';
 import type { ProcessReceiptLine } from '../../types';
 import { getProcessLineComputed } from '../../types';
 
+type ItemLike = { id: string; name: string; categoryId: string };
+type CategoryLike = { id: string; name: string; type: string };
+
 export function useInvoiceSummary(
   lines: ProcessReceiptLine[],
-  items: InventoryItem[],
-  categories: Category[],
+  items: ItemLike[],
+  categories: CategoryLike[],
 ) {
   const itemsWithCategory = useMemo(
     () =>
