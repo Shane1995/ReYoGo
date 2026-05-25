@@ -3,6 +3,8 @@ export enum InvoiceStatus {
   Posted = 'POSTED',
 }
 
+export type VatMode = 'inclusive' | 'exclusive' | 'non-taxable';
+
 export interface Invoice {
   id: string;
   supplierId: string | null;
@@ -23,7 +25,43 @@ export interface InvoiceLine {
   totalCost: number;
 }
 
-export type VatMode = 'inclusive' | 'exclusive' | 'non-taxable';
+export interface InvoiceWithLines extends Invoice {
+  lines: InvoiceLine[];
+}
+
+export type InvoiceLinePayload = Omit<InvoiceLine, 'invoiceId'>;
+
+export interface InvoiceLineWithDate extends InvoiceLine {
+  invoiceCreatedAt: Date;
+  categoryType: string | null;
+  categoryName: string | null;
+}
+
+export interface InvoiceAuditEntry {
+  id: string;
+  invoiceId: string;
+  editedAt: Date;
+  note: string | null;
+  snapshot: InvoiceWithLines;
+}
+
+export interface SaveInvoicePayload {
+  id: string;
+  supplierId: string | null;
+  invoiceNumber: string | null;
+  invoiceDate: Date | null;
+  status: InvoiceStatus;
+  totalExclTax: number;
+  taxAmount: number;
+  totalInclTax: number;
+  lines: InvoiceLinePayload[];
+}
+
+export interface UpdateInvoicePayload {
+  id: string;
+  note?: string;
+  lines: InvoiceLinePayload[];
+}
 
 export interface IInvoiceLine {
   id: string;
