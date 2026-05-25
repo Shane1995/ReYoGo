@@ -5,10 +5,10 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { AddCategoryModal } from '@/pages/Inventory/Capture/CapturedInventory/components/AddCategoryModal';
 import { AddItemModal } from '@/pages/Inventory/Capture/CapturedInventory/components/AddItemModal';
 import { useInvoiceForm } from './hooks/useInvoiceForm';
-import { InvoiceHeader } from './InvoiceHeader';
-import { ReuseNotice } from './ReuseNotice';
-import { InvoiceLineRow } from './InvoiceLineRow';
-import { InvoiceSummaryFooter } from './InvoiceSummaryFooter';
+import { InvoiceHeader } from './components/InvoiceHeader';
+import { ReuseNotice } from './components/ReuseNotice';
+import { InvoiceLineRow } from './components/InvoiceLineRow';
+import { InvoiceSummaryFooter } from './components/InvoiceSummaryFooter';
 
 export default function InvoicePage() {
   const {

@@ -1,5 +1,5 @@
-import { overallChangePct } from '../utils/stats';
-import type { ItemEntry } from '../types';
+import { overallChangePct } from '../../utils/stats';
+import type { ItemEntry } from '../../types';
 
 const SW = 140;
 const SH = 44;

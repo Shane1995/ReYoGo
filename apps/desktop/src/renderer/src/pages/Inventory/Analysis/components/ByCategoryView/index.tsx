@@ -4,10 +4,10 @@ import { cn } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { InsightChips } from '../InsightChips';
 import { itemTrendPath } from '@/components/AppRoutes/routePaths';
-import { fmt, fmtDate, fmtPct } from '../utils/format';
-import { overallChangePct, groupStats } from '../utils/stats';
-import { changeCls } from '../utils/styles';
-import type { ItemGroup } from '../types';
+import { fmt, fmtDate, fmtPct } from '../../utils/format';
+import { overallChangePct, groupStats } from '../../utils/stats';
+import { changeCls } from '../../utils/styles';
+import type { ItemGroup } from '../../types';
 
 export function ByCategoryView({ groups }: { groups: ItemGroup[] }) {
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());

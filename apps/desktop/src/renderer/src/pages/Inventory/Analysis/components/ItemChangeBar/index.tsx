@@ -1,5 +1,5 @@
 import { cn } from '@reyogo/ui';
-import { fmtPct } from '../utils/format';
+import { fmtPct } from '../../utils/format';
 
 export function ItemChangeBar({
   name,

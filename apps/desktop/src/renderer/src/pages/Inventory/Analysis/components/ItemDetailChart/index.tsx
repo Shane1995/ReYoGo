@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { fmt, fmtDate, fmtDateShort, fmtPct } from '../utils/format';
-import { changeCls } from '../utils/styles';
-import type { ItemEntry, ItemGroup, Metric } from '../types';
+import { fmt, fmtDate, fmtDateShort, fmtPct } from '../../utils/format';
+import { changeCls } from '../../utils/styles';
+import type { ItemEntry, ItemGroup, Metric } from '../../types';
 
 const DC = { w: 800, h: 300, pt: 20, pr: 24, pb: 48, pl: 68 };
 const dPlotW = DC.w - DC.pl - DC.pr;

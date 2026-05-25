@@ -3,13 +3,13 @@ import { XIcon, CheckIcon } from 'lucide-react';
 import { Button } from '@reyogo/ui';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
 import type { ICapturedInvoiceWithLines } from '@reyogo/types';
-import { ItemAutocomplete } from '../../ItemAutocomplete';
-import type { ProcessReceiptLine } from '../../types';
-import { getProcessLineComputed, DEFAULT_VAT_RATE } from '../../types';
-import { inputClass } from '../../utils/inputClass';
-import { formatMoney } from '../../utils/formatMoney';
-import { createEmptyLine } from '../../utils/createEmptyLine';
-import { lineToEditLine } from '../../utils/lineToEditLine';
+import { ItemAutocomplete } from '../../../components/ItemAutocomplete';
+import type { ProcessReceiptLine } from '../../../types';
+import { getProcessLineComputed, DEFAULT_VAT_RATE } from '../../../types';
+import { inputClass } from '../../../utils/inputClass';
+import { formatMoney } from '../../../utils/formatMoney';
+import { createEmptyLine } from '../../../utils/createEmptyLine';
+import { lineToEditLine } from '../../../utils/lineToEditLine';
 import { cn } from '@reyogo/ui';
 
 type Props = {

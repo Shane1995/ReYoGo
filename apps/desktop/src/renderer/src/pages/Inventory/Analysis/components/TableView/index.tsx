@@ -2,11 +2,11 @@ import { Fragment, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
-import { fmt, fmtDate, fmtPct } from '../utils/format';
-import { overallChangePct } from '../utils/stats';
-import { changeCls } from '../utils/styles';
+import { fmt, fmtDate, fmtPct } from '../../utils/format';
+import { overallChangePct } from '../../utils/stats';
+import { changeCls } from '../../utils/styles';
 import { itemTrendPath } from '@/components/AppRoutes/routePaths';
-import type { ItemGroup } from '../types';
+import type { ItemGroup } from '../../types';
 
 export function TableView({ groups }: { groups: ItemGroup[] }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());

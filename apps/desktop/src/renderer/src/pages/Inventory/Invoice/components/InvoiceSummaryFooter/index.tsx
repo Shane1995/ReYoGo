@@ -1,5 +1,5 @@
 import { Button } from '@reyogo/ui';
-import { formatMoney } from '../utils/formatMoney';
+import { formatMoney } from '../../utils/formatMoney';
 
 type Summary = {
   lineCount: number;

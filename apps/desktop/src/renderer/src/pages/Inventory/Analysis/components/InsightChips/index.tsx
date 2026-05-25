@@ -1,7 +1,7 @@
 import { cn } from '@reyogo/ui';
-import { fmtPct } from '../utils/format';
-import { changeCls } from '../utils/styles';
-import type { GroupStats } from '../utils/stats';
+import { fmtPct } from '../../utils/format';
+import { changeCls } from '../../utils/styles';
+import type { GroupStats } from '../../utils/stats';
 
 export function InsightChips({ stats }: { stats: GroupStats }) {
   return (

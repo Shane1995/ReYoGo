@@ -12,8 +12,8 @@ import {
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { cn } from '@reyogo/ui';
-import { EditPanel } from './EditPanel';
-import { AuditPanel } from './AuditPanel';
+import { EditPanel } from './components/EditPanel';
+import { AuditPanel } from './components/AuditPanel';
 import { useInvoiceHistory } from './hooks/useInvoiceHistory';
 import { formatDate } from '../utils/formatDate';
 import { formatMoney } from '../utils/formatMoney';

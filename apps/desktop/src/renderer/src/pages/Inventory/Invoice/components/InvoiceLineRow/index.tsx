@@ -3,10 +3,10 @@ import { ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
 import { Button } from '@reyogo/ui';
 import { TableCell, TableRow } from '@reyogo/ui';
 import { ItemAutocomplete, type ItemOption } from '../ItemAutocomplete';
-import type { ProcessReceiptLine } from '../types';
-import { getProcessLineComputed } from '../types';
-import { formatMoney } from '../utils/formatMoney';
-import { inputClass } from '../utils/inputClass';
+import type { ProcessReceiptLine } from '../../types';
+import { getProcessLineComputed } from '../../types';
+import { formatMoney } from '../../utils/formatMoney';
+import { inputClass } from '../../utils/inputClass';
 import { cn } from '@reyogo/ui';
 
 type ItemMeta = {

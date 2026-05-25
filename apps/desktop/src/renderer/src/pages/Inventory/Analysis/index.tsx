@@ -1,9 +1,9 @@
 import { cn } from '@reyogo/ui';
 import { useAnalysisData } from './hooks/useAnalysisData';
 import type { AnalysisTab } from './hooks/useAnalysisData';
-import { SummaryTableView } from './SummaryTableView';
-import { TableView } from './TableView';
-import { ByCategoryView } from './ByCategoryView';
+import { SummaryTableView } from './components/SummaryTableView';
+import { TableView } from './components/TableView';
+import { ByCategoryView } from './components/ByCategoryView';
 import { typeLabel } from './types';
 
 const inputClass =

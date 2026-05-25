@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { XIcon, ClockIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
 import { InvoicesIPC } from '@shared/types/ipc';
 import type { ICapturedInvoiceAuditEntry } from '@reyogo/types';
-import { formatDate } from '../../utils/formatDate';
-import { formatMoney } from '../../utils/formatMoney';
-import { invoiceTotals } from '../../utils/invoiceTotals';
+import { formatDate } from '../../../utils/formatDate';
+import { formatMoney } from '../../../utils/formatMoney';
+import { invoiceTotals } from '../../../utils/invoiceTotals';
 
 type Props = {
   invoiceId: string;

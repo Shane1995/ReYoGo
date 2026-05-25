@@ -9,8 +9,8 @@ import type { ReviewResult, ExistingInventory, InventoryType } from '@/component
 import { ImportReview } from '@/components/CsvImport/ImportReview';
 import { StockRoutes } from '@/components/AppRoutes/routePaths';
 import { useInventory } from '../Context/InventoryContext';
-import { FormatGuide } from './FormatGuide';
-import { DropZone } from './DropZone';
+import { FormatGuide } from './components/FormatGuide';
+import { DropZone } from './components/DropZone';
 
 type PageState =
   | { phase: 'idle' }
