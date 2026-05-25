@@ -1,6 +1,6 @@
-import type { ITimestamped } from '../base';
+import type { Timestamped } from '../base';
 
-export interface ISupplier extends ITimestamped {
+export interface Supplier extends Timestamped {
   id: string;
   name: string;
   contactName: string | null;
@@ -8,10 +8,13 @@ export interface ISupplier extends ITimestamped {
   email: string | null;
 }
 
-export interface IUpsertSupplierPayload {
+export interface UpsertSupplierPayload {
   id: string;
   name: string;
   contactName?: string;
   phone?: string;
   email?: string;
 }
+
+export type ISupplier = Supplier;
+export type IUpsertSupplierPayload = UpsertSupplierPayload;

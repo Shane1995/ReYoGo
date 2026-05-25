@@ -8,9 +8,8 @@
     ".": "./src/index.ts",
     "./inventory": "./src/inventory/index.ts",
     "./invoices": "./src/invoices/index.ts",
-    "./setup": "./src/setup/index.ts",
-    "./stockMovements": "./src/stockMovements/index.ts",
-    "./schemas": "./src/schemas/index.ts"
+    "./setup": "./src/inventory/index.ts",
+    "./stockMovements": "./src/stockMovements/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

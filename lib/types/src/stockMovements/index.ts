@@ -1,10 +1,17 @@
-export type StockMovementType = 'IN' | 'OUT' | 'ADJUSTMENT' | 'WASTE' | 'RETURN';
+export enum MovementType {
+  In = 'IN',
+  Out = 'OUT',
+  Adjustment = 'ADJUSTMENT',
+  Waste = 'WASTE',
+  Return = 'RETURN',
+}
+
 export type ReferenceType = 'invoice' | 'manual' | 'adjustment';
 
-export interface IStockMovement {
+export interface StockMovement {
   id: string;
   inventoryItemId: string;
-  movementType: StockMovementType;
+  movementType: MovementType;
   qty: number;
   unitCostAtTime: number | null;
   totalCost: number | null;
@@ -17,8 +24,8 @@ export interface IStockMovement {
   createdAt: Date;
 }
 
-export type IStockMovementSummary = Pick<
-  IStockMovement,
+export type StockMovementSummary = Pick<
+  StockMovement,
   | 'id'
   | 'movementType'
   | 'qty'
@@ -30,14 +37,14 @@ export type IStockMovementSummary = Pick<
   | 'createdAt'
 >;
 
-export interface IItemCostHistory {
+export interface ItemCostHistory {
   itemId: string;
   weightedAvgCost: number | null;
   totalStock: number;
-  movements: IStockMovementSummary[];
+  movements: StockMovementSummary[];
 }
 
-export interface ICOGSSummary {
+export interface COGSSummary {
   total: number;
   byCategory: Array<{
     categoryId: string | null;
@@ -45,3 +52,9 @@ export interface ICOGSSummary {
     total: number;
   }>;
 }
+
+export type StockMovementType = 'IN' | 'OUT' | 'ADJUSTMENT' | 'WASTE' | 'RETURN';
+export type IStockMovement = StockMovement;
+export type IStockMovementSummary = StockMovementSummary;
+export type IItemCostHistory = ItemCostHistory;
+export type ICOGSSummary = COGSSummary;
