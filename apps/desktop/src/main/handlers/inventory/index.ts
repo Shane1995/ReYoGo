@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import type { Category, InventoryItemInput } from '@reyogo/types';
+import type { Category, InventoryItem, InventorySubmitPayload } from '@reyogo/types';
 import { InventoryIPC } from '@shared/types/ipc';
 import { getRepos } from '../../db';
 
@@ -9,11 +9,14 @@ export function registerInventoryHandlers(): void {
   ipcMain.handle(InventoryIPC.UPSERT_CATEGORY, (_e, category: Category) =>
     getRepos().inventory.upsertCategory(category),
   );
-  ipcMain.handle(InventoryIPC.UPSERT_ITEM, (_e, item: InventoryItemInput) =>
+  ipcMain.handle(InventoryIPC.UPSERT_ITEM, (_e, item: InventoryItem) =>
     getRepos().inventory.upsertItem(item),
   );
   ipcMain.handle(InventoryIPC.DELETE_CATEGORY, (_e, id: string) =>
     getRepos().inventory.deleteCategory(id),
   );
   ipcMain.handle(InventoryIPC.DELETE_ITEM, (_e, id: string) => getRepos().inventory.deleteItem(id));
+  ipcMain.handle(InventoryIPC.SUBMIT, (_e, payload: InventorySubmitPayload) =>
+    getRepos().inventory.submitInventory(payload),
+  );
 }

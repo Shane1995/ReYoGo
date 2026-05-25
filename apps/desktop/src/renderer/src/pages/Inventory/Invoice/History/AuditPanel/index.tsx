@@ -24,7 +24,7 @@ export function AuditPanel({ invoiceId, onClose }: Props) {
           InvoicesIPC.GET_INVOICE_AUDIT,
           invoiceId,
         );
-        if (!cancelled) setEntries(result);
+        if (!cancelled) setEntries(result as unknown as ICapturedInvoiceAuditEntry[]);
       } finally {
         if (!cancelled) setLoading(false);
       }

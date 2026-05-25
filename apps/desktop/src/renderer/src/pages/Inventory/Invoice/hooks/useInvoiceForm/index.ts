@@ -188,7 +188,7 @@ export function useInvoiceForm() {
           };
         }),
       };
-      await window.electronAPI.ipcRenderer.invoke(InvoicesIPC.SAVE_INVOICE, payload);
+      await window.electronAPI.ipcRenderer.invoke(InvoicesIPC.SAVE_INVOICE, payload as never);
       setLines([createEmptyLine()]);
       setInvoiceNumber('');
       setInvoiceDate('');

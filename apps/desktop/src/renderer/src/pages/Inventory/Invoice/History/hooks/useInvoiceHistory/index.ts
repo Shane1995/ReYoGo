@@ -20,9 +20,9 @@ export function useInvoiceHistory() {
   const navigate = useNavigate();
 
   const loadInvoices = useCallback(async () => {
-    const list: ICapturedInvoiceWithLines[] = await window.electronAPI.ipcRenderer.invoke(
+    const list: ICapturedInvoiceWithLines[] = (await window.electronAPI.ipcRenderer.invoke(
       InvoicesIPC.GET_INVOICES_WITH_LINES,
-    );
+    )) as unknown as ICapturedInvoiceWithLines[];
     setInvoices(list);
     setDetailCache((prev) => {
       const next = { ...prev };
@@ -48,7 +48,10 @@ export function useInvoiceHistory() {
   const getDetail = useCallback(
     async (id: string): Promise<ICapturedInvoiceWithLines | null> => {
       if (detailCache[id]) return detailCache[id];
-      const inv = await window.electronAPI.ipcRenderer.invoke(InvoicesIPC.GET_INVOICE, id);
+      const inv = (await window.electronAPI.ipcRenderer.invoke(
+        InvoicesIPC.GET_INVOICE,
+        id,
+      )) as unknown as ICapturedInvoiceWithLines | null;
       if (inv) setDetailCache((prev) => ({ ...prev, [id]: inv }));
       return inv ?? null;
     },
@@ -63,7 +66,10 @@ export function useInvoiceHistory() {
     async (id: string) => {
       let detail = detailCache[id];
       if (!detail) {
-        const inv = await window.electronAPI.ipcRenderer.invoke(InvoicesIPC.GET_INVOICE, id);
+        const inv = (await window.electronAPI.ipcRenderer.invoke(
+          InvoicesIPC.GET_INVOICE,
+          id,
+        )) as unknown as ICapturedInvoiceWithLines | null;
         if (inv) {
           setDetailCache((prev) => ({ ...prev, [id]: inv }));
           detail = inv;
@@ -135,7 +141,7 @@ export function useInvoiceHistory() {
           };
         }),
       };
-      await window.electronAPI.ipcRenderer.invoke(InvoicesIPC.UPDATE_INVOICE, payload);
+      await window.electronAPI.ipcRenderer.invoke(InvoicesIPC.UPDATE_INVOICE, payload as never);
       setDetailCache((prev) => {
         const next = { ...prev };
         delete next[invoice.id];
