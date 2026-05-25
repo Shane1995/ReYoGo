@@ -2,7 +2,8 @@ import { useMemo, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon } from 'lucide-react';
 import { stockMovementsService } from '@/services/stockMovements';
-import type { IItemCostHistory } from '@reyogo/types';
+import type { ItemCostHistory } from '@reyogo/types';
+import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
 import {
   ResponsiveContainer,
   LineChart,
@@ -24,7 +25,8 @@ export default function ItemTrendPage() {
   const { itemId } = useParams<{ itemId: string }>();
   const navigate = useNavigate();
   const { lines, loading } = useAnalysisLines();
-  const [costHistory, setCostHistory] = useState<IItemCostHistory | null>(null);
+  const { items } = useInventory();
+  const [costHistory, setCostHistory] = useState<ItemCostHistory | null>(null);
 
   useEffect(() => {
     if (!itemId) return;
@@ -36,9 +38,9 @@ export default function ItemTrendPage() {
 
   const group = useMemo(() => {
     if (!itemId || !lines.length) return null;
-    const groups = buildItemGroups(lines, '', '');
+    const groups = buildItemGroups(lines, '', '', items);
     return groups.find((g) => g.itemId === itemId) ?? null;
-  }, [lines, itemId]);
+  }, [lines, itemId, items]);
 
   const chartData = useMemo(() => {
     if (!group) return [];

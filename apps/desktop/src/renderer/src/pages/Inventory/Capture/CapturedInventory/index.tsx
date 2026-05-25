@@ -7,18 +7,16 @@ import { itemTrendPath } from '@/components/AppRoutes/routePaths';
 import { useInventory } from './Context/InventoryContext';
 import { ItemsTable } from './components/ItemsTable';
 import { AddInventoryModal } from './components/AddInventoryModal';
-import { useItemCosts } from './hooks/useItemCosts';
+import { useInventoryCosts } from './hooks/useInventoryCosts';
 import { useItemStock } from './hooks/useItemStock/index';
-import { useWeightedAvgCosts } from './hooks/useWeightedAvgCosts';
 import type { InventoryItem } from './types';
 
 export default function InventoryIndex() {
   const { categories, items, units, updateItem, deleteItemFromBackend } = useInventory();
 
   const navigate = useNavigate();
-  const costMap = useItemCosts();
+  const costMap = useInventoryCosts();
   const stockMap = useItemStock();
-  const weightedAvgMap = useWeightedAvgCosts();
   const [addModalOpen, setAddModalOpen] = useState(false);
 
   const handleViewInsights = useCallback(
@@ -50,7 +48,6 @@ export default function InventoryIndex() {
             units={units}
             costMap={costMap}
             stockMap={stockMap}
-            weightedAvgMap={weightedAvgMap}
             onUpdate={handleUpdate}
             onDelete={deleteItemFromBackend}
             onViewInsights={handleViewInsights}

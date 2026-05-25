@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@reyogo/ui';
 import { stockMovementsService } from '@/services/stockMovements';
-import type { ICOGSSummary } from '@reyogo/types';
+import type { COGSSummary } from '@reyogo/types';
 
 const inputClass =
   'h-8 rounded-md border border-input bg-muted px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40';
@@ -17,7 +17,7 @@ function fmt(n: number) {
 export default function CostingDashboard() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
-  const [cogs, setCogs] = useState<ICOGSSummary | null>(null);
+  const [cogs, setCogs] = useState<COGSSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -1,6 +1,5 @@
 import type { InventoryCategory, InventoryItem } from '../../types';
-
-export type ItemCost = { price: number; uom?: string };
+import type { ItemCostEntry } from '../../hooks/useInventoryCosts';
 
 export type FlatItem = {
   id: string;
@@ -19,9 +18,8 @@ export type ItemsTableProps = {
   items: InventoryItem[];
   categories: InventoryCategory[];
   units: string[];
-  costMap: Map<string, ItemCost>;
+  costMap: Map<string, ItemCostEntry>;
   stockMap: Map<string, number>;
-  weightedAvgMap: Map<string, number | null>;
   onUpdate: (id: string, values: Omit<InventoryItem, 'id'>) => void;
   onDelete: (id: string) => void;
   onViewInsights: (id: string) => void;

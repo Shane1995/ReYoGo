@@ -20,7 +20,6 @@ export function ItemsTable({
   units,
   costMap,
   stockMap,
-  weightedAvgMap,
   onUpdate,
   onDelete,
   onViewInsights,
@@ -30,7 +29,7 @@ export function ItemsTable({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const { filterValues, filteredItems, filters, allTypes, handleFilterChange, clearFilters } =
-    useItemFilters({ items, categories, costMap, stockMap, weightedAvgMap });
+    useItemFilters({ items, categories, costMap, stockMap });
 
   const filteredIds = useMemo(() => filteredItems.map((i) => i.id), [filteredItems]);
 

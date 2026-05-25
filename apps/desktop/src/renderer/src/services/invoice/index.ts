@@ -1,29 +1,28 @@
 import { InvoicesIPC } from '@shared/types/ipc';
 import type {
-  IInvoice,
-  IInvoiceWithLines,
-  IInvoiceLineWithDate,
-  IInvoiceAuditEntry,
-  ISaveInvoicePayload,
-  IUpdateInvoicePayload,
+  Invoice,
+  InvoiceWithLines,
+  InvoiceLineWithDate,
+  InvoiceAuditEntry,
+  SaveInvoicePayload,
+  UpdateInvoicePayload,
 } from '@reyogo/types';
 
 const invoke = () => window.electronAPI.ipcRenderer.invoke;
 
 export const invoiceService = {
-  saveInvoice: (payload: ISaveInvoicePayload) =>
+  saveInvoice: (payload: SaveInvoicePayload) =>
     invoke()(InvoicesIPC.SAVE_INVOICE, payload as never),
-  getInvoices: (): Promise<IInvoice[]> =>
-    invoke()(InvoicesIPC.GET_INVOICES) as unknown as Promise<IInvoice[]>,
-  getInvoicesWithLines: (): Promise<IInvoiceWithLines[]> =>
-    invoke()(InvoicesIPC.GET_INVOICES_WITH_LINES) as unknown as Promise<IInvoiceWithLines[]>,
-  getInvoice: (id: string): Promise<IInvoiceWithLines | null> =>
-    invoke()(InvoicesIPC.GET_INVOICE, id) as unknown as Promise<IInvoiceWithLines | null>,
-  getLinesForAnalysis: (): Promise<IInvoiceLineWithDate[]> =>
-    invoke()(InvoicesIPC.GET_LINES_FOR_ANALYSIS) as unknown as Promise<IInvoiceLineWithDate[]>,
-  updateInvoice: (payload: IUpdateInvoicePayload) =>
+  getInvoices: (): Promise<Invoice[]> => invoke()(InvoicesIPC.GET_INVOICES) as Promise<Invoice[]>,
+  getInvoicesWithLines: (): Promise<InvoiceWithLines[]> =>
+    invoke()(InvoicesIPC.GET_INVOICES_WITH_LINES) as Promise<InvoiceWithLines[]>,
+  getInvoice: (id: string): Promise<InvoiceWithLines | null> =>
+    invoke()(InvoicesIPC.GET_INVOICE, id) as Promise<InvoiceWithLines | null>,
+  getLinesForAnalysis: (): Promise<InvoiceLineWithDate[]> =>
+    invoke()(InvoicesIPC.GET_LINES_FOR_ANALYSIS) as Promise<InvoiceLineWithDate[]>,
+  updateInvoice: (payload: UpdateInvoicePayload) =>
     invoke()(InvoicesIPC.UPDATE_INVOICE, payload as never),
-  getInvoiceAudit: (id: string): Promise<IInvoiceAuditEntry[]> =>
-    invoke()(InvoicesIPC.GET_INVOICE_AUDIT, id) as unknown as Promise<IInvoiceAuditEntry[]>,
+  getInvoiceAudit: (id: string): Promise<InvoiceAuditEntry[]> =>
+    invoke()(InvoicesIPC.GET_INVOICE_AUDIT, id) as Promise<InvoiceAuditEntry[]>,
   getLastUnitPrices: () => invoke()(InvoicesIPC.GET_LAST_UNIT_PRICES),
 };

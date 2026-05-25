@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import type { IInvoiceLineWithDate } from '@reyogo/types';
+import type { InvoiceLineWithDate } from '@reyogo/types';
 import { invoiceService } from '@/services/invoice';
 
 export function useAnalysisLines() {
-  const [lines, setLines] = useState<IInvoiceLineWithDate[]>([]);
+  const [lines, setLines] = useState<InvoiceLineWithDate[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     let cancelled = false;
