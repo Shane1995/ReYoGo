@@ -1,5 +1,5 @@
 import { SetupIPC } from '@shared/types/ipc';
-import type { IUnitOfMeasure } from '@reyogo/types/setup';
+import type { IUnitOfMeasure } from '@reyogo/types';
 
 const invoke = () => window.electronAPI.ipcRenderer.invoke;
 

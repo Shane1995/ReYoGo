@@ -1,5 +1,3 @@
-// ── New costing/stock entity interfaces ──────────────────────────────────────
-
 export enum InvoiceStatus {
   Draft = 'DRAFT',
   Posted = 'POSTED',
@@ -24,8 +22,6 @@ export interface InvoiceLine {
   unitCost: number;
   totalCost: number;
 }
-
-// ── Legacy interfaces ─────────────────────────────────────────────────────────
 
 export type VatMode = 'inclusive' | 'exclusive' | 'non-taxable';
 
