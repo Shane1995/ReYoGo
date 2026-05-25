@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import type { MovementType, StockMovementType } from '@reyogo/types';
+import { MovementType } from '@reyogo/types';
 import { createTestDb, type DbClient } from '../../__tests__/helpers';
 import { createStockMovementsRepo } from '.';
 import * as schema from '../../schema';
@@ -34,7 +34,7 @@ async function seedMovement(
   opts: {
     id: string;
     itemId: string;
-    type?: StockMovementType;
+    type?: MovementType;
     qty: number;
     unitCost?: number;
     wac?: number;
@@ -47,7 +47,7 @@ async function seedMovement(
     id: opts.id,
     accountId: 'default',
     inventoryItemId: opts.itemId,
-    movementType: (opts.type ?? 'IN') as MovementType,
+    movementType: opts.type ?? MovementType.In,
     qty: opts.qty,
     unitCostAtTime: opts.unitCost ?? null,
     weightedAvgCostAfter: opts.wac ?? null,
@@ -192,7 +192,7 @@ describe('createStockMovementsRepo', () => {
       await seedMovement(db, {
         id: 'mv-1',
         itemId: 'item-1',
-        type: 'OUT',
+        type: MovementType.Out,
         qty: 5,
         unitCost: 10,
         stockAfter: 5,
@@ -205,7 +205,7 @@ describe('createStockMovementsRepo', () => {
       await seedMovement(db, {
         id: 'mv-1',
         itemId: 'item-1',
-        type: 'IN',
+        type: MovementType.In,
         qty: 10,
         unitCost: 10,
         stockAfter: 10,
@@ -218,7 +218,7 @@ describe('createStockMovementsRepo', () => {
       await seedMovement(db, {
         id: 'mv-1',
         itemId: 'item-1',
-        type: 'OUT',
+        type: MovementType.Out,
         qty: 5,
         unitCost: 10,
         stockAfter: 5,
@@ -227,7 +227,7 @@ describe('createStockMovementsRepo', () => {
       await seedMovement(db, {
         id: 'mv-2',
         itemId: 'item-1',
-        type: 'OUT',
+        type: MovementType.Out,
         qty: 5,
         unitCost: 10,
         stockAfter: 0,
@@ -242,7 +242,7 @@ describe('createStockMovementsRepo', () => {
       await seedMovement(db, {
         id: 'mv-1',
         itemId: 'item-1',
-        type: 'OUT',
+        type: MovementType.Out,
         qty: 5,
         unitCost: 10,
         stockAfter: 5,
@@ -251,7 +251,7 @@ describe('createStockMovementsRepo', () => {
       await seedMovement(db, {
         id: 'mv-2',
         itemId: 'item-1',
-        type: 'OUT',
+        type: MovementType.Out,
         qty: 5,
         unitCost: 10,
         stockAfter: 0,
@@ -266,7 +266,7 @@ describe('createStockMovementsRepo', () => {
       await seedMovement(db, {
         id: 'mv-1',
         itemId: 'item-1',
-        type: 'OUT',
+        type: MovementType.Out,
         qty: 2,
         unitCost: 5,
         stockAfter: 8,

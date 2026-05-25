@@ -10,7 +10,7 @@ CREATE TABLE `__new_invoice_line_items` (
 	FOREIGN KEY (`inventory_item_id`) REFERENCES `inventory_items`(`id`) ON UPDATE no action ON DELETE restrict
 );
 --> statement-breakpoint
-INSERT INTO `__new_invoice_line_items`("id", "invoice_id", "inventory_item_id", "qty", "unit_cost", "total_cost") SELECT "id", "invoice_id", "inventory_item_id", "qty", "unit_cost", "total_cost" FROM `invoice_line_items`;--> statement-breakpoint
+INSERT INTO `__new_invoice_line_items`("id", "invoice_id", "inventory_item_id", "qty", "unit_cost", "total_cost") SELECT "id", "invoice_id", "item_id", "quantity", CASE WHEN "quantity" > 0 THEN "total_vat_exclude" / "quantity" ELSE 0 END, "total_vat_exclude" FROM `invoice_line_items`;--> statement-breakpoint
 DROP TABLE `invoice_line_items`;--> statement-breakpoint
 ALTER TABLE `__new_invoice_line_items` RENAME TO `invoice_line_items`;--> statement-breakpoint
 PRAGMA foreign_keys=ON;--> statement-breakpoint
@@ -37,7 +37,7 @@ CREATE TABLE `__new_invoices` (
 	CONSTRAINT "invoices_status_check" CHECK("__new_invoices"."status" IN ('DRAFT', 'POSTED'))
 );
 --> statement-breakpoint
-INSERT INTO `__new_invoices`("id", "account_id", "supplier_id", "invoice_number", "invoice_date", "status", "total_excl_tax", "tax_amount", "total_incl_tax", "created_at", "updated_at") SELECT "id", "account_id", "supplier_id", "invoice_number", "invoice_date", "status", "total_excl_tax", "tax_amount", "total_incl_tax", "created_at", "updated_at" FROM `invoices`;--> statement-breakpoint
+INSERT INTO `__new_invoices`("id", "account_id", "supplier_id", "invoice_number", "invoice_date", "status", "total_excl_tax", "tax_amount", "total_incl_tax", "created_at", "updated_at") SELECT "id", "account_id", "supplier_id", "invoice_number", "invoice_date", 'DRAFT', 0, 0, 0, "created_at", "updated_at" FROM `invoices`;--> statement-breakpoint
 DROP TABLE `invoices`;--> statement-breakpoint
 ALTER TABLE `__new_invoices` RENAME TO `invoices`;--> statement-breakpoint
 CREATE INDEX `invoices_supplier_idx` ON `invoices` (`supplier_id`);
