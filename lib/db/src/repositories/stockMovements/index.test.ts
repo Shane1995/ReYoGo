@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import type { StockMovementType } from '@reyogo/types';
+import type { MovementType, StockMovementType } from '@reyogo/types';
 import { createTestDb, type DbClient } from '../../__tests__/helpers';
 import { createStockMovementsRepo } from '.';
 import * as schema from '../../schema';
@@ -47,7 +47,7 @@ async function seedMovement(
     id: opts.id,
     accountId: 'default',
     inventoryItemId: opts.itemId,
-    movementType: opts.type ?? 'IN',
+    movementType: (opts.type ?? 'IN') as MovementType,
     qty: opts.qty,
     unitCostAtTime: opts.unitCost ?? null,
     weightedAvgCostAfter: opts.wac ?? null,

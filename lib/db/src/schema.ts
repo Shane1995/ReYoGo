@@ -1,6 +1,6 @@
 import { check, index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
-import type { StockMovementType, ReferenceType, StocktakeSessionStatus } from '@reyogo/types';
+import type { MovementType, ReferenceType, StocktakeSessionStatus } from '@reyogo/types';
 
 export const accounts = sqliteTable('accounts', {
   id: text('id').primaryKey(),
@@ -54,9 +54,10 @@ export const inventoryItems = sqliteTable('inventory_items', {
   categoryId: text('category_id')
     .notNull()
     .references(() => inventoryCategories.id, { onDelete: 'cascade' }),
-  unitOfMeasure: text('unit_of_measure'),
-  yieldFactor: real('yield_factor').notNull().default(1.0),
-  parLevel: real('par_level'),
+  unitOfMeasureId: text('unit_of_measure_id').references(() => unitsOfMeasure.id, {
+    onDelete: 'set null',
+  }),
+  sku: text('sku'),
   reorderPoint: real('reorder_point'),
   reorderQty: real('reorder_qty'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
@@ -90,11 +91,16 @@ export const invoices = sqliteTable(
     supplierId: text('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
     invoiceNumber: text('invoice_number'),
     invoiceDate: integer('invoice_date', { mode: 'timestamp' }),
+    status: text('status').notNull().default('DRAFT'),
+    totalExclTax: real('total_excl_tax').notNull().default(0),
+    taxAmount: real('tax_amount').notNull().default(0),
+    totalInclTax: real('total_incl_tax').notNull().default(0),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }),
   },
   (t) => ({
     invoicesBySupplier: index('invoices_supplier_idx').on(t.supplierId),
+    statusCheck: check('invoices_status_check', sql`${t.status} IN ('DRAFT', 'POSTED')`),
   }),
 );
 export type InvoiceRow = typeof invoices.$inferSelect;
@@ -107,15 +113,12 @@ export const invoiceLineItems = sqliteTable(
     invoiceId: text('invoice_id')
       .notNull()
       .references(() => invoices.id, { onDelete: 'cascade' }),
-    itemId: text('item_id')
+    inventoryItemId: text('inventory_item_id')
       .notNull()
       .references(() => inventoryItems.id, { onDelete: 'restrict' }),
-    itemNameSnapshot: text('item_name_snapshot').notNull(),
-    unitOfMeasure: text('unit_of_measure'),
-    quantity: real('quantity').notNull(),
-    vatMode: text('vat_mode').notNull(),
-    vatRate: real('vat_rate').notNull(),
-    totalVatExclude: real('total_vat_exclude').notNull(),
+    qty: real('qty').notNull(),
+    unitCost: real('unit_cost').notNull().default(0),
+    totalCost: real('total_cost').notNull().default(0),
   },
   (t) => ({
     invoiceLinesByInvoice: index('invoice_lines_invoice_idx').on(t.invoiceId),
@@ -146,7 +149,7 @@ export const stockMovements = sqliteTable(
     inventoryItemId: text('inventory_item_id')
       .notNull()
       .references(() => inventoryItems.id, { onDelete: 'restrict' }),
-    movementType: text('movement_type').$type<StockMovementType>().notNull(),
+    movementType: text('movement_type').$type<MovementType>().notNull(),
     qty: real('qty').notNull(),
     unitCostAtTime: real('unit_cost_at_time'),
     totalCost: real('total_cost'),

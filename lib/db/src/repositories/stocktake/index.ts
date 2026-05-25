@@ -4,6 +4,7 @@ import type {
   IStocktakeLine,
   IStocktakeSessionWithLines,
   ICompleteStocktakePayload,
+  MovementType,
 } from '@reyogo/types';
 import type { DbClient } from '../../client';
 import * as schema from '../../schema';
@@ -125,7 +126,7 @@ export function createStocktakeRepo(db: DbClient) {
             id: generateId(),
             accountId: 'default',
             inventoryItemId: line.inventoryItemId,
-            movementType: 'ADJUSTMENT',
+            movementType: 'ADJUSTMENT' as MovementType,
             qty: variance,
             stockQtyAfter: newQty,
             referenceType: 'adjustment',

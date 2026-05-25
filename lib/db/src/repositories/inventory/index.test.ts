@@ -52,11 +52,10 @@ describe('createInventoryRepo', () => {
         name: 'Chips',
         categoryId: 'cat-1',
         type: InventoryType.Food,
-        unitOfMeasure: 'kg',
       });
       const rows = await db.select().from(schema.inventoryItems);
       expect(rows).toHaveLength(1);
-      expect(rows[0]!.unitOfMeasure).toBe('kg');
+      expect(rows[0]!.name).toBe('Chips');
     });
 
     it('updates an existing item', async () => {
