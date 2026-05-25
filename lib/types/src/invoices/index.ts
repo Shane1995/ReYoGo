@@ -45,15 +45,7 @@ export interface InvoiceAuditEntry {
   snapshot: InvoiceWithLines;
 }
 
-export interface SaveInvoicePayload {
-  id: string;
-  supplierId: string | null;
-  invoiceNumber: string | null;
-  invoiceDate: Date | null;
-  status: InvoiceStatus;
-  totalExclTax: number;
-  taxAmount: number;
-  totalInclTax: number;
+export interface SaveInvoicePayload extends Invoice {
   lines: InvoiceLinePayload[];
 }
 
