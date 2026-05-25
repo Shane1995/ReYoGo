@@ -1,5 +1,6 @@
 import { and, asc, eq, gte, lte } from 'drizzle-orm';
-import type { COGSSummary, ItemCostHistory, StockMovement, MovementType } from '@reyogo/types';
+import { MovementType } from '@reyogo/types';
+import type { COGSSummary, ItemCostHistory, StockMovement } from '@reyogo/types';
 import type { DbClient } from '../../client';
 import * as schema from '../../schema';
 
@@ -27,7 +28,7 @@ export function createStockMovementsRepo(db: DbClient) {
           occurredAt: schema.stockMovements.occurredAt,
         })
         .from(schema.stockMovements)
-        .where(eq(schema.stockMovements.movementType, 'IN' as MovementType))
+        .where(eq(schema.stockMovements.movementType, MovementType.In))
         .orderBy(asc(schema.stockMovements.occurredAt));
       const result: Record<string, number | null> = {};
       for (const row of rows) result[row.inventoryItemId] = row.weightedAvgCostAfter ?? null;
@@ -81,7 +82,7 @@ export function createStockMovementsRepo(db: DbClient) {
     },
 
     async getCOGS(fromDate?: string, toDate?: string): Promise<COGSSummary> {
-      const conditions = [eq(schema.stockMovements.movementType, 'OUT' as MovementType)];
+      const conditions = [eq(schema.stockMovements.movementType, MovementType.Out)];
       if (fromDate)
         conditions.push(gte(schema.stockMovements.occurredAt, new Date(fromDate + 'T00:00:00')));
       if (toDate)
