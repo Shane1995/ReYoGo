@@ -87,7 +87,7 @@ export function DatePicker({
             e.currentTarget.blur();
           }
         }}
-        className="h-8 w-28 rounded-l-md rounded-r-none border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+        className="h-8 w-32 rounded-l-md rounded-r-none border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
       />
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
@@ -99,7 +99,10 @@ export function DatePicker({
             <CalendarIcon className="size-3.5" />
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent
+          className="w-auto p-0 bg-[var(--nav-bg)] border-[var(--nav-border)]"
+          align="start"
+        >
           <Calendar
             mode="single"
             selected={validSelected}
