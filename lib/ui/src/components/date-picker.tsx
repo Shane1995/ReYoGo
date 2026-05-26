@@ -100,7 +100,7 @@ export function DatePicker({
           </button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-auto p-0 bg-[var(--nav-bg)] border-[var(--nav-border)]"
+          className="w-auto min-w-[17rem] p-0 bg-[var(--nav-bg)] border-[var(--nav-border)]"
           align="start"
         >
           <Calendar

@@ -33,10 +33,18 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [units, setUnits] = useState<string[]>([]);
+  const [unitMap, setUnitMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
-    (window.electronAPI.ipcRenderer.invoke('setup:get-units') as Promise<{ name: string }[]>)
-      .then((data) => setUnits(data.map((u) => u.name)))
+    (
+      window.electronAPI.ipcRenderer.invoke('setup:get-units') as Promise<
+        { id: string; name: string }[]
+      >
+    )
+      .then((data) => {
+        setUnits(data.map((u) => u.name));
+        setUnitMap(new Map(data.map((u) => [u.id, u.name])));
+      })
       .catch(console.error);
     invokeInventory(InventoryIPC.GET_CATEGORIES)
       .then((data) => {
@@ -128,8 +136,11 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
       items.map((item) => ({
         ...item,
         type: item.type ?? categoryTypeMap.get(item.categoryId) ?? '',
+        unitOfMeasure:
+          item.unitOfMeasure ??
+          (item.unitOfMeasureId ? unitMap.get(item.unitOfMeasureId) : undefined),
       })),
-    [items, categoryTypeMap],
+    [items, categoryTypeMap, unitMap],
   );
 
   const value: InventoryContextValue = {
