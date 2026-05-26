@@ -11,12 +11,12 @@ type Summary = {
 type Props = {
   summary: Summary;
   isSaving: boolean;
-  hasValidLines: boolean;
+  canSave: boolean;
   isDirty: boolean;
   onSave: () => void;
 };
 
-export function InvoiceSummaryFooter({ summary, isSaving, hasValidLines, isDirty, onSave }: Props) {
+export function InvoiceSummaryFooter({ summary, isSaving, canSave, isDirty, onSave }: Props) {
   return (
     <footer
       className="shrink-0 sticky bottom-0 left-0 right-0 z-10 border-t border-[var(--nav-border)] bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.08)]"
@@ -47,7 +47,7 @@ export function InvoiceSummaryFooter({ summary, isSaving, hasValidLines, isDirty
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-3">
-          <Button type="button" size="sm" onClick={onSave} disabled={isSaving || !hasValidLines}>
+          <Button type="button" size="sm" onClick={onSave} disabled={isSaving || !canSave}>
             {isSaving ? 'Saving…' : 'Save invoice'}
           </Button>
           <span className="text-muted-foreground">Total:</span>

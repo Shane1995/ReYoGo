@@ -5,5 +5,6 @@ export default defineConfig({
   format: ['cjs', 'esm'],
   dts: true,
   clean: true,
-  external: ['drizzle-orm', '@libsql/client', '@reyogo/types'],
+  external: ['drizzle-orm', '@libsql/client'],
+  noExternal: ['@reyogo/types'],
 });

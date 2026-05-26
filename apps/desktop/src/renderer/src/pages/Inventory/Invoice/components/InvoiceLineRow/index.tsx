@@ -117,7 +117,7 @@ export function InvoiceLineRow({
                 onNavigateNext('qty');
               } else if (e.key === 'Tab') {
                 e.preventDefault();
-                document.getElementById(`invoice-vat-${line.id}`)?.focus();
+                document.getElementById(`invoice-total-${line.id}`)?.focus();
               }
             }}
             className={cn(inputClass, 'w-20')}
@@ -130,41 +130,18 @@ export function InvoiceLineRow({
             value={line.vatMode}
             onValueChange={(v) => onUpdate({ vatMode: v as ProcessReceiptLine['vatMode'] })}
           >
-            <SelectTrigger id={`invoice-vat-${line.id}`} className={cn(inputClass, 'min-w-[6rem]')}>
+            <SelectTrigger
+              id={`invoice-vat-${line.id}`}
+              className="h-8 w-full text-sm focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0"
+            >
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent style={{ minWidth: '12rem' }}>
               <SelectItem value="exclusive">No (add VAT)</SelectItem>
               <SelectItem value="inclusive">Yes (VAT included)</SelectItem>
               <SelectItem value="non-taxable">Non-taxable</SelectItem>
             </SelectContent>
           </Select>
-        </TableCell>
-
-        <TableCell className="py-2 px-3">
-          <input
-            id={`invoice-vatrate-${line.id}`}
-            type="number"
-            min={0}
-            max={100}
-            step={0.01}
-            value={line.vatMode !== 'non-taxable' ? line.vatRate : ''}
-            onChange={(e) =>
-              onUpdate({ vatRate: e.target.value === '' ? 0 : Number(e.target.value) })
-            }
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                onNavigateNext('vatrate');
-              } else if (e.key === 'Tab') {
-                e.preventDefault();
-                document.getElementById(`invoice-total-${line.id}`)?.focus();
-              }
-            }}
-            disabled={line.vatMode === 'non-taxable'}
-            className={cn(inputClass, 'w-20', line.vatMode === 'non-taxable' && 'opacity-50')}
-            placeholder="15"
-          />
         </TableCell>
 
         <TableCell className="py-2 px-3">

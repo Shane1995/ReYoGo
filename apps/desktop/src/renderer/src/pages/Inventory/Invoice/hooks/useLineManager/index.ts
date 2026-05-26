@@ -25,8 +25,8 @@ export function useLineManager(initialLines?: ProcessReceiptLine[]) {
     return () => clearTimeout(t);
   }, [lines, focusPendingLine]);
 
-  const addLine = useCallback((focusField = 'item') => {
-    const newLine = createEmptyLine();
+  const addLine = useCallback((focusField = 'item', vatRate?: number) => {
+    const newLine = vatRate !== undefined ? { ...createEmptyLine(), vatRate } : createEmptyLine();
     pendingFocusRef.current = { id: newLine.id, field: focusField };
     setLines((prev) => [...prev, newLine]);
   }, []);

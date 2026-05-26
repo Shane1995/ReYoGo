@@ -14,6 +14,8 @@ type Props = {
   supplierId: string;
   onSupplierChange: (id: string) => void;
   suppliers: Supplier[];
+  vatRate: number;
+  onVatRateChange: (rate: number) => void;
   onAddCategory: () => void;
   onAddItem: () => void;
   isDirty: boolean;
@@ -28,6 +30,8 @@ export function InvoiceHeader({
   supplierId,
   onSupplierChange,
   suppliers,
+  vatRate,
+  onVatRateChange,
   onAddCategory,
   onAddItem,
   isDirty,
@@ -90,6 +94,18 @@ export function InvoiceHeader({
               </option>
             ))}
           </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-muted-foreground whitespace-nowrap">VAT rate %</label>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            step={1}
+            value={vatRate}
+            onChange={(e) => onVatRateChange(Number(e.target.value))}
+            className={cn(inputClass, 'w-20')}
+          />
         </div>
       </div>
     </PageHeader>

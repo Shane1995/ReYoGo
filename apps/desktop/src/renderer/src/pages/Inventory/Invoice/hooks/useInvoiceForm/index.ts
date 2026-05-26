@@ -5,7 +5,7 @@ import { InvoiceStatus } from '@reyogo/types';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
 import { invoiceService } from '@/services/invoice';
 import type { ProcessReceiptLine } from '../../types';
-import { getProcessLineComputed } from '../../types';
+import { getProcessLineComputed, DEFAULT_VAT_RATE } from '../../types';
 import { createEmptyLine } from '../../utils/createEmptyLine';
 import { loadDraft, useDraftPersistence } from '../useDraftPersistence';
 import { useLineManager } from '../useLineManager';
@@ -32,13 +32,35 @@ export function useInvoiceForm() {
     isReused ? '' : (loadDraft()?.invoiceDate ?? ''),
   );
   const [supplierId, setSupplierId] = useState<string>('');
+  const [vatRate, setVatRateState] = useState<number>(
+    () => initialLines[0]?.vatRate ?? DEFAULT_VAT_RATE,
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [expandedResultLineIds, setExpandedResultLineIds] = useState<Set<string>>(new Set());
   const [reuseNoticeDismissed, setReuseNoticeDismissed] = useState(false);
 
-  const { lines, setLines, addLine, removeLine, updateLine, setAllVatMode } =
-    useLineManager(initialLines);
+  const {
+    lines,
+    setLines,
+    addLine: addLineRaw,
+    removeLine,
+    updateLine,
+    setAllVatMode,
+  } = useLineManager(initialLines);
+
+  const addLine = useCallback(
+    (focusField = 'item') => addLineRaw(focusField, vatRate),
+    [addLineRaw, vatRate],
+  );
+
+  const setVatRate = useCallback(
+    (rate: number) => {
+      setVatRateState(rate);
+      setLines((prev) => prev.map((l) => ({ ...l, vatRate: rate })));
+    },
+    [setLines],
+  );
 
   const { clearDraft } = useDraftPersistence(lines, invoiceNumber, invoiceDate, isReused);
 
@@ -47,6 +69,12 @@ export function useInvoiceForm() {
     items,
     categories,
   );
+
+  const canSave =
+    validLines.length > 0 &&
+    !lines.some(
+      (l) => (l.itemId && Number(l.quantity) <= 0) || (!l.itemId && Number(l.quantity) > 0),
+    );
 
   const toggleResultRow = useCallback((lineId: string) => {
     setExpandedResultLineIds((prev) => {
@@ -70,8 +98,8 @@ export function useInvoiceForm() {
     lines.some((l) => l.itemId) || !!invoiceNumber.trim() || !!invoiceDate || !!supplierId;
 
   const handleSave = useCallback(async () => {
-    if (validLines.length === 0) {
-      setSaveError('Add at least one line with an item, quantity, and total.');
+    if (!canSave) {
+      setSaveError('Complete all rows before saving — each row needs an item and quantity.');
       return;
     }
     setSaveError(null);
@@ -106,7 +134,7 @@ export function useInvoiceForm() {
     } finally {
       setIsSaving(false);
     }
-  }, [validLines, invoiceNumber, invoiceDate, supplierId, invoiceSummary, clearForm]);
+  }, [canSave, validLines, invoiceNumber, invoiceDate, supplierId, invoiceSummary, clearForm]);
 
   return {
     units,
@@ -120,6 +148,8 @@ export function useInvoiceForm() {
     setInvoiceDate,
     supplierId,
     setSupplierId,
+    vatRate,
+    setVatRate,
     expandedResultLineIds,
     isReused,
     reuseNoticeDismissed,
@@ -133,6 +163,7 @@ export function useInvoiceForm() {
     setAllVatMode,
     clearForm,
     isDirty,
+    canSave,
     itemsWithCategory,
     itemMetaMap,
     invoiceSummary,

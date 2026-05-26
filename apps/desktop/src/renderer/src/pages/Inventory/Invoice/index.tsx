@@ -29,6 +29,8 @@ export default function InvoicePage() {
     setInvoiceDate,
     supplierId,
     setSupplierId,
+    vatRate,
+    setVatRate,
     expandedResultLineIds,
     isReused,
     reuseNoticeDismissed,
@@ -41,10 +43,10 @@ export default function InvoicePage() {
     updateLine,
     clearForm,
     isDirty,
+    canSave,
     itemsWithCategory,
     itemMetaMap,
     invoiceSummary,
-    validLines,
     handleSave,
   } = useInvoiceForm();
 
@@ -67,6 +69,8 @@ export default function InvoicePage() {
         supplierId={supplierId}
         onSupplierChange={setSupplierId}
         suppliers={suppliers}
+        vatRate={vatRate}
+        onVatRateChange={setVatRate}
         onAddCategory={() => setCategoryModalOpen(true)}
         onAddItem={() => setItemModalOpen(true)}
         isDirty={isDirty}
@@ -86,8 +90,7 @@ export default function InvoicePage() {
                   <TableHead className="w-8 p-2" />
                   <TableHead className="font-medium text-foreground">Item</TableHead>
                   <TableHead className="font-medium text-foreground w-20">Quantity</TableHead>
-                  <TableHead className="font-medium text-foreground w-28">VAT</TableHead>
-                  <TableHead className="font-medium text-foreground w-20">VAT Rate %</TableHead>
+                  <TableHead className="font-medium text-foreground w-44">VAT</TableHead>
                   <TableHead className="font-medium text-foreground w-28">Total</TableHead>
                   <TableHead className="w-20" />
                 </TableRow>
@@ -142,7 +145,7 @@ export default function InvoicePage() {
       <InvoiceSummaryFooter
         summary={invoiceSummary}
         isSaving={isSaving}
-        hasValidLines={validLines.length > 0}
+        canSave={canSave}
         isDirty={isDirty}
         onSave={handleSave}
       />
