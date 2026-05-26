@@ -84,6 +84,14 @@ export function enrichParseResult(result: ParseResult, existing: ExistingInvento
     if (alreadyExists) {
       return { ...item, status: 'exists', selected: false };
     }
+    if (!item.unit) {
+      return {
+        ...item,
+        status: 'unresolved',
+        selected: false,
+        unresolvedReason: 'No unit of measure — add a Unit column to your spreadsheet',
+      };
+    }
     if (willExistCatLower.has(catKey)) {
       return { ...item, status: 'new', selected: true };
     }
@@ -91,7 +99,7 @@ export function enrichParseResult(result: ParseResult, existing: ExistingInvento
       ...item,
       status: 'unresolved',
       selected: false,
-      unresolvedReason: item.categoryName,
+      unresolvedReason: `Category not found: ${item.categoryName}`,
     };
   });
 

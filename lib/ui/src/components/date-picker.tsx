@@ -74,51 +74,53 @@ export function DatePicker({
 
   return (
     <div className={cn('flex items-center', className)}>
-      <input
-        ref={inputRef}
-        type="text"
-        value={inputText}
-        placeholder={placeholder}
-        onChange={(e) => setInputText(e.target.value)}
-        onBlur={(e) => commitText(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            commitText(inputText);
-            e.currentTarget.blur();
-          }
-        }}
-        className="h-8 w-32 rounded-l-md rounded-r-none border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-      />
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className="flex h-8 items-center rounded-l-none rounded-r-md border border-l-0 border-input bg-background px-2 text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
-            aria-label="Open calendar"
+      <div className="flex h-8 rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring/40 focus-within:border-ring/40">
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputText}
+          placeholder={placeholder}
+          onChange={(e) => setInputText(e.target.value)}
+          onBlur={(e) => commitText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              commitText(inputText);
+              e.currentTarget.blur();
+            }
+          }}
+          className="h-full w-32 rounded-l-md bg-transparent px-2.5 text-sm focus:outline-none"
+        />
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="flex h-full items-center border-l border-input px-2 text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none rounded-r-md"
+              aria-label="Open calendar"
+            >
+              <CalendarIcon className="size-3.5" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="p-0 bg-[var(--nav-bg)] border-[var(--nav-border)]"
+            align="start"
           >
-            <CalendarIcon className="size-3.5" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent
-          className="w-auto min-w-[17rem] p-0 bg-[var(--nav-bg)] border-[var(--nav-border)]"
-          align="start"
-        >
-          <Calendar
-            mode="single"
-            selected={validSelected}
-            onSelect={(date) => {
-              if (date) {
-                const formatted = format(date, DISPLAY_FORMAT);
-                setInputText(formatted);
-                onChange(format(date, STORE_FORMAT));
-              }
-              setOpen(false);
-              inputRef.current?.focus();
-            }}
-            autoFocus
-          />
-        </PopoverContent>
-      </Popover>
+            <Calendar
+              mode="single"
+              selected={validSelected}
+              onSelect={(date) => {
+                if (date) {
+                  const formatted = format(date, DISPLAY_FORMAT);
+                  setInputText(formatted);
+                  onChange(format(date, STORE_FORMAT));
+                }
+                setOpen(false);
+                inputRef.current?.focus();
+              }}
+              autoFocus
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   );
 }
