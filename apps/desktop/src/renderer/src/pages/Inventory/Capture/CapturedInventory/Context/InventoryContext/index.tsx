@@ -36,12 +36,9 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const [unitMap, setUnitMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
-    (
-      window.electronAPI.ipcRenderer.invoke('setup:get-units') as Promise<
-        { id: string; name: string }[]
-      >
-    )
+    (invokeInventory('setup:get-units') as Promise<{ id: string; name: string }[]>)
       .then((data) => {
+        if (!Array.isArray(data)) return;
         setUnits(data.map((u) => u.name));
         setUnitMap(new Map(data.map((u) => [u.id, u.name])));
       })

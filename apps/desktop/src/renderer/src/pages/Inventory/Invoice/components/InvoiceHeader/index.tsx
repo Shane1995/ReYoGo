@@ -44,17 +44,6 @@ export function InvoiceHeader({
           <Button asChild variant="ghost" size="sm">
             <Link to={InvoiceRoutes.History}>View history</Link>
           </Button>
-          {isDirty && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onClear}
-              className="text-muted-foreground hover:text-destructive"
-            >
-              Clear
-            </Button>
-          )}
           <Button type="button" variant="outline" size="sm" onClick={onAddCategory}>
             Add category
           </Button>
@@ -106,6 +95,15 @@ export function InvoiceHeader({
             className={cn(inputClass, 'w-20')}
           />
         </div>
+        {isDirty && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="text-xs text-muted-foreground underline hover:text-destructive ml-1"
+          >
+            Clear
+          </button>
+        )}
       </div>
     </PageHeader>
   );
