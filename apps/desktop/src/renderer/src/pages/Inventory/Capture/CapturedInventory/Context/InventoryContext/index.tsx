@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import type { IPCChannel } from '@shared/types/ipc';
 import { InventoryIPC } from '@shared/types/ipc';
 import type { InventoryCategory, InventoryItem } from '../../types';
@@ -118,9 +118,23 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
       .catch(console.error);
   }, []);
 
+  const categoryTypeMap = useMemo(
+    () => new Map(categories.map((c) => [c.id, c.type])),
+    [categories],
+  );
+
+  const enrichedItems = useMemo(
+    () =>
+      items.map((item) => ({
+        ...item,
+        type: item.type ?? categoryTypeMap.get(item.categoryId) ?? '',
+      })),
+    [items, categoryTypeMap],
+  );
+
   const value: InventoryContextValue = {
     categories,
-    items,
+    items: enrichedItems,
     units,
     addCategory,
     updateCategory,
