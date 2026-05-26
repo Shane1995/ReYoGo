@@ -58,11 +58,18 @@ export default function ImportPage() {
     async (review: ReviewResult) => {
       setState({ phase: 'saving' });
       try {
+        const existingUnits = (await window.electronAPI.ipcRenderer.invoke('setup:get-units')) as {
+          id: string;
+          name: string;
+        }[];
+        const unitNameToId = new Map<string, string>(
+          existingUnits.map((u) => [u.name.toLowerCase(), u.id]),
+        );
+
         for (const u of review.units.filter((u) => u.selected && u.status === 'new')) {
-          await window.electronAPI.ipcRenderer.invoke('setup:upsert-unit', {
-            id: crypto.randomUUID(),
-            name: u.name,
-          });
+          const id = crypto.randomUUID();
+          await window.electronAPI.ipcRenderer.invoke('setup:upsert-unit', { id, name: u.name });
+          unitNameToId.set(u.name.toLowerCase(), id);
         }
 
         const catNameToId = new Map<string, string>(
@@ -79,11 +86,14 @@ export default function ImportPage() {
           const cat = [...existingCats, ...review.categories].find(
             (c) => c.name.toLowerCase() === item.categoryName.toLowerCase(),
           );
+          const unitOfMeasureId = item.unit
+            ? (unitNameToId.get(item.unit.toLowerCase()) ?? null)
+            : null;
           addItem({
             name: item.name,
             categoryId: catId,
             type: (cat?.type as 'food' | 'drink' | 'non-perishable') ?? 'food',
-            unitOfMeasure: item.unit as 'litres' | 'kgs' | 'unit' | undefined,
+            unitOfMeasureId,
           });
         }
 
