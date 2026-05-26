@@ -26,7 +26,6 @@ export function ItemsTable({
 }: ItemsTableProps) {
   const navigate = useNavigate();
   const [editingItem, setEditingItem] = useState<InventoryItem | null | undefined>(undefined);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const { filterValues, filteredItems, filters, allTypes, handleFilterChange, clearFilters } =
     useItemFilters({ items, categories, costMap, stockMap });
@@ -147,20 +146,14 @@ export function ItemsTable({
       key: 'actions',
       header: 'Actions',
       align: 'right',
-      width: '120px',
+      width: '48px',
       cell: (row) => (
         <ItemRowActions
           row={row}
           originalItem={items.find((i) => i.id === row.id)!}
-          confirmDeleteId={confirmDeleteId}
           onEdit={setEditingItem}
           onViewInsights={onViewInsights}
-          onRequestDelete={setConfirmDeleteId}
-          onCancelDelete={() => setConfirmDeleteId(null)}
-          onConfirmDelete={(id) => {
-            onDelete(id);
-            setConfirmDeleteId(null);
-          }}
+          onDelete={onDelete}
         />
       ),
     },
