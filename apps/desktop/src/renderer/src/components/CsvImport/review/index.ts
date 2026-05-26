@@ -1,10 +1,16 @@
-import type { ParseResult, ParsedCategory, InventoryType } from './parser';
-import { INVENTORY_TYPES } from '@reyogo/types';
+import type { ParseResult, ParsedCategory } from '../parser';
+import { InventoryType, INVENTORY_TYPES } from '@reyogo/types';
+
 export type { InventoryType };
 
-export type UnitStatus = 'new' | 'exists';
-export type CategoryStatus = 'new' | 'exists';
-export type ItemStatus = 'new' | 'exists' | 'unresolved';
+export const UNIT_STATUS = { New: 'new', Exists: 'exists' } as const;
+export type UnitStatus = (typeof UNIT_STATUS)[keyof typeof UNIT_STATUS];
+
+export const CATEGORY_STATUS = { New: 'new', Exists: 'exists' } as const;
+export type CategoryStatus = (typeof CATEGORY_STATUS)[keyof typeof CATEGORY_STATUS];
+
+export const ITEM_STATUS = { New: 'new', Exists: 'exists', Unresolved: 'unresolved' } as const;
+export type ItemStatus = (typeof ITEM_STATUS)[keyof typeof ITEM_STATUS];
 
 export interface ReviewUnit {
   name: string;
@@ -13,7 +19,7 @@ export interface ReviewUnit {
 }
 
 export interface ReviewCategory {
-  id: string; // temp UUID for UI keying
+  id: string;
   name: string;
   type: InventoryType;
   status: CategoryStatus;
@@ -55,7 +61,11 @@ export function enrichParseResult(result: ParseResult, existing: ExistingInvento
 
   const units: ReviewUnit[] = result.units.map((u) => {
     const exists = unitNames.has(u.name.toLowerCase());
-    return { name: u.name, status: exists ? 'exists' : 'new', selected: !exists };
+    return {
+      name: u.name,
+      status: exists ? UNIT_STATUS.Exists : UNIT_STATUS.New,
+      selected: !exists,
+    };
   });
 
   const importedCatLower = new Map<string, ParsedCategory>(
@@ -64,12 +74,12 @@ export function enrichParseResult(result: ParseResult, existing: ExistingInvento
 
   const categories: ReviewCategory[] = result.categories.map((c) => {
     const exists = categoryNames.has(c.name.toLowerCase());
-    const typeWarning = !exists && !INVENTORY_TYPES.includes(c.type as InventoryType);
+    const typeWarning = !exists && !INVENTORY_TYPES.includes(c.type);
     return {
       id: crypto.randomUUID(),
       name: c.name,
       type: c.type,
-      status: exists ? 'exists' : 'new',
+      status: exists ? CATEGORY_STATUS.Exists : CATEGORY_STATUS.New,
       selected: !exists,
       typeWarning,
     };
@@ -82,22 +92,22 @@ export function enrichParseResult(result: ParseResult, existing: ExistingInvento
     const alreadyExists = itemNames.has(item.name.toLowerCase());
 
     if (alreadyExists) {
-      return { ...item, status: 'exists', selected: false };
+      return { ...item, status: ITEM_STATUS.Exists, selected: false };
     }
     if (!item.unit) {
       return {
         ...item,
-        status: 'unresolved',
+        status: ITEM_STATUS.Unresolved,
         selected: false,
         unresolvedReason: 'No unit of measure — add a Unit column to your spreadsheet',
       };
     }
     if (willExistCatLower.has(catKey)) {
-      return { ...item, status: 'new', selected: true };
+      return { ...item, status: ITEM_STATUS.New, selected: true };
     }
     return {
       ...item,
-      status: 'unresolved',
+      status: ITEM_STATUS.Unresolved,
       selected: false,
       unresolvedReason: `Category not found: ${item.categoryName}`,
     };
@@ -124,14 +134,14 @@ export function enrichParseResult(result: ParseResult, existing: ExistingInvento
 
   const counts = {
     newTotal:
-      units.filter((u) => u.status === 'new').length +
-      categories.filter((c) => c.status === 'new').length +
-      items.filter((i) => i.status === 'new').length,
+      units.filter((u) => u.status === UNIT_STATUS.New).length +
+      categories.filter((c) => c.status === CATEGORY_STATUS.New).length +
+      items.filter((i) => i.status === ITEM_STATUS.New).length,
     existsTotal:
-      units.filter((u) => u.status === 'exists').length +
-      categories.filter((c) => c.status === 'exists').length +
-      items.filter((i) => i.status === 'exists').length,
-    unresolvedTotal: items.filter((i) => i.status === 'unresolved').length,
+      units.filter((u) => u.status === UNIT_STATUS.Exists).length +
+      categories.filter((c) => c.status === CATEGORY_STATUS.Exists).length +
+      items.filter((i) => i.status === ITEM_STATUS.Exists).length,
+    unresolvedTotal: items.filter((i) => i.status === ITEM_STATUS.Unresolved).length,
   };
 
   return {

@@ -102,6 +102,7 @@ export function DatePicker({
           </PopoverTrigger>
           <PopoverContent
             className="p-0 bg-[var(--nav-bg)] border-[var(--nav-border)]"
+            style={{ minWidth: '280px' }}
             align="start"
           >
             <Calendar

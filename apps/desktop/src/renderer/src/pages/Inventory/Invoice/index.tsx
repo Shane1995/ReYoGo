@@ -90,7 +90,7 @@ export default function InvoicePage() {
                   <TableHead className="w-8 p-2" />
                   <TableHead className="font-medium text-foreground">Item</TableHead>
                   <TableHead className="font-medium text-foreground w-20">Quantity</TableHead>
-                  <TableHead className="font-medium text-foreground w-44">VAT</TableHead>
+                  <TableHead className="font-medium text-foreground w-52">VAT</TableHead>
                   <TableHead className="font-medium text-foreground w-28">Total</TableHead>
                   <TableHead className="w-20" />
                 </TableRow>

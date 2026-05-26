@@ -1,7 +1,6 @@
-import { Button, PageHeader } from '@reyogo/ui';
+import { Button, PageHeader, DatePicker } from '@reyogo/ui';
 import { Link } from 'react-router-dom';
 import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
-import { DatePicker } from '@reyogo/ui';
 import type { Supplier } from '@reyogo/types';
 import { inputClass } from '../../utils/inputClass';
 import { cn } from '@reyogo/ui';

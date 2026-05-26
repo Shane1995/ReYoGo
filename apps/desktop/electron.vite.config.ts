@@ -69,9 +69,15 @@ export default defineConfig({
         '@shared': resolve(__dirname, './src/shared'),
       },
     },
+    optimizeDeps: {
+      exclude: ['@reyogo/ui', '@reyogo/types'],
+    },
     server: {
       port: 5173,
       strictPort: true,
+      watch: {
+        ignored: ['!**/node_modules/@reyogo/**'],
+      },
     },
   },
 });

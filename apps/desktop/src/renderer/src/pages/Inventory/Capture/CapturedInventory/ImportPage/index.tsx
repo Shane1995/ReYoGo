@@ -4,7 +4,12 @@ import { UploadIcon, DownloadIcon, FileSpreadsheetIcon } from 'lucide-react';
 import { Button } from '@reyogo/ui';
 import { Spinner } from '@reyogo/ui';
 import { parseFile, downloadTemplate } from '@/components/CsvImport/parser';
-import { enrichParseResult } from '@/components/CsvImport/review';
+import {
+  enrichParseResult,
+  UNIT_STATUS,
+  CATEGORY_STATUS,
+  ITEM_STATUS,
+} from '@/components/CsvImport/review';
 import type { ReviewResult, ExistingInventory, InventoryType } from '@/components/CsvImport/review';
 import { ImportReview } from '@/components/CsvImport/ImportReview';
 import { StockRoutes } from '@/components/AppRoutes/routePaths';
@@ -66,7 +71,7 @@ export default function ImportPage() {
           existingUnits.map((u) => [u.name.toLowerCase(), u.id]),
         );
 
-        for (const u of review.units.filter((u) => u.selected && u.status === 'new')) {
+        for (const u of review.units.filter((u) => u.selected && u.status === UNIT_STATUS.New)) {
           const id = crypto.randomUUID();
           await window.electronAPI.ipcRenderer.invoke('setup:upsert-unit', { id, name: u.name });
           unitNameToId.set(u.name.toLowerCase(), id);
@@ -75,12 +80,14 @@ export default function ImportPage() {
         const catNameToId = new Map<string, string>(
           existingCats.map((c) => [c.name.toLowerCase(), c.id]),
         );
-        for (const c of review.categories.filter((c) => c.selected && c.status !== 'exists')) {
+        for (const c of review.categories.filter(
+          (c) => c.selected && c.status !== CATEGORY_STATUS.Exists,
+        )) {
           const id = addCategory({ name: c.name, type: c.type });
           catNameToId.set(c.name.toLowerCase(), id);
         }
 
-        for (const item of review.items.filter((i) => i.selected && i.status === 'new')) {
+        for (const item of review.items.filter((i) => i.selected && i.status === ITEM_STATUS.New)) {
           const catId = catNameToId.get(item.categoryName.toLowerCase());
           if (!catId) continue;
           const cat = [...existingCats, ...review.categories].find(
@@ -94,6 +101,7 @@ export default function ImportPage() {
             categoryId: catId,
             type: (cat?.type as 'food' | 'drink' | 'non-perishable') ?? 'food',
             unitOfMeasureId,
+            unitOfMeasure: item.unit,
           });
         }
 
