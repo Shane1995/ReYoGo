@@ -1,11 +1,11 @@
 import type { Category, InventoryItem, InventorySubmitPayload, UnitOfMeasure } from '@reyogo/types';
 import type {
-  Invoice,
-  InvoiceAuditEntry,
-  InvoiceWithLines,
+  IInvoice,
+  IInvoiceAuditEntry,
+  IInvoiceWithLines,
   InvoiceLineWithDate,
-  SaveInvoicePayload,
-  UpdateInvoicePayload,
+  ISaveCapturedInvoicePayload,
+  IUpdateCapturedInvoicePayload,
 } from '@reyogo/types';
 import type { ItemCostHistory, COGSSummary } from '@reyogo/types';
 import type { Supplier, UpsertSupplierPayload } from '@reyogo/types';
@@ -26,13 +26,13 @@ export interface IPCInvokeMap {
   'inventory:delete-category': { args: [id: string]; return: void };
   'inventory:delete-item': { args: [id: string]; return: void };
   'inventory:submit': { args: [payload: InventorySubmitPayload]; return: void };
-  'invoices:save-invoice': { args: [payload: SaveInvoicePayload]; return: void };
-  'invoices:get-invoices': { args: []; return: Invoice[] };
-  'invoices:get-invoices-with-lines': { args: []; return: InvoiceWithLines[] };
-  'invoices:get-invoice': { args: [id: string]; return: InvoiceWithLines | null };
+  'invoices:save-invoice': { args: [payload: ISaveCapturedInvoicePayload]; return: void };
+  'invoices:get-invoices': { args: []; return: IInvoice[] };
+  'invoices:get-invoices-with-lines': { args: []; return: IInvoiceWithLines[] };
+  'invoices:get-invoice': { args: [id: string]; return: IInvoiceWithLines | null };
   'invoices:get-lines-for-analysis': { args: []; return: InvoiceLineWithDate[] };
-  'invoices:update-invoice': { args: [payload: UpdateInvoicePayload]; return: void };
-  'invoices:get-invoice-audit': { args: [id: string]; return: InvoiceAuditEntry[] };
+  'invoices:update-invoice': { args: [payload: IUpdateCapturedInvoicePayload]; return: void };
+  'invoices:get-invoice-audit': { args: [id: string]; return: IInvoiceAuditEntry[] };
   'invoices:get-last-unit-prices': { args: []; return: Record<string, number> };
   'stock-movements:get-current-stock': { args: []; return: Record<string, number> };
   'stock-movements:get-weighted-avg-costs': { args: []; return: Record<string, number | null> };

@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { InvoiceStatus } from '@reyogo/types';
 import { createTestDb, type DbClient } from '../../__tests__/helpers';
 import { createInvoicesRepo } from '.';
 import * as schema from '../../schema';
@@ -11,12 +10,25 @@ function round4(x: number) {
   return Math.round(x * 10000) / 10000;
 }
 
-const baseInvoice = {
-  status: InvoiceStatus.Draft,
-  totalExclTax: 0,
-  taxAmount: 0,
-  totalInclTax: 0,
-};
+function line(overrides: {
+  id: string;
+  itemId?: string;
+  quantity?: number;
+  totalVatExclude?: number;
+  vatMode?: 'exclusive' | 'inclusive' | 'non-taxable';
+  vatRate?: number;
+  itemNameSnapshot?: string;
+}) {
+  return {
+    id: overrides.id,
+    itemId: overrides.itemId ?? 'item-1',
+    itemNameSnapshot: overrides.itemNameSnapshot ?? '',
+    quantity: overrides.quantity ?? 10,
+    vatMode: overrides.vatMode ?? ('exclusive' as const),
+    vatRate: overrides.vatRate ?? 15,
+    totalVatExclude: overrides.totalVatExclude ?? 100,
+  };
+}
 
 beforeEach(async () => {
   db = await createTestDb();
@@ -57,16 +69,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceDate: null,
         invoiceNumber: 'INV-001',
-        ...baseInvoice,
-        lines: [
-          {
-            id: 'l-1',
-            inventoryItemId: 'item-1',
-            qty: 10,
-            unitCost: 5,
-            totalCost: 50,
-          },
-        ],
+        lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 50 })],
       });
       const invoices = await db.select().from(schema.invoices);
       expect(invoices).toHaveLength(1);
@@ -80,16 +83,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceDate: null,
         invoiceNumber: null,
-        ...baseInvoice,
-        lines: [
-          {
-            id: 'l-1',
-            inventoryItemId: 'item-1',
-            qty: 10,
-            unitCost: 10,
-            totalCost: 100,
-          },
-        ],
+        lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
       });
       const movements = await db.select().from(schema.stockMovements);
       expect(movements).toHaveLength(1);
@@ -104,32 +98,14 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: null,
         invoiceDate: new Date('2024-01-01'),
-        ...baseInvoice,
-        lines: [
-          {
-            id: 'l-1',
-            inventoryItemId: 'item-1',
-            qty: 10,
-            unitCost: 10,
-            totalCost: 100,
-          },
-        ],
+        lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
       });
       await repo.saveInvoice({
         id: 'inv-2',
         supplierId: null,
         invoiceNumber: null,
         invoiceDate: new Date('2024-01-02'),
-        ...baseInvoice,
-        lines: [
-          {
-            id: 'l-2',
-            inventoryItemId: 'item-1',
-            qty: 10,
-            unitCost: 20,
-            totalCost: 200,
-          },
-        ],
+        lines: [line({ id: 'l-2', quantity: 10, totalVatExclude: 200 })],
       });
       const movements = await db
         .select()
@@ -145,16 +121,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceDate: null,
         invoiceNumber: null,
-        ...baseInvoice,
-        lines: [
-          {
-            id: 'l-1',
-            inventoryItemId: 'item-1',
-            qty: 0,
-            unitCost: 0,
-            totalCost: 0,
-          },
-        ],
+        lines: [line({ id: 'l-1', quantity: 0, totalVatExclude: 0 })],
       });
       expect(await db.select().from(schema.stockMovements)).toHaveLength(0);
     });
@@ -167,31 +134,14 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: 'INV-001',
         invoiceDate: new Date('2024-01-01'),
-        ...baseInvoice,
-        lines: [
-          {
-            id: 'l-1',
-            inventoryItemId: 'item-1',
-            qty: 10,
-            unitCost: 10,
-            totalCost: 100,
-          },
-        ],
+        lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
       }),
     );
 
     it('replaces old movements with movements for the new lines', async () => {
       await repo.updateInvoice({
         id: 'inv-1',
-        lines: [
-          {
-            id: 'l-2',
-            inventoryItemId: 'item-2',
-            qty: 5,
-            unitCost: 10,
-            totalCost: 50,
-          },
-        ],
+        lines: [line({ id: 'l-2', itemId: 'item-2', quantity: 5, totalVatExclude: 50 })],
       });
       const movements = await db.select().from(schema.stockMovements);
       expect(movements).toHaveLength(1);
@@ -222,7 +172,6 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: null,
         invoiceDate: null,
-        ...baseInvoice,
         lines: [],
       });
       await repo.saveInvoice({
@@ -230,7 +179,6 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: null,
         invoiceDate: null,
-        ...baseInvoice,
         lines: [],
       });
       const invoices = await repo.getInvoices();
@@ -249,16 +197,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: 'INV-001',
         invoiceDate: null,
-        ...baseInvoice,
-        lines: [
-          {
-            id: 'l-1',
-            inventoryItemId: 'item-1',
-            qty: 10,
-            unitCost: 10,
-            totalCost: 100,
-          },
-        ],
+        lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
       });
       const result = await repo.getInvoiceById('inv-1');
       expect(result!.invoiceNumber).toBe('INV-001');
@@ -273,16 +212,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: null,
         invoiceDate: null,
-        ...baseInvoice,
-        lines: [
-          {
-            id: 'l-1',
-            inventoryItemId: 'item-1',
-            qty: 10,
-            unitCost: 10,
-            totalCost: 100,
-          },
-        ],
+        lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
       });
       expect((await repo.getLastUnitPrices())['item-1']).toBe(10);
     });

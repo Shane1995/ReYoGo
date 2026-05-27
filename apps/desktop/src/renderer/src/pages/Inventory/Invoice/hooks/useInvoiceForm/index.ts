@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
-import { InvoiceStatus } from '@reyogo/types';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
 import { invoiceService } from '@/services/invoice';
 import type { ProcessReceiptLine } from '../../types';
@@ -110,20 +109,16 @@ export function useInvoiceForm() {
         supplierId: supplierId || null,
         invoiceNumber: invoiceNumber.trim() || null,
         invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
-        status: InvoiceStatus.Draft,
-        totalExclTax: invoiceSummary.subtotal,
-        taxAmount: invoiceSummary.totalVat,
-        totalInclTax: invoiceSummary.grandTotal,
         lines: validLines.map((line) => {
           const computed = getProcessLineComputed(line);
-          const qty = Number(line.quantity) || 1;
-          const totalCost = computed.netTotal;
           return {
             id: line.id,
-            inventoryItemId: line.itemId,
-            qty,
-            unitCost: qty > 0 ? totalCost / qty : 0,
-            totalCost,
+            itemId: line.itemId,
+            itemNameSnapshot: itemMetaMap.get(line.itemId)?.name ?? '',
+            quantity: Number(line.quantity),
+            vatMode: line.vatMode,
+            vatRate: line.vatRate,
+            totalVatExclude: computed.netTotal,
           };
         }),
       });
@@ -134,7 +129,7 @@ export function useInvoiceForm() {
     } finally {
       setIsSaving(false);
     }
-  }, [canSave, validLines, invoiceNumber, invoiceDate, supplierId, invoiceSummary, clearForm]);
+  }, [canSave, validLines, invoiceNumber, invoiceDate, supplierId, itemMetaMap, clearForm]);
 
   return {
     units,

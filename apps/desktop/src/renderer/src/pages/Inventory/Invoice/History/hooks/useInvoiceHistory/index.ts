@@ -141,7 +141,7 @@ export function useInvoiceHistory() {
           };
         }),
       };
-      await window.electronAPI.ipcRenderer.invoke(InvoicesIPC.UPDATE_INVOICE, payload as never);
+      await window.electronAPI.ipcRenderer.invoke(InvoicesIPC.UPDATE_INVOICE, payload);
       setDetailCache((prev) => {
         const next = { ...prev };
         delete next[invoice.id];

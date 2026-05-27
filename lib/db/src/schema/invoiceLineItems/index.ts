@@ -12,9 +12,12 @@ export const invoiceLineItems = sqliteTable(
     inventoryItemId: text('inventory_item_id')
       .notNull()
       .references(() => inventoryItems.id, { onDelete: 'restrict' }),
+    itemNameSnapshot: text('item_name_snapshot').notNull().default(''),
     qty: real('qty').notNull(),
     unitCost: real('unit_cost').notNull().default(0),
     totalCost: real('total_cost').notNull().default(0),
+    vatMode: text('vat_mode').notNull().default('exclusive'),
+    vatRate: real('vat_rate').notNull().default(15),
   },
   (t) => ({
     invoiceLinesByInvoice: index('invoice_lines_invoice_idx').on(t.invoiceId),
