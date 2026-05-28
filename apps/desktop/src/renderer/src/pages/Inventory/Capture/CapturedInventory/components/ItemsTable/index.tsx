@@ -9,26 +9,22 @@ import { EditItemDialog } from '../EditItemDialog';
 import type { InventoryItem } from '../../types';
 import { InvoiceRoutes } from '@/components/AppRoutes/routes';
 import type { FlatItem, ItemsTableProps } from './types';
-import { useItemFilters } from './hooks/useItemFilters';
 import { useItemSelection } from './hooks/useItemSelection';
 import { SelectionBar } from './SelectionBar';
 import { ItemRowActions } from './ItemRowActions';
 
 export function ItemsTable({
   items,
+  filteredItems,
+  allTypes,
   categories,
   units,
-  costMap,
-  stockMap,
   onUpdate,
   onDelete,
   onViewInsights,
 }: ItemsTableProps) {
   const navigate = useNavigate();
   const [editingItem, setEditingItem] = useState<InventoryItem | null | undefined>(undefined);
-
-  const { filterValues, filteredItems, filters, allTypes, handleFilterChange, clearFilters } =
-    useItemFilters({ items, categories, costMap, stockMap });
 
   const filteredIds = useMemo(() => filteredItems.map((i) => i.id), [filteredItems]);
 
@@ -195,16 +191,9 @@ export function ItemsTable({
       <DataTable
         columns={columns}
         data={filteredItems}
-        filters={filters}
-        filterValues={filterValues}
-        onFilterChange={handleFilterChange}
-        onClearFilters={clearFilters}
+        hideFilters
         rowKey={(row) => row.id}
-        emptyMessage={
-          Object.values(filterValues).some((v) => (Array.isArray(v) ? v.length > 0 : Boolean(v)))
-            ? 'No items match your filters.'
-            : 'No items yet. Use the + button to add your first item.'
-        }
+        emptyMessage="No items match your filters."
       />
       {editingItem !== undefined && (
         <EditItemDialog

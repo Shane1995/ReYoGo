@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button, PageHeader } from '@reyogo/ui';
 import { itemTrendPath } from '@/components/AppRoutes/routePaths';
+import { FilterBar } from '@/components/DataTable';
 import { useInventory } from './Context/InventoryContext';
 import { ItemsTable } from './components/ItemsTable';
 import { AddInventoryModal } from './components/AddInventoryModal';
 import { useInventoryCosts } from './hooks/useInventoryCosts';
 import { useItemStock } from './hooks/useItemStock/index';
+import { useItemFilters } from './components/ItemsTable/hooks/useItemFilters';
 import type { InventoryItem } from './types';
 
 export default function InventoryIndex() {
@@ -18,6 +20,9 @@ export default function InventoryIndex() {
   const costMap = useInventoryCosts();
   const stockMap = useItemStock();
   const [addModalOpen, setAddModalOpen] = useState(false);
+
+  const { filterValues, filteredItems, filters, allTypes, handleFilterChange, clearFilters } =
+    useItemFilters({ items, categories, costMap, stockMap });
 
   const handleViewInsights = useCallback(
     (itemId: string) => navigate(itemTrendPath(itemId)),
@@ -39,15 +44,23 @@ export default function InventoryIndex() {
             Add
           </Button>
         }
-      />
+      >
+        <FilterBar
+          filters={filters}
+          values={filterValues}
+          onChange={handleFilterChange}
+          onClearAll={clearFilters}
+        />
+      </PageHeader>
+
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-4 my-4">
           <ItemsTable
             items={items}
+            filteredItems={filteredItems}
+            allTypes={allTypes}
             categories={categories}
             units={units}
-            costMap={costMap}
-            stockMap={stockMap}
             onUpdate={handleUpdate}
             onDelete={deleteItemFromBackend}
             onViewInsights={handleViewInsights}

@@ -1,6 +1,6 @@
 import { Input, Popover, PopoverContent, PopoverTrigger, cn } from '@reyogo/ui';
 import { ChevronDownIcon, CheckIcon, SearchIcon, XIcon } from 'lucide-react';
-import type { FilterField, FilterValues, FilterOption } from './types';
+import type { FilterField, FilterValues, FilterOption } from '../types';
 
 type Props = {
   filters: FilterField[];
@@ -154,7 +154,7 @@ export function FilterBar({ filters, values, onChange, onClearAll }: Props) {
   const active = hasActiveFilters(values);
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-[var(--nav-border)] bg-background px-4 py-2.5">
+    <div className="flex flex-wrap items-center gap-2 bg-background">
       {filters.map((field) => {
         if (field.type === 'search') {
           return (

@@ -1,9 +1,10 @@
 import { cn } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
-import { FilterBar } from './FilterBar';
+import { FilterBar } from './FilterBar/index';
 import type { ColumnDef, FilterField, FilterValues } from './types';
 
 export type { ColumnDef, FilterField, FilterValues };
+export { FilterBar };
 
 type Props<T> = {
   columns: ColumnDef<T>[];
@@ -12,6 +13,7 @@ type Props<T> = {
   filterValues?: FilterValues;
   onFilterChange?: (key: string, value: string | string[]) => void;
   onClearFilters?: () => void;
+  hideFilters?: boolean;
   emptyMessage?: string;
   rowKey: (row: T) => string;
 };
@@ -29,12 +31,13 @@ export function DataTable<T>({
   filterValues = {},
   onFilterChange,
   onClearFilters,
+  hideFilters = false,
   emptyMessage = 'No items found.',
   rowKey,
 }: Props<T>) {
   return (
     <div className="rounded-lg border border-[var(--nav-border)] overflow-hidden">
-      {filters.length > 0 && onFilterChange && onClearFilters && (
+      {!hideFilters && filters.length > 0 && onFilterChange && onClearFilters && (
         <FilterBar
           filters={filters}
           values={filterValues}
