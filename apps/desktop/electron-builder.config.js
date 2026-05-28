@@ -20,8 +20,8 @@ module.exports = {
     icon: 'build/icon.png',
   },
   nsis: {
-    oneClick: false,
-    allowToChangeInstallationDirectory: true,
+    oneClick: true,
+    perMachine: false,
   },
   mac: {
     target: ['dmg', 'zip'],
