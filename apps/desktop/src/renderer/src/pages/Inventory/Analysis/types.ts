@@ -17,12 +17,12 @@ export type ItemGroup = {
 
 export type Metric = 'price' | 'change';
 
-export const TYPE_ORDER = ['food', 'drink', 'non-perishable'];
+export const TYPE_ORDER = ['food', 'beverage', 'non-food'];
 
 export const TYPE_LABELS: Record<string, string> = {
   food: 'Foods',
-  drink: 'Drinks',
-  'non-perishable': 'Non-perishable',
+  beverage: 'Beverages',
+  'non-food': 'Non-food',
 };
 
 export function typeLabel(t: string) {

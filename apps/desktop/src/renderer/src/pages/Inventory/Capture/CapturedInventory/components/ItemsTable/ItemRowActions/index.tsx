@@ -33,10 +33,10 @@ export function ItemRowActions({ row, originalItem, onEdit, onViewInsights, onDe
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="flex size-7 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            className="flex size-7 items-center justify-center rounded text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:bg-muted hover:text-foreground transition-all"
             aria-label="Row actions"
           >
-            <MoreHorizontalIcon className="size-4" />
+            <MoreHorizontalIcon className="size-3.5" />
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-40 p-1" align="end" sideOffset={4}>

@@ -11,7 +11,13 @@ describe('loadDraft', () => {
   });
 
   it('returns parsed state when valid JSON exists', () => {
-    const draft = { lines: [], invoiceNumber: 'INV-001', invoiceDate: '2026-01-01' };
+    const draft = {
+      lines: [],
+      invoiceNumber: 'INV-001',
+      invoiceDate: '2026-01-01',
+      vatMode: 'exclusive' as const,
+      vatRate: 15,
+    };
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
     expect(loadDraft()).toEqual(draft);
   });
@@ -24,7 +30,13 @@ describe('loadDraft', () => {
 
 describe('saveDraft', () => {
   it('writes correct JSON to localStorage', () => {
-    const draft = { lines: [], invoiceNumber: '', invoiceDate: '' };
+    const draft = {
+      lines: [],
+      invoiceNumber: '',
+      invoiceDate: '',
+      vatMode: 'exclusive' as const,
+      vatRate: 15,
+    };
     saveDraft(draft);
     expect(JSON.parse(localStorage.getItem(DRAFT_KEY)!)).toEqual(draft);
   });

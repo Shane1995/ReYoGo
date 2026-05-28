@@ -4,6 +4,7 @@ export * from './components/badge';
 export * from './components/button';
 export * from './components/calendar';
 export * from './components/date-picker';
+export * from './components/date-range-picker';
 export * from './components/dialog';
 export * from './components/input';
 export * from './components/label';

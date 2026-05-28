@@ -26,6 +26,8 @@ function toIInvoice(row: schema.InvoiceRow): IInvoice {
     supplierId: row.supplierId ?? null,
     invoiceNumber: row.invoiceNumber ?? null,
     invoiceDate: row.invoiceDate ?? null,
+    vatMode: (row.vatMode as VatMode) ?? 'exclusive',
+    vatRate: row.vatRate ?? 15,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt ?? null,
   };
@@ -39,8 +41,7 @@ function toIInvoiceLine(row: schema.InvoiceLineItemRow, itemName?: string | null
     itemNameSnapshot: row.itemNameSnapshot || itemName || '',
     unitOfMeasure: null,
     quantity: row.qty,
-    vatMode: (row.vatMode as VatMode) ?? 'exclusive',
-    vatRate: row.vatRate ?? 15,
+    isVatable: row.isVatable ?? true,
     totalVatExclude: row.totalCost,
   };
 }
@@ -96,17 +97,23 @@ async function insertMovementsForLines(
   }
 }
 
+function computeTax(
+  lines: ISaveCapturedInvoicePayload['lines'],
+  vatRate: number,
+): { totalExclTax: number; taxAmount: number } {
+  const totalExclTax = lines.reduce((s, l) => s + l.totalVatExclude, 0);
+  const taxAmount = lines.reduce(
+    (s, l) => s + (l.isVatable ? l.totalVatExclude * (vatRate / 100) : 0),
+    0,
+  );
+  return { totalExclTax, taxAmount };
+}
+
 export function createInvoicesRepo(db: DbClient) {
   return {
     async saveInvoice(payload: ISaveCapturedInvoicePayload): Promise<void> {
       const createdAt = now();
-      const totalExclTax = payload.lines.reduce((s, l) => s + l.totalVatExclude, 0);
-      const taxAmount = payload.lines.reduce((s, l) => {
-        if (l.vatMode === 'non-taxable') return s;
-        const net =
-          l.vatMode === 'inclusive' ? l.totalVatExclude / (1 + l.vatRate / 100) : l.totalVatExclude;
-        return s + net * (l.vatRate / 100);
-      }, 0);
+      const { totalExclTax, taxAmount } = computeTax(payload.lines, payload.vatRate);
 
       await db.transaction(async (tx) => {
         await tx.insert(schema.invoices).values({
@@ -116,6 +123,8 @@ export function createInvoicesRepo(db: DbClient) {
           invoiceNumber: payload.invoiceNumber ?? null,
           invoiceDate: payload.invoiceDate ?? null,
           status: 'DRAFT',
+          vatMode: payload.vatMode,
+          vatRate: payload.vatRate,
           totalExclTax,
           taxAmount,
           totalInclTax: totalExclTax + taxAmount,
@@ -135,8 +144,7 @@ export function createInvoicesRepo(db: DbClient) {
               qty: l.quantity,
               unitCost: unitCostOf(l),
               totalCost: l.totalVatExclude,
-              vatMode: l.vatMode,
-              vatRate: l.vatRate,
+              isVatable: l.isVatable,
             })),
           );
           await insertMovementsForLines(
@@ -155,14 +163,11 @@ export function createInvoicesRepo(db: DbClient) {
       const current = await this.getInvoiceById(payload.id);
       if (!current) throw new Error(`Invoice not found: ${payload.id}`);
 
+      const vatMode = payload.vatMode ?? current.vatMode;
+      const vatRate = payload.vatRate ?? current.vatRate;
+
       const validLines = payload.lines.filter((l) => l.itemId && l.quantity >= 0);
-      const totalExclTax = validLines.reduce((s, l) => s + l.totalVatExclude, 0);
-      const taxAmount = validLines.reduce((s, l) => {
-        if (l.vatMode === 'non-taxable') return s;
-        const net =
-          l.vatMode === 'inclusive' ? l.totalVatExclude / (1 + l.vatRate / 100) : l.totalVatExclude;
-        return s + net * (l.vatRate / 100);
-      }, 0);
+      const { totalExclTax, taxAmount } = computeTax(validLines, vatRate);
 
       await db.transaction(async (tx) => {
         await tx.insert(schema.invoiceAuditLog).values({
@@ -196,8 +201,7 @@ export function createInvoicesRepo(db: DbClient) {
               qty: l.quantity,
               unitCost: unitCostOf(l),
               totalCost: l.totalVatExclude,
-              vatMode: l.vatMode,
-              vatRate: l.vatRate,
+              isVatable: l.isVatable,
             })),
           );
           await insertMovementsForLines(
@@ -212,6 +216,8 @@ export function createInvoicesRepo(db: DbClient) {
           .update(schema.invoices)
           .set({
             updatedAt: editedAt,
+            vatMode,
+            vatRate,
             totalExclTax,
             taxAmount,
             totalInclTax: totalExclTax + taxAmount,

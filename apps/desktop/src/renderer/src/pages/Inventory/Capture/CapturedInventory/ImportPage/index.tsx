@@ -99,7 +99,7 @@ export default function ImportPage() {
           addItem({
             name: item.name,
             categoryId: catId,
-            type: (cat?.type as 'food' | 'drink' | 'non-perishable') ?? 'food',
+            type: (cat?.type as 'food' | 'beverage' | 'non-food') ?? 'food',
             unitOfMeasureId,
             unitOfMeasure: item.unit,
           });

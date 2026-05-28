@@ -1,10 +1,12 @@
 import { useCallback, useEffect } from 'react';
-import type { ProcessReceiptLine } from '../../types';
+import type { ProcessReceiptLine, VatMode } from '../../types';
 
 export type DraftState = {
   lines: ProcessReceiptLine[];
   invoiceNumber: string;
   invoiceDate: string;
+  vatMode: VatMode;
+  vatRate: number;
 };
 
 const DRAFT_KEY = 'reyogo:invoice-draft';
@@ -31,6 +33,8 @@ export function useDraftPersistence(
   lines: ProcessReceiptLine[],
   invoiceNumber: string,
   invoiceDate: string,
+  vatMode: VatMode,
+  vatRate: number,
   isReused: boolean,
 ): { clearDraft: () => void } {
   const save = useCallback(() => {
@@ -38,11 +42,11 @@ export function useDraftPersistence(
     const hasMeaningfulContent =
       lines.some((l) => l.itemId) || !!invoiceNumber.trim() || !!invoiceDate;
     if (hasMeaningfulContent) {
-      saveDraft({ lines, invoiceNumber, invoiceDate });
+      saveDraft({ lines, invoiceNumber, invoiceDate, vatMode, vatRate });
     } else {
       clearDraft();
     }
-  }, [lines, invoiceNumber, invoiceDate, isReused]);
+  }, [lines, invoiceNumber, invoiceDate, vatMode, vatRate, isReused]);
 
   useEffect(() => {
     save();

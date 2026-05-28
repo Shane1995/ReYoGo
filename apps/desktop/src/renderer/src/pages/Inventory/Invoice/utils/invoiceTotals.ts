@@ -1,11 +1,11 @@
-import type { ICapturedInvoiceWithLines } from '@reyogo/types';
+import type { IInvoiceWithLines } from '@reyogo/types';
 
-export function invoiceTotals(lines: ICapturedInvoiceWithLines['lines']) {
+export function invoiceTotals(invoice: IInvoiceWithLines) {
   let excl = 0;
   let vat = 0;
-  for (const l of lines) {
+  for (const l of invoice.lines) {
     excl += l.totalVatExclude;
-    vat += l.vatMode !== 'non-taxable' ? l.totalVatExclude * (l.vatRate / 100) : 0;
+    vat += l.isVatable ? l.totalVatExclude * (invoice.vatRate / 100) : 0;
   }
   return { excl, vat, total: excl + vat };
 }

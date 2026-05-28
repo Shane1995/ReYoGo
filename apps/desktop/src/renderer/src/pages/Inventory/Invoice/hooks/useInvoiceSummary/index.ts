@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { ProcessReceiptLine } from '../../types';
+import type { ProcessReceiptLine, VatMode } from '../../types';
 import { getProcessLineComputed } from '../../types';
 
 type ItemLike = { id: string; name: string; categoryId: string };
@@ -9,6 +9,8 @@ export function useInvoiceSummary(
   lines: ProcessReceiptLine[],
   items: ItemLike[],
   categories: CategoryLike[],
+  vatMode: VatMode,
+  vatRate: number,
 ) {
   const itemsWithCategory = useMemo(
     () =>
@@ -28,7 +30,7 @@ export function useInvoiceSummary(
     () =>
       lines.reduce(
         (acc, line) => {
-          const c = getProcessLineComputed(line);
+          const c = getProcessLineComputed(line, vatMode, vatRate);
           return {
             lineCount: acc.lineCount + (line.itemId ? 1 : 0),
             subtotal: acc.subtotal + c.netTotal,
@@ -38,7 +40,7 @@ export function useInvoiceSummary(
         },
         { lineCount: 0, subtotal: 0, totalVat: 0, grandTotal: 0 },
       ),
-    [lines],
+    [lines, vatMode, vatRate],
   );
 
   const validLines = useMemo(

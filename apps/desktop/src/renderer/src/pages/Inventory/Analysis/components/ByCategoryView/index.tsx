@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ChevronRightIcon } from 'lucide-react';
 import { cn } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { InsightChips } from '../InsightChips';
@@ -26,7 +27,7 @@ export function ByCategoryView({ groups }: { groups: ItemGroup[] }) {
 
   if (groups.length === 0) {
     return (
-      <div className="rounded-xl border border-border bg-muted/20 p-10 text-center text-sm text-muted-foreground">
+      <div className="rounded-lg border border-[var(--nav-border)] bg-muted/10 p-10 text-center text-sm text-muted-foreground/60">
         No data for the selected range or search.
       </div>
     );
@@ -41,58 +42,53 @@ export function ByCategoryView({ groups }: { groups: ItemGroup[] }) {
   const catSections = Array.from(catMap.entries()).sort(([a], [b]) => a.localeCompare(b));
 
   return (
-    <div className="rounded-xl border border-border overflow-hidden">
+    <div className="rounded-lg border border-[var(--nav-border)] overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow className="bg-secondary hover:bg-secondary">
-            <TableHead className="text-xs font-semibold uppercase tracking-wider text-foreground/80">
+          <TableRow className="bg-muted/30 hover:bg-muted/30 border-[var(--nav-border)]">
+            <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5">
               Item
             </TableHead>
-            <TableHead className="text-center text-xs font-semibold uppercase tracking-wider text-foreground/80">
+            <TableHead className="text-center text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5">
               Entries
             </TableHead>
-            <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-foreground/80">
+            <TableHead className="text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5">
               Min
             </TableHead>
-            <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-foreground/80">
+            <TableHead className="text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5">
               Avg
             </TableHead>
-            <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-foreground/80">
-              Last Captured
+            <TableHead className="text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5">
+              Last captured
             </TableHead>
-            <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-foreground/80">
-              Last Price (excl. VAT)
+            <TableHead className="text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5">
+              Last price
             </TableHead>
-            <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-foreground/80">
-              Overall Change
+            <TableHead className="text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5">
+              Overall change
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {catSections.map(([catName, catGroups], ci) => {
+          {catSections.map(([catName, catGroups]) => {
             const catStats = groupStats(catGroups);
             const isExpanded = expandedCats.has(catName);
             return (
               <Fragment key={catName}>
                 <TableRow
-                  className={cn(
-                    'cursor-pointer select-none hover:bg-white/[0.08]',
-                    ci % 2 === 1 ? 'bg-white/[0.06]' : 'bg-muted/10',
-                  )}
+                  className="cursor-pointer select-none border-[var(--nav-border)] hover:bg-muted/20 transition-colors"
                   onClick={() => toggleCat(catName)}
                 >
                   <TableCell colSpan={7} className="relative py-0">
-                    <div className="absolute inset-y-0 left-0 w-0.5 bg-border" />
-                    <div className="flex items-center justify-between pl-6 pr-4 py-2.5">
+                    <div className="absolute inset-y-0 left-0 w-0.5 bg-[var(--nav-active-border)]/20" />
+                    <div className="flex items-center justify-between pl-5 pr-4 py-2.5">
                       <div className="flex items-center gap-2">
-                        <span
+                        <ChevronRightIcon
                           className={cn(
-                            'inline-block text-xs text-muted-foreground/50 transition-transform',
-                            isExpanded && 'rotate-90',
+                            'size-3.5 text-muted-foreground/30 transition-transform',
+                            isExpanded && 'rotate-90 text-primary',
                           )}
-                        >
-                          ▶
-                        </span>
+                        />
                         <span className="text-sm font-medium text-foreground/70">
                           {catName || 'Uncategorised'}
                         </span>
@@ -103,7 +99,7 @@ export function ByCategoryView({ groups }: { groups: ItemGroup[] }) {
                 </TableRow>
 
                 {isExpanded &&
-                  catGroups.map((group, gi) => {
+                  catGroups.map((group) => {
                     const last = group.entries[group.entries.length - 1]!;
                     const change = overallChangePct(group);
                     const minPrice = Math.min(...group.entries.map((e) => e.unitPrice));
@@ -112,33 +108,43 @@ export function ByCategoryView({ groups }: { groups: ItemGroup[] }) {
                     return (
                       <TableRow
                         key={group.itemId}
-                        className={cn(
-                          'cursor-pointer hover:bg-white/[0.08]',
-                          gi % 2 === 1 ? 'bg-white/[0.06]' : '',
-                        )}
+                        className="cursor-pointer border-[var(--nav-border)] hover:bg-muted/20 transition-colors"
                         onClick={() => navigate(itemTrendPath(group.itemId))}
                       >
-                        <TableCell className="py-3 pl-10 font-medium text-foreground hover:underline">
+                        <TableCell className="py-2.5 pl-10 font-medium text-foreground hover:text-primary transition-colors">
                           {group.name}
                         </TableCell>
-                        <TableCell className="py-3 text-center tabular-nums text-muted-foreground">
+                        <TableCell className="py-2.5 text-center font-mono text-sm tabular-nums text-muted-foreground">
                           {group.entries.length}
                         </TableCell>
-                        <TableCell className="py-3 text-right font-mono text-muted-foreground">
+                        <TableCell className="py-2.5 text-right font-mono text-sm tabular-nums text-muted-foreground">
                           {fmt(minPrice)}
                         </TableCell>
-                        <TableCell className="py-3 text-right font-mono text-muted-foreground">
+                        <TableCell className="py-2.5 text-right font-mono text-sm tabular-nums text-muted-foreground">
                           {fmt(avgPrice)}
                         </TableCell>
-                        <TableCell className="py-3 text-right text-muted-foreground">
+                        <TableCell className="py-2.5 text-right text-sm text-muted-foreground">
                           {fmtDate(last.date)}
                         </TableCell>
-                        <TableCell className="py-3 text-right font-mono font-medium text-foreground">
+                        <TableCell className="py-2.5 text-right font-mono text-sm tabular-nums font-medium text-foreground">
                           {fmt(last.unitPrice)}
-                          {last.uom ? ` / ${last.uom}` : ''}
+                          {last.uom ? (
+                            <span className="text-muted-foreground/60"> / {last.uom}</span>
+                          ) : (
+                            ''
+                          )}
                         </TableCell>
-                        <TableCell className={cn('py-3 text-right', changeCls(change, true))}>
-                          {change === null ? '—' : fmtPct(change)}
+                        <TableCell
+                          className={cn(
+                            'py-2.5 text-right font-mono text-sm tabular-nums',
+                            changeCls(change, true),
+                          )}
+                        >
+                          {change === null ? (
+                            <span className="text-muted-foreground/30">—</span>
+                          ) : (
+                            fmtPct(change)
+                          )}
                         </TableCell>
                       </TableRow>
                     );

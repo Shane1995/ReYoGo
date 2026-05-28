@@ -15,8 +15,7 @@ function line(overrides: {
   itemId?: string;
   quantity?: number;
   totalVatExclude?: number;
-  vatMode?: 'exclusive' | 'inclusive' | 'non-taxable';
-  vatRate?: number;
+  isVatable?: boolean;
   itemNameSnapshot?: string;
 }) {
   return {
@@ -24,8 +23,7 @@ function line(overrides: {
     itemId: overrides.itemId ?? 'item-1',
     itemNameSnapshot: overrides.itemNameSnapshot ?? '',
     quantity: overrides.quantity ?? 10,
-    vatMode: overrides.vatMode ?? ('exclusive' as const),
-    vatRate: overrides.vatRate ?? 15,
+    isVatable: overrides.isVatable ?? true,
     totalVatExclude: overrides.totalVatExclude ?? 100,
   };
 }
@@ -69,6 +67,8 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceDate: null,
         invoiceNumber: 'INV-001',
+        vatMode: 'exclusive',
+        vatRate: 15,
         lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 50 })],
       });
       const invoices = await db.select().from(schema.invoices);
@@ -83,6 +83,8 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceDate: null,
         invoiceNumber: null,
+        vatMode: 'exclusive',
+        vatRate: 15,
         lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
       });
       const movements = await db.select().from(schema.stockMovements);
@@ -98,6 +100,8 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: null,
         invoiceDate: new Date('2024-01-01'),
+        vatMode: 'exclusive',
+        vatRate: 15,
         lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
       });
       await repo.saveInvoice({
@@ -105,6 +109,8 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: null,
         invoiceDate: new Date('2024-01-02'),
+        vatMode: 'exclusive',
+        vatRate: 15,
         lines: [line({ id: 'l-2', quantity: 10, totalVatExclude: 200 })],
       });
       const movements = await db
@@ -121,9 +127,25 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceDate: null,
         invoiceNumber: null,
+        vatMode: 'exclusive',
+        vatRate: 15,
         lines: [line({ id: 'l-1', quantity: 0, totalVatExclude: 0 })],
       });
       expect(await db.select().from(schema.stockMovements)).toHaveLength(0);
+    });
+
+    it('computes zero tax for non-vatable lines', async () => {
+      await repo.saveInvoice({
+        id: 'inv-1',
+        supplierId: null,
+        invoiceDate: null,
+        invoiceNumber: null,
+        vatMode: 'exclusive',
+        vatRate: 15,
+        lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100, isVatable: false })],
+      });
+      const invoices = await db.select().from(schema.invoices);
+      expect(invoices[0]!.taxAmount).toBe(0);
     });
   });
 
@@ -134,6 +156,8 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: 'INV-001',
         invoiceDate: new Date('2024-01-01'),
+        vatMode: 'exclusive',
+        vatRate: 15,
         lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
       }),
     );
@@ -172,6 +196,8 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: null,
         invoiceDate: null,
+        vatMode: 'exclusive',
+        vatRate: 15,
         lines: [],
       });
       await repo.saveInvoice({
@@ -179,6 +205,8 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: null,
         invoiceDate: null,
+        vatMode: 'exclusive',
+        vatRate: 15,
         lines: [],
       });
       const invoices = await repo.getInvoices();
@@ -197,6 +225,8 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: 'INV-001',
         invoiceDate: null,
+        vatMode: 'exclusive',
+        vatRate: 15,
         lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
       });
       const result = await repo.getInvoiceById('inv-1');
@@ -212,6 +242,8 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: null,
         invoiceDate: null,
+        vatMode: 'exclusive',
+        vatRate: 15,
         lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
       });
       expect((await repo.getLastUnitPrices())['item-1']).toBe(10);

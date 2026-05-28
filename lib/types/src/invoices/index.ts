@@ -3,7 +3,7 @@ export enum InvoiceStatus {
   Posted = 'POSTED',
 }
 
-export type VatMode = 'inclusive' | 'exclusive' | 'non-taxable';
+export type VatMode = 'inclusive' | 'exclusive';
 
 export interface Invoice {
   id: string;
@@ -62,8 +62,7 @@ export interface IInvoiceLine {
   itemNameSnapshot: string;
   unitOfMeasure?: string | null;
   quantity: number;
-  vatMode: VatMode;
-  vatRate: number;
+  isVatable: boolean;
   totalVatExclude: number;
 }
 
@@ -72,6 +71,8 @@ export interface IInvoice {
   supplierId: string | null;
   invoiceNumber?: string | null;
   invoiceDate?: Date | null;
+  vatMode: VatMode;
+  vatRate: number;
   createdAt: Date;
   updatedAt?: Date | null;
 }
@@ -101,12 +102,16 @@ export interface ISaveInvoicePayload {
   supplierId?: string | null;
   invoiceNumber?: string | null;
   invoiceDate?: Date | null;
+  vatMode: VatMode;
+  vatRate: number;
   lines: IInvoiceLinePayload[];
 }
 
 export interface IUpdateInvoicePayload {
   id: string;
   note?: string;
+  vatMode?: VatMode;
+  vatRate?: number;
   lines: IInvoiceLinePayload[];
 }
 

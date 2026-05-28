@@ -1,7 +1,9 @@
 import { Button, PageHeader, DatePicker } from '@reyogo/ui';
 import { Link } from 'react-router-dom';
+import { RotateCcwIcon } from 'lucide-react';
 import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
 import type { Supplier } from '@reyogo/types';
+import type { VatMode } from '../../types';
 import { inputClass } from '../../utils/inputClass';
 import { cn } from '@reyogo/ui';
 
@@ -13,6 +15,8 @@ type Props = {
   supplierId: string;
   onSupplierChange: (id: string) => void;
   suppliers: Supplier[];
+  vatMode: VatMode;
+  onVatModeChange: (mode: VatMode) => void;
   vatRate: number;
   onVatRateChange: (rate: number) => void;
   onAddCategory: () => void;
@@ -20,6 +24,10 @@ type Props = {
   isDirty: boolean;
   onClear: () => void;
 };
+
+const fieldLabel =
+  'text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 mb-1';
+const fieldGroup = 'flex flex-col';
 
 export function InvoiceHeader({
   invoiceNumber,
@@ -29,6 +37,8 @@ export function InvoiceHeader({
   supplierId,
   onSupplierChange,
   suppliers,
+  vatMode,
+  onVatModeChange,
   vatRate,
   onVatRateChange,
   onAddCategory,
@@ -40,42 +50,48 @@ export function InvoiceHeader({
     <PageHeader
       title="Capture Invoice"
       actions={
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <Button asChild variant="ghost" size="sm">
-            <Link to={InvoiceRoutes.History}>View history</Link>
+            <Link to={InvoiceRoutes.History}>History</Link>
           </Button>
+          <div className="h-4 w-px bg-border" />
           <Button type="button" variant="outline" size="sm" onClick={onAddCategory}>
-            Add category
+            + Category
           </Button>
           <Button type="button" variant="outline" size="sm" onClick={onAddItem}>
-            Add item
+            + Item
           </Button>
         </div>
       }
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-muted-foreground whitespace-nowrap">Invoice #</label>
+      <div className="flex flex-wrap items-end gap-x-5 gap-y-3 pb-1">
+        <div className={fieldGroup}>
+          <label className={fieldLabel}>Invoice #</label>
           <input
             type="text"
             value={invoiceNumber}
             onChange={(e) => onInvoiceNumberChange(e.target.value)}
-            placeholder="e.g. INV-0042"
-            className={cn(inputClass, 'w-36')}
+            placeholder="INV-0042"
+            className={cn(
+              inputClass,
+              'w-52 font-mono text-[13px] placeholder:text-muted-foreground/40',
+            )}
           />
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-muted-foreground whitespace-nowrap">Invoice date</label>
+
+        <div className={fieldGroup}>
+          <label className={fieldLabel}>Date</label>
           <DatePicker value={invoiceDate} onChange={onInvoiceDateChange} />
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-muted-foreground whitespace-nowrap">Supplier</label>
+
+        <div className={fieldGroup}>
+          <label className={fieldLabel}>Supplier</label>
           <select
             value={supplierId}
             onChange={(e) => onSupplierChange(e.target.value)}
             className={cn(inputClass, 'w-44')}
           >
-            <option value="">No supplier</option>
+            <option value="">— none —</option>
             {suppliers.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
@@ -83,8 +99,23 @@ export function InvoiceHeader({
             ))}
           </select>
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-muted-foreground whitespace-nowrap">VAT rate %</label>
+
+        <div className="h-8 w-px bg-border/60 self-end mb-0.5 hidden sm:block" />
+
+        <div className={fieldGroup}>
+          <label className={fieldLabel}>VAT treatment</label>
+          <select
+            value={vatMode}
+            onChange={(e) => onVatModeChange(e.target.value as VatMode)}
+            className={cn(inputClass, 'w-40')}
+          >
+            <option value="exclusive">+ VAT (exclusive)</option>
+            <option value="inclusive">VAT included</option>
+          </select>
+        </div>
+
+        <div className={fieldGroup}>
+          <label className={fieldLabel}>Rate %</label>
           <input
             type="number"
             min={0}
@@ -92,15 +123,17 @@ export function InvoiceHeader({
             step={1}
             value={vatRate}
             onChange={(e) => onVatRateChange(Number(e.target.value))}
-            className={cn(inputClass, 'w-20')}
+            className={cn(inputClass, 'w-16 font-mono')}
           />
         </div>
+
         {isDirty && (
           <button
             type="button"
             onClick={onClear}
-            className="text-xs text-muted-foreground underline hover:text-destructive ml-1"
+            className="flex items-center gap-1.5 self-end mb-0.5 text-xs text-muted-foreground/60 hover:text-destructive transition-colors"
           >
+            <RotateCcwIcon className="size-3" />
             Clear
           </button>
         )}

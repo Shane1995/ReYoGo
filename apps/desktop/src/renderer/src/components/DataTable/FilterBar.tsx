@@ -112,7 +112,9 @@ function SingleSelect({
               : 'border-[var(--border)] bg-[var(--background)] text-[var(--muted-foreground)] hover:border-[var(--input)] hover:text-[var(--foreground)]',
           )}
         >
-          {selected ? (options.find((o) => o.value === selected)?.label ?? field.label) : field.label}
+          {selected
+            ? (options.find((o) => o.value === selected)?.label ?? field.label)
+            : field.label}
           <ChevronDownIcon className="size-3 opacity-60" />
         </button>
       </PopoverTrigger>
@@ -152,40 +154,36 @@ export function FilterBar({ filters, values, onChange, onClearAll }: Props) {
   const active = hasActiveFilters(values);
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-[var(--border)] bg-[var(--card)] px-4 py-2.5">
+    <div className="flex flex-wrap items-center gap-2 border-b border-[var(--nav-border)] bg-background px-4 py-2.5">
       {filters.map((field) => {
         if (field.type === 'search') {
           return (
             <div key={field.key} className="relative">
-              <SearchIcon className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[var(--muted-foreground)]" />
+              <SearchIcon className="absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground/50" />
               <Input
                 type="text"
                 placeholder={field.placeholder ?? `Search ${field.label}…`}
                 value={(values[field.key] as string) ?? ''}
                 onChange={(e) => onChange(field.key, e.target.value)}
-                className="h-8 w-56 pl-8 text-xs"
+                className="h-8 w-52 pl-8 text-xs placeholder:text-muted-foreground/40"
               />
             </div>
           );
         }
         if (field.multi) {
-          return (
-            <MultiSelect key={field.key} field={field} values={values} onChange={onChange} />
-          );
+          return <MultiSelect key={field.key} field={field} values={values} onChange={onChange} />;
         }
-        return (
-          <SingleSelect key={field.key} field={field} values={values} onChange={onChange} />
-        );
+        return <SingleSelect key={field.key} field={field} values={values} onChange={onChange} />;
       })}
 
       {active && (
         <button
           type="button"
           onClick={onClearAll}
-          className="flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-medium text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
+          className="flex h-8 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/50 transition-colors hover:text-foreground"
         >
           <XIcon className="size-3" />
-          Clear all
+          Clear
         </button>
       )}
     </div>

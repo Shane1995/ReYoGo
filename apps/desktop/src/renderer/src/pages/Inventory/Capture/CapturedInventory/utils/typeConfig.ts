@@ -15,13 +15,13 @@ export const KNOWN_TYPE_CONFIG: Record<string, TypeConfig> = {
     treeLine: 'border-emerald-200 dark:border-emerald-800',
     icon: UtensilsIcon,
   },
-  drink: {
+  beverage: {
     color: 'text-sky-700 dark:text-sky-400',
     badgeClass: 'border-transparent bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-300',
     treeLine: 'border-sky-200 dark:border-sky-800',
     icon: GlassWaterIcon,
   },
-  'non-perishable': {
+  'non-food': {
     color: 'text-amber-700 dark:text-amber-400',
     badgeClass:
       'border-transparent bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300',

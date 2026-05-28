@@ -1,9 +1,8 @@
 import { Fragment } from 'react';
-import { ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
-import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@reyogo/ui';
+import { ChevronDownIcon, ChevronRightIcon, XIcon } from 'lucide-react';
 import { TableCell, TableRow } from '@reyogo/ui';
 import { ItemAutocomplete, type ItemOption } from '../ItemAutocomplete';
-import type { ProcessReceiptLine } from '../../types';
+import type { ProcessReceiptLine, VatMode } from '../../types';
 import { getProcessLineComputed } from '../../types';
 import { formatMoney } from '../../utils/formatMoney';
 import { inputClass } from '../../utils/inputClass';
@@ -17,6 +16,8 @@ type ItemMeta = {
 
 type Props = {
   line: ProcessReceiptLine;
+  vatMode: VatMode;
+  vatRate: number;
   isExpanded: boolean;
   isLast: boolean;
   sortedItems: ItemOption[];
@@ -29,17 +30,17 @@ type Props = {
 };
 
 function ItemMetaHint({
-  line,
   itemMeta,
+  vatMode,
   computed,
 }: {
-  line: ProcessReceiptLine;
   itemMeta: ItemMeta;
+  vatMode: VatMode;
   computed: ReturnType<typeof getProcessLineComputed>;
 }) {
   const unitPrice =
     computed.netUnitPrice > 0
-      ? `Unit price: ${formatMoney(line.vatMode === 'inclusive' ? computed.grossUnitPrice : computed.netUnitPrice)} excl. VAT`
+      ? `${formatMoney(vatMode === 'inclusive' ? computed.grossUnitPrice : computed.netUnitPrice)} / unit`
       : null;
   const parts = [
     itemMeta.categoryName,
@@ -48,11 +49,17 @@ function ItemMetaHint({
     unitPrice,
   ].filter(Boolean);
   if (parts.length === 0) return null;
-  return <p className="mt-0.5 text-xs text-muted-foreground truncate">{parts.join(' · ')}</p>;
+  return (
+    <p className="mt-0.5 text-[11px] text-muted-foreground/60 truncate tracking-wide">
+      {parts.join(' · ')}
+    </p>
+  );
 }
 
 export function InvoiceLineRow({
   line,
+  vatMode,
+  vatRate,
   isExpanded,
   isLast,
   sortedItems,
@@ -63,23 +70,31 @@ export function InvoiceLineRow({
   onAddLine,
   onNavigateNext,
 }: Props) {
-  const computed = getProcessLineComputed(line);
+  const computed = getProcessLineComputed(line, vatMode, vatRate);
 
   return (
     <Fragment>
-      <TableRow className="border-[var(--nav-border)] hover:bg-muted/30">
+      <TableRow
+        className={cn(
+          'border-[var(--nav-border)] transition-colors group',
+          isExpanded ? 'bg-[var(--nav-accent)]/30' : 'hover:bg-muted/20',
+        )}
+      >
         <TableCell className="w-8 p-2 align-middle">
           <button
             type="button"
             onClick={onToggleExpand}
-            className="text-muted-foreground hover:text-foreground p-0.5 -m-0.5 rounded"
+            className={cn(
+              'rounded p-0.5 -m-0.5 transition-colors',
+              isExpanded ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground',
+            )}
             aria-expanded={isExpanded}
-            aria-label={isExpanded ? 'Collapse results' : 'Expand results'}
+            aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
           >
             {isExpanded ? (
-              <ChevronDownIcon className="size-4" aria-hidden />
+              <ChevronDownIcon className="size-3.5" aria-hidden />
             ) : (
-              <ChevronRightIcon className="size-4" aria-hidden />
+              <ChevronRightIcon className="size-3.5" aria-hidden />
             )}
           </button>
         </TableCell>
@@ -90,14 +105,14 @@ export function InvoiceLineRow({
             items={sortedItems}
             value={line.itemId}
             onChange={(itemId) => onUpdate({ itemId })}
-            placeholder="Search or select item…"
+            placeholder="Search item…"
             onSelectComplete={() => {
               document.getElementById(`invoice-qty-${line.id}`)?.focus();
               if (isLast) onAddLine();
             }}
           />
           {line.itemId && itemMeta && (
-            <ItemMetaHint line={line} itemMeta={itemMeta} computed={computed} />
+            <ItemMetaHint itemMeta={itemMeta} vatMode={vatMode} computed={computed} />
           )}
         </TableCell>
 
@@ -120,28 +135,37 @@ export function InvoiceLineRow({
                 document.getElementById(`invoice-total-${line.id}`)?.focus();
               }
             }}
-            className={cn(inputClass, 'w-20')}
+            className={cn(inputClass, 'w-20 font-mono')}
             placeholder="0"
           />
         </TableCell>
 
-        <TableCell className="py-2 px-3">
-          <Select
-            value={line.vatMode}
-            onValueChange={(v) => onUpdate({ vatMode: v as ProcessReceiptLine['vatMode'] })}
+        <TableCell className="py-2 px-3 text-center">
+          <button
+            id={`invoice-vat-${line.id}`}
+            type="button"
+            role="checkbox"
+            aria-checked={line.isVatable}
+            onClick={() => onUpdate({ isVatable: !line.isVatable })}
+            title={line.isVatable ? 'Taxable — click to exempt' : 'Exempt — click to make taxable'}
+            className={cn(
+              'inline-flex items-center justify-center size-5 rounded border transition-all',
+              line.isVatable
+                ? 'bg-primary border-primary text-primary-foreground'
+                : 'bg-background border-input text-transparent hover:border-primary/50',
+            )}
           >
-            <SelectTrigger
-              id={`invoice-vat-${line.id}`}
-              className="h-8 w-full text-sm focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent style={{ minWidth: '12rem' }}>
-              <SelectItem value="exclusive">No (add VAT)</SelectItem>
-              <SelectItem value="inclusive">Yes (VAT included)</SelectItem>
-              <SelectItem value="non-taxable">Non-taxable</SelectItem>
-            </SelectContent>
-          </Select>
+            <svg viewBox="0 0 10 8" className="size-2.5 fill-current" aria-hidden>
+              <path
+                d="M1 4l3 3 5-6"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
         </TableCell>
 
         <TableCell className="py-2 px-3">
@@ -163,50 +187,42 @@ export function InvoiceLineRow({
                 onAddLine();
               }
             }}
-            className={cn(inputClass, 'w-28')}
+            className={cn(inputClass, 'w-28 font-mono')}
             placeholder="0.00"
           />
         </TableCell>
 
-        <TableCell className="py-2 px-2">
-          <Button
+        <TableCell className="py-2 px-2 text-right">
+          <button
             type="button"
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
             onClick={onRemove}
+            title="Remove line"
+            className="opacity-0 group-hover:opacity-100 rounded p-1 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-all"
           >
-            Remove
-          </Button>
+            <XIcon className="size-3.5" aria-hidden />
+          </button>
         </TableCell>
       </TableRow>
 
       {isExpanded && (
-        <TableRow className="border-[var(--nav-border)] bg-muted/20">
-          <TableCell colSpan={7} className="py-2 pl-10 pr-4 align-top">
-            <div className="flex flex-wrap gap-6 text-sm">
-              <span className="text-muted-foreground">
-                Net unit price{' '}
-                <span className="font-mono text-foreground">
-                  {formatMoney(computed.netUnitPrice)}
-                </span>
-              </span>
-              <span className="text-muted-foreground">
-                Gross unit price{' '}
-                <span className="font-mono text-foreground">
-                  {formatMoney(computed.grossUnitPrice)}
-                </span>
-              </span>
-              <span className="text-muted-foreground">
-                Net total{' '}
-                <span className="font-mono text-foreground">{formatMoney(computed.netTotal)}</span>
-              </span>
-              <span className="text-muted-foreground">
-                Gross total{' '}
-                <span className="font-mono text-foreground">
-                  {formatMoney(computed.grossTotal)}
-                </span>
-              </span>
+        <TableRow className="border-[var(--nav-border)] bg-[var(--nav-accent)]/20">
+          <TableCell colSpan={7} className="py-2.5 pl-10 pr-4 align-top">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-1 sm:flex sm:flex-wrap sm:gap-x-8">
+              {[
+                { label: 'Net unit', value: computed.netUnitPrice },
+                { label: 'Gross unit', value: computed.grossUnitPrice },
+                { label: 'Net total', value: computed.netTotal },
+                { label: 'Gross total', value: computed.grossTotal },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex items-baseline gap-1.5">
+                  <span className="text-[11px] uppercase tracking-widest text-muted-foreground/60">
+                    {label}
+                  </span>
+                  <span className="font-mono text-sm text-foreground tabular-nums">
+                    {formatMoney(value)}
+                  </span>
+                </div>
+              ))}
             </div>
           </TableCell>
         </TableRow>

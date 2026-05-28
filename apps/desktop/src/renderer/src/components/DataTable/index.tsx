@@ -33,7 +33,7 @@ export function DataTable<T>({
   rowKey,
 }: Props<T>) {
   return (
-    <div className="rounded-xl border border-border overflow-hidden">
+    <div className="rounded-lg border border-[var(--nav-border)] overflow-hidden">
       {filters.length > 0 && onFilterChange && onClearFilters && (
         <FilterBar
           filters={filters}
@@ -45,13 +45,13 @@ export function DataTable<T>({
 
       <Table>
         <TableHeader>
-          <TableRow className="bg-secondary hover:bg-secondary">
+          <TableRow className="bg-muted/30 hover:bg-muted/30 border-[var(--nav-border)]">
             {columns.map((col) => (
               <TableHead
                 key={col.key}
                 style={col.width ? { width: col.width } : undefined}
                 className={cn(
-                  'text-xs font-semibold uppercase tracking-wider text-foreground/80',
+                  'text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5',
                   alignClass(col.align),
                 )}
               >
@@ -65,16 +65,19 @@ export function DataTable<T>({
             <TableRow>
               <TableCell
                 colSpan={columns.length}
-                className="py-12 text-center text-sm text-muted-foreground"
+                className="py-16 text-center text-sm text-muted-foreground/60"
               >
                 {emptyMessage}
               </TableCell>
             </TableRow>
           ) : (
-            data.map((row, i) => (
-              <TableRow key={rowKey(row)} className={i % 2 === 1 ? 'bg-white/[0.06]' : ''}>
+            data.map((row) => (
+              <TableRow
+                key={rowKey(row)}
+                className="border-[var(--nav-border)] transition-colors hover:bg-muted/20 group"
+              >
                 {columns.map((col) => (
-                  <TableCell key={col.key} className={cn('py-3 px-4', alignClass(col.align))}>
+                  <TableCell key={col.key} className={cn('py-2.5 px-4', alignClass(col.align))}>
                     {col.cell(row)}
                   </TableCell>
                 ))}

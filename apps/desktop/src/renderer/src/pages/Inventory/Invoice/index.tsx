@@ -29,6 +29,8 @@ export default function InvoicePage() {
     setInvoiceDate,
     supplierId,
     setSupplierId,
+    vatMode,
+    setVatMode,
     vatRate,
     setVatRate,
     expandedResultLineIds,
@@ -69,6 +71,8 @@ export default function InvoicePage() {
         supplierId={supplierId}
         onSupplierChange={setSupplierId}
         suppliers={suppliers}
+        vatMode={vatMode}
+        onVatModeChange={setVatMode}
         vatRate={vatRate}
         onVatRateChange={setVatRate}
         onAddCategory={() => setCategoryModalOpen(true)}
@@ -83,16 +87,24 @@ export default function InvoicePage() {
 
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-4 my-4">
-          <div className="rounded-lg border border-[var(--nav-border)] bg-background">
+          <div className="rounded-lg border border-[var(--nav-border)] bg-background overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="border-[var(--nav-border)] hover:bg-transparent">
+                <TableRow className="border-[var(--nav-border)] hover:bg-transparent bg-muted/30">
                   <TableHead className="w-8 p-2" />
-                  <TableHead className="font-medium text-foreground">Item</TableHead>
-                  <TableHead className="font-medium text-foreground w-20">Quantity</TableHead>
-                  <TableHead className="font-medium text-foreground w-52">VAT</TableHead>
-                  <TableHead className="font-medium text-foreground w-28">Total</TableHead>
-                  <TableHead className="w-20" />
+                  <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5">
+                    Item
+                  </TableHead>
+                  <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5 w-24">
+                    Qty
+                  </TableHead>
+                  <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5 w-20 text-center">
+                    Tax
+                  </TableHead>
+                  <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5 w-32">
+                    Total (excl.)
+                  </TableHead>
+                  <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -100,6 +112,8 @@ export default function InvoicePage() {
                   <InvoiceLineRow
                     key={line.id}
                     line={line}
+                    vatMode={vatMode}
+                    vatRate={vatRate}
                     isExpanded={expandedResultLineIds.has(line.id)}
                     isLast={i === lines.length - 1}
                     sortedItems={sortedItems}
@@ -126,10 +140,10 @@ export default function InvoicePage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => addLine()}
-                className="gap-1.5 text-primary hover:text-primary"
+                className="gap-1.5 text-muted-foreground hover:text-foreground text-xs"
               >
-                <PlusIcon className="size-4" aria-hidden />
-                Add row
+                <PlusIcon className="size-3.5" aria-hidden />
+                Add line
               </Button>
             </div>
           </div>

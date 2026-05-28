@@ -59,7 +59,7 @@ export function AuditPanel({ invoiceId, onClose }: Props) {
           <div className="flex flex-col gap-2">
             {entries.map((entry) => {
               const snap = entry.snapshot;
-              const totals = invoiceTotals(snap.lines);
+              const totals = invoiceTotals(snap);
               const isOpen = expanded === entry.id;
               return (
                 <div
@@ -108,7 +108,7 @@ export function AuditPanel({ invoiceId, onClose }: Props) {
                                 {formatMoney(l.totalVatExclude)}
                               </td>
                               <td className="py-1 text-right">
-                                {l.vatMode === 'non-taxable' ? '—' : `${l.vatRate}%`}
+                                {l.isVatable ? `${snap.vatRate}%` : '—'}
                               </td>
                             </tr>
                           ))}

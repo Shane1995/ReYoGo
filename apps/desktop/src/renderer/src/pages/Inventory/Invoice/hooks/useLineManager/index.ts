@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { ProcessReceiptLine } from '../../types';
-import type { VatMode } from '../../types';
 import { createEmptyLine } from '../../utils/createEmptyLine';
 
 export function useLineManager(initialLines?: ProcessReceiptLine[]) {
@@ -25,8 +24,8 @@ export function useLineManager(initialLines?: ProcessReceiptLine[]) {
     return () => clearTimeout(t);
   }, [lines, focusPendingLine]);
 
-  const addLine = useCallback((focusField = 'item', vatRate?: number) => {
-    const newLine = vatRate !== undefined ? { ...createEmptyLine(), vatRate } : createEmptyLine();
+  const addLine = useCallback((focusField = 'item') => {
+    const newLine = createEmptyLine();
     pendingFocusRef.current = { id: newLine.id, field: focusField };
     setLines((prev) => [...prev, newLine]);
   }, []);
@@ -42,9 +41,5 @@ export function useLineManager(initialLines?: ProcessReceiptLine[]) {
     setLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)));
   }, []);
 
-  const setAllVatMode = useCallback((mode: VatMode) => {
-    setLines((prev) => prev.map((l) => ({ ...l, vatMode: mode })));
-  }, []);
-
-  return { lines, setLines, addLine, removeLine, updateLine, setAllVatMode };
+  return { lines, setLines, addLine, removeLine, updateLine };
 }

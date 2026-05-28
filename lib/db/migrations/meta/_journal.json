@@ -33,8 +33,15 @@
     {
       "idx": 4,
       "version": "6",
-      "when": 1748304000000,
+      "when": 1779750000000,
       "tag": "0004_invoice_line_vat_snapshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1779864207036,
+      "tag": "0005_nice_loners",
       "breakpoints": true
     }
   ]

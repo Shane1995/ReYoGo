@@ -5,7 +5,7 @@ import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Contex
 import type { ICapturedInvoiceWithLines } from '@reyogo/types';
 import { ItemAutocomplete } from '../../../components/ItemAutocomplete';
 import type { ProcessReceiptLine } from '../../../types';
-import { getProcessLineComputed, DEFAULT_VAT_RATE } from '../../../types';
+import { getProcessLineComputed } from '../../../types';
 import { inputClass } from '../../../utils/inputClass';
 import { formatMoney } from '../../../utils/formatMoney';
 import { createEmptyLine } from '../../../utils/createEmptyLine';
@@ -21,11 +21,15 @@ type Props = {
 export function EditPanel({ invoice, onSave, onCancel }: Props) {
   const { items, categories } = useInventory();
   const [lines, setLines] = useState<ProcessReceiptLine[]>(() =>
-    invoice.lines.length > 0 ? invoice.lines.map(lineToEditLine) : [createEmptyLine()],
+    invoice.lines.length > 0
+      ? invoice.lines.map((l) => lineToEditLine(l, invoice.vatMode, invoice.vatRate))
+      : [createEmptyLine()],
   );
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { vatMode, vatRate } = invoice;
 
   const itemsWithCategory = items.map((item) => {
     const cat = categories.find((c) => c.id === item.categoryId);
@@ -64,7 +68,7 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
 
   const summary = lines.reduce(
     (acc, l) => {
-      const c = getProcessLineComputed(l);
+      const c = getProcessLineComputed(l, vatMode, vatRate);
       return {
         excl: acc.excl + c.netTotal,
         vat: acc.vat + c.vatAmount,
@@ -76,15 +80,25 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
 
   return (
     <div className="border-t border-[var(--nav-border)] bg-muted/5">
-      <div className="flex items-center gap-3 px-4 pt-3 pb-2">
-        <label className="shrink-0 text-sm font-medium text-muted-foreground">Edit note</label>
-        <input
-          type="text"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Optional reason for this edit (recorded in audit trail)"
-          className={cn(inputClass, 'max-w-md')}
-        />
+      <div className="flex items-center gap-4 px-4 pt-3 pb-2">
+        <div className="flex items-center gap-3">
+          <label className="shrink-0 text-sm font-medium text-muted-foreground">Edit note</label>
+          <input
+            type="text"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Optional reason for this edit (recorded in audit trail)"
+            className={cn(inputClass, 'max-w-md')}
+          />
+        </div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>
+            VAT:{' '}
+            <span className="text-foreground">
+              {vatMode === 'inclusive' ? 'Inclusive' : 'Exclusive'} · {vatRate}%
+            </span>
+          </span>
+        </div>
       </div>
 
       <div className="px-4 pb-2">
@@ -93,9 +107,8 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
             <tr className="border-b border-[var(--nav-border)]">
               <th className="pb-2 pr-3 text-left font-medium">Item</th>
               <th className="pb-2 pr-3 text-right font-medium w-20">Qty</th>
-              <th className="pb-2 pr-3 text-left font-medium w-36">VAT</th>
-              <th className="pb-2 pr-3 text-right font-medium w-24">VAT %</th>
-              <th className="pb-2 pr-3 text-right font-medium w-28">Total (excl.)</th>
+              <th className="pb-2 pr-3 text-center font-medium w-20">Taxable</th>
+              <th className="pb-2 pr-3 text-right font-medium w-28">Total</th>
               <th className="pb-2 w-16" />
             </tr>
           </thead>
@@ -125,40 +138,13 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
                     placeholder="0"
                   />
                 </td>
-                <td className="py-1.5 pr-3">
-                  <select
-                    value={line.vatMode}
-                    onChange={(e) =>
-                      updateLine(line.id, {
-                        vatMode: e.target.value as ProcessReceiptLine['vatMode'],
-                      })
-                    }
-                    className={cn(inputClass, 'min-w-[8rem] cursor-pointer')}
-                  >
-                    <option value="exclusive">No (add VAT)</option>
-                    <option value="inclusive">Yes (incl.)</option>
-                    <option value="non-taxable">Non-taxable</option>
-                  </select>
-                </td>
-                <td className="py-1.5 pr-3">
+                <td className="py-1.5 pr-3 text-center">
                   <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={0.01}
-                    value={line.vatMode !== 'non-taxable' ? line.vatRate : ''}
-                    onChange={(e) =>
-                      updateLine(line.id, {
-                        vatRate: e.target.value === '' ? 0 : Number(e.target.value),
-                      })
-                    }
-                    disabled={line.vatMode === 'non-taxable'}
-                    className={cn(
-                      inputClass,
-                      'w-20',
-                      line.vatMode === 'non-taxable' && 'opacity-40',
-                    )}
-                    placeholder="15"
+                    type="checkbox"
+                    checked={line.isVatable}
+                    onChange={(e) => updateLine(line.id, { isVatable: e.target.checked })}
+                    className="size-4 cursor-pointer accent-primary"
+                    title="Taxable"
                   />
                 </td>
                 <td className="py-1.5 pr-3">
@@ -191,19 +177,7 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
         </table>
         <button
           type="button"
-          onClick={() =>
-            setLines((prev) => [
-              ...prev,
-              {
-                id: window.crypto.randomUUID(),
-                itemId: '',
-                quantity: 0,
-                vatMode: 'exclusive',
-                vatRate: DEFAULT_VAT_RATE,
-                totalVatExclude: 0,
-              },
-            ])
-          }
+          onClick={() => setLines((prev) => [...prev, createEmptyLine()])}
           className="mt-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
           + Add row

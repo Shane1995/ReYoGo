@@ -14,6 +14,8 @@ export const invoices = sqliteTable(
     invoiceNumber: text('invoice_number'),
     invoiceDate: integer('invoice_date', { mode: 'timestamp' }),
     status: text('status').notNull().default('DRAFT'),
+    vatMode: text('vat_mode').notNull().default('exclusive'),
+    vatRate: real('vat_rate').notNull().default(15),
     totalExclTax: real('total_excl_tax').notNull().default(0),
     taxAmount: real('tax_amount').notNull().default(0),
     totalInclTax: real('total_incl_tax').notNull().default(0),

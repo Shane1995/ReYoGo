@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
 import { invoiceService } from '@/services/invoice';
-import type { ProcessReceiptLine } from '../../types';
+import type { ProcessReceiptLine, VatMode } from '../../types';
 import { getProcessLineComputed, DEFAULT_VAT_RATE } from '../../types';
 import { createEmptyLine } from '../../utils/createEmptyLine';
 import { loadDraft, useDraftPersistence } from '../useDraftPersistence';
@@ -31,42 +31,42 @@ export function useInvoiceForm() {
     isReused ? '' : (loadDraft()?.invoiceDate ?? ''),
   );
   const [supplierId, setSupplierId] = useState<string>('');
-  const [vatRate, setVatRateState] = useState<number>(
-    () => initialLines[0]?.vatRate ?? DEFAULT_VAT_RATE,
+  const [vatMode, setVatModeState] = useState<VatMode>(() =>
+    isReused ? 'exclusive' : (loadDraft()?.vatMode ?? 'exclusive'),
+  );
+  const [vatRate, setVatRateState] = useState<number>(() =>
+    isReused ? DEFAULT_VAT_RATE : (loadDraft()?.vatRate ?? DEFAULT_VAT_RATE),
   );
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [expandedResultLineIds, setExpandedResultLineIds] = useState<Set<string>>(new Set());
   const [reuseNoticeDismissed, setReuseNoticeDismissed] = useState(false);
 
-  const {
+  const { lines, setLines, addLine, removeLine, updateLine } = useLineManager(initialLines);
+
+  const setVatMode = useCallback((mode: VatMode) => {
+    setVatModeState(mode);
+  }, []);
+
+  const setVatRate = useCallback((rate: number) => {
+    setVatRateState(rate);
+  }, []);
+
+  const { clearDraft } = useDraftPersistence(
     lines,
-    setLines,
-    addLine: addLineRaw,
-    removeLine,
-    updateLine,
-    setAllVatMode,
-  } = useLineManager(initialLines);
-
-  const addLine = useCallback(
-    (focusField = 'item') => addLineRaw(focusField, vatRate),
-    [addLineRaw, vatRate],
+    invoiceNumber,
+    invoiceDate,
+    vatMode,
+    vatRate,
+    isReused,
   );
-
-  const setVatRate = useCallback(
-    (rate: number) => {
-      setVatRateState(rate);
-      setLines((prev) => prev.map((l) => ({ ...l, vatRate: rate })));
-    },
-    [setLines],
-  );
-
-  const { clearDraft } = useDraftPersistence(lines, invoiceNumber, invoiceDate, isReused);
 
   const { invoiceSummary, validLines, itemsWithCategory, itemMetaMap } = useInvoiceSummary(
     lines,
     items,
     categories,
+    vatMode,
+    vatRate,
   );
 
   const canSave =
@@ -89,6 +89,8 @@ export function useInvoiceForm() {
     setInvoiceNumber('');
     setInvoiceDate('');
     setSupplierId('');
+    setVatModeState('exclusive');
+    setVatRateState(DEFAULT_VAT_RATE);
     setExpandedResultLineIds(new Set());
     clearDraft();
   }, [clearDraft, setLines]);
@@ -109,15 +111,16 @@ export function useInvoiceForm() {
         supplierId: supplierId || null,
         invoiceNumber: invoiceNumber.trim() || null,
         invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
+        vatMode,
+        vatRate,
         lines: validLines.map((line) => {
-          const computed = getProcessLineComputed(line);
+          const computed = getProcessLineComputed(line, vatMode, vatRate);
           return {
             id: line.id,
             itemId: line.itemId,
             itemNameSnapshot: itemMetaMap.get(line.itemId)?.name ?? '',
             quantity: Number(line.quantity),
-            vatMode: line.vatMode,
-            vatRate: line.vatRate,
+            isVatable: line.isVatable,
             totalVatExclude: computed.netTotal,
           };
         }),
@@ -129,7 +132,17 @@ export function useInvoiceForm() {
     } finally {
       setIsSaving(false);
     }
-  }, [canSave, validLines, invoiceNumber, invoiceDate, supplierId, itemMetaMap, clearForm]);
+  }, [
+    canSave,
+    validLines,
+    invoiceNumber,
+    invoiceDate,
+    supplierId,
+    vatMode,
+    vatRate,
+    itemMetaMap,
+    clearForm,
+  ]);
 
   return {
     units,
@@ -143,6 +156,8 @@ export function useInvoiceForm() {
     setInvoiceDate,
     supplierId,
     setSupplierId,
+    vatMode,
+    setVatMode,
     vatRate,
     setVatRate,
     expandedResultLineIds,
@@ -155,7 +170,6 @@ export function useInvoiceForm() {
     addLine,
     removeLine,
     updateLine,
-    setAllVatMode,
     clearForm,
     isDirty,
     canSave,

@@ -55,7 +55,7 @@ export function ItemsTable({
             if (el) el.indeterminate = someSelected && !allSelected;
           }}
           onChange={toggleAll}
-          className="size-4 cursor-pointer rounded border-border accent-primary"
+          className="size-3.5 cursor-pointer rounded border-border accent-primary"
           aria-label="Select all"
         />
       ),
@@ -65,14 +65,14 @@ export function ItemsTable({
           type="checkbox"
           checked={selectedIds.has(row.id)}
           onChange={() => toggleOne(row.id)}
-          className="size-4 cursor-pointer rounded border-border accent-primary"
+          className="size-3.5 cursor-pointer rounded border-border accent-primary"
           aria-label={`Select ${row.name}`}
         />
       ),
     },
     {
       key: 'name',
-      header: 'Item Name',
+      header: 'Item',
       cell: (row) => <span className="font-medium text-foreground">{row.name}</span>,
     },
     {
@@ -80,52 +80,60 @@ export function ItemsTable({
       header: 'Type',
       cell: (row) => {
         const cfg = getTypeConfig(row.type, allTypes);
-        return <Badge className={cn('text-xs font-medium', cfg.badgeClass)}>{row.type}</Badge>;
+        return (
+          <Badge className={cn('text-[11px] font-medium capitalize', cfg.badgeClass)}>
+            {row.type}
+          </Badge>
+        );
       },
     },
     {
       key: 'category',
       header: 'Category',
-      cell: (row) => <span className="text-muted-foreground">{row.categoryName}</span>,
+      cell: (row) => <span className="text-muted-foreground text-sm">{row.categoryName}</span>,
     },
     {
       key: 'unit',
-      header: 'Unit of Measure',
+      header: 'Unit',
       cell: (row) =>
         row.unitOfMeasure ? (
-          <Badge variant="secondary" className="text-xs font-normal">
+          <Badge variant="secondary" className="text-[11px] font-normal">
             {row.unitOfMeasure}
           </Badge>
         ) : (
-          <span className="text-muted-foreground/50">—</span>
+          <span className="text-muted-foreground/30">—</span>
         ),
     },
     {
       key: 'cost',
-      header: 'Last Cost / Unit',
+      header: 'Last cost / unit',
       align: 'right',
       cell: (row) =>
         row.lastCostPerUnit !== undefined ? (
-          <span className="font-mono text-foreground">
+          <span className="font-mono text-sm tabular-nums text-foreground">
             {row.lastCostPerUnit.toFixed(2)}
-            {row.lastCostUom ? ` / ${row.lastCostUom}` : ''}
+            {row.lastCostUom ? (
+              <span className="text-muted-foreground/60"> / {row.lastCostUom}</span>
+            ) : null}
           </span>
         ) : (
-          <span className="text-muted-foreground/50">No data</span>
+          <span className="text-muted-foreground/30 text-xs">—</span>
         ),
     },
     {
       key: 'weightedAvgCost',
-      header: 'Weighted Avg Cost',
+      header: 'Avg cost',
       align: 'right',
       cell: (row) =>
         row.weightedAvgCost != null ? (
-          <span className="font-mono text-foreground">
+          <span className="font-mono text-sm tabular-nums text-foreground">
             {row.weightedAvgCost.toFixed(2)}
-            {row.unitOfMeasure ? ` / ${row.unitOfMeasure}` : ''}
+            {row.unitOfMeasure ? (
+              <span className="text-muted-foreground/60"> / {row.unitOfMeasure}</span>
+            ) : null}
           </span>
         ) : (
-          <span className="text-muted-foreground/50">—</span>
+          <span className="text-muted-foreground/30 text-xs">—</span>
         ),
     },
     {
@@ -134,17 +142,19 @@ export function ItemsTable({
       align: 'right',
       cell: (row) =>
         row.currentStock !== undefined ? (
-          <span className="font-mono text-foreground">
+          <span className="font-mono text-sm tabular-nums text-foreground">
             {row.currentStock % 1 === 0 ? row.currentStock.toFixed(0) : row.currentStock.toFixed(2)}
-            {row.unitOfMeasure ? ` ${row.unitOfMeasure}` : ''}
+            {row.unitOfMeasure ? (
+              <span className="text-muted-foreground/60"> {row.unitOfMeasure}</span>
+            ) : null}
           </span>
         ) : (
-          <span className="text-muted-foreground/50">—</span>
+          <span className="text-muted-foreground/30 text-xs">—</span>
         ),
     },
     {
       key: 'actions',
-      header: 'Actions',
+      header: '',
       align: 'right',
       width: '48px',
       cell: (row) => (

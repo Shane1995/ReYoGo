@@ -1,4 +1,4 @@
-import { index, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { invoices } from '../invoices';
 import { inventoryItems } from '../inventoryItems';
 
@@ -16,8 +16,7 @@ export const invoiceLineItems = sqliteTable(
     qty: real('qty').notNull(),
     unitCost: real('unit_cost').notNull().default(0),
     totalCost: real('total_cost').notNull().default(0),
-    vatMode: text('vat_mode').notNull().default('exclusive'),
-    vatRate: real('vat_rate').notNull().default(15),
+    isVatable: integer('is_vatable', { mode: 'boolean' }).notNull().default(true),
   },
   (t) => ({
     invoiceLinesByInvoice: index('invoice_lines_invoice_idx').on(t.invoiceId),

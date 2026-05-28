@@ -34,14 +34,14 @@ export default function InventoryIndex() {
       <PageHeader
         title="Captured Inventory"
         actions={
-          <Button size="sm" onClick={() => setAddModalOpen(true)}>
+          <Button size="sm" variant="outline" onClick={() => setAddModalOpen(true)}>
             <PlusIcon className="size-3.5" />
-            Add Item
+            Add
           </Button>
         }
       />
       <div className="min-h-0 flex-1 overflow-auto">
-        <div className="mx-6 my-5">
+        <div className="mx-4 my-4">
           <ItemsTable
             items={items}
             categories={categories}
@@ -65,15 +65,9 @@ export default function InventoryIndex() {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            className="fixed bottom-6 right-6 z-40 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
+            className="fixed bottom-6 right-6 z-40 flex size-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md hover:bg-[var(--primary-hover)] transition-colors"
           >
-            <motion.span
-              animate={{ rotate: addModalOpen ? 45 : 0 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-              className="flex"
-            >
-              <PlusIcon className="size-5" />
-            </motion.span>
+            <PlusIcon className="size-4" />
           </motion.button>
         )}
       </AnimatePresence>

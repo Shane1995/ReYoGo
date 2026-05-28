@@ -52,14 +52,8 @@ describe('useLineManager', () => {
     expect(result.current.lines[0]!.quantity).toBe(5);
   });
 
-  it('setAllVatMode updates vatMode on every line', () => {
+  it('new lines default isVatable to true', () => {
     const { result } = renderHook(() => useLineManager());
-    act(() => {
-      result.current.addLine();
-    });
-    act(() => {
-      result.current.setAllVatMode('inclusive');
-    });
-    expect(result.current.lines.every((l) => l.vatMode === 'inclusive')).toBe(true);
+    expect(result.current.lines[0]!.isVatable).toBe(true);
   });
 });
