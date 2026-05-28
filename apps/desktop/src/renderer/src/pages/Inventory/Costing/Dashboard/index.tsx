@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
-import { PageHeader } from '@reyogo/ui';
+import { PageHeader, DatePicker } from '@reyogo/ui';
 import { stockMovementsService } from '@/services/stockMovements';
-import type { ICOGSSummary } from '@reyogo/types';
-
-const inputClass =
-  'h-8 rounded-md border border-input bg-muted px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40';
+import type { COGSSummary } from '@reyogo/types';
 
 function fmt(n: number) {
   return n.toLocaleString('en-ZA', {
@@ -17,7 +14,7 @@ function fmt(n: number) {
 export default function CostingDashboard() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
-  const [cogs, setCogs] = useState<ICOGSSummary | null>(null);
+  const [cogs, setCogs] = useState<COGSSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,21 +32,11 @@ export default function CostingDashboard() {
         <div className="flex flex-wrap items-center gap-2.5 text-sm">
           <div className="flex items-center gap-1.5">
             <label className="text-muted-foreground shrink-0">From</label>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className={inputClass}
-            />
+            <DatePicker value={fromDate} onChange={setFromDate} />
           </div>
           <div className="flex items-center gap-1.5">
             <label className="text-muted-foreground shrink-0">To</label>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className={inputClass}
-            />
+            <DatePicker value={toDate} onChange={setToDate} />
           </div>
           {(fromDate || toDate) && (
             <button

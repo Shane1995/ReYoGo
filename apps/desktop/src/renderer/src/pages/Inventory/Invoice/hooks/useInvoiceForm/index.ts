@@ -1,37 +1,14 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
-import { InvoicesIPC } from '@shared/types/ipc';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
+import { invoiceService } from '@/services/invoice';
 import type { ProcessReceiptLine, VatMode } from '../../types';
-import { getProcessLineComputed } from '../../types';
+import { getProcessLineComputed, DEFAULT_VAT_RATE } from '../../types';
 import { createEmptyLine } from '../../utils/createEmptyLine';
-
-const DRAFT_KEY = 'reyogo:invoice-draft';
-
-type DraftState = {
-  lines: ProcessReceiptLine[];
-  invoiceNumber: string;
-  invoiceDate: string;
-};
-
-function loadDraft(): DraftState | null {
-  try {
-    const raw = localStorage.getItem(DRAFT_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as DraftState;
-  } catch {
-    return null;
-  }
-}
-
-function saveDraft(state: DraftState) {
-  localStorage.setItem(DRAFT_KEY, JSON.stringify(state));
-}
-
-function clearDraft() {
-  localStorage.removeItem(DRAFT_KEY);
-}
+import { loadDraft, useDraftPersistence } from '../useDraftPersistence';
+import { useLineManager } from '../useLineManager';
+import { useInvoiceSummary } from '../useInvoiceSummary';
 
 export function useInvoiceForm() {
   const { items, categories, units, addCategory, addItem } = useInventory();
@@ -41,48 +18,62 @@ export function useInvoiceForm() {
     ?.templateLines;
   const isReused = !!templateLines;
 
-  const [lines, setLines] = useState<ProcessReceiptLine[]>(() => {
+  const initialLines = (() => {
     if (templateLines && templateLines.length > 0) return templateLines;
     const draft = loadDraft();
     return draft?.lines.length ? draft.lines : [createEmptyLine()];
-  });
-  const [invoiceNumber, setInvoiceNumber] = useState<string>(() => {
-    if (isReused) return '';
-    return loadDraft()?.invoiceNumber ?? '';
-  });
-  const [invoiceDate, setInvoiceDate] = useState<string>(() => {
-    if (isReused) return '';
-    return loadDraft()?.invoiceDate ?? '';
-  });
-  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
-  const [itemModalOpen, setItemModalOpen] = useState(false);
-  const [expandedResultLineIds, setExpandedResultLineIds] = useState<Set<string>>(new Set());
-  const [reuseNoticeDismissed, setReuseNoticeDismissed] = useState(false);
+  })();
+
+  const [invoiceNumber, setInvoiceNumber] = useState<string>(() =>
+    isReused ? '' : (loadDraft()?.invoiceNumber ?? ''),
+  );
+  const [invoiceDate, setInvoiceDate] = useState<string>(() =>
+    isReused ? '' : (loadDraft()?.invoiceDate ?? ''),
+  );
+  const [supplierId, setSupplierId] = useState<string>('');
+  const [vatMode, setVatModeState] = useState<VatMode>(() =>
+    isReused ? 'exclusive' : (loadDraft()?.vatMode ?? 'exclusive'),
+  );
+  const [vatRate, setVatRateState] = useState<number>(() =>
+    isReused ? DEFAULT_VAT_RATE : (loadDraft()?.vatRate ?? DEFAULT_VAT_RATE),
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [lastAddedLineId, setLastAddedLineId] = useState<string | null>(null);
-  const [lastAddedLineFocusField, setLastAddedLineFocusField] = useState('item');
+  const [expandedResultLineIds, setExpandedResultLineIds] = useState<Set<string>>(new Set());
+  const [reuseNoticeDismissed, setReuseNoticeDismissed] = useState(false);
 
-  useEffect(() => {
-    if (isReused) return;
-    const hasMeaningfulContent =
-      lines.some((l) => l.itemId) || !!invoiceNumber.trim() || !!invoiceDate;
-    if (hasMeaningfulContent) {
-      saveDraft({ lines, invoiceNumber, invoiceDate });
-    } else {
-      clearDraft();
-    }
-  }, [lines, invoiceNumber, invoiceDate, isReused]);
+  const { lines, setLines, addLine, removeLine, updateLine } = useLineManager(initialLines);
 
-  useEffect(() => {
-    if (!lastAddedLineId) return;
-    const id = `invoice-${lastAddedLineFocusField}-${lastAddedLineId}`;
-    const t = setTimeout(() => {
-      document.getElementById(id)?.focus();
-      setLastAddedLineId(null);
-    }, 50);
-    return () => clearTimeout(t);
-  }, [lastAddedLineId, lastAddedLineFocusField]);
+  const setVatMode = useCallback((mode: VatMode) => {
+    setVatModeState(mode);
+  }, []);
+
+  const setVatRate = useCallback((rate: number) => {
+    setVatRateState(rate);
+  }, []);
+
+  const { clearDraft } = useDraftPersistence(
+    lines,
+    invoiceNumber,
+    invoiceDate,
+    vatMode,
+    vatRate,
+    isReused,
+  );
+
+  const { invoiceSummary, validLines, itemsWithCategory, itemMetaMap } = useInvoiceSummary(
+    lines,
+    items,
+    categories,
+    vatMode,
+    vatRate,
+  );
+
+  const canSave =
+    validLines.length > 0 &&
+    !lines.some(
+      (l) => (l.itemId && Number(l.quantity) <= 0) || (!l.itemId && Number(l.quantity) > 0),
+    );
 
   const toggleResultRow = useCallback((lineId: string) => {
     setExpandedResultLineIds((prev) => {
@@ -93,114 +84,65 @@ export function useInvoiceForm() {
     });
   }, []);
 
-  const addLine = useCallback((focusField = 'item') => {
-    const newLine = createEmptyLine();
-    setLastAddedLineFocusField(focusField);
-    setLines((prev) => [...prev, newLine]);
-    setLastAddedLineId(newLine.id);
-  }, []);
-
-  const removeLine = useCallback((id: string) => {
-    setLines((prev) => {
-      const next = prev.filter((l) => l.id !== id);
-      return next.length > 0 ? next : [createEmptyLine()];
-    });
-  }, []);
-
-  const updateLine = useCallback((id: string, updates: Partial<ProcessReceiptLine>) => {
-    setLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)));
-  }, []);
-
-  const setAllVatMode = useCallback((mode: VatMode) => {
-    setLines((prev) => prev.map((l) => ({ ...l, vatMode: mode })));
-  }, []);
-
   const clearForm = useCallback(() => {
     setLines([createEmptyLine()]);
     setInvoiceNumber('');
     setInvoiceDate('');
+    setSupplierId('');
+    setVatModeState('exclusive');
+    setVatRateState(DEFAULT_VAT_RATE);
     setExpandedResultLineIds(new Set());
     clearDraft();
-  }, []);
+  }, [clearDraft, setLines]);
 
-  const isDirty = lines.some((l) => l.itemId) || !!invoiceNumber.trim() || !!invoiceDate;
-
-  const itemsWithCategory = useMemo(
-    () =>
-      items.map((item) => {
-        const cat = categories.find((c) => c.id === item.categoryId);
-        return { ...item, categoryName: cat?.name ?? '', typeLabel: cat?.type ?? '' };
-      }),
-    [items, categories],
-  );
-
-  const itemMetaMap = useMemo(
-    () => new Map(itemsWithCategory.map((i) => [i.id, i])),
-    [itemsWithCategory],
-  );
-
-  const invoiceSummary = useMemo(
-    () =>
-      lines.reduce(
-        (acc, line) => {
-          const c = getProcessLineComputed(line);
-          return {
-            lineCount: acc.lineCount + (line.itemId ? 1 : 0),
-            subtotal: acc.subtotal + c.netTotal,
-            totalVat: acc.totalVat + c.vatAmount,
-            grandTotal: acc.grandTotal + c.grossTotal,
-          };
-        },
-        { lineCount: 0, subtotal: 0, totalVat: 0, grandTotal: 0 },
-      ),
-    [lines],
-  );
-
-  const validLines = useMemo(
-    () => lines.filter((l) => l.itemId && Number(l.quantity) > 0 && (l.totalVatExclude ?? 0) >= 0),
-    [lines],
-  );
+  const isDirty =
+    lines.some((l) => l.itemId) || !!invoiceNumber.trim() || !!invoiceDate || !!supplierId;
 
   const handleSave = useCallback(async () => {
-    if (validLines.length === 0) {
-      setSaveError('Add at least one line with an item, quantity, and total.');
+    if (!canSave) {
+      setSaveError('Complete all rows before saving — each row needs an item and quantity.');
       return;
     }
     setSaveError(null);
     setIsSaving(true);
     try {
-      const payload = {
+      await invoiceService.saveInvoice({
         id: window.crypto.randomUUID(),
+        supplierId: supplierId || null,
         invoiceNumber: invoiceNumber.trim() || null,
         invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
+        vatMode,
+        vatRate,
         lines: validLines.map((line) => {
-          const item = items.find((i) => i.id === line.itemId);
-          const computed = getProcessLineComputed(line);
+          const computed = getProcessLineComputed(line, vatMode, vatRate);
           return {
             id: line.id,
             itemId: line.itemId,
-            itemNameSnapshot: item?.name ?? 'Unknown',
-            unitOfMeasure: item?.unitOfMeasure ?? null,
-            quantity: Number(line.quantity) || 0,
-            vatMode: line.vatMode,
-            vatRate: line.vatRate,
+            itemNameSnapshot: itemMetaMap.get(line.itemId)?.name ?? '',
+            quantity: Number(line.quantity),
+            isVatable: line.isVatable,
             totalVatExclude: computed.netTotal,
           };
         }),
-      };
-      await window.electronAPI.ipcRenderer.invoke(InvoicesIPC.SAVE_INVOICE, payload);
-      setLines([createEmptyLine()]);
-      setInvoiceNumber('');
-      setInvoiceDate('');
-      setExpandedResultLineIds(new Set());
-      clearDraft();
+      });
+      clearForm();
       toast.success('Invoice saved');
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : 'Failed to save invoice');
     } finally {
       setIsSaving(false);
     }
-  }, [validLines, items, invoiceNumber, invoiceDate]);
+  }, [
+    canSave,
+    validLines,
+    invoiceNumber,
+    invoiceDate,
+    supplierId,
+    vatMode,
+    vatRate,
+    itemMetaMap,
+    clearForm,
+  ]);
 
   return {
     units,
@@ -212,10 +154,12 @@ export function useInvoiceForm() {
     setInvoiceNumber,
     invoiceDate,
     setInvoiceDate,
-    categoryModalOpen,
-    setCategoryModalOpen,
-    itemModalOpen,
-    setItemModalOpen,
+    supplierId,
+    setSupplierId,
+    vatMode,
+    setVatMode,
+    vatRate,
+    setVatRate,
     expandedResultLineIds,
     isReused,
     reuseNoticeDismissed,
@@ -226,9 +170,9 @@ export function useInvoiceForm() {
     addLine,
     removeLine,
     updateLine,
-    setAllVatMode,
     clearForm,
     isDirty,
+    canSave,
     itemsWithCategory,
     itemMetaMap,
     invoiceSummary,

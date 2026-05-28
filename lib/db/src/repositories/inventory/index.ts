@@ -1,51 +1,66 @@
-import { asc, eq } from 'drizzle-orm';
-import type { IInventoryCategory, IInventoryItem } from '@reyogo/types';
+import { asc, desc, eq } from 'drizzle-orm';
+import type {
+  Category,
+  InventoryItem,
+  InventoryItemInput,
+  InventorySubmitPayload,
+} from '@reyogo/types';
 import type { DbClient } from '../../client';
 import * as schema from '../../schema';
-import type { InventoryCategoryRow, InventoryItemRow } from '../../schema';
 import { now } from '../../utils/timestamps';
-
-function toCategory(row: InventoryCategoryRow): IInventoryCategory {
-  return { id: row.id, name: row.name, type: row.type as IInventoryCategory['type'] };
-}
-
-function toItem(row: InventoryItemRow, type: IInventoryCategory['type']): IInventoryItem {
-  return {
-    id: row.id,
-    name: row.name,
-    categoryId: row.categoryId,
-    type,
-    unitOfMeasure: (row.unitOfMeasure as IInventoryItem['unitOfMeasure']) ?? undefined,
-    yieldFactor: row.yieldFactor,
-    parLevel: row.parLevel ?? null,
-    reorderPoint: row.reorderPoint ?? null,
-    reorderQty: row.reorderQty ?? null,
-  };
-}
 
 export function createInventoryRepo(db: DbClient) {
   return {
-    async getCategories(): Promise<IInventoryCategory[]> {
+    async getCategories(): Promise<Category[]> {
       const rows = await db
         .select()
         .from(schema.inventoryCategories)
         .orderBy(schema.inventoryCategories.name);
-      return rows.map(toCategory);
+      return rows.map((r) => ({ id: r.id, name: r.name, type: r.type as Category['type'] }));
     },
 
-    async getItems(): Promise<IInventoryItem[]> {
-      const rows = await db
-        .select({ item: schema.inventoryItems, categoryType: schema.inventoryCategories.type })
+    async getItems(): Promise<InventoryItem[]> {
+      const itemRows = await db
+        .select()
         .from(schema.inventoryItems)
-        .innerJoin(
-          schema.inventoryCategories,
-          eq(schema.inventoryItems.categoryId, schema.inventoryCategories.id),
-        )
         .orderBy(asc(schema.inventoryItems.name));
-      return rows.map((r) => toItem(r.item, r.categoryType as IInventoryCategory['type']));
+      const movementRows = await db
+        .select({
+          inventoryItemId: schema.stockMovements.inventoryItemId,
+          stockQtyAfter: schema.stockMovements.stockQtyAfter,
+          weightedAvgCostAfter: schema.stockMovements.weightedAvgCostAfter,
+        })
+        .from(schema.stockMovements)
+        .orderBy(desc(schema.stockMovements.occurredAt), desc(schema.stockMovements.createdAt));
+      const latestMovement = new Map<
+        string,
+        { stockQtyAfter: number; weightedAvgCostAfter: number | null }
+      >();
+      for (const m of movementRows) {
+        if (!latestMovement.has(m.inventoryItemId)) {
+          latestMovement.set(m.inventoryItemId, {
+            stockQtyAfter: m.stockQtyAfter,
+            weightedAvgCostAfter: m.weightedAvgCostAfter,
+          });
+        }
+      }
+      return itemRows.map((row) => {
+        const movement = latestMovement.get(row.id);
+        return {
+          id: row.id,
+          name: row.name,
+          categoryId: row.categoryId,
+          unitOfMeasureId: row.unitOfMeasureId ?? null,
+          sku: row.sku ?? null,
+          currentStockQty: movement?.stockQtyAfter ?? 0,
+          currentWeightedAvgCost: movement?.weightedAvgCostAfter ?? null,
+          reorderPoint: row.reorderPoint ?? null,
+          reorderQty: row.reorderQty ?? null,
+        };
+      });
     },
 
-    async upsertCategory(category: IInventoryCategory): Promise<void> {
+    async upsertCategory(category: Category): Promise<void> {
       const ts = now();
       await db
         .insert(schema.inventoryCategories)
@@ -63,7 +78,7 @@ export function createInventoryRepo(db: DbClient) {
         });
     },
 
-    async upsertItem(item: IInventoryItem): Promise<void> {
+    async upsertItem(item: InventoryItemInput): Promise<void> {
       const ts = now();
       await db
         .insert(schema.inventoryItems)
@@ -72,9 +87,8 @@ export function createInventoryRepo(db: DbClient) {
           accountId: 'default',
           name: item.name,
           categoryId: item.categoryId,
-          unitOfMeasure: item.unitOfMeasure ?? null,
-          yieldFactor: item.yieldFactor ?? 1.0,
-          parLevel: item.parLevel ?? null,
+          unitOfMeasureId: item.unitOfMeasureId ?? null,
+          sku: item.sku ?? null,
           reorderPoint: item.reorderPoint ?? null,
           reorderQty: item.reorderQty ?? null,
           createdAt: ts,
@@ -85,14 +99,24 @@ export function createInventoryRepo(db: DbClient) {
           set: {
             name: item.name,
             categoryId: item.categoryId,
-            unitOfMeasure: item.unitOfMeasure ?? null,
-            yieldFactor: item.yieldFactor ?? 1.0,
-            parLevel: item.parLevel ?? null,
+            unitOfMeasureId: item.unitOfMeasureId ?? null,
+            sku: item.sku ?? null,
             reorderPoint: item.reorderPoint ?? null,
             reorderQty: item.reorderQty ?? null,
             updatedAt: ts,
           },
         });
+    },
+
+    async submitInventory(payload: InventorySubmitPayload): Promise<void> {
+      for (const cat of payload.addedCategories) await this.upsertCategory(cat);
+      for (const cat of payload.updatedCategories) await this.upsertCategory(cat);
+      for (const item of payload.addedItems) await this.upsertItem(item);
+      for (const item of payload.updatedItems) await this.upsertItem(item);
+      for (const id of payload.deletedCategoryIds)
+        await db.delete(schema.inventoryCategories).where(eq(schema.inventoryCategories.id, id));
+      for (const id of payload.deletedItemIds)
+        await db.delete(schema.inventoryItems).where(eq(schema.inventoryItems.id, id));
     },
 
     async deleteCategory(id: string): Promise<void> {

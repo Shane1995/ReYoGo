@@ -9,7 +9,10 @@ const inputClass = cn(
   'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0',
 );
 
-type Tab = 'item' | 'category';
+enum Tab {
+  ITEM = 'item',
+  CATEGORY = 'category',
+}
 
 type Props = {
   open: boolean;
@@ -144,12 +147,12 @@ function ItemForm({ onDone }: { onDone: () => void }) {
 }
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'item', label: 'Item' },
-  { id: 'category', label: 'Category' },
+  { id: Tab.ITEM, label: Tab.ITEM },
+  { id: Tab.CATEGORY, label: Tab.CATEGORY },
 ];
 
 export function AddInventoryModal({ open, onClose }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>('item');
+  const [activeTab, setActiveTab] = useState<Tab>(Tab.ITEM);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const handleDone = useCallback((label: string) => {
@@ -198,8 +201,8 @@ export function AddInventoryModal({ open, onClose }: Props) {
             </div>
           )}
 
-          {activeTab === 'item' && <ItemForm onDone={() => handleDone('Item')} />}
-          {activeTab === 'category' && <CategoryForm onDone={() => handleDone('Category')} />}
+          {activeTab === Tab.ITEM && <ItemForm onDone={() => handleDone(Tab.ITEM)} />}
+          {activeTab === Tab.CATEGORY && <CategoryForm onDone={() => handleDone(Tab.CATEGORY)} />}
         </div>
 
         <div className="flex justify-end border-t border-border px-6 py-4">

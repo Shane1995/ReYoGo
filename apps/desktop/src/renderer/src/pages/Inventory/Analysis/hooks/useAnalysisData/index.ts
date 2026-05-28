@@ -2,11 +2,13 @@ import { useMemo, useState } from 'react';
 import { useAnalysisLines } from '../useAnalysisLines';
 import { buildItemGroups } from '../../utils/buildItemGroups';
 import { TYPE_ORDER } from '../../types';
+import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
 
 export type AnalysisTab = 'all' | 'by-type' | 'by-category';
 
 export function useAnalysisData() {
   const { lines, loading } = useAnalysisLines();
+  const { items } = useInventory();
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [search, setSearch] = useState('');
@@ -15,8 +17,8 @@ export function useAnalysisData() {
   const [analysisTab, setAnalysisTab] = useState<AnalysisTab>('all');
 
   const allGroups = useMemo(
-    () => buildItemGroups(lines, fromDate, toDate),
-    [lines, fromDate, toDate],
+    () => buildItemGroups(lines, fromDate, toDate, items),
+    [lines, fromDate, toDate, items],
   );
 
   const availableTypes = useMemo(() => {

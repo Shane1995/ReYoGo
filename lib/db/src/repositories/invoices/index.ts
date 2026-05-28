@@ -1,12 +1,14 @@
 import { and, asc, desc, eq, gt } from 'drizzle-orm';
+import { MovementType } from '@reyogo/types';
 import type {
   IInvoice,
   IInvoiceWithLines,
   IInvoiceLine,
-  IInvoiceLineWithDate,
   IInvoiceAuditEntry,
-  ISaveInvoicePayload,
-  IUpdateInvoicePayload,
+  ISaveCapturedInvoicePayload,
+  IUpdateCapturedInvoicePayload,
+  VatMode,
+  InvoiceLineWithDate,
 } from '@reyogo/types';
 import type { DbClient } from '../../client';
 import * as schema from '../../schema';
@@ -18,49 +20,29 @@ type TxClient = Parameters<DbClient['transaction']>[0] extends (tx: infer T) => 
   ? T
   : never;
 
-function toInvoice(row: {
-  id: string;
-  supplierId?: string | null;
-  invoiceNumber?: string | null;
-  invoiceDate?: Date | null;
-  createdAt: Date;
-  updatedAt?: Date | null;
-}): IInvoice {
+function toIInvoice(row: schema.InvoiceRow): IInvoice {
   return {
     id: row.id,
     supplierId: row.supplierId ?? null,
     invoiceNumber: row.invoiceNumber ?? null,
     invoiceDate: row.invoiceDate ?? null,
+    vatMode: (row.vatMode as VatMode) ?? 'exclusive',
+    vatRate: row.vatRate ?? 15,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt ?? null,
   };
 }
 
-function toLine(row: {
-  id: string;
-  invoiceId: string;
-  itemId: string;
-  itemNameSnapshot: string;
-  unitOfMeasure: string | null;
-  quantity: number;
-  vatMode: string;
-  vatRate: number;
-  totalVatExclude: number;
-}): IInvoiceLine {
-  const vatMode =
-    row.vatMode === 'inclusive' || row.vatMode === 'exclusive' || row.vatMode === 'non-taxable'
-      ? row.vatMode
-      : 'exclusive';
+function toIInvoiceLine(row: schema.InvoiceLineItemRow, itemName?: string | null): IInvoiceLine {
   return {
     id: row.id,
     invoiceId: row.invoiceId,
-    itemId: row.itemId,
-    itemNameSnapshot: row.itemNameSnapshot,
-    unitOfMeasure: row.unitOfMeasure ?? null,
-    quantity: row.quantity,
-    vatMode,
-    vatRate: row.vatRate,
-    totalVatExclude: row.totalVatExclude,
+    itemId: row.inventoryItemId,
+    itemNameSnapshot: row.itemNameSnapshot || itemName || '',
+    unitOfMeasure: null,
+    quantity: row.qty,
+    isVatable: row.isVatable ?? true,
+    totalVatExclude: row.totalCost,
   };
 }
 
@@ -82,29 +64,29 @@ async function getLatestMovement(
 
 async function insertMovementsForLines(
   tx: TxClient,
-  lines: ISaveInvoicePayload['lines'],
+  lines: ISaveCapturedInvoicePayload['lines'],
   referenceId: string,
   occurredAt: Date,
   createdAt: Date,
 ): Promise<void> {
   for (const line of lines.filter((l) => l.quantity > 0)) {
-    const unitCostAtTime = line.totalVatExclude / line.quantity;
     const prev = await getLatestMovement(tx, line.itemId);
+    const unitCost = line.quantity > 0 ? line.totalVatExclude / line.quantity : 0;
     const newWac = calculateWAC(
       prev?.stockQtyAfter ?? 0,
       prev?.weightedAvgCostAfter ?? null,
       line.quantity,
-      unitCostAtTime,
+      unitCost,
     );
     const newQty = (prev?.stockQtyAfter ?? 0) + line.quantity;
     await tx.insert(schema.stockMovements).values({
       id: generateId(),
       inventoryItemId: line.itemId,
       accountId: 'default',
-      movementType: 'IN',
+      movementType: MovementType.In,
       qty: line.quantity,
-      unitCostAtTime,
-      totalCost: line.quantity * unitCostAtTime,
+      unitCostAtTime: unitCost,
+      totalCost: line.totalVatExclude,
       weightedAvgCostAfter: newWac,
       stockQtyAfter: newQty,
       referenceType: 'invoice',
@@ -115,10 +97,24 @@ async function insertMovementsForLines(
   }
 }
 
+function computeTax(
+  lines: ISaveCapturedInvoicePayload['lines'],
+  vatRate: number,
+): { totalExclTax: number; taxAmount: number } {
+  const totalExclTax = lines.reduce((s, l) => s + l.totalVatExclude, 0);
+  const taxAmount = lines.reduce(
+    (s, l) => s + (l.isVatable ? l.totalVatExclude * (vatRate / 100) : 0),
+    0,
+  );
+  return { totalExclTax, taxAmount };
+}
+
 export function createInvoicesRepo(db: DbClient) {
   return {
-    async saveInvoice(payload: ISaveInvoicePayload): Promise<void> {
+    async saveInvoice(payload: ISaveCapturedInvoicePayload): Promise<void> {
       const createdAt = now();
+      const { totalExclTax, taxAmount } = computeTax(payload.lines, payload.vatRate);
+
       await db.transaction(async (tx) => {
         await tx.insert(schema.invoices).values({
           id: payload.id,
@@ -126,23 +122,29 @@ export function createInvoicesRepo(db: DbClient) {
           accountId: 'default',
           invoiceNumber: payload.invoiceNumber ?? null,
           invoiceDate: payload.invoiceDate ?? null,
+          status: 'DRAFT',
+          vatMode: payload.vatMode,
+          vatRate: payload.vatRate,
+          totalExclTax,
+          taxAmount,
+          totalInclTax: totalExclTax + taxAmount,
           createdAt,
         });
-        const validLines = payload.lines.filter(
-          (l) => l.itemId && l.itemNameSnapshot && l.quantity >= 0 && l.totalVatExclude >= 0,
-        );
+
+        const validLines = payload.lines.filter((l) => l.itemId && l.quantity >= 0);
         if (validLines.length > 0) {
+          const unitCostOf = (l: (typeof validLines)[number]) =>
+            l.quantity > 0 ? l.totalVatExclude / l.quantity : 0;
           await tx.insert(schema.invoiceLineItems).values(
             validLines.map((l) => ({
               id: l.id,
               invoiceId: payload.id,
-              itemId: l.itemId,
-              itemNameSnapshot: l.itemNameSnapshot,
-              unitOfMeasure: l.unitOfMeasure ?? null,
-              quantity: l.quantity,
-              vatMode: l.vatMode,
-              vatRate: l.vatRate,
-              totalVatExclude: l.totalVatExclude,
+              inventoryItemId: l.itemId,
+              itemNameSnapshot: l.itemNameSnapshot ?? '',
+              qty: l.quantity,
+              unitCost: unitCostOf(l),
+              totalCost: l.totalVatExclude,
+              isVatable: l.isVatable,
             })),
           );
           await insertMovementsForLines(
@@ -156,13 +158,17 @@ export function createInvoicesRepo(db: DbClient) {
       });
     },
 
-    async updateInvoice(payload: IUpdateInvoicePayload): Promise<void> {
+    async updateInvoice(payload: IUpdateCapturedInvoicePayload): Promise<void> {
       const editedAt = now();
       const current = await this.getInvoiceById(payload.id);
       if (!current) throw new Error(`Invoice not found: ${payload.id}`);
-      const validLines = payload.lines.filter(
-        (l) => l.itemId && l.itemNameSnapshot && l.quantity >= 0 && l.totalVatExclude >= 0,
-      );
+
+      const vatMode = payload.vatMode ?? current.vatMode;
+      const vatRate = payload.vatRate ?? current.vatRate;
+
+      const validLines = payload.lines.filter((l) => l.itemId && l.quantity >= 0);
+      const { totalExclTax, taxAmount } = computeTax(validLines, vatRate);
+
       await db.transaction(async (tx) => {
         await tx.insert(schema.invoiceAuditLog).values({
           id: generateId(),
@@ -182,18 +188,20 @@ export function createInvoicesRepo(db: DbClient) {
         await tx
           .delete(schema.invoiceLineItems)
           .where(eq(schema.invoiceLineItems.invoiceId, payload.id));
+
         if (validLines.length > 0) {
+          const unitCostOf = (l: (typeof validLines)[number]) =>
+            l.quantity > 0 ? l.totalVatExclude / l.quantity : 0;
           await tx.insert(schema.invoiceLineItems).values(
             validLines.map((l) => ({
               id: l.id,
               invoiceId: payload.id,
-              itemId: l.itemId,
-              itemNameSnapshot: l.itemNameSnapshot,
-              unitOfMeasure: l.unitOfMeasure ?? null,
-              quantity: l.quantity,
-              vatMode: l.vatMode,
-              vatRate: l.vatRate,
-              totalVatExclude: l.totalVatExclude,
+              inventoryItemId: l.itemId,
+              itemNameSnapshot: l.itemNameSnapshot ?? '',
+              qty: l.quantity,
+              unitCost: unitCostOf(l),
+              totalCost: l.totalVatExclude,
+              isVatable: l.isVatable,
             })),
           );
           await insertMovementsForLines(
@@ -206,14 +214,21 @@ export function createInvoicesRepo(db: DbClient) {
         }
         await tx
           .update(schema.invoices)
-          .set({ updatedAt: editedAt })
+          .set({
+            updatedAt: editedAt,
+            vatMode,
+            vatRate,
+            totalExclTax,
+            taxAmount,
+            totalInclTax: totalExclTax + taxAmount,
+          })
           .where(eq(schema.invoices.id, payload.id));
       });
     },
 
     async getInvoices(): Promise<IInvoice[]> {
       const rows = await db.select().from(schema.invoices).orderBy(desc(schema.invoices.createdAt));
-      return rows.map(toInvoice);
+      return rows.map(toIInvoice);
     },
 
     async getInvoicesWithLines(): Promise<IInvoiceWithLines[]> {
@@ -222,15 +237,35 @@ export function createInvoicesRepo(db: DbClient) {
         .from(schema.invoices)
         .orderBy(desc(schema.invoices.createdAt));
       if (invoiceRows.length === 0) return [];
-      const lineRows = await db.select().from(schema.invoiceLineItems);
+
+      const lineRows = await db
+        .select({
+          line: schema.invoiceLineItems,
+          itemName: schema.inventoryItems.name,
+          uomName: schema.unitsOfMeasure.name,
+        })
+        .from(schema.invoiceLineItems)
+        .leftJoin(
+          schema.inventoryItems,
+          eq(schema.invoiceLineItems.inventoryItemId, schema.inventoryItems.id),
+        )
+        .leftJoin(
+          schema.unitsOfMeasure,
+          eq(schema.inventoryItems.unitOfMeasureId, schema.unitsOfMeasure.id),
+        );
+
       const linesByInvoice = new Map<string, typeof lineRows>();
-      for (const line of lineRows) {
-        if (!linesByInvoice.has(line.invoiceId)) linesByInvoice.set(line.invoiceId, []);
-        linesByInvoice.get(line.invoiceId)!.push(line);
+      for (const row of lineRows) {
+        if (!linesByInvoice.has(row.line.invoiceId)) linesByInvoice.set(row.line.invoiceId, []);
+        linesByInvoice.get(row.line.invoiceId)!.push(row);
       }
+
       return invoiceRows.map((inv) => ({
-        ...toInvoice(inv),
-        lines: (linesByInvoice.get(inv.id) ?? []).map(toLine),
+        ...toIInvoice(inv),
+        lines: (linesByInvoice.get(inv.id) ?? []).map((r) => ({
+          ...toIInvoiceLine(r.line, r.itemName),
+          unitOfMeasure: r.uomName ?? null,
+        })),
       }));
     },
 
@@ -241,26 +276,43 @@ export function createInvoicesRepo(db: DbClient) {
         .where(eq(schema.invoices.id, id))
         .limit(1);
       if (!invRows[0]) return null;
+
       const lineRows = await db
-        .select()
+        .select({
+          line: schema.invoiceLineItems,
+          itemName: schema.inventoryItems.name,
+          uomName: schema.unitsOfMeasure.name,
+        })
         .from(schema.invoiceLineItems)
+        .leftJoin(
+          schema.inventoryItems,
+          eq(schema.invoiceLineItems.inventoryItemId, schema.inventoryItems.id),
+        )
+        .leftJoin(
+          schema.unitsOfMeasure,
+          eq(schema.inventoryItems.unitOfMeasureId, schema.unitsOfMeasure.id),
+        )
         .where(eq(schema.invoiceLineItems.invoiceId, id));
-      return { ...toInvoice(invRows[0]), lines: lineRows.map(toLine) };
+
+      return {
+        ...toIInvoice(invRows[0]),
+        lines: lineRows.map((r) => ({
+          ...toIInvoiceLine(r.line, r.itemName),
+          unitOfMeasure: r.uomName ?? null,
+        })),
+      };
     },
 
-    async getLinesForAnalysis(): Promise<IInvoiceLineWithDate[]> {
+    async getLinesForAnalysis(): Promise<InvoiceLineWithDate[]> {
       const rows = await db
         .select({
           id: schema.invoiceLineItems.id,
           invoiceId: schema.invoiceLineItems.invoiceId,
-          itemId: schema.invoiceLineItems.itemId,
-          itemNameSnapshot: schema.invoiceLineItems.itemNameSnapshot,
-          unitOfMeasure: schema.invoiceLineItems.unitOfMeasure,
-          quantity: schema.invoiceLineItems.quantity,
-          vatMode: schema.invoiceLineItems.vatMode,
-          vatRate: schema.invoiceLineItems.vatRate,
-          totalVatExclude: schema.invoiceLineItems.totalVatExclude,
-          createdAt: schema.invoices.createdAt,
+          inventoryItemId: schema.invoiceLineItems.inventoryItemId,
+          qty: schema.invoiceLineItems.qty,
+          unitCost: schema.invoiceLineItems.unitCost,
+          totalCost: schema.invoiceLineItems.totalCost,
+          invoiceCreatedAt: schema.invoices.createdAt,
           categoryType: schema.inventoryCategories.type,
           categoryName: schema.inventoryCategories.name,
         })
@@ -268,7 +320,7 @@ export function createInvoicesRepo(db: DbClient) {
         .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
         .leftJoin(
           schema.inventoryItems,
-          eq(schema.invoiceLineItems.itemId, schema.inventoryItems.id),
+          eq(schema.invoiceLineItems.inventoryItemId, schema.inventoryItems.id),
         )
         .leftJoin(
           schema.inventoryCategories,
@@ -276,8 +328,13 @@ export function createInvoicesRepo(db: DbClient) {
         )
         .orderBy(asc(schema.invoices.createdAt));
       return rows.map((r) => ({
-        ...toLine(r),
-        createdAt: r.createdAt,
+        id: r.id,
+        invoiceId: r.invoiceId,
+        inventoryItemId: r.inventoryItemId,
+        qty: r.qty,
+        unitCost: r.unitCost,
+        totalCost: r.totalCost,
+        invoiceCreatedAt: r.invoiceCreatedAt,
         categoryType: r.categoryType ?? null,
         categoryName: r.categoryName ?? null,
       }));
@@ -286,17 +343,16 @@ export function createInvoicesRepo(db: DbClient) {
     async getLastUnitPrices(): Promise<Record<string, number>> {
       const rows = await db
         .select({
-          itemId: schema.invoiceLineItems.itemId,
-          quantity: schema.invoiceLineItems.quantity,
-          totalVatExclude: schema.invoiceLineItems.totalVatExclude,
+          inventoryItemId: schema.invoiceLineItems.inventoryItemId,
+          unitCost: schema.invoiceLineItems.unitCost,
         })
         .from(schema.invoiceLineItems)
         .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
-        .where(gt(schema.invoiceLineItems.quantity, 0))
+        .where(gt(schema.invoiceLineItems.qty, 0))
         .orderBy(desc(schema.invoices.createdAt));
       const result: Record<string, number> = {};
       for (const row of rows) {
-        if (!(row.itemId in result)) result[row.itemId] = row.totalVatExclude / row.quantity;
+        if (!(row.inventoryItemId in result)) result[row.inventoryItemId] = row.unitCost;
       }
       return result;
     },
@@ -311,7 +367,7 @@ export function createInvoicesRepo(db: DbClient) {
         id: r.id,
         invoiceId: r.invoiceId,
         editedAt: r.editedAt,
-        note: r.note,
+        note: r.note ?? null,
         snapshot: JSON.parse(r.snapshot) as IInvoiceWithLines,
       }));
     },

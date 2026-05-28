@@ -1,0 +1,25 @@
+import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { accounts } from '../accounts';
+import { inventoryCategories } from '../inventoryCategories';
+import { unitsOfMeasure } from '../unitsOfMeasure';
+
+export const inventoryItems = sqliteTable('inventory_items', {
+  id: text('id').primaryKey(),
+  accountId: text('account_id')
+    .notNull()
+    .references(() => accounts.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  categoryId: text('category_id')
+    .notNull()
+    .references(() => inventoryCategories.id, { onDelete: 'cascade' }),
+  unitOfMeasureId: text('unit_of_measure_id').references(() => unitsOfMeasure.id, {
+    onDelete: 'set null',
+  }),
+  sku: text('sku'),
+  reorderPoint: real('reorder_point'),
+  reorderQty: real('reorder_qty'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+});
+export type InventoryItemRow = typeof inventoryItems.$inferSelect;
+export type NewInventoryItemRow = typeof inventoryItems.$inferInsert;

@@ -10,6 +10,7 @@ export type InventoryItem = {
   id: string;
   name: string;
   categoryId: string;
+  unitOfMeasureId?: string | null;
   type: TypeValue;
   unitOfMeasure?: string;
 };

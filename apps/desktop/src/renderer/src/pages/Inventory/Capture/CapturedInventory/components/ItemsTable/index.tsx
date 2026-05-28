@@ -9,28 +9,22 @@ import { EditItemDialog } from '../EditItemDialog';
 import type { InventoryItem } from '../../types';
 import { InvoiceRoutes } from '@/components/AppRoutes/routes';
 import type { FlatItem, ItemsTableProps } from './types';
-import { useItemFilters } from './hooks/useItemFilters';
 import { useItemSelection } from './hooks/useItemSelection';
 import { SelectionBar } from './SelectionBar';
 import { ItemRowActions } from './ItemRowActions';
 
 export function ItemsTable({
   items,
+  filteredItems,
+  allTypes,
   categories,
   units,
-  costMap,
-  stockMap,
-  weightedAvgMap,
   onUpdate,
   onDelete,
   onViewInsights,
 }: ItemsTableProps) {
   const navigate = useNavigate();
   const [editingItem, setEditingItem] = useState<InventoryItem | null | undefined>(undefined);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-
-  const { filterValues, filteredItems, filters, allTypes, handleFilterChange, clearFilters } =
-    useItemFilters({ items, categories, costMap, stockMap, weightedAvgMap });
 
   const filteredIds = useMemo(() => filteredItems.map((i) => i.id), [filteredItems]);
 
@@ -57,7 +51,7 @@ export function ItemsTable({
             if (el) el.indeterminate = someSelected && !allSelected;
           }}
           onChange={toggleAll}
-          className="size-4 cursor-pointer rounded border-border accent-primary"
+          className="size-3.5 cursor-pointer rounded border-border accent-primary"
           aria-label="Select all"
         />
       ),
@@ -67,14 +61,14 @@ export function ItemsTable({
           type="checkbox"
           checked={selectedIds.has(row.id)}
           onChange={() => toggleOne(row.id)}
-          className="size-4 cursor-pointer rounded border-border accent-primary"
+          className="size-3.5 cursor-pointer rounded border-border accent-primary"
           aria-label={`Select ${row.name}`}
         />
       ),
     },
     {
       key: 'name',
-      header: 'Item Name',
+      header: 'Item',
       cell: (row) => <span className="font-medium text-foreground">{row.name}</span>,
     },
     {
@@ -82,52 +76,60 @@ export function ItemsTable({
       header: 'Type',
       cell: (row) => {
         const cfg = getTypeConfig(row.type, allTypes);
-        return <Badge className={cn('text-xs font-medium', cfg.badgeClass)}>{row.type}</Badge>;
+        return (
+          <Badge className={cn('text-[11px] font-medium capitalize', cfg.badgeClass)}>
+            {row.type}
+          </Badge>
+        );
       },
     },
     {
       key: 'category',
       header: 'Category',
-      cell: (row) => <span className="text-muted-foreground">{row.categoryName}</span>,
+      cell: (row) => <span className="text-muted-foreground text-sm">{row.categoryName}</span>,
     },
     {
       key: 'unit',
-      header: 'Unit of Measure',
+      header: 'Unit',
       cell: (row) =>
         row.unitOfMeasure ? (
-          <Badge variant="secondary" className="text-xs font-normal">
+          <Badge variant="secondary" className="text-[11px] font-normal">
             {row.unitOfMeasure}
           </Badge>
         ) : (
-          <span className="text-muted-foreground/50">—</span>
+          <span className="text-muted-foreground/30">—</span>
         ),
     },
     {
       key: 'cost',
-      header: 'Last Cost / Unit',
+      header: 'Last cost / unit',
       align: 'right',
       cell: (row) =>
         row.lastCostPerUnit !== undefined ? (
-          <span className="font-mono text-foreground">
+          <span className="font-mono text-sm tabular-nums text-foreground">
             {row.lastCostPerUnit.toFixed(2)}
-            {row.lastCostUom ? ` / ${row.lastCostUom}` : ''}
+            {row.lastCostUom ? (
+              <span className="text-muted-foreground/60"> / {row.lastCostUom}</span>
+            ) : null}
           </span>
         ) : (
-          <span className="text-muted-foreground/50">No data</span>
+          <span className="text-muted-foreground/30 text-xs">—</span>
         ),
     },
     {
       key: 'weightedAvgCost',
-      header: 'Weighted Avg Cost',
+      header: 'Avg cost',
       align: 'right',
       cell: (row) =>
         row.weightedAvgCost != null ? (
-          <span className="font-mono text-foreground">
+          <span className="font-mono text-sm tabular-nums text-foreground">
             {row.weightedAvgCost.toFixed(2)}
-            {row.unitOfMeasure ? ` / ${row.unitOfMeasure}` : ''}
+            {row.unitOfMeasure ? (
+              <span className="text-muted-foreground/60"> / {row.unitOfMeasure}</span>
+            ) : null}
           </span>
         ) : (
-          <span className="text-muted-foreground/50">—</span>
+          <span className="text-muted-foreground/30 text-xs">—</span>
         ),
     },
     {
@@ -136,32 +138,28 @@ export function ItemsTable({
       align: 'right',
       cell: (row) =>
         row.currentStock !== undefined ? (
-          <span className="font-mono text-foreground">
+          <span className="font-mono text-sm tabular-nums text-foreground">
             {row.currentStock % 1 === 0 ? row.currentStock.toFixed(0) : row.currentStock.toFixed(2)}
-            {row.unitOfMeasure ? ` ${row.unitOfMeasure}` : ''}
+            {row.unitOfMeasure ? (
+              <span className="text-muted-foreground/60"> {row.unitOfMeasure}</span>
+            ) : null}
           </span>
         ) : (
-          <span className="text-muted-foreground/50">—</span>
+          <span className="text-muted-foreground/30 text-xs">—</span>
         ),
     },
     {
       key: 'actions',
-      header: 'Actions',
+      header: '',
       align: 'right',
-      width: '120px',
+      width: '48px',
       cell: (row) => (
         <ItemRowActions
           row={row}
           originalItem={items.find((i) => i.id === row.id)!}
-          confirmDeleteId={confirmDeleteId}
           onEdit={setEditingItem}
           onViewInsights={onViewInsights}
-          onRequestDelete={setConfirmDeleteId}
-          onCancelDelete={() => setConfirmDeleteId(null)}
-          onConfirmDelete={(id) => {
-            onDelete(id);
-            setConfirmDeleteId(null);
-          }}
+          onDelete={onDelete}
         />
       ),
     },
@@ -193,16 +191,9 @@ export function ItemsTable({
       <DataTable
         columns={columns}
         data={filteredItems}
-        filters={filters}
-        filterValues={filterValues}
-        onFilterChange={handleFilterChange}
-        onClearFilters={clearFilters}
+        hideFilters
         rowKey={(row) => row.id}
-        emptyMessage={
-          Object.values(filterValues).some((v) => (Array.isArray(v) ? v.length > 0 : Boolean(v)))
-            ? 'No items match your filters.'
-            : 'No items yet. Use the + button to add your first item.'
-        }
+        emptyMessage="No items match your filters."
       />
       {editingItem !== undefined && (
         <EditItemDialog

@@ -1,9 +1,10 @@
 import { cn } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
-import { FilterBar } from './FilterBar';
+import { FilterBar } from './FilterBar/index';
 import type { ColumnDef, FilterField, FilterValues } from './types';
 
 export type { ColumnDef, FilterField, FilterValues };
+export { FilterBar };
 
 type Props<T> = {
   columns: ColumnDef<T>[];
@@ -12,6 +13,7 @@ type Props<T> = {
   filterValues?: FilterValues;
   onFilterChange?: (key: string, value: string | string[]) => void;
   onClearFilters?: () => void;
+  hideFilters?: boolean;
   emptyMessage?: string;
   rowKey: (row: T) => string;
 };
@@ -29,12 +31,13 @@ export function DataTable<T>({
   filterValues = {},
   onFilterChange,
   onClearFilters,
+  hideFilters = false,
   emptyMessage = 'No items found.',
   rowKey,
 }: Props<T>) {
   return (
-    <div className="rounded-xl border border-border overflow-hidden">
-      {filters.length > 0 && onFilterChange && onClearFilters && (
+    <div className="rounded-lg border border-[var(--nav-border)] overflow-hidden">
+      {!hideFilters && filters.length > 0 && onFilterChange && onClearFilters && (
         <FilterBar
           filters={filters}
           values={filterValues}
@@ -45,13 +48,13 @@ export function DataTable<T>({
 
       <Table>
         <TableHeader>
-          <TableRow className="bg-secondary hover:bg-secondary">
+          <TableRow className="bg-muted/30 hover:bg-muted/30 border-[var(--nav-border)]">
             {columns.map((col) => (
               <TableHead
                 key={col.key}
                 style={col.width ? { width: col.width } : undefined}
                 className={cn(
-                  'text-xs font-semibold uppercase tracking-wider text-foreground/80',
+                  'text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5',
                   alignClass(col.align),
                 )}
               >
@@ -65,16 +68,19 @@ export function DataTable<T>({
             <TableRow>
               <TableCell
                 colSpan={columns.length}
-                className="py-12 text-center text-sm text-muted-foreground"
+                className="py-16 text-center text-sm text-muted-foreground/60"
               >
                 {emptyMessage}
               </TableCell>
             </TableRow>
           ) : (
-            data.map((row, i) => (
-              <TableRow key={rowKey(row)} className={i % 2 === 1 ? 'bg-white/[0.06]' : ''}>
+            data.map((row) => (
+              <TableRow
+                key={rowKey(row)}
+                className="border-[var(--nav-border)] transition-colors hover:bg-muted/20 group"
+              >
                 {columns.map((col) => (
-                  <TableCell key={col.key} className={cn('py-3 px-4', alignClass(col.align))}>
+                  <TableCell key={col.key} className={cn('py-2.5 px-4', alignClass(col.align))}>
                     {col.cell(row)}
                   </TableCell>
                 ))}

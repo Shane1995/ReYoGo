@@ -4,13 +4,18 @@ import { UploadIcon, DownloadIcon, FileSpreadsheetIcon } from 'lucide-react';
 import { Button } from '@reyogo/ui';
 import { Spinner } from '@reyogo/ui';
 import { parseFile, downloadTemplate } from '@/components/CsvImport/parser';
-import { enrichParseResult } from '@/components/CsvImport/review';
+import {
+  enrichParseResult,
+  UNIT_STATUS,
+  CATEGORY_STATUS,
+  ITEM_STATUS,
+} from '@/components/CsvImport/review';
 import type { ReviewResult, ExistingInventory, InventoryType } from '@/components/CsvImport/review';
 import { ImportReview } from '@/components/CsvImport/ImportReview';
 import { StockRoutes } from '@/components/AppRoutes/routePaths';
 import { useInventory } from '../Context/InventoryContext';
-import { FormatGuide } from './FormatGuide';
-import { DropZone } from './DropZone';
+import { FormatGuide } from './components/FormatGuide';
+import { DropZone } from './components/DropZone';
 
 type PageState =
   | { phase: 'idle' }
@@ -58,32 +63,45 @@ export default function ImportPage() {
     async (review: ReviewResult) => {
       setState({ phase: 'saving' });
       try {
-        for (const u of review.units.filter((u) => u.selected && u.status === 'new')) {
-          await window.electronAPI.ipcRenderer.invoke('setup:upsert-unit', {
-            id: crypto.randomUUID(),
-            name: u.name,
-          });
+        const existingUnits = (await window.electronAPI.ipcRenderer.invoke('setup:get-units')) as {
+          id: string;
+          name: string;
+        }[];
+        const unitNameToId = new Map<string, string>(
+          existingUnits.map((u) => [u.name.toLowerCase(), u.id]),
+        );
+
+        for (const u of review.units.filter((u) => u.selected && u.status === UNIT_STATUS.New)) {
+          const id = crypto.randomUUID();
+          await window.electronAPI.ipcRenderer.invoke('setup:upsert-unit', { id, name: u.name });
+          unitNameToId.set(u.name.toLowerCase(), id);
         }
 
         const catNameToId = new Map<string, string>(
           existingCats.map((c) => [c.name.toLowerCase(), c.id]),
         );
-        for (const c of review.categories.filter((c) => c.selected && c.status !== 'exists')) {
+        for (const c of review.categories.filter(
+          (c) => c.selected && c.status !== CATEGORY_STATUS.Exists,
+        )) {
           const id = addCategory({ name: c.name, type: c.type });
           catNameToId.set(c.name.toLowerCase(), id);
         }
 
-        for (const item of review.items.filter((i) => i.selected && i.status === 'new')) {
+        for (const item of review.items.filter((i) => i.selected && i.status === ITEM_STATUS.New)) {
           const catId = catNameToId.get(item.categoryName.toLowerCase());
           if (!catId) continue;
           const cat = [...existingCats, ...review.categories].find(
             (c) => c.name.toLowerCase() === item.categoryName.toLowerCase(),
           );
+          const unitOfMeasureId = item.unit
+            ? (unitNameToId.get(item.unit.toLowerCase()) ?? null)
+            : null;
           addItem({
             name: item.name,
             categoryId: catId,
-            type: (cat?.type as 'food' | 'drink' | 'non-perishable') ?? 'food',
-            unitOfMeasure: item.unit as 'litres' | 'kgs' | 'unit' | undefined,
+            type: (cat?.type as 'food' | 'beverage' | 'non-food') ?? 'food',
+            unitOfMeasureId,
+            unitOfMeasure: item.unit,
           });
         }
 

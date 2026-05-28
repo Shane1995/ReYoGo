@@ -1,6 +1,6 @@
 export type StocktakeSessionStatus = 'open' | 'complete';
 
-export interface IStocktakeSession {
+export interface StocktakeSession {
   id: string;
   accountId: string;
   label: string | null;
@@ -9,7 +9,7 @@ export interface IStocktakeSession {
   createdAt: Date;
 }
 
-export interface IStocktakeLine {
+export interface StocktakeLine {
   id: string;
   sessionId: string;
   inventoryItemId: string;
@@ -17,18 +17,24 @@ export interface IStocktakeLine {
   notes: string | null;
 }
 
-export interface IStocktakeSessionWithLines extends IStocktakeSession {
-  lines: IStocktakeLine[];
+export interface StocktakeSessionWithLines extends StocktakeSession {
+  lines: StocktakeLine[];
 }
 
-export interface ISaveStocktakeLinePayload {
+export interface SaveStocktakeLinePayload {
   id: string;
   inventoryItemId: string;
   countedQty: number;
   notes?: string | null;
 }
 
-export interface ICompleteStocktakePayload {
+export interface CompleteStocktakePayload {
   sessionId: string;
-  lines: ISaveStocktakeLinePayload[];
+  lines: SaveStocktakeLinePayload[];
 }
+
+export type IStocktakeSession = StocktakeSession;
+export type IStocktakeLine = StocktakeLine;
+export type IStocktakeSessionWithLines = StocktakeSessionWithLines;
+export type ISaveStocktakeLinePayload = SaveStocktakeLinePayload;
+export type ICompleteStocktakePayload = CompleteStocktakePayload;

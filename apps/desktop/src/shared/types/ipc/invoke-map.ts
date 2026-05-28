@@ -1,15 +1,14 @@
-import type { IInventoryCategory, IInventoryItem, IInventorySubmitPayload } from '@reyogo/types';
+import type { Category, InventoryItem, InventorySubmitPayload, UnitOfMeasure } from '@reyogo/types';
 import type {
   IInvoice,
   IInvoiceAuditEntry,
   IInvoiceWithLines,
-  IInvoiceLineWithDate,
-  ISaveInvoicePayload,
-  IUpdateInvoicePayload,
+  InvoiceLineWithDate,
+  ISaveCapturedInvoicePayload,
+  IUpdateCapturedInvoicePayload,
 } from '@reyogo/types';
-import type { IUnitOfMeasure } from '@reyogo/types';
-import type { ICOGSSummary, IItemCostHistory } from '@reyogo/types';
-import type { ISupplier, IUpsertSupplierPayload } from '@reyogo/types';
+import type { ItemCostHistory, COGSSummary } from '@reyogo/types';
+import type { Supplier, UpsertSupplierPayload } from '@reyogo/types';
 
 export interface AppVersionInfo {
   version: string;
@@ -20,30 +19,30 @@ export interface IPCInvokeMap {
   'app:get-version': { args: []; return: AppVersionInfo };
   'app:install-update': { args: []; return: void };
   'app:check-for-updates': { args: []; return: { hasUpdate: boolean } };
-  'inventory:get-categories': { args: []; return: IInventoryCategory[] };
-  'inventory:get-items': { args: []; return: IInventoryItem[] };
-  'inventory:upsert-category': { args: [category: IInventoryCategory]; return: void };
-  'inventory:upsert-item': { args: [item: IInventoryItem]; return: void };
+  'inventory:get-categories': { args: []; return: Category[] };
+  'inventory:get-items': { args: []; return: InventoryItem[] };
+  'inventory:upsert-category': { args: [category: Category]; return: void };
+  'inventory:upsert-item': { args: [item: InventoryItem]; return: void };
   'inventory:delete-category': { args: [id: string]; return: void };
   'inventory:delete-item': { args: [id: string]; return: void };
-  'inventory:submit': { args: [payload: IInventorySubmitPayload]; return: void };
-  'invoices:save-invoice': { args: [payload: ISaveInvoicePayload]; return: void };
+  'inventory:submit': { args: [payload: InventorySubmitPayload]; return: void };
+  'invoices:save-invoice': { args: [payload: ISaveCapturedInvoicePayload]; return: void };
   'invoices:get-invoices': { args: []; return: IInvoice[] };
   'invoices:get-invoices-with-lines': { args: []; return: IInvoiceWithLines[] };
   'invoices:get-invoice': { args: [id: string]; return: IInvoiceWithLines | null };
-  'invoices:get-lines-for-analysis': { args: []; return: IInvoiceLineWithDate[] };
-  'invoices:update-invoice': { args: [payload: IUpdateInvoicePayload]; return: void };
+  'invoices:get-lines-for-analysis': { args: []; return: InvoiceLineWithDate[] };
+  'invoices:update-invoice': { args: [payload: IUpdateCapturedInvoicePayload]; return: void };
   'invoices:get-invoice-audit': { args: [id: string]; return: IInvoiceAuditEntry[] };
   'invoices:get-last-unit-prices': { args: []; return: Record<string, number> };
   'stock-movements:get-current-stock': { args: []; return: Record<string, number> };
   'stock-movements:get-weighted-avg-costs': { args: []; return: Record<string, number | null> };
-  'stock-movements:get-item-cost-history': { args: [itemId: string]; return: IItemCostHistory };
-  'stock-movements:get-cogs': { args: [fromDate?: string, toDate?: string]; return: ICOGSSummary };
-  'setup:get-units': { args: []; return: IUnitOfMeasure[] };
-  'setup:upsert-unit': { args: [unit: IUnitOfMeasure]; return: void };
+  'stock-movements:get-item-cost-history': { args: [itemId: string]; return: ItemCostHistory };
+  'stock-movements:get-cogs': { args: [fromDate?: string, toDate?: string]; return: COGSSummary };
+  'setup:get-units': { args: []; return: UnitOfMeasure[] };
+  'setup:upsert-unit': { args: [unit: UnitOfMeasure]; return: void };
   'setup:delete-unit': { args: [id: string]; return: void };
-  'suppliers:get-suppliers': { args: []; return: ISupplier[] };
-  'suppliers:upsert-supplier': { args: [payload: IUpsertSupplierPayload]; return: void };
+  'suppliers:get-suppliers': { args: []; return: Supplier[] };
+  'suppliers:upsert-supplier': { args: [payload: UpsertSupplierPayload]; return: void };
   'suppliers:delete-supplier': { args: [id: string]; return: void };
   'shell:save-file': { args: [payload: { filename: string; data: number[] }]; return: string };
 }

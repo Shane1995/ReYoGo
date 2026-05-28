@@ -3,6 +3,7 @@ import { Button } from '@reyogo/ui';
 import { cn } from '@reyogo/ui';
 import { INVENTORY_TYPES } from '@reyogo/types';
 import type { ReviewResult, InventoryType } from './review';
+import { UNIT_STATUS, CATEGORY_STATUS, ITEM_STATUS } from './review';
 import { useImportReviewState } from './hooks/useImportReviewState';
 import { StatusBadge } from './StatusBadge';
 import { Section } from './Section';
@@ -91,19 +92,19 @@ export function ImportReview({
         <Section
           title="Units of measure"
           count={units.length}
-          defaultOpen={units.some((u) => u.status === 'new')}
+          defaultOpen={units.some((u) => u.status === UNIT_STATUS.New)}
         >
           {units.map((u) => (
             <ReviewRow
               key={u.name}
               selected={u.selected}
               onToggle={() => toggleUnit(u.name)}
-              disabled={u.status === 'exists'}
+              disabled={u.status === UNIT_STATUS.Exists}
             >
               <span
                 className={cn(
                   'flex-1 font-medium',
-                  u.status === 'exists' && 'text-muted-foreground',
+                  u.status === UNIT_STATUS.Exists && 'text-muted-foreground',
                 )}
               >
                 {u.name}
@@ -131,25 +132,25 @@ export function ImportReview({
         <Section
           title="Categories"
           count={categories.length}
-          defaultOpen={categories.some((c) => c.status === 'new')}
+          defaultOpen={categories.some((c) => c.status === CATEGORY_STATUS.New)}
         >
           {categories.map((cat) => (
             <ReviewRow
               key={cat.id}
               selected={cat.selected}
               onToggle={() => toggleCategory(cat.id)}
-              disabled={cat.status === 'exists'}
+              disabled={cat.status === CATEGORY_STATUS.Exists}
             >
               <div className="flex flex-1 items-center gap-3 min-w-0 flex-wrap">
                 <span
                   className={cn(
                     'font-medium truncate',
-                    cat.status === 'exists' && 'text-muted-foreground',
+                    cat.status === CATEGORY_STATUS.Exists && 'text-muted-foreground',
                   )}
                 >
                   {cat.name}
                 </span>
-                {cat.typeWarning && cat.status !== 'exists' ? (
+                {cat.typeWarning && cat.status !== CATEGORY_STATUS.Exists ? (
                   <select
                     value=""
                     onChange={(e) => {
@@ -185,22 +186,23 @@ export function ImportReview({
         <Section
           title="Items"
           count={items.length}
-          defaultOpen={items.some((i) => i.status !== 'exists')}
+          defaultOpen={items.some((i) => i.status !== ITEM_STATUS.Exists)}
         >
           {items.map((item) => {
-            const isUnresolved = item.status === 'unresolved';
+            const isUnresolved = item.status === ITEM_STATUS.Unresolved;
             return (
               <ReviewRow
                 key={item.name}
                 selected={item.selected}
                 onToggle={() => toggleItem(item.name)}
-                disabled={item.status === 'exists' || isUnresolved}
+                disabled={item.status === ITEM_STATUS.Exists || isUnresolved}
               >
                 <div className="flex flex-1 items-center gap-3 min-w-0 flex-wrap">
                   <span
                     className={cn(
                       'font-medium truncate',
-                      (item.status === 'exists' || isUnresolved) && 'text-muted-foreground',
+                      (item.status === ITEM_STATUS.Exists || isUnresolved) &&
+                        'text-muted-foreground',
                     )}
                   >
                     {item.name}

@@ -4,22 +4,25 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button, PageHeader } from '@reyogo/ui';
 import { itemTrendPath } from '@/components/AppRoutes/routePaths';
+import { FilterBar } from '@/components/DataTable';
 import { useInventory } from './Context/InventoryContext';
 import { ItemsTable } from './components/ItemsTable';
 import { AddInventoryModal } from './components/AddInventoryModal';
-import { useItemCosts } from './hooks/useItemCosts';
+import { useInventoryCosts } from './hooks/useInventoryCosts';
 import { useItemStock } from './hooks/useItemStock/index';
-import { useWeightedAvgCosts } from './hooks/useWeightedAvgCosts';
+import { useItemFilters } from './components/ItemsTable/hooks/useItemFilters';
 import type { InventoryItem } from './types';
 
 export default function InventoryIndex() {
   const { categories, items, units, updateItem, deleteItemFromBackend } = useInventory();
 
   const navigate = useNavigate();
-  const costMap = useItemCosts();
+  const costMap = useInventoryCosts();
   const stockMap = useItemStock();
-  const weightedAvgMap = useWeightedAvgCosts();
   const [addModalOpen, setAddModalOpen] = useState(false);
+
+  const { filterValues, filteredItems, filters, allTypes, handleFilterChange, clearFilters } =
+    useItemFilters({ items, categories, costMap, stockMap });
 
   const handleViewInsights = useCallback(
     (itemId: string) => navigate(itemTrendPath(itemId)),
@@ -36,21 +39,28 @@ export default function InventoryIndex() {
       <PageHeader
         title="Captured Inventory"
         actions={
-          <Button size="sm" onClick={() => setAddModalOpen(true)}>
+          <Button size="sm" variant="outline" onClick={() => setAddModalOpen(true)}>
             <PlusIcon className="size-3.5" />
-            Add Item
+            Add
           </Button>
         }
-      />
+      >
+        <FilterBar
+          filters={filters}
+          values={filterValues}
+          onChange={handleFilterChange}
+          onClearAll={clearFilters}
+        />
+      </PageHeader>
+
       <div className="min-h-0 flex-1 overflow-auto">
-        <div className="mx-6 my-5">
+        <div className="mx-4 my-4">
           <ItemsTable
             items={items}
+            filteredItems={filteredItems}
+            allTypes={allTypes}
             categories={categories}
             units={units}
-            costMap={costMap}
-            stockMap={stockMap}
-            weightedAvgMap={weightedAvgMap}
             onUpdate={handleUpdate}
             onDelete={deleteItemFromBackend}
             onViewInsights={handleViewInsights}
@@ -68,15 +78,9 @@ export default function InventoryIndex() {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            className="fixed bottom-6 right-6 z-40 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
+            className="fixed bottom-6 right-6 z-40 flex size-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md hover:bg-[var(--primary-hover)] transition-colors"
           >
-            <motion.span
-              animate={{ rotate: addModalOpen ? 45 : 0 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-              className="flex"
-            >
-              <PlusIcon className="size-5" />
-            </motion.span>
+            <PlusIcon className="size-4" />
           </motion.button>
         )}
       </AnimatePresence>

@@ -2,12 +2,21 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { InvoicesIPC } from '@shared/types/ipc';
 import type { ICapturedInvoice, ICapturedInvoiceWithLines } from '@reyogo/types';
+import type { Supplier } from '@reyogo/types';
 import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
+import { suppliersService } from '@/services/suppliers';
 import type { ProcessReceiptLine } from '../../../types';
 import { getProcessLineComputed } from '../../../types';
+import { lineToEditLine } from '../../../utils/lineToEditLine';
 
 export type RowMode = { kind: 'view' } | { kind: 'detail' } | { kind: 'edit' } | { kind: 'audit' };
+
+function toDateStr(d: Date | string | null | undefined): string {
+  if (!d) return '';
+  const s = typeof d === 'string' ? d : d.toISOString();
+  return s.slice(0, 10);
+}
 
 export function useInvoiceHistory() {
   const [invoices, setInvoices] = useState<ICapturedInvoice[]>([]);
@@ -15,14 +24,18 @@ export function useInvoiceHistory() {
   const [detailCache, setDetailCache] = useState<Record<string, ICapturedInvoiceWithLines>>({});
   const [rowMode, setRowModeState] = useState<Record<string, RowMode>>({});
   const [search, setSearch] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [supplierFilter, setSupplierFilter] = useState('');
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
   const { items } = useInventory();
   const navigate = useNavigate();
 
   const loadInvoices = useCallback(async () => {
-    const list: ICapturedInvoiceWithLines[] = await window.electronAPI.ipcRenderer.invoke(
+    const list: ICapturedInvoiceWithLines[] = (await window.electronAPI.ipcRenderer.invoke(
       InvoicesIPC.GET_INVOICES_WITH_LINES,
-    );
+    )) as unknown as ICapturedInvoiceWithLines[];
     setInvoices(list);
     setDetailCache((prev) => {
       const next = { ...prev };
@@ -45,10 +58,20 @@ export function useInvoiceHistory() {
     };
   }, [loadInvoices]);
 
+  useEffect(() => {
+    suppliersService
+      .getSuppliers()
+      .then((s) => setSuppliers((s as unknown as Supplier[]) ?? []))
+      .catch(() => {});
+  }, []);
+
   const getDetail = useCallback(
     async (id: string): Promise<ICapturedInvoiceWithLines | null> => {
       if (detailCache[id]) return detailCache[id];
-      const inv = await window.electronAPI.ipcRenderer.invoke(InvoicesIPC.GET_INVOICE, id);
+      const inv = (await window.electronAPI.ipcRenderer.invoke(
+        InvoicesIPC.GET_INVOICE,
+        id,
+      )) as unknown as ICapturedInvoiceWithLines | null;
       if (inv) setDetailCache((prev) => ({ ...prev, [id]: inv }));
       return inv ?? null;
     },
@@ -63,7 +86,10 @@ export function useInvoiceHistory() {
     async (id: string) => {
       let detail = detailCache[id];
       if (!detail) {
-        const inv = await window.electronAPI.ipcRenderer.invoke(InvoicesIPC.GET_INVOICE, id);
+        const inv = (await window.electronAPI.ipcRenderer.invoke(
+          InvoicesIPC.GET_INVOICE,
+          id,
+        )) as unknown as ICapturedInvoiceWithLines | null;
         if (inv) {
           setDetailCache((prev) => ({ ...prev, [id]: inv }));
           detail = inv;
@@ -74,8 +100,7 @@ export function useInvoiceHistory() {
         id: window.crypto.randomUUID(),
         itemId: l.itemId,
         quantity: 0,
-        vatMode: l.vatMode,
-        vatRate: l.vatRate,
+        isVatable: l.isVatable,
         totalVatExclude: 0,
       }));
       navigate(InvoiceRoutes.Base, { state: { templateLines } });
@@ -116,21 +141,20 @@ export function useInvoiceHistory() {
       const payload = {
         id: invoice.id,
         note: note || undefined,
+        vatMode: invoice.vatMode,
+        vatRate: invoice.vatRate,
         lines: editLines.map((line) => {
-          const item = items.find((i) => i.id === line.itemId);
-          const computed = getProcessLineComputed(line);
+          const computed = getProcessLineComputed(line, invoice.vatMode, invoice.vatRate);
           return {
             id: line.id,
             itemId: line.itemId,
             itemNameSnapshot:
-              item?.name ??
+              items.find((i) => i.id === line.itemId)?.name ??
               detailCache[invoice.id]?.lines.find((l) => l.itemId === line.itemId)
                 ?.itemNameSnapshot ??
               'Unknown',
-            unitOfMeasure: item?.unitOfMeasure ?? null,
             quantity: Number(line.quantity) || 0,
-            vatMode: line.vatMode,
-            vatRate: line.vatRate,
+            isVatable: line.isVatable,
             totalVatExclude: computed.netTotal,
           };
         }),
@@ -147,14 +171,43 @@ export function useInvoiceHistory() {
     [items, detailCache, loadInvoices, setMode],
   );
 
+  const hasFilters = !!(search || fromDate || toDate || supplierFilter);
+
+  const clearFilters = useCallback(() => {
+    setSearch('');
+    setFromDate('');
+    setToDate('');
+    setSupplierFilter('');
+  }, []);
+
   const filteredInvoices = useMemo(() => {
+    let result = invoices;
+
     const q = search.trim().toLowerCase();
-    if (!q) return invoices;
-    return invoices.filter((inv) => {
-      const detail = detailCache[inv.id];
-      return detail?.lines.some((l) => l.itemNameSnapshot.toLowerCase().includes(q));
-    });
-  }, [invoices, detailCache, search]);
+    if (q) {
+      result = result.filter((inv) => {
+        const detail = detailCache[inv.id];
+        const matchesItem = detail?.lines.some((l) => l.itemNameSnapshot.toLowerCase().includes(q));
+        const matchesNumber = inv.invoiceNumber?.toLowerCase().includes(q);
+        return matchesItem || matchesNumber;
+      });
+    }
+
+    if (fromDate || toDate) {
+      result = result.filter((inv) => {
+        const d = toDateStr(inv.invoiceDate ?? inv.createdAt);
+        if (fromDate && d < fromDate) return false;
+        if (toDate && d > toDate) return false;
+        return true;
+      });
+    }
+
+    if (supplierFilter) {
+      result = result.filter((inv) => inv.supplierId === supplierFilter);
+    }
+
+    return result;
+  }, [invoices, detailCache, search, fromDate, toDate, supplierFilter]);
 
   return {
     invoices: filteredInvoices,
@@ -164,10 +217,20 @@ export function useInvoiceHistory() {
     setMode,
     search,
     setSearch,
+    fromDate,
+    setFromDate,
+    toDate,
+    setToDate,
+    supplierFilter,
+    setSupplierFilter,
+    suppliers,
+    hasFilters,
+    clearFilters,
     handleReuse,
     handleExpandDetail,
     handleEditClick,
     handleAuditClick,
     handleSaveEdit,
+    lineToEditLine,
   };
 }

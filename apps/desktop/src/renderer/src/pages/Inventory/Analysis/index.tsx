@@ -1,22 +1,24 @@
-import { cn } from '@reyogo/ui';
+import { cn, DateRangePicker, PageHeader } from '@reyogo/ui';
+import { SearchIcon, XIcon } from 'lucide-react';
 import { useAnalysisData } from './hooks/useAnalysisData';
 import type { AnalysisTab } from './hooks/useAnalysisData';
-import { SummaryTableView } from './SummaryTableView';
-import { TableView } from './TableView';
-import { ByCategoryView } from './ByCategoryView';
+import { SummaryTableView } from './components/SummaryTableView';
+import { TableView } from './components/TableView';
+import { ByCategoryView } from './components/ByCategoryView';
 import { typeLabel } from './types';
 
-const inputClass =
-  'h-8 rounded-md border border-input bg-muted px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40';
-
-const selectClass =
-  'h-8 rounded-md border border-input bg-muted px-2.5 pr-7 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40 text-muted-foreground';
+const fieldBase =
+  'h-8 rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50';
 
 const TAB_LABELS: { key: AnalysisTab; label: string }[] = [
-  { key: 'all', label: 'All Items' },
-  { key: 'by-type', label: 'By Type' },
-  { key: 'by-category', label: 'By Category' },
+  { key: 'all', label: 'All items' },
+  { key: 'by-type', label: 'By type' },
+  { key: 'by-category', label: 'By category' },
 ];
+
+const fieldLabel =
+  'text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 mb-1 block';
+const selectClass = cn(fieldBase, 'pr-7');
 
 export default function InventoryAnalysis() {
   const {
@@ -43,59 +45,65 @@ export default function InventoryAnalysis() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="shrink-0 border-b border-border bg-background px-4 py-3 space-y-2">
-        <input
-          type="search"
-          placeholder="Search items…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className={cn(inputClass, 'w-full')}
-        />
-        <div className="flex flex-wrap items-center gap-2.5">
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className={cn(selectClass, filterType && 'text-foreground')}
-          >
-            <option value="">All Types</option>
-            {availableTypes.map((t) => (
-              <option key={t} value={t}>
-                {typeLabel(t)}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className={cn(selectClass, filterCategory && 'text-foreground')}
-          >
-            <option value="">All Categories</option>
-            {availableCategories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-
-          <div className="h-4 w-px bg-border" />
-
-          <div className="flex items-center gap-1.5 text-sm">
-            <label className="text-muted-foreground shrink-0">From</label>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className={inputClass}
-            />
+      <PageHeader title="Cost Analysis">
+        <div className="flex flex-wrap items-end gap-x-4 gap-y-2.5">
+          <div className="flex flex-col">
+            <label className={fieldLabel}>Search</label>
+            <div className="relative">
+              <SearchIcon className="absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground/40 pointer-events-none" />
+              <input
+                type="search"
+                placeholder="Search items…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className={cn(fieldBase, 'w-48 pl-8 placeholder:text-muted-foreground/40')}
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 text-sm">
-            <label className="text-muted-foreground shrink-0">To</label>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className={inputClass}
+
+          <div className="flex flex-col">
+            <label className={fieldLabel}>Type</label>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className={cn(selectClass, 'w-36', !filterType && 'text-muted-foreground/60')}
+            >
+              <option value="">All types</option>
+              {availableTypes.map((t) => (
+                <option key={t} value={t}>
+                  {typeLabel(t)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col">
+            <label className={fieldLabel}>Category</label>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className={cn(selectClass, 'w-44', !filterCategory && 'text-muted-foreground/60')}
+            >
+              <option value="">All categories</option>
+              {availableCategories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="h-6 w-px bg-border/60 self-end mb-1 hidden sm:block" />
+
+          <div className="flex flex-col">
+            <label className={fieldLabel}>Date range</label>
+            <DateRangePicker
+              from={fromDate}
+              to={toDate}
+              onChange={(f, t) => {
+                setFromDate(f);
+                setToDate(t);
+              }}
             />
           </div>
 
@@ -103,15 +111,16 @@ export default function InventoryAnalysis() {
             <button
               type="button"
               onClick={clearFilters}
-              className="text-xs text-muted-foreground underline hover:text-foreground"
+              className="flex items-center gap-1 self-end mb-0.5 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/50 hover:text-foreground transition-colors"
             >
-              Clear all
+              <XIcon className="size-3" />
+              Clear
             </button>
           )}
         </div>
-      </div>
+      </PageHeader>
 
-      <div className="shrink-0 border-b border-border bg-background px-4">
+      <div className="shrink-0 border-b border-[var(--nav-border)] bg-background px-6">
         <div className="flex gap-0">
           {TAB_LABELS.map(({ key, label }) => (
             <button
@@ -133,9 +142,9 @@ export default function InventoryAnalysis() {
 
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {loading ? (
-          <p className="text-muted-foreground">Loading…</p>
+          <p className="text-sm text-muted-foreground/60">Loading…</p>
         ) : lines.length === 0 ? (
-          <div className="rounded-xl border border-border bg-muted/20 p-10 text-center text-muted-foreground">
+          <div className="rounded-lg border border-[var(--nav-border)] bg-muted/10 p-10 text-center text-sm text-muted-foreground/60">
             No captured invoices yet. Save invoices from Capture Invoice to see analysis here.
           </div>
         ) : analysisTab === 'all' ? (

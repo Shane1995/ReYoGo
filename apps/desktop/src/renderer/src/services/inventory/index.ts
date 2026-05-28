@@ -1,14 +1,14 @@
 import { InventoryIPC } from '@shared/types/ipc';
-import type { IInventoryCategory, IInventoryItem } from '@reyogo/types/inventory';
+import type { Category, InventoryItem } from '@reyogo/types';
 
 const invoke = () => window.electronAPI.ipcRenderer.invoke;
 
 export const inventoryService = {
-  getCategories: (): Promise<IInventoryCategory[]> => invoke()(InventoryIPC.GET_CATEGORIES),
-  getItems: (): Promise<IInventoryItem[]> => invoke()(InventoryIPC.GET_ITEMS),
-  upsertCategory: (category: IInventoryCategory): Promise<void> =>
+  getCategories: (): Promise<Category[]> => invoke()(InventoryIPC.GET_CATEGORIES),
+  getItems: () => invoke()(InventoryIPC.GET_ITEMS),
+  upsertCategory: (category: Category): Promise<void> =>
     invoke()(InventoryIPC.UPSERT_CATEGORY, category),
-  upsertItem: (item: IInventoryItem): Promise<void> => invoke()(InventoryIPC.UPSERT_ITEM, item),
+  upsertItem: (item: InventoryItem): Promise<void> => invoke()(InventoryIPC.UPSERT_ITEM, item),
   deleteCategory: (id: string): Promise<void> => invoke()(InventoryIPC.DELETE_CATEGORY, id),
   deleteItem: (id: string): Promise<void> => invoke()(InventoryIPC.DELETE_ITEM, id),
 };

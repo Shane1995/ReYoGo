@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import type { MovementType } from '@reyogo/types';
 import { createTestDb, type DbClient } from '../../__tests__/helpers';
 import { createStocktakeRepo } from '.';
 import * as schema from '../../schema';
@@ -30,7 +31,7 @@ async function seedMovement(db: DbClient, itemId: string, stockAfter: number) {
     id: `mv-${Math.random()}`,
     accountId: 'default',
     inventoryItemId: itemId,
-    movementType: 'IN',
+    movementType: 'IN' as MovementType,
     qty: stockAfter,
     stockQtyAfter: stockAfter,
     occurredAt: new Date(),

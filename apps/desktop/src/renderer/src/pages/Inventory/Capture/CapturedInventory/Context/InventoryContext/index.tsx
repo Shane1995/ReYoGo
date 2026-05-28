@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import type { IPCChannel } from '@shared/types/ipc';
 import { InventoryIPC } from '@shared/types/ipc';
 import type { InventoryCategory, InventoryItem } from '../../types';
@@ -33,10 +33,15 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [units, setUnits] = useState<string[]>([]);
+  const [unitMap, setUnitMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
-    (window.electronAPI.ipcRenderer.invoke('setup:get-units') as Promise<{ name: string }[]>)
-      .then((data) => setUnits(data.map((u) => u.name)))
+    (invokeInventory('setup:get-units') as Promise<{ id: string; name: string }[]>)
+      .then((data) => {
+        if (!Array.isArray(data)) return;
+        setUnits(data.map((u) => u.name));
+        setUnitMap(new Map(data.map((u) => [u.id, u.name])));
+      })
       .catch(console.error);
     invokeInventory(InventoryIPC.GET_CATEGORIES)
       .then((data) => {
@@ -118,9 +123,26 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
       .catch(console.error);
   }, []);
 
+  const categoryTypeMap = useMemo(
+    () => new Map(categories.map((c) => [c.id, c.type])),
+    [categories],
+  );
+
+  const enrichedItems = useMemo(
+    () =>
+      items.map((item) => ({
+        ...item,
+        type: item.type ?? categoryTypeMap.get(item.categoryId) ?? '',
+        unitOfMeasure:
+          item.unitOfMeasure ??
+          (item.unitOfMeasureId ? unitMap.get(item.unitOfMeasureId) : undefined),
+      })),
+    [items, categoryTypeMap, unitMap],
+  );
+
   const value: InventoryContextValue = {
     categories,
-    items,
+    items: enrichedItems,
     units,
     addCategory,
     updateCategory,

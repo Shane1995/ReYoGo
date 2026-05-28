@@ -22,6 +22,27 @@
       "when": 1779655817078,
       "tag": "0002_cynical_the_order",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1779723910674,
+      "tag": "0003_first_matthew_murdock",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1779750000000,
+      "tag": "0004_invoice_line_vat_snapshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1779864207036,
+      "tag": "0005_nice_loners",
+      "breakpoints": true
     }
   ]
 }

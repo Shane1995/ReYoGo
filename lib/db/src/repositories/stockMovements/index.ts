@@ -1,5 +1,6 @@
 import { and, asc, eq, gte, lte } from 'drizzle-orm';
-import type { ICOGSSummary, IItemCostHistory, IStockMovement } from '@reyogo/types';
+import { MovementType } from '@reyogo/types';
+import type { COGSSummary, ItemCostHistory, StockMovement } from '@reyogo/types';
 import type { DbClient } from '../../client';
 import * as schema from '../../schema';
 
@@ -27,14 +28,14 @@ export function createStockMovementsRepo(db: DbClient) {
           occurredAt: schema.stockMovements.occurredAt,
         })
         .from(schema.stockMovements)
-        .where(eq(schema.stockMovements.movementType, 'IN'))
+        .where(eq(schema.stockMovements.movementType, MovementType.In))
         .orderBy(asc(schema.stockMovements.occurredAt));
       const result: Record<string, number | null> = {};
       for (const row of rows) result[row.inventoryItemId] = row.weightedAvgCostAfter ?? null;
       return result;
     },
 
-    async getMovementsForItem(itemId: string): Promise<IStockMovement[]> {
+    async getMovementsForItem(itemId: string): Promise<StockMovement[]> {
       const rows = await db
         .select()
         .from(schema.stockMovements)
@@ -58,7 +59,7 @@ export function createStockMovementsRepo(db: DbClient) {
       }));
     },
 
-    async getItemCostHistory(itemId: string): Promise<IItemCostHistory> {
+    async getItemCostHistory(itemId: string): Promise<ItemCostHistory> {
       const movements = await this.getMovementsForItem(itemId);
       const latestIn = movements.find((m) => m.movementType === 'IN');
       const latest = movements.at(0);
@@ -80,8 +81,8 @@ export function createStockMovementsRepo(db: DbClient) {
       };
     },
 
-    async getCOGS(fromDate?: string, toDate?: string): Promise<ICOGSSummary> {
-      const conditions = [eq(schema.stockMovements.movementType, 'OUT')];
+    async getCOGS(fromDate?: string, toDate?: string): Promise<COGSSummary> {
+      const conditions = [eq(schema.stockMovements.movementType, MovementType.Out)];
       if (fromDate)
         conditions.push(gte(schema.stockMovements.occurredAt, new Date(fromDate + 'T00:00:00')));
       if (toDate)

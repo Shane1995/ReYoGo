@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { format, parse, parseISO, isValid } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
-import { Calendar } from './calendar';
+import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import { DayPicker } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 import { cn } from '../lib/utils';
 
@@ -74,48 +74,88 @@ export function DatePicker({
 
   return (
     <div className={cn('flex items-center', className)}>
-      <input
-        ref={inputRef}
-        type="text"
-        value={inputText}
-        placeholder={placeholder}
-        onChange={(e) => setInputText(e.target.value)}
-        onBlur={(e) => commitText(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            commitText(inputText);
-            e.currentTarget.blur();
-          }
-        }}
-        className="h-8 w-28 rounded-l-md rounded-r-none border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-      />
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className="flex h-8 items-center rounded-l-none rounded-r-md border border-l-0 border-input bg-background px-2 text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
-            aria-label="Open calendar"
+      <div className="flex h-8 rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring/40 focus-within:border-ring/40">
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputText}
+          placeholder={placeholder}
+          onChange={(e) => setInputText(e.target.value)}
+          onBlur={(e) => commitText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              commitText(inputText);
+              e.currentTarget.blur();
+            }
+          }}
+          className="h-full w-32 rounded-l-md bg-transparent px-2.5 text-sm focus:outline-none"
+        />
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="flex h-full items-center border-l border-input px-2 text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none rounded-r-md"
+              aria-label="Open calendar"
+            >
+              <CalendarIcon className="size-3.5" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-auto p-0 bg-[var(--nav-bg)] border-[var(--nav-border)]"
+            align="start"
+            sideOffset={4}
           >
-            <CalendarIcon className="size-3.5" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={validSelected}
-            onSelect={(date) => {
-              if (date) {
-                const formatted = format(date, DISPLAY_FORMAT);
-                setInputText(formatted);
-                onChange(format(date, STORE_FORMAT));
-              }
-              setOpen(false);
-              inputRef.current?.focus();
-            }}
-            autoFocus
-          />
-        </PopoverContent>
-      </Popover>
+            <DayPicker
+              mode="single"
+              selected={validSelected}
+              onSelect={(date) => {
+                if (date) {
+                  setInputText(format(date, DISPLAY_FORMAT));
+                  onChange(format(date, STORE_FORMAT));
+                }
+                setOpen(false);
+                inputRef.current?.focus();
+              }}
+              defaultMonth={validSelected}
+              showOutsideDays
+              className="p-3 select-none"
+              classNames={{
+                months: 'flex flex-col',
+                month: 'space-y-1',
+                month_caption: 'relative flex h-8 items-center justify-center',
+                caption_label: 'text-sm font-medium text-foreground',
+                nav: 'absolute inset-x-0 top-0 flex items-center justify-between',
+                button_previous:
+                  'flex size-7 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground transition-colors',
+                button_next:
+                  'flex size-7 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground transition-colors',
+                weekdays: 'flex',
+                weekday:
+                  'w-8 text-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground/50 pb-1',
+                weeks: 'space-y-0.5',
+                week: 'flex',
+                day: 'relative h-8 w-8 p-0 text-center',
+                day_button:
+                  'relative z-10 h-8 w-8 flex items-center justify-center text-sm rounded focus:outline-none hover:bg-muted transition-colors',
+                today: 'font-semibold',
+                outside: 'opacity-30',
+                disabled: 'opacity-20 pointer-events-none',
+                hidden: 'invisible',
+                selected:
+                  '[&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:hover:bg-primary/90',
+              }}
+              components={{
+                Chevron: ({ orientation }) =>
+                  orientation === 'left' ? (
+                    <ChevronLeftIcon className="size-3.5" />
+                  ) : (
+                    <ChevronRightIcon className="size-3.5" />
+                  ),
+              }}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   );
 }

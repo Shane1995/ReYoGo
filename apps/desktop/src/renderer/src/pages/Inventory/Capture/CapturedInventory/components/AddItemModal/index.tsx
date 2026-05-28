@@ -107,7 +107,12 @@ export function AddItemModal({ open, onClose, categories, units, onSave }: AddIt
           <Button type="button" variant="outline" onClick={handleClose}>
             Cancel
           </Button>
-          <Button type="button" onClick={handleSave} disabled={!name.trim() || !categoryId}>
+          <Button
+            type="button"
+            variant="success"
+            onClick={handleSave}
+            disabled={!name.trim() || !categoryId}
+          >
             Save
           </Button>
         </div>

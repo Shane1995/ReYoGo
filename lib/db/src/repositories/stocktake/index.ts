@@ -1,9 +1,10 @@
 import { desc, eq } from 'drizzle-orm';
 import type {
-  IStocktakeSession,
-  IStocktakeLine,
-  IStocktakeSessionWithLines,
-  ICompleteStocktakePayload,
+  StocktakeSession,
+  StocktakeLine,
+  StocktakeSessionWithLines,
+  CompleteStocktakePayload,
+  MovementType,
 } from '@reyogo/types';
 import type { DbClient } from '../../client';
 import * as schema from '../../schema';
@@ -14,7 +15,7 @@ type TxClient = Parameters<DbClient['transaction']>[0] extends (tx: infer T) => 
   ? T
   : never;
 
-function toSession(row: schema.StockCountSessionRow): IStocktakeSession {
+function toSession(row: schema.StockCountSessionRow): StocktakeSession {
   return {
     id: row.id,
     accountId: row.accountId,
@@ -25,7 +26,7 @@ function toSession(row: schema.StockCountSessionRow): IStocktakeSession {
   };
 }
 
-function toLine(row: schema.StockCountLineRow): IStocktakeLine {
+function toLine(row: schema.StockCountLineRow): StocktakeLine {
   return {
     id: row.id,
     sessionId: row.sessionId,
@@ -47,7 +48,7 @@ async function getLatestStockQty(tx: TxClient, itemId: string): Promise<number> 
 
 export function createStocktakeRepo(db: DbClient) {
   return {
-    async createSession(label?: string): Promise<IStocktakeSession> {
+    async createSession(label?: string): Promise<StocktakeSession> {
       const ts = now();
       const id = generateId();
       await db.insert(schema.stockCountSessions).values({
@@ -65,7 +66,7 @@ export function createStocktakeRepo(db: DbClient) {
       return toSession(rows[0]!);
     },
 
-    async getSessions(): Promise<IStocktakeSession[]> {
+    async getSessions(): Promise<StocktakeSession[]> {
       const rows = await db
         .select()
         .from(schema.stockCountSessions)
@@ -73,7 +74,7 @@ export function createStocktakeRepo(db: DbClient) {
       return rows.map(toSession);
     },
 
-    async getSessionById(id: string): Promise<IStocktakeSessionWithLines | null> {
+    async getSessionById(id: string): Promise<StocktakeSessionWithLines | null> {
       const sessionRows = await db
         .select()
         .from(schema.stockCountSessions)
@@ -87,7 +88,7 @@ export function createStocktakeRepo(db: DbClient) {
       return { ...toSession(sessionRows[0]), lines: lineRows.map(toLine) };
     },
 
-    async completeSession(payload: ICompleteStocktakePayload): Promise<void> {
+    async completeSession(payload: CompleteStocktakePayload): Promise<void> {
       const completedAt = now();
       await db.transaction(async (tx) => {
         const sessionRows = await tx
@@ -125,7 +126,7 @@ export function createStocktakeRepo(db: DbClient) {
             id: generateId(),
             accountId: 'default',
             inventoryItemId: line.inventoryItemId,
-            movementType: 'ADJUSTMENT',
+            movementType: 'ADJUSTMENT' as MovementType,
             qty: variance,
             stockQtyAfter: newQty,
             referenceType: 'adjustment',

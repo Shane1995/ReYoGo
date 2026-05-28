@@ -1,4 +1,59 @@
-export type VatMode = 'inclusive' | 'exclusive' | 'non-taxable';
+export enum InvoiceStatus {
+  Draft = 'DRAFT',
+  Posted = 'POSTED',
+}
+
+export type VatMode = 'inclusive' | 'exclusive';
+
+export interface Invoice {
+  id: string;
+  supplierId: string | null;
+  invoiceNumber: string | null;
+  invoiceDate: Date | null;
+  status: InvoiceStatus;
+  totalExclTax: number;
+  taxAmount: number;
+  totalInclTax: number;
+}
+
+export interface InvoiceLine {
+  id: string;
+  invoiceId: string;
+  inventoryItemId: string;
+  qty: number;
+  unitCost: number;
+  totalCost: number;
+}
+
+export interface InvoiceWithLines extends Invoice {
+  lines: InvoiceLine[];
+}
+
+export type InvoiceLinePayload = Omit<InvoiceLine, 'invoiceId'>;
+
+export interface InvoiceLineWithDate extends InvoiceLine {
+  invoiceCreatedAt: Date;
+  categoryType: string | null;
+  categoryName: string | null;
+}
+
+export interface InvoiceAuditEntry {
+  id: string;
+  invoiceId: string;
+  editedAt: Date;
+  note: string | null;
+  snapshot: InvoiceWithLines;
+}
+
+export interface SaveInvoicePayload extends Invoice {
+  lines: InvoiceLinePayload[];
+}
+
+export interface UpdateInvoicePayload {
+  id: string;
+  note?: string;
+  lines: InvoiceLinePayload[];
+}
 
 export interface IInvoiceLine {
   id: string;
@@ -7,8 +62,7 @@ export interface IInvoiceLine {
   itemNameSnapshot: string;
   unitOfMeasure?: string | null;
   quantity: number;
-  vatMode: VatMode;
-  vatRate: number;
+  isVatable: boolean;
   totalVatExclude: number;
 }
 
@@ -17,6 +71,8 @@ export interface IInvoice {
   supplierId: string | null;
   invoiceNumber?: string | null;
   invoiceDate?: Date | null;
+  vatMode: VatMode;
+  vatRate: number;
   createdAt: Date;
   updatedAt?: Date | null;
 }
@@ -46,12 +102,16 @@ export interface ISaveInvoicePayload {
   supplierId?: string | null;
   invoiceNumber?: string | null;
   invoiceDate?: Date | null;
+  vatMode: VatMode;
+  vatRate: number;
   lines: IInvoiceLinePayload[];
 }
 
 export interface IUpdateInvoicePayload {
   id: string;
   note?: string;
+  vatMode?: VatMode;
+  vatRate?: number;
   lines: IInvoiceLinePayload[];
 }
 

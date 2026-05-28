@@ -1,15 +1,18 @@
-export type VatMode = 'inclusive' | 'exclusive' | 'non-taxable';
+export type VatMode = 'inclusive' | 'exclusive';
 
 export type ProcessReceiptLine = {
   id: string;
   itemId: string;
   quantity: number;
-  vatMode: VatMode;
-  vatRate: number;
+  isVatable: boolean;
   totalVatExclude: number;
 };
 
-export function getProcessLineComputed(line: ProcessReceiptLine): {
+export function getProcessLineComputed(
+  line: ProcessReceiptLine,
+  vatMode: VatMode,
+  vatRate: number,
+): {
   netUnitPrice: number;
   grossUnitPrice: number;
   netTotal: number;
@@ -21,17 +24,17 @@ export function getProcessLineComputed(line: ProcessReceiptLine): {
   let netTotal: number;
   let grossTotal: number;
   let vatAmount: number;
-  if (line.vatMode === 'inclusive') {
-    grossTotal = entered;
-    netTotal = line.vatRate > 0 ? grossTotal / (1 + line.vatRate / 100) : grossTotal;
-    vatAmount = grossTotal - netTotal;
-  } else if (line.vatMode === 'non-taxable') {
+  if (!line.isVatable) {
     netTotal = entered;
     grossTotal = entered;
     vatAmount = 0;
+  } else if (vatMode === 'inclusive') {
+    grossTotal = entered;
+    netTotal = vatRate > 0 ? grossTotal / (1 + vatRate / 100) : grossTotal;
+    vatAmount = grossTotal - netTotal;
   } else {
     netTotal = entered;
-    vatAmount = netTotal * (line.vatRate / 100);
+    vatAmount = netTotal * (vatRate / 100);
     grossTotal = netTotal + vatAmount;
   }
   const netUnitPrice = qty > 0 ? netTotal / qty : 0;

@@ -2,17 +2,17 @@ import { useMemo, useState } from 'react';
 import { INVENTORY_TYPES } from '@reyogo/types';
 import type { FilterField, FilterValues } from '@/components/DataTable';
 import type { InventoryCategory, InventoryItem } from '../../../../types';
-import type { FlatItem, ItemCost } from '../../types';
+import type { ItemCostEntry } from '../../../../hooks/useInventoryCosts';
+import type { FlatItem } from '../../types';
 
 type Props = {
   items: InventoryItem[];
   categories: InventoryCategory[];
-  costMap: Map<string, ItemCost>;
+  costMap: Map<string, ItemCostEntry>;
   stockMap: Map<string, number>;
-  weightedAvgMap: Map<string, number | null>;
 };
 
-export function useItemFilters({ items, categories, costMap, stockMap, weightedAvgMap }: Props) {
+export function useItemFilters({ items, categories, costMap, stockMap }: Props) {
   const [filterValues, setFilterValues] = useState<FilterValues>({});
 
   const allTypes = useMemo(() => [...INVENTORY_TYPES], []);
@@ -28,13 +28,13 @@ export function useItemFilters({ items, categories, costMap, stockMap, weightedA
         categoryId: item.categoryId,
         categoryName: category?.name ?? '—',
         unitOfMeasure: item.unitOfMeasure,
-        lastCostPerUnit: cost?.price,
-        lastCostUom: cost?.uom,
+        lastCostPerUnit: cost?.lastUnitCost ?? undefined,
+        lastCostUom: item.unitOfMeasure,
         currentStock: stockMap.get(item.id),
-        weightedAvgCost: weightedAvgMap.get(item.id) ?? null,
+        weightedAvgCost: cost?.weightedAvgCost ?? null,
       };
     });
-  }, [items, categories, costMap, stockMap, weightedAvgMap]);
+  }, [items, categories, costMap, stockMap]);
 
   const filteredItems = useMemo(() => {
     const search = (filterValues.search as string)?.toLowerCase() ?? '';

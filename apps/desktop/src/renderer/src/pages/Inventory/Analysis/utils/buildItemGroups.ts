@@ -1,41 +1,46 @@
-import type { IInvoiceLineWithDate } from '@reyogo/types';
+import type { InvoiceLineWithDate } from '@reyogo/types';
 import type { ItemGroup } from '../types';
 
+type ItemLookup = { id: string; name: string; unitOfMeasure?: string };
+
 export function buildItemGroups(
-  lines: IInvoiceLineWithDate[],
+  lines: InvoiceLineWithDate[],
   fromDate: string,
   toDate: string,
+  items: ItemLookup[] = [],
 ): ItemGroup[] {
   const from = fromDate ? new Date(fromDate + 'T00:00:00') : null;
   const to = toDate ? new Date(toDate + 'T23:59:59') : null;
+  const itemById = new Map(items.map((i) => [i.id, i]));
 
   const map = new Map<string, ItemGroup>();
   for (const line of lines) {
-    if (line.quantity <= 0) continue;
-    const date = new Date(line.createdAt);
+    if (line.qty <= 0) continue;
+    const date = new Date(line.invoiceCreatedAt);
     if (from && date < from) continue;
     if (to && date > to) continue;
 
-    if (!map.has(line.itemId)) {
-      map.set(line.itemId, {
-        itemId: line.itemId,
-        name: line.itemNameSnapshot,
+    const item = itemById.get(line.inventoryItemId);
+    if (!map.has(line.inventoryItemId)) {
+      map.set(line.inventoryItemId, {
+        itemId: line.inventoryItemId,
+        name: item?.name ?? line.inventoryItemId,
         categoryType: line.categoryType ?? 'other',
         categoryName: line.categoryName ?? undefined,
         entries: [],
       });
     }
-    const group = map.get(line.itemId)!;
-    group.name = line.itemNameSnapshot;
-    group.uom = line.unitOfMeasure ?? undefined;
+    const group = map.get(line.inventoryItemId)!;
+    group.name = item?.name ?? group.name;
+    group.uom = item?.unitOfMeasure ?? group.uom;
     group.categoryType = line.categoryType ?? group.categoryType;
     group.categoryName = line.categoryName ?? group.categoryName;
     group.entries.push({
       invoiceId: line.invoiceId,
       date,
-      quantity: line.quantity,
-      unitPrice: line.totalVatExclude / line.quantity,
-      uom: line.unitOfMeasure ?? undefined,
+      quantity: line.qty,
+      unitPrice: line.unitCost,
+      uom: item?.unitOfMeasure,
     });
   }
 
