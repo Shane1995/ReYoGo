@@ -1,5 +1,9 @@
 import { ipcMain } from 'electron';
-import type { ISaveCapturedInvoicePayload, IUpdateCapturedInvoicePayload } from '@reyogo/types';
+import type {
+  ISaveCapturedInvoicePayload,
+  IUpdateCapturedInvoicePayload,
+  IUpdateCapturedInvoiceMetadataPayload,
+} from '@reyogo/types';
 import { InvoicesIPC } from '@shared/types/ipc';
 import { getRepos } from '../../db';
 
@@ -7,6 +11,10 @@ export function registerInvoicesHandlers(): void {
   ipcMain.handle(InvoicesIPC.SAVE_INVOICE, (_e, payload: ISaveCapturedInvoicePayload) =>
     getRepos().invoices.saveInvoice(payload),
   );
+  ipcMain.handle(InvoicesIPC.SAVE_AND_POST_INVOICE, (_e, payload: ISaveCapturedInvoicePayload) =>
+    getRepos().invoices.saveAndPostInvoice(payload),
+  );
+  ipcMain.handle(InvoicesIPC.POST_INVOICE, (_e, id: string) => getRepos().invoices.postInvoice(id));
   ipcMain.handle(InvoicesIPC.GET_INVOICES, () => getRepos().invoices.getInvoices());
   ipcMain.handle(InvoicesIPC.GET_INVOICES_WITH_LINES, () =>
     getRepos().invoices.getInvoicesWithLines(),
@@ -19,6 +27,11 @@ export function registerInvoicesHandlers(): void {
   );
   ipcMain.handle(InvoicesIPC.UPDATE_INVOICE, (_e, payload: IUpdateCapturedInvoicePayload) =>
     getRepos().invoices.updateInvoice(payload),
+  );
+  ipcMain.handle(
+    InvoicesIPC.UPDATE_INVOICE_METADATA,
+    (_e, payload: IUpdateCapturedInvoiceMetadataPayload) =>
+      getRepos().invoices.updateInvoiceMetadata(payload),
   );
   ipcMain.handle(InvoicesIPC.GET_INVOICE_AUDIT, (_e, id: string) =>
     getRepos().invoices.getInvoiceAudit(id),

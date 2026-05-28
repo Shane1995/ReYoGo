@@ -1,17 +1,26 @@
 import { useState, useEffect } from 'react';
 import { XIcon, ClockIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
-import { InvoicesIPC } from '@shared/types/ipc';
+import { invoiceService } from '@/services/invoice';
 import type { ICapturedInvoiceAuditEntry } from '@reyogo/types';
+import type { Supplier } from '@reyogo/types';
 import { formatDate } from '../../../utils/formatDate';
-import { formatMoney } from '../../../utils/formatMoney';
-import { invoiceTotals } from '../../../utils/invoiceTotals';
 
 type Props = {
   invoiceId: string;
+  suppliers: Supplier[];
   onClose: () => void;
 };
 
-export function AuditPanel({ invoiceId, onClose }: Props) {
+function MetaRow({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div className="flex gap-2 text-xs">
+      <span className="w-28 shrink-0 text-muted-foreground">{label}</span>
+      <span className="font-mono">{value ?? <span className="opacity-40 italic">—</span>}</span>
+    </div>
+  );
+}
+
+export function AuditPanel({ invoiceId, suppliers, onClose }: Props) {
   const [entries, setEntries] = useState<ICapturedInvoiceAuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -20,11 +29,8 @@ export function AuditPanel({ invoiceId, onClose }: Props) {
     let cancelled = false;
     (async () => {
       try {
-        const result = await window.electronAPI.ipcRenderer.invoke(
-          InvoicesIPC.GET_INVOICE_AUDIT,
-          invoiceId,
-        );
-        if (!cancelled) setEntries(result as unknown as ICapturedInvoiceAuditEntry[]);
+        const result = await invoiceService.getInvoiceAudit(invoiceId);
+        if (!cancelled) setEntries(result);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -59,8 +65,11 @@ export function AuditPanel({ invoiceId, onClose }: Props) {
           <div className="flex flex-col gap-2">
             {entries.map((entry) => {
               const snap = entry.snapshot;
-              const totals = invoiceTotals(snap);
               const isOpen = expanded === entry.id;
+              const supplierName = snap.supplierId
+                ? (suppliers.find((s) => s.id === snap.supplierId)?.name ?? snap.supplierId)
+                : null;
+
               return (
                 <div
                   key={entry.id}
@@ -80,60 +89,18 @@ export function AuditPanel({ invoiceId, onClose }: Props) {
                     {entry.note && (
                       <span className="text-muted-foreground truncate">— {entry.note}</span>
                     )}
-                    <span className="ml-auto shrink-0 font-mono text-muted-foreground">
-                      {snap.lines.length} line{snap.lines.length !== 1 ? 's' : ''} ·{' '}
-                      {formatMoney(totals.total)}
-                    </span>
                   </button>
                   {isOpen && (
-                    <div className="border-t border-[var(--nav-border)]/60 bg-muted/10 px-3 py-2">
-                      <p className="mb-1.5 text-xs text-muted-foreground">
-                        Snapshot before this edit:
+                    <div className="border-t border-[var(--nav-border)]/60 bg-muted/10 px-3 py-2.5 space-y-1.5">
+                      <p className="text-[11px] uppercase tracking-widest text-muted-foreground/60 font-medium mb-2">
+                        Before this edit
                       </p>
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="border-b border-[var(--nav-border)]/50">
-                            <th className="pb-1 pr-3 text-left font-medium">Item</th>
-                            <th className="pb-1 pr-3 text-right font-medium">Qty</th>
-                            <th className="pb-1 pr-3 text-right font-medium">Total excl.</th>
-                            <th className="pb-1 text-right font-medium">VAT</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {snap.lines.map((l) => (
-                            <tr key={l.id} className="border-b border-[var(--nav-border)]/30">
-                              <td className="py-1 pr-3">{l.itemNameSnapshot}</td>
-                              <td className="py-1 pr-3 text-right">{l.quantity}</td>
-                              <td className="py-1 pr-3 text-right font-mono">
-                                {formatMoney(l.totalVatExclude)}
-                              </td>
-                              <td className="py-1 text-right">
-                                {l.isVatable ? `${snap.vatRate}%` : '—'}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      <div className="mt-2 flex gap-4 text-xs text-muted-foreground">
-                        <span>
-                          Excl.{' '}
-                          <span className="font-mono text-foreground">
-                            {formatMoney(totals.excl)}
-                          </span>
-                        </span>
-                        <span>
-                          VAT{' '}
-                          <span className="font-mono text-foreground">
-                            {formatMoney(totals.vat)}
-                          </span>
-                        </span>
-                        <span>
-                          Total{' '}
-                          <span className="font-mono font-semibold text-foreground">
-                            {formatMoney(totals.total)}
-                          </span>
-                        </span>
-                      </div>
+                      <MetaRow label="Supplier" value={supplierName} />
+                      <MetaRow label="Invoice number" value={snap.invoiceNumber} />
+                      <MetaRow
+                        label="Invoice date"
+                        value={snap.invoiceDate ? formatDate(snap.invoiceDate) : null}
+                      />
                     </div>
                   )}
                 </div>

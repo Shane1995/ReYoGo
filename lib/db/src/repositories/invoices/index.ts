@@ -1,5 +1,5 @@
-import { and, asc, desc, eq, gt } from 'drizzle-orm';
-import { MovementType } from '@reyogo/types';
+import { asc, desc, eq, gt } from 'drizzle-orm';
+import { MovementType, InvoiceStatus } from '@reyogo/types';
 import type {
   IInvoice,
   IInvoiceWithLines,
@@ -7,6 +7,7 @@ import type {
   IInvoiceAuditEntry,
   ISaveCapturedInvoicePayload,
   IUpdateCapturedInvoicePayload,
+  IUpdateCapturedInvoiceMetadataPayload,
   VatMode,
   InvoiceLineWithDate,
 } from '@reyogo/types';
@@ -26,6 +27,7 @@ function toIInvoice(row: schema.InvoiceRow): IInvoice {
     supplierId: row.supplierId ?? null,
     invoiceNumber: row.invoiceNumber ?? null,
     invoiceDate: row.invoiceDate ?? null,
+    status: (row.status as InvoiceStatus) ?? InvoiceStatus.Draft,
     vatMode: (row.vatMode as VatMode) ?? 'exclusive',
     vatRate: row.vatRate ?? 15,
     createdAt: row.createdAt,
@@ -62,9 +64,11 @@ async function getLatestMovement(
   return rows[0] ?? null;
 }
 
+type MovementLine = { itemId: string; quantity: number; totalVatExclude: number };
+
 async function insertMovementsForLines(
   tx: TxClient,
-  lines: ISaveCapturedInvoicePayload['lines'],
+  lines: MovementLine[],
   referenceId: string,
   occurredAt: Date,
   createdAt: Date,
@@ -147,13 +151,6 @@ export function createInvoicesRepo(db: DbClient) {
               isVatable: l.isVatable,
             })),
           );
-          await insertMovementsForLines(
-            tx,
-            validLines,
-            payload.id,
-            payload.invoiceDate ?? createdAt,
-            createdAt,
-          );
         }
       });
     },
@@ -162,6 +159,8 @@ export function createInvoicesRepo(db: DbClient) {
       const editedAt = now();
       const current = await this.getInvoiceById(payload.id);
       if (!current) throw new Error(`Invoice not found: ${payload.id}`);
+      if (current.status === InvoiceStatus.Posted)
+        throw new Error(`Invoice ${payload.id} is posted and cannot be edited`);
 
       const vatMode = payload.vatMode ?? current.vatMode;
       const vatRate = payload.vatRate ?? current.vatRate;
@@ -177,14 +176,6 @@ export function createInvoicesRepo(db: DbClient) {
           note: payload.note ?? null,
           snapshot: JSON.stringify(current),
         });
-        await tx
-          .delete(schema.stockMovements)
-          .where(
-            and(
-              eq(schema.stockMovements.referenceType, 'invoice'),
-              eq(schema.stockMovements.referenceId, payload.id),
-            ),
-          );
         await tx
           .delete(schema.invoiceLineItems)
           .where(eq(schema.invoiceLineItems.invoiceId, payload.id));
@@ -204,13 +195,6 @@ export function createInvoicesRepo(db: DbClient) {
               isVatable: l.isVatable,
             })),
           );
-          await insertMovementsForLines(
-            tx,
-            validLines,
-            payload.id,
-            current.invoiceDate ?? editedAt,
-            editedAt,
-          );
         }
         await tx
           .update(schema.invoices)
@@ -221,6 +205,33 @@ export function createInvoicesRepo(db: DbClient) {
             totalExclTax,
             taxAmount,
             totalInclTax: totalExclTax + taxAmount,
+          })
+          .where(eq(schema.invoices.id, payload.id));
+      });
+    },
+
+    async updateInvoiceMetadata(payload: IUpdateCapturedInvoiceMetadataPayload): Promise<void> {
+      const editedAt = now();
+      const current = await this.getInvoiceById(payload.id);
+      if (!current) throw new Error(`Invoice not found: ${payload.id}`);
+
+      await db.transaction(async (tx) => {
+        await tx.insert(schema.invoiceAuditLog).values({
+          id: generateId(),
+          invoiceId: payload.id,
+          editedAt,
+          note: payload.note ?? null,
+          snapshot: JSON.stringify(current),
+        });
+        await tx
+          .update(schema.invoices)
+          .set({
+            supplierId: payload.supplierId !== undefined ? payload.supplierId : current.supplierId,
+            invoiceNumber:
+              payload.invoiceNumber !== undefined ? payload.invoiceNumber : current.invoiceNumber,
+            invoiceDate:
+              payload.invoiceDate !== undefined ? payload.invoiceDate : current.invoiceDate,
+            updatedAt: editedAt,
           })
           .where(eq(schema.invoices.id, payload.id));
       });
@@ -370,6 +381,67 @@ export function createInvoicesRepo(db: DbClient) {
         note: r.note ?? null,
         snapshot: JSON.parse(r.snapshot) as IInvoiceWithLines,
       }));
+    },
+
+    async saveAndPostInvoice(payload: ISaveCapturedInvoicePayload): Promise<void> {
+      const createdAt = now();
+      const occurredAt = payload.invoiceDate ?? createdAt;
+      const { totalExclTax, taxAmount } = computeTax(payload.lines, payload.vatRate);
+      const validLines = payload.lines.filter((l) => l.itemId && l.quantity >= 0);
+
+      await db.transaction(async (tx) => {
+        await tx.insert(schema.invoices).values({
+          id: payload.id,
+          supplierId: payload.supplierId ?? null,
+          accountId: 'default',
+          invoiceNumber: payload.invoiceNumber ?? null,
+          invoiceDate: payload.invoiceDate ?? null,
+          status: InvoiceStatus.Posted,
+          vatMode: payload.vatMode,
+          vatRate: payload.vatRate,
+          totalExclTax,
+          taxAmount,
+          totalInclTax: totalExclTax + taxAmount,
+          createdAt,
+        });
+
+        if (validLines.length > 0) {
+          const unitCostOf = (l: (typeof validLines)[number]) =>
+            l.quantity > 0 ? l.totalVatExclude / l.quantity : 0;
+          await tx.insert(schema.invoiceLineItems).values(
+            validLines.map((l) => ({
+              id: l.id,
+              invoiceId: payload.id,
+              inventoryItemId: l.itemId,
+              itemNameSnapshot: l.itemNameSnapshot ?? '',
+              qty: l.quantity,
+              unitCost: unitCostOf(l),
+              totalCost: l.totalVatExclude,
+              isVatable: l.isVatable,
+            })),
+          );
+        }
+
+        await insertMovementsForLines(tx, validLines, payload.id, occurredAt, createdAt);
+      });
+    },
+
+    async postInvoice(id: string): Promise<void> {
+      const invoice = await this.getInvoiceById(id);
+      if (!invoice) throw new Error(`Invoice not found: ${id}`);
+      if (invoice.status === InvoiceStatus.Posted)
+        throw new Error(`Invoice ${id} is already posted`);
+
+      const postedAt = now();
+      const occurredAt = invoice.invoiceDate ?? postedAt;
+
+      await db.transaction(async (tx) => {
+        await insertMovementsForLines(tx, invoice.lines, id, occurredAt, postedAt);
+        await tx
+          .update(schema.invoices)
+          .set({ status: InvoiceStatus.Posted, updatedAt: postedAt })
+          .where(eq(schema.invoices.id, id));
+      });
     },
   };
 }

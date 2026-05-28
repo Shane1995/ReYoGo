@@ -6,6 +6,7 @@ import type {
   InvoiceLineWithDate,
   ISaveCapturedInvoicePayload,
   IUpdateCapturedInvoicePayload,
+  IUpdateCapturedInvoiceMetadataPayload,
 } from '@reyogo/types';
 import type { ItemCostHistory, COGSSummary } from '@reyogo/types';
 import type { Supplier, UpsertSupplierPayload } from '@reyogo/types';
@@ -27,11 +28,17 @@ export interface IPCInvokeMap {
   'inventory:delete-item': { args: [id: string]; return: void };
   'inventory:submit': { args: [payload: InventorySubmitPayload]; return: void };
   'invoices:save-invoice': { args: [payload: ISaveCapturedInvoicePayload]; return: void };
+  'invoices:save-and-post-invoice': { args: [payload: ISaveCapturedInvoicePayload]; return: void };
+  'invoices:post-invoice': { args: [id: string]; return: void };
   'invoices:get-invoices': { args: []; return: IInvoice[] };
   'invoices:get-invoices-with-lines': { args: []; return: IInvoiceWithLines[] };
   'invoices:get-invoice': { args: [id: string]; return: IInvoiceWithLines | null };
   'invoices:get-lines-for-analysis': { args: []; return: InvoiceLineWithDate[] };
   'invoices:update-invoice': { args: [payload: IUpdateCapturedInvoicePayload]; return: void };
+  'invoices:update-invoice-metadata': {
+    args: [payload: IUpdateCapturedInvoiceMetadataPayload];
+    return: void;
+  };
   'invoices:get-invoice-audit': { args: [id: string]; return: IInvoiceAuditEntry[] };
   'invoices:get-last-unit-prices': { args: []; return: Record<string, number> };
   'stock-movements:get-current-stock': { args: []; return: Record<string, number> };

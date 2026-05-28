@@ -38,6 +38,7 @@ export default function InvoicePage() {
     reuseNoticeDismissed,
     setReuseNoticeDismissed,
     isSaving,
+    isSavingDraft,
     saveError,
     toggleResultRow,
     addLine,
@@ -50,10 +51,11 @@ export default function InvoicePage() {
     itemMetaMap,
     invoiceSummary,
     handleSave,
+    handleSaveDraft,
   } = useInvoiceForm();
 
   useEffect(() => {
-    suppliersService.getSuppliers().then((s) => setSuppliers(s as Supplier[]));
+    suppliersService.getSuppliers().then((s) => setSuppliers(s));
   }, []);
 
   const sortedItems = useMemo(
@@ -159,9 +161,11 @@ export default function InvoicePage() {
       <InvoiceSummaryFooter
         summary={invoiceSummary}
         isSaving={isSaving}
+        isSavingDraft={isSavingDraft}
         canSave={canSave}
         isDirty={isDirty}
         onSave={handleSave}
+        onSaveDraft={handleSaveDraft}
       />
 
       <AddCategoryModal
