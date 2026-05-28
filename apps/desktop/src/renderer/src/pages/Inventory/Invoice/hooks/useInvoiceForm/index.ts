@@ -38,6 +38,7 @@ export function useInvoiceForm() {
     isReused ? DEFAULT_VAT_RATE : (loadDraft()?.vatRate ?? DEFAULT_VAT_RATE),
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [expandedResultLineIds, setExpandedResultLineIds] = useState<Set<string>>(new Set());
   const [reuseNoticeDismissed, setReuseNoticeDismissed] = useState(false);
@@ -106,6 +107,52 @@ export function useInvoiceForm() {
     setSaveError(null);
     setIsSaving(true);
     try {
+      await invoiceService.saveAndPostInvoice({
+        id: window.crypto.randomUUID(),
+        supplierId: supplierId || null,
+        invoiceNumber: invoiceNumber.trim() || null,
+        invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
+        vatMode,
+        vatRate,
+        lines: validLines.map((line) => {
+          const computed = getProcessLineComputed(line, vatMode, vatRate);
+          return {
+            id: line.id,
+            itemId: line.itemId,
+            itemNameSnapshot: itemMetaMap.get(line.itemId)?.name ?? '',
+            quantity: Number(line.quantity),
+            isVatable: line.isVatable,
+            totalVatExclude: computed.netTotal,
+          };
+        }),
+      });
+      clearForm();
+      toast.success('Invoice posted');
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Failed to save invoice');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    canSave,
+    validLines,
+    invoiceNumber,
+    invoiceDate,
+    supplierId,
+    vatMode,
+    vatRate,
+    itemMetaMap,
+    clearForm,
+  ]);
+
+  const handleSaveDraft = useCallback(async () => {
+    if (!canSave) {
+      setSaveError('Complete all rows before saving — each row needs an item and quantity.');
+      return;
+    }
+    setSaveError(null);
+    setIsSavingDraft(true);
+    try {
       await invoiceService.saveInvoice({
         id: window.crypto.randomUUID(),
         supplierId: supplierId || null,
@@ -126,11 +173,11 @@ export function useInvoiceForm() {
         }),
       });
       clearForm();
-      toast.success('Invoice saved');
+      toast.success('Draft saved');
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : 'Failed to save invoice');
+      setSaveError(e instanceof Error ? e.message : 'Failed to save draft');
     } finally {
-      setIsSaving(false);
+      setIsSavingDraft(false);
     }
   }, [
     canSave,
@@ -165,6 +212,7 @@ export function useInvoiceForm() {
     reuseNoticeDismissed,
     setReuseNoticeDismissed,
     isSaving,
+    isSavingDraft,
     saveError,
     toggleResultRow,
     addLine,
@@ -178,5 +226,6 @@ export function useInvoiceForm() {
     invoiceSummary,
     validLines,
     handleSave,
+    handleSaveDraft,
   };
 }

@@ -77,7 +77,7 @@ describe('createInvoicesRepo', () => {
       expect(await db.select().from(schema.invoiceLineItems)).toHaveLength(1);
     });
 
-    it('creates a stock movement with correct WAC on first purchase', async () => {
+    it('saves with DRAFT status and no stock movements', async () => {
       await repo.saveInvoice({
         id: 'inv-1',
         supplierId: null,
@@ -87,50 +87,8 @@ describe('createInvoicesRepo', () => {
         vatRate: 15,
         lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
       });
-      const movements = await db.select().from(schema.stockMovements);
-      expect(movements).toHaveLength(1);
-      expect(movements[0]!.unitCostAtTime).toBe(10);
-      expect(movements[0]!.weightedAvgCostAfter).toBe(10);
-      expect(movements[0]!.stockQtyAfter).toBe(10);
-    });
-
-    it('blends WAC correctly across two purchases', async () => {
-      await repo.saveInvoice({
-        id: 'inv-1',
-        supplierId: null,
-        invoiceNumber: null,
-        invoiceDate: new Date('2024-01-01'),
-        vatMode: 'exclusive',
-        vatRate: 15,
-        lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
-      });
-      await repo.saveInvoice({
-        id: 'inv-2',
-        supplierId: null,
-        invoiceNumber: null,
-        invoiceDate: new Date('2024-01-02'),
-        vatMode: 'exclusive',
-        vatRate: 15,
-        lines: [line({ id: 'l-2', quantity: 10, totalVatExclude: 200 })],
-      });
-      const movements = await db
-        .select()
-        .from(schema.stockMovements)
-        .orderBy(schema.stockMovements.occurredAt);
-      expect(movements[1]!.weightedAvgCostAfter).toBe(round4((10 * 10 + 10 * 20) / 20));
-      expect(movements[1]!.stockQtyAfter).toBe(20);
-    });
-
-    it('skips lines with zero quantity', async () => {
-      await repo.saveInvoice({
-        id: 'inv-1',
-        supplierId: null,
-        invoiceDate: null,
-        invoiceNumber: null,
-        vatMode: 'exclusive',
-        vatRate: 15,
-        lines: [line({ id: 'l-1', quantity: 0, totalVatExclude: 0 })],
-      });
+      const invoices = await db.select().from(schema.invoices);
+      expect(invoices[0]!.status).toBe('DRAFT');
       expect(await db.select().from(schema.stockMovements)).toHaveLength(0);
     });
 
@@ -149,6 +107,113 @@ describe('createInvoicesRepo', () => {
     });
   });
 
+  describe('saveAndPostInvoice', () => {
+    it('creates the invoice as POSTED with stock movements in one step', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-1',
+        supplierId: null,
+        invoiceNumber: 'INV-001',
+        invoiceDate: new Date('2024-01-01'),
+        vatMode: 'exclusive',
+        vatRate: 15,
+        lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
+      });
+      const invoices = await db.select().from(schema.invoices);
+      expect(invoices[0]!.status).toBe('POSTED');
+      const movements = await db.select().from(schema.stockMovements);
+      expect(movements).toHaveLength(1);
+      expect(movements[0]!.unitCostAtTime).toBe(10);
+      expect(movements[0]!.weightedAvgCostAfter).toBe(10);
+      expect(movements[0]!.stockQtyAfter).toBe(10);
+    });
+
+    it('uses invoiceDate as occurredAt when provided', async () => {
+      const invoiceDate = new Date('2024-03-15');
+      await repo.saveAndPostInvoice({
+        id: 'inv-1',
+        supplierId: null,
+        invoiceNumber: null,
+        invoiceDate,
+        vatMode: 'exclusive',
+        vatRate: 15,
+        lines: [line({ id: 'l-1', quantity: 5, totalVatExclude: 50 })],
+      });
+      const movements = await db.select().from(schema.stockMovements);
+      expect(movements[0]!.occurredAt).toEqual(invoiceDate);
+    });
+
+    it('skips lines with zero quantity for movements', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-1',
+        supplierId: null,
+        invoiceNumber: null,
+        invoiceDate: null,
+        vatMode: 'exclusive',
+        vatRate: 15,
+        lines: [
+          line({ id: 'l-1', quantity: 10, totalVatExclude: 100 }),
+          line({ id: 'l-2', quantity: 0, totalVatExclude: 0 }),
+        ],
+      });
+      const movements = await db.select().from(schema.stockMovements);
+      expect(movements).toHaveLength(1);
+    });
+  });
+
+  describe('postInvoice', () => {
+    beforeEach(() =>
+      repo.saveInvoice({
+        id: 'inv-1',
+        supplierId: null,
+        invoiceNumber: 'INV-001',
+        invoiceDate: new Date('2024-01-01'),
+        vatMode: 'exclusive',
+        vatRate: 15,
+        lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
+      }),
+    );
+
+    it('creates stock movements and transitions status to POSTED', async () => {
+      await repo.postInvoice('inv-1');
+      const invoices = await db.select().from(schema.invoices);
+      expect(invoices[0]!.status).toBe('POSTED');
+      const movements = await db.select().from(schema.stockMovements);
+      expect(movements).toHaveLength(1);
+      expect(movements[0]!.unitCostAtTime).toBe(10);
+      expect(movements[0]!.weightedAvgCostAfter).toBe(10);
+      expect(movements[0]!.stockQtyAfter).toBe(10);
+    });
+
+    it('blends WAC correctly across two posted invoices', async () => {
+      await repo.saveInvoice({
+        id: 'inv-2',
+        supplierId: null,
+        invoiceNumber: null,
+        invoiceDate: new Date('2024-01-02'),
+        vatMode: 'exclusive',
+        vatRate: 15,
+        lines: [line({ id: 'l-2', quantity: 10, totalVatExclude: 200 })],
+      });
+      await repo.postInvoice('inv-1');
+      await repo.postInvoice('inv-2');
+      const movements = await db
+        .select()
+        .from(schema.stockMovements)
+        .orderBy(schema.stockMovements.occurredAt);
+      expect(movements[1]!.weightedAvgCostAfter).toBe(round4((10 * 10 + 10 * 20) / 20));
+      expect(movements[1]!.stockQtyAfter).toBe(20);
+    });
+
+    it('throws when already posted', async () => {
+      await repo.postInvoice('inv-1');
+      await expect(repo.postInvoice('inv-1')).rejects.toThrow();
+    });
+
+    it('throws when invoice does not exist', async () => {
+      await expect(repo.postInvoice('nope')).rejects.toThrow();
+    });
+  });
+
   describe('updateInvoice', () => {
     beforeEach(() =>
       repo.saveInvoice({
@@ -162,14 +227,15 @@ describe('createInvoicesRepo', () => {
       }),
     );
 
-    it('replaces old movements with movements for the new lines', async () => {
+    it('replaces draft line items with the new set', async () => {
       await repo.updateInvoice({
         id: 'inv-1',
         lines: [line({ id: 'l-2', itemId: 'item-2', quantity: 5, totalVatExclude: 50 })],
       });
-      const movements = await db.select().from(schema.stockMovements);
-      expect(movements).toHaveLength(1);
-      expect(movements[0]!.inventoryItemId).toBe('item-2');
+      const lines = await db.select().from(schema.invoiceLineItems);
+      expect(lines).toHaveLength(1);
+      expect(lines[0]!.inventoryItemId).toBe('item-2');
+      expect(await db.select().from(schema.stockMovements)).toHaveLength(0);
     });
 
     it('writes an audit log entry with the previous invoice snapshot', async () => {
@@ -182,6 +248,11 @@ describe('createInvoicesRepo', () => {
 
     it('throws when the invoice does not exist', async () => {
       await expect(repo.updateInvoice({ id: 'nope', lines: [] })).rejects.toThrow();
+    });
+
+    it('throws when the invoice is already posted', async () => {
+      await repo.postInvoice('inv-1');
+      await expect(repo.updateInvoice({ id: 'inv-1', lines: [] })).rejects.toThrow();
     });
   });
 

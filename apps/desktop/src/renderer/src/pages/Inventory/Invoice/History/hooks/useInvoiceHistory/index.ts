@@ -1,22 +1,17 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { InvoicesIPC } from '@shared/types/ipc';
-import type { ICapturedInvoice, ICapturedInvoiceWithLines } from '@reyogo/types';
-import type { Supplier } from '@reyogo/types';
+import type { ICapturedInvoice, ICapturedInvoiceWithLines, Supplier } from '@reyogo/types';
+import { InvoiceStatus } from '@reyogo/types';
 import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
 import { suppliersService } from '@/services/suppliers';
+import { invoiceService } from '@/services/invoice';
 import type { ProcessReceiptLine } from '../../../types';
 import { getProcessLineComputed } from '../../../types';
 import { lineToEditLine } from '../../../utils/lineToEditLine';
-
-export type RowMode = { kind: 'view' } | { kind: 'detail' } | { kind: 'edit' } | { kind: 'audit' };
-
-function toDateStr(d: Date | string | null | undefined): string {
-  if (!d) return '';
-  const s = typeof d === 'string' ? d : d.toISOString();
-  return s.slice(0, 10);
-}
+import { toDateStr } from '../../utils/toDateStr';
+import { RowModeKind, type RowMode } from '../../types';
+export type { RowModeKind, RowMode } from '../../types';
 
 export function useInvoiceHistory() {
   const [invoices, setInvoices] = useState<ICapturedInvoice[]>([]);
@@ -28,14 +23,13 @@ export function useInvoiceHistory() {
   const [toDate, setToDate] = useState('');
   const [supplierFilter, setSupplierFilter] = useState('');
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [postingId, setPostingId] = useState<string | null>(null);
 
   const { items } = useInventory();
   const navigate = useNavigate();
 
   const loadInvoices = useCallback(async () => {
-    const list: ICapturedInvoiceWithLines[] = (await window.electronAPI.ipcRenderer.invoke(
-      InvoicesIPC.GET_INVOICES_WITH_LINES,
-    )) as unknown as ICapturedInvoiceWithLines[];
+    const list = await invoiceService.getInvoicesWithLines();
     setInvoices(list);
     setDetailCache((prev) => {
       const next = { ...prev };
@@ -61,17 +55,14 @@ export function useInvoiceHistory() {
   useEffect(() => {
     suppliersService
       .getSuppliers()
-      .then((s) => setSuppliers((s as unknown as Supplier[]) ?? []))
+      .then((s) => setSuppliers(s ?? []))
       .catch(() => {});
   }, []);
 
   const getDetail = useCallback(
     async (id: string): Promise<ICapturedInvoiceWithLines | null> => {
       if (detailCache[id]) return detailCache[id];
-      const inv = (await window.electronAPI.ipcRenderer.invoke(
-        InvoicesIPC.GET_INVOICE,
-        id,
-      )) as unknown as ICapturedInvoiceWithLines | null;
+      const inv = await invoiceService.getInvoice(id);
       if (inv) setDetailCache((prev) => ({ ...prev, [id]: inv }));
       return inv ?? null;
     },
@@ -86,10 +77,7 @@ export function useInvoiceHistory() {
     async (id: string) => {
       let detail = detailCache[id];
       if (!detail) {
-        const inv = (await window.electronAPI.ipcRenderer.invoke(
-          InvoicesIPC.GET_INVOICE,
-          id,
-        )) as unknown as ICapturedInvoiceWithLines | null;
+        const inv = await invoiceService.getInvoice(id);
         if (inv) {
           setDetailCache((prev) => ({ ...prev, [id]: inv }));
           detail = inv;
@@ -111,29 +99,48 @@ export function useInvoiceHistory() {
   const handleExpandDetail = useCallback(
     async (id: string) => {
       const current = rowMode[id];
-      if (current?.kind === 'detail') {
-        setMode(id, { kind: 'view' });
+      if (current?.kind === RowModeKind.Detail) {
+        setMode(id, { kind: RowModeKind.View });
         return;
       }
       await getDetail(id);
-      setMode(id, { kind: 'detail' });
+      setMode(id, { kind: RowModeKind.Detail });
     },
     [rowMode, getDetail, setMode],
   );
 
   const handleEditClick = useCallback(
     async (id: string) => {
-      await getDetail(id);
-      setMode(id, { kind: 'edit' });
+      const detail = await getDetail(id);
+      const isPosted = detail?.status === InvoiceStatus.Posted;
+      setMode(id, { kind: isPosted ? RowModeKind.MetadataEdit : RowModeKind.Edit });
     },
     [getDetail, setMode],
   );
 
   const handleAuditClick = useCallback(
     (id: string) => {
-      setMode(id, { kind: 'audit' });
+      setMode(id, { kind: RowModeKind.Audit });
     },
     [setMode],
+  );
+
+  const handlePost = useCallback(
+    async (id: string) => {
+      setPostingId(id);
+      try {
+        await invoiceService.postInvoice(id);
+        setDetailCache((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+        await loadInvoices();
+      } finally {
+        setPostingId(null);
+      }
+    },
+    [loadInvoices],
   );
 
   const handleSaveEdit = useCallback(
@@ -159,16 +166,44 @@ export function useInvoiceHistory() {
           };
         }),
       };
-      await window.electronAPI.ipcRenderer.invoke(InvoicesIPC.UPDATE_INVOICE, payload);
+      await invoiceService.updateInvoice(payload);
       setDetailCache((prev) => {
         const next = { ...prev };
         delete next[invoice.id];
         return next;
       });
       await loadInvoices();
-      setMode(invoice.id, { kind: 'view' });
+      setMode(invoice.id, { kind: RowModeKind.View });
     },
     [items, detailCache, loadInvoices, setMode],
+  );
+
+  const handleMetadataSave = useCallback(
+    async (
+      id: string,
+      fields: {
+        supplierId: string | null;
+        invoiceNumber: string | null;
+        invoiceDate: Date | null;
+        note: string;
+      },
+    ) => {
+      await invoiceService.updateInvoiceMetadata({
+        id,
+        supplierId: fields.supplierId,
+        invoiceNumber: fields.invoiceNumber,
+        invoiceDate: fields.invoiceDate,
+        note: fields.note || undefined,
+      });
+      setDetailCache((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      await loadInvoices();
+      setMode(id, { kind: RowModeKind.View });
+    },
+    [loadInvoices, setMode],
   );
 
   const hasFilters = !!(search || fromDate || toDate || supplierFilter);
@@ -231,6 +266,9 @@ export function useInvoiceHistory() {
     handleEditClick,
     handleAuditClick,
     handleSaveEdit,
+    handleMetadataSave,
+    handlePost,
+    postingId,
     lineToEditLine,
   };
 }

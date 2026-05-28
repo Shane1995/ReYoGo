@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
+import { InvoiceStatus } from '@reyogo/types';
 import type { ICapturedInvoiceWithLines } from '@reyogo/types';
 
 vi.mock('react-router-dom', () => ({
@@ -33,6 +34,7 @@ function makeInvoice(
     supplierId: null,
     invoiceNumber: null,
     invoiceDate: null,
+    status: InvoiceStatus.Draft,
     vatMode: 'exclusive',
     vatRate: 15,
     createdAt: new Date('2026-01-15'),
@@ -112,7 +114,7 @@ describe('useInvoiceHistory', () => {
     it('excludes invoices before fromDate', async () => {
       const inv = makeInvoice({
         id: 'inv-1',
-        invoiceDate: new Date('2026-01-10') as unknown as Date,
+        invoiceDate: new Date('2026-01-10'),
       });
       mockInvoke.mockResolvedValue([inv]);
 
@@ -126,7 +128,7 @@ describe('useInvoiceHistory', () => {
     it('excludes invoices after toDate', async () => {
       const inv = makeInvoice({
         id: 'inv-1',
-        invoiceDate: new Date('2026-03-01') as unknown as Date,
+        invoiceDate: new Date('2026-03-01'),
       });
       mockInvoke.mockResolvedValue([inv]);
 
@@ -140,7 +142,7 @@ describe('useInvoiceHistory', () => {
     it('includes invoices within the date range', async () => {
       const inv = makeInvoice({
         id: 'inv-1',
-        invoiceDate: new Date('2026-02-15') as unknown as Date,
+        invoiceDate: new Date('2026-02-15'),
       });
       mockInvoke.mockResolvedValue([inv]);
 

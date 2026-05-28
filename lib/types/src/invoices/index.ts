@@ -71,6 +71,7 @@ export interface IInvoice {
   supplierId: string | null;
   invoiceNumber?: string | null;
   invoiceDate?: Date | null;
+  status: InvoiceStatus;
   vatMode: VatMode;
   vatRate: number;
   createdAt: Date;
@@ -115,9 +116,18 @@ export interface IUpdateInvoicePayload {
   lines: IInvoiceLinePayload[];
 }
 
+export interface IUpdateInvoiceMetadataPayload {
+  id: string;
+  supplierId?: string | null;
+  invoiceNumber?: string | null;
+  invoiceDate?: Date | null;
+  note?: string;
+}
+
 export type ICapturedInvoiceLine = IInvoiceLine;
 export type ICapturedInvoice = IInvoice;
 export type ICapturedInvoiceWithLines = IInvoiceWithLines;
 export type ICapturedInvoiceAuditEntry = IInvoiceAuditEntry;
 export type ISaveCapturedInvoicePayload = ISaveInvoicePayload;
 export type IUpdateCapturedInvoicePayload = IUpdateInvoicePayload;
+export type IUpdateCapturedInvoiceMetadataPayload = IUpdateInvoiceMetadataPayload;
