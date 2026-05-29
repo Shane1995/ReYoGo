@@ -3,6 +3,7 @@ import { XIcon } from 'lucide-react';
 import { Button } from '@reyogo/ui';
 import { cn } from '@reyogo/ui';
 import type { InventoryCategory, InventoryItem } from '../../types';
+import { useEntities } from '@/Context/EntityContext';
 
 type Props = {
   item: InventoryItem | null;
@@ -13,9 +14,11 @@ type Props = {
 };
 
 export function EditItemDialog({ item, categories, units, onSave, onClose }: Props) {
+  const { entities } = useEntities();
   const [name, setName] = useState(item?.name ?? '');
   const [categoryId, setCategoryId] = useState(item?.categoryId ?? '');
   const [unitOfMeasure, setUnitOfMeasure] = useState(item?.unitOfMeasure ?? '');
+  const [entityId, setEntityId] = useState(item?.entityId ?? entities[0]?.id ?? '');
   const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -28,12 +31,13 @@ export function EditItemDialog({ item, categories, units, onSave, onClose }: Pro
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !categoryId) return;
+    if (!name.trim() || !categoryId || !entityId) return;
     onSave(item?.id ?? null, {
       name: name.trim(),
       categoryId,
       type: selectedCategory?.type ?? '',
       unitOfMeasure: unitOfMeasure || undefined,
+      entityId,
     });
   };
 
@@ -71,6 +75,30 @@ export function EditItemDialog({ item, categories, units, onSave, onClose }: Pro
               className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
               required
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Belongs to
+            </label>
+            <select
+              value={entityId}
+              onChange={(e) => setEntityId(e.target.value)}
+              className={cn(
+                'h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40',
+                !entityId && 'text-muted-foreground',
+              )}
+              required
+            >
+              <option value="" disabled>
+                Select entity…
+              </option>
+              {entities.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-1.5">
@@ -130,7 +158,7 @@ export function EditItemDialog({ item, categories, units, onSave, onClose }: Pro
             <Button type="button" variant="outline" size="sm" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" size="sm" disabled={!name.trim() || !categoryId}>
+            <Button type="submit" size="sm" disabled={!name.trim() || !categoryId || !entityId}>
               {item ? 'Save changes' : 'Add item'}
             </Button>
           </div>

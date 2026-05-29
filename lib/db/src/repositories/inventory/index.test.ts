@@ -49,6 +49,7 @@ describe('createInventoryRepo', () => {
     it('creates a new item', async () => {
       await repo.upsertItem({
         id: 'item-1',
+        entityId: 'entity-1',
         name: 'Chips',
         categoryId: 'cat-1',
         unitOfMeasureId: null,
@@ -64,6 +65,7 @@ describe('createInventoryRepo', () => {
     it('updates an existing item', async () => {
       await repo.upsertItem({
         id: 'item-1',
+        entityId: 'entity-1',
         name: 'OJ',
         categoryId: 'cat-1',
         unitOfMeasureId: null,
@@ -73,6 +75,7 @@ describe('createInventoryRepo', () => {
       });
       await repo.upsertItem({
         id: 'item-1',
+        entityId: 'entity-1',
         name: 'Apple Juice',
         categoryId: 'cat-1',
         unitOfMeasureId: null,
@@ -91,6 +94,7 @@ describe('createInventoryRepo', () => {
       await repo.upsertCategory({ id: 'cat-1', name: 'Beverages', type: InventoryType.Beverage });
       await repo.upsertItem({
         id: 'item-1',
+        entityId: 'entity-1',
         name: 'OJ',
         categoryId: 'cat-1',
         unitOfMeasureId: null,
@@ -122,6 +126,7 @@ describe('createInventoryRepo', () => {
       await repo.upsertCategory({ id: 'cat-1', name: 'Food', type: InventoryType.Food });
       await repo.upsertItem({
         id: 'item-1',
+        entityId: 'entity-1',
         name: 'Chips',
         categoryId: 'cat-1',
         unitOfMeasureId: null,

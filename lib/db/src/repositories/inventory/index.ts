@@ -48,6 +48,7 @@ export function createInventoryRepo(db: DbClient) {
         const movement = latestMovement.get(row.id);
         return {
           id: row.id,
+          entityId: row.entityId,
           name: row.name,
           categoryId: row.categoryId,
           unitOfMeasureId: row.unitOfMeasureId ?? null,
@@ -85,7 +86,7 @@ export function createInventoryRepo(db: DbClient) {
         .values({
           id: item.id,
           accountId: 'default',
-          entityId: 'default',
+          entityId: item.entityId,
           name: item.name,
           categoryId: item.categoryId,
           unitOfMeasureId: item.unitOfMeasureId ?? null,
@@ -98,6 +99,7 @@ export function createInventoryRepo(db: DbClient) {
         .onConflictDoUpdate({
           target: schema.inventoryItems.id,
           set: {
+            entityId: item.entityId,
             name: item.name,
             categoryId: item.categoryId,
             unitOfMeasureId: item.unitOfMeasureId ?? null,

@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { useEntities } from '@/Context/EntityContext';
 import { useNavigate } from 'react-router-dom';
 import { UploadIcon, DownloadIcon, FileSpreadsheetIcon } from 'lucide-react';
 import { Button } from '@reyogo/ui';
@@ -26,6 +27,7 @@ type PageState =
   | { phase: 'error'; message: string };
 
 export default function ImportPage() {
+  const { entities } = useEntities();
   const { categories: existingCats, items: existingItems, addCategory, addItem } = useInventory();
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -102,6 +104,7 @@ export default function ImportPage() {
             type: (cat?.type as 'food' | 'beverage' | 'non-food') ?? 'food',
             unitOfMeasureId,
             unitOfMeasure: item.unit,
+            entityId: entities[0]?.id ?? '',
           });
         }
 

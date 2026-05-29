@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
 import type { TypeValue } from '../CapturedInventory/types';
 import { cn } from '@reyogo/ui';
+import { useEntities } from '@/Context/EntityContext';
 
 const inputClass = cn(
   'h-8 w-full rounded-md border border-input bg-muted px-2.5 text-sm',
@@ -24,6 +25,7 @@ function createEmptyRow(): PendingRow {
 }
 
 export default function AddItemsPage() {
+  const { entities } = useEntities();
   const { categories, items, units, addItem } = useInventory();
   const namedCategories = categories.filter((c) => c.name.trim());
   const categoryTypes = Array.from(new Set(namedCategories.map((c) => c.type)));
@@ -82,6 +84,7 @@ export default function AddItemsPage() {
         categoryId: r.categoryId,
         type: r.type,
         unitOfMeasure: r.unitOfMeasure || undefined,
+        entityId: entities[0]?.id ?? '',
       });
     });
     setRows([createEmptyRow()]);
