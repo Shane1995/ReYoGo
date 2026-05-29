@@ -118,9 +118,8 @@ export default function AddInventoryPage() {
 
   const namedItemRows = itemRows.filter((r) => r.name.trim());
   const canSubmitItems =
-    namedItemRows.some((r) => r.categoryId && r.unitOfMeasure && !itemDupes.has(r.id)) &&
-    !namedItemRows.some((r) => !r.categoryId || !r.unitOfMeasure) &&
-    !!venueId;
+    namedItemRows.some((r) => r.categoryId && r.unitOfMeasure && !itemDupes.has(r.id)) && !!venueId;
+  const hasIncompleteItemRows = namedItemRows.some((r) => !r.categoryId || !r.unitOfMeasure);
 
   // --- Category logic ---
   const addCatRow = useCallback(() => {
@@ -246,9 +245,6 @@ export default function AddInventoryPage() {
                 <TableBody>
                   {itemRows.map((row) => {
                     const isDupe = itemDupes.has(row.id);
-                    const hasName = !!row.name.trim();
-                    const isIncomplete = hasName && !row.categoryId;
-                    const missingUnit = hasName && !row.unitOfMeasure;
                     return (
                       <TableRow
                         key={row.id}
@@ -288,11 +284,7 @@ export default function AddInventoryPage() {
                                 cat ? { categoryId, type: cat.type } : { categoryId },
                               );
                             }}
-                            className={cn(
-                              inputClass,
-                              'min-w-[10rem] cursor-pointer',
-                              isIncomplete && 'border-destructive focus:ring-destructive/50',
-                            )}
+                            className={cn(inputClass, 'min-w-[10rem] cursor-pointer')}
                           >
                             <option value="">Select a category…</option>
                             {categoryTypes.map((type) => (
@@ -307,9 +299,6 @@ export default function AddInventoryPage() {
                               </optgroup>
                             ))}
                           </select>
-                          {isIncomplete && (
-                            <span className="text-xs text-destructive mt-0.5 block">Required</span>
-                          )}
                         </TableCell>
                         <TableCell className="py-2 px-3">
                           <select
@@ -323,11 +312,7 @@ export default function AddInventoryPage() {
                                 addItemRow();
                               }
                             }}
-                            className={cn(
-                              inputClass,
-                              'min-w-[6rem] cursor-pointer',
-                              missingUnit && 'border-destructive focus:ring-destructive/50',
-                            )}
+                            className={cn(inputClass, 'min-w-[6rem] cursor-pointer')}
                           >
                             <option value="">Select a unit…</option>
                             {units.map((u) => (
@@ -336,9 +321,6 @@ export default function AddInventoryPage() {
                               </option>
                             ))}
                           </select>
-                          {missingUnit && (
-                            <span className="text-xs text-destructive mt-0.5 block">Required</span>
-                          )}
                         </TableCell>
                         <TableCell className="py-2 px-2">
                           <Button
@@ -449,7 +431,12 @@ export default function AddInventoryPage() {
                   Add row
                 </Button>
               </div>
-              <div className="flex justify-end gap-2 border-t border-[var(--nav-border)] px-3 py-2">
+              <div className="flex justify-end gap-2 border-t border-[var(--nav-border)] px-3 py-2 items-center">
+                {mode === 'items' && hasIncompleteItemRows && (
+                  <p className="text-xs text-muted-foreground mr-auto">
+                    Incomplete rows will be skipped
+                  </p>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
