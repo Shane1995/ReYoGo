@@ -140,7 +140,7 @@ export function ItemsTable({
       align: 'right',
       cell: (row) =>
         row.lastCostPerUnit !== undefined ? (
-          <span className="font-mono text-sm tabular-nums text-foreground">
+          <span className="font-mono text-xs tabular-nums text-foreground">
             {row.lastCostPerUnit.toFixed(2)}
             {row.lastCostUom ? (
               <span className="text-muted-foreground/60"> / {row.lastCostUom}</span>
@@ -156,7 +156,7 @@ export function ItemsTable({
       align: 'right',
       cell: (row) =>
         row.weightedAvgCost != null ? (
-          <span className="font-mono text-sm tabular-nums text-foreground">
+          <span className="font-mono text-xs tabular-nums text-foreground">
             {row.weightedAvgCost.toFixed(2)}
             {row.unitOfMeasure ? (
               <span className="text-muted-foreground/60"> / {row.unitOfMeasure}</span>
@@ -172,7 +172,7 @@ export function ItemsTable({
       align: 'right',
       cell: (row) =>
         row.currentStock !== undefined ? (
-          <span className="font-mono text-sm tabular-nums text-foreground">
+          <span className="font-mono text-xs tabular-nums text-foreground">
             {row.currentStock % 1 === 0 ? row.currentStock.toFixed(0) : row.currentStock.toFixed(2)}
             {row.unitOfMeasure ? (
               <span className="text-muted-foreground/60"> {row.unitOfMeasure}</span>
