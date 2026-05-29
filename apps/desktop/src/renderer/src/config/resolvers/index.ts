@@ -17,6 +17,8 @@ import {
   ShoppingCartIcon,
   AlertTriangleIcon,
   TrashIcon,
+  BuildingIcon,
+  PercentIcon,
 } from 'lucide-react';
 import { appConfig } from '@/config/app.config';
 
@@ -38,6 +40,8 @@ export const iconRegistry: Readonly<Record<string, LucideIcon>> = {
   ShoppingCart: ShoppingCartIcon,
   AlertTriangle: AlertTriangleIcon,
   Trash: TrashIcon,
+  Building: BuildingIcon,
+  Percent: PercentIcon,
 };
 
 export function resolveIcon(name: string): LucideIcon {

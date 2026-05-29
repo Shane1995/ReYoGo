@@ -43,6 +43,13 @@
       "when": 1779864207036,
       "tag": "0005_nice_loners",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1780054221045,
+      "tag": "0006_slow_night_nurse",
+      "breakpoints": true
     }
   ]
 }

@@ -26,5 +26,6 @@ export function useNavItems() {
     stock: hydrateNavItems(config.nav.stock),
     invoices: hydrateNavItems(config.nav.invoices),
     costing: hydrateNavItems(config.nav.costing),
+    settings: hydrateNavItems(config.nav.settings),
   };
 }

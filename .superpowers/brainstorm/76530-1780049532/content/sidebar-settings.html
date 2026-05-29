@@ -1,0 +1,126 @@
+<h2>Settings in the sidebar — where should it live?</h2>
+<p class="subtitle">Both options pin Settings at the bottom, away from the main nav. The difference is how separated it feels.</p>
+
+<div class="split">
+  <div class="mockup" data-choice="a" onclick="toggleSelect(this)" style="cursor:pointer">
+    <div class="mockup-header">Option A — Icon + label, above collapse toggle</div>
+    <div class="mockup-body" style="padding:0">
+      <div style="display:flex;height:420px;background:#0d1117;border-radius:8px;overflow:hidden">
+        <!-- Sidebar -->
+        <div style="width:160px;background:rgba(13,17,23,0.95);border-right:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;padding:0">
+          <!-- Brand -->
+          <div style="padding:14px 12px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:8px">
+            <div style="width:20px;height:20px;background:#20C997;border-radius:4px;flex-shrink:0"></div>
+            <div>
+              <div style="color:white;font-size:12px;font-weight:600;line-height:1">ReYoGo</div>
+              <div style="color:rgba(255,255,255,0.3);font-size:10px;margin-top:2px">The Crown Pub</div>
+            </div>
+          </div>
+          <!-- Main nav -->
+          <nav style="flex:1;padding:8px;display:flex;flex-direction:column;gap:2px;overflow:auto">
+            <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;color:rgba(255,255,255,0.5);font-size:12px">
+              <div style="width:14px;height:14px;background:rgba(255,255,255,0.2);border-radius:3px;flex-shrink:0"></div>
+              Dashboard
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;background:rgba(32,201,151,0.12);border-left:2px solid #20C997;color:white;font-size:12px">
+              <div style="width:14px;height:14px;background:rgba(255,255,255,0.3);border-radius:3px;flex-shrink:0"></div>
+              Stock
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;color:rgba(255,255,255,0.5);font-size:12px">
+              <div style="width:14px;height:14px;background:rgba(255,255,255,0.2);border-radius:3px;flex-shrink:0"></div>
+              Invoices
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;color:rgba(255,255,255,0.5);font-size:12px">
+              <div style="width:14px;height:14px;background:rgba(255,255,255,0.2);border-radius:3px;flex-shrink:0"></div>
+              Costing
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;color:rgba(255,255,255,0.5);font-size:12px">
+              <div style="width:14px;height:14px;background:rgba(255,255,255,0.2);border-radius:3px;flex-shrink:0"></div>
+              Suppliers
+            </div>
+          </nav>
+          <!-- Bottom section: Settings + Collapse -->
+          <div style="padding:8px;display:flex;flex-direction:column;gap:4px;border-top:1px solid rgba(255,255,255,0.07)">
+            <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;color:rgba(255,255,255,0.5);font-size:12px">
+              <div style="width:14px;height:14px;background:rgba(255,255,255,0.2);border-radius:3px;flex-shrink:0"></div>
+              Settings
+            </div>
+            <button style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:7px;border-radius:7px;background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.35);font-size:11px;border:none;cursor:pointer">
+              ‹ Collapse
+            </button>
+          </div>
+        </div>
+        <!-- Main content placeholder -->
+        <div style="flex:1;padding:20px">
+          <div style="color:rgba(255,255,255,0.15);font-size:11px">Main content area</div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:12px 14px;background:rgba(255,255,255,0.03)">
+      <div style="color:white;font-size:13px;font-weight:500;margin-bottom:4px">Divider + Settings above Collapse</div>
+      <div style="color:rgba(255,255,255,0.45);font-size:12px">Settings is a full nav item, visually separated from the main nav by a border. Sits above the collapse toggle. Clean, consistent with the rest of the nav.</div>
+    </div>
+  </div>
+
+  <div class="mockup" data-choice="b" onclick="toggleSelect(this)" style="cursor:pointer">
+    <div class="mockup-header">Option B — Settings as icon-only bottom button</div>
+    <div class="mockup-body" style="padding:0">
+      <div style="display:flex;height:420px;background:#0d1117;border-radius:8px;overflow:hidden">
+        <!-- Sidebar -->
+        <div style="width:160px;background:rgba(13,17,23,0.95);border-right:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;padding:0">
+          <!-- Brand -->
+          <div style="padding:14px 12px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:8px">
+            <div style="width:20px;height:20px;background:#20C997;border-radius:4px;flex-shrink:0"></div>
+            <div>
+              <div style="color:white;font-size:12px;font-weight:600;line-height:1">ReYoGo</div>
+              <div style="color:rgba(255,255,255,0.3);font-size:10px;margin-top:2px">The Crown Pub</div>
+            </div>
+          </div>
+          <!-- Main nav -->
+          <nav style="flex:1;padding:8px;display:flex;flex-direction:column;gap:2px;overflow:auto">
+            <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;color:rgba(255,255,255,0.5);font-size:12px">
+              <div style="width:14px;height:14px;background:rgba(255,255,255,0.2);border-radius:3px;flex-shrink:0"></div>
+              Dashboard
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;background:rgba(32,201,151,0.12);border-left:2px solid #20C997;color:white;font-size:12px">
+              <div style="width:14px;height:14px;background:rgba(255,255,255,0.3);border-radius:3px;flex-shrink:0"></div>
+              Stock
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;color:rgba(255,255,255,0.5);font-size:12px">
+              <div style="width:14px;height:14px;background:rgba(255,255,255,0.2);border-radius:3px;flex-shrink:0"></div>
+              Invoices
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;color:rgba(255,255,255,0.5);font-size:12px">
+              <div style="width:14px;height:14px;background:rgba(255,255,255,0.2);border-radius:3px;flex-shrink:0"></div>
+              Costing
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;color:rgba(255,255,255,0.5);font-size:12px">
+              <div style="width:14px;height:14px;background:rgba(255,255,255,0.2);border-radius:3px;flex-shrink:0"></div>
+              Suppliers
+            </div>
+          </nav>
+          <!-- Bottom section: icon row + Collapse -->
+          <div style="padding:8px;display:flex;flex-direction:column;gap:4px;border-top:1px solid rgba(255,255,255,0.07)">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 4px">
+              <div style="width:30px;height:30px;border-radius:7px;background:rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.45);font-size:14px" title="Settings">⚙</div>
+              <div style="color:rgba(255,255,255,0.25);font-size:11px;padding-right:4px">Settings</div>
+            </div>
+            <button style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:7px;border-radius:7px;background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.35);font-size:11px;border:none;cursor:pointer">
+              ‹ Collapse
+            </button>
+          </div>
+        </div>
+        <!-- Main content placeholder -->
+        <div style="flex:1;padding:20px">
+          <div style="color:rgba(255,255,255,0.15);font-size:11px">Main content area</div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:12px 14px;background:rgba(255,255,255,0.03)">
+      <div style="color:white;font-size:13px;font-weight:500;margin-bottom:4px">De-emphasised settings row</div>
+      <div style="color:rgba(255,255,255,0.45);font-size:12px">Settings is visually lighter — a smaller icon button rather than a full nav item. Signals it's utility/config, not a primary destination. Works poorly when sidebar is collapsed (icon isn't distinctive enough).</div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:16px">My recommendation: <strong>Option A</strong>. Consistent with the existing nav style, clearly labelled, works in both expanded and collapsed states (shows icon only when collapsed, same as the other nav items).</p>

@@ -29,8 +29,9 @@ export function useInvoiceForm() {
   const [invoiceNumber, setInvoiceNumber] = useState<string>(() =>
     isReused ? '' : (loadDraft()?.invoiceNumber ?? ''),
   );
+  const todayIso = new Date().toISOString().slice(0, 10);
   const [invoiceDate, setInvoiceDate] = useState<string>(() =>
-    isReused ? '' : (loadDraft()?.invoiceDate ?? ''),
+    isReused ? todayIso : (loadDraft()?.invoiceDate ?? todayIso),
   );
   const [supplierId, setSupplierId] = useState<string>('');
   const [vatMode, setVatModeState] = useState<VatMode>(() =>
@@ -62,6 +63,7 @@ export function useInvoiceForm() {
   );
 
   const canSave =
+    !!invoiceNumber.trim() &&
     validLines.length > 0 &&
     !lines.some(
       (l) => (l.itemId && Number(l.quantity) <= 0) || (!l.itemId && Number(l.quantity) > 0),
@@ -79,15 +81,20 @@ export function useInvoiceForm() {
   const clearForm = useCallback(() => {
     setLines([createEmptyLine()]);
     setInvoiceNumber('');
-    setInvoiceDate('');
+    setInvoiceDate(new Date().toISOString().slice(0, 10));
     setSupplierId('');
+    setEntityId('');
     setVatModeState('exclusive');
     setExpandedResultLineIds(new Set());
     clearDraft();
   }, [clearDraft, setLines]);
 
   const isDirty =
-    lines.some((l) => l.itemId) || !!invoiceNumber.trim() || !!invoiceDate || !!supplierId;
+    !!entityId ||
+    lines.some((l) => l.itemId) ||
+    !!invoiceNumber.trim() ||
+    !!invoiceDate ||
+    !!supplierId;
 
   const handleEntityChange = useCallback(
     (newEntityId: string) => {
@@ -107,7 +114,11 @@ export function useInvoiceForm() {
       return;
     }
     if (!canSave) {
-      setSaveError('Complete all rows before saving — each row needs an item and quantity.');
+      setSaveError(
+        !invoiceNumber.trim()
+          ? 'Invoice number is required.'
+          : 'Complete all rows before saving — each row needs an item and quantity.',
+      );
       return;
     }
     setSaveError(null);
@@ -118,7 +129,7 @@ export function useInvoiceForm() {
         id: window.crypto.randomUUID(),
         entityId,
         supplierId: supplierId || null,
-        invoiceNumber: invoiceNumber.trim() || null,
+        invoiceNumber: invoiceNumber.trim(),
         invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
         vatMode,
         vatRate,
@@ -160,7 +171,11 @@ export function useInvoiceForm() {
       return;
     }
     if (!canSave) {
-      setSaveError('Complete all rows before saving — each row needs an item and quantity.');
+      setSaveError(
+        !invoiceNumber.trim()
+          ? 'Invoice number is required.'
+          : 'Complete all rows before saving — each row needs an item and quantity.',
+      );
       return;
     }
     setSaveError(null);
@@ -171,7 +186,7 @@ export function useInvoiceForm() {
         id: window.crypto.randomUUID(),
         entityId,
         supplierId: supplierId || null,
-        invoiceNumber: invoiceNumber.trim() || null,
+        invoiceNumber: invoiceNumber.trim(),
         invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
         vatMode,
         vatRate,
