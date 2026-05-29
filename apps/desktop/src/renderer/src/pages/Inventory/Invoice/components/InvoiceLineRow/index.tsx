@@ -21,6 +21,7 @@ type Props = {
   isExpanded: boolean;
   isLast: boolean;
   sortedItems: ItemOption[];
+  entityId: string;
   itemMeta: ItemMeta | undefined;
   onToggleExpand: () => void;
   onUpdate: (updates: Partial<ProcessReceiptLine>) => void;
@@ -63,6 +64,7 @@ export function InvoiceLineRow({
   isExpanded,
   isLast,
   sortedItems,
+  entityId,
   itemMeta,
   onToggleExpand,
   onUpdate,
@@ -105,6 +107,7 @@ export function InvoiceLineRow({
             items={sortedItems}
             value={line.itemId}
             onChange={(itemId) => onUpdate({ itemId })}
+            entityId={entityId}
             placeholder="Search item…"
             onSelectComplete={() => {
               document.getElementById(`invoice-qty-${line.id}`)?.focus();

@@ -6,6 +6,7 @@ import type { Supplier } from '@reyogo/types';
 import type { VatMode } from '../../types';
 import { inputClass } from '../../utils/inputClass';
 import { cn } from '@reyogo/ui';
+import { useEntities } from '@/Context/EntityContext';
 
 type Props = {
   invoiceNumber: string;
@@ -17,8 +18,8 @@ type Props = {
   suppliers: Supplier[];
   vatMode: VatMode;
   onVatModeChange: (mode: VatMode) => void;
-  vatRate: number;
-  onVatRateChange: (rate: number) => void;
+  entityId: string;
+  onEntityChange: (id: string) => void;
   onAddCategory: () => void;
   onAddItem: () => void;
   isDirty: boolean;
@@ -39,13 +40,15 @@ export function InvoiceHeader({
   suppliers,
   vatMode,
   onVatModeChange,
-  vatRate,
-  onVatRateChange,
+  entityId,
+  onEntityChange,
   onAddCategory,
   onAddItem,
   isDirty,
   onClear,
 }: Props) {
+  const { entities } = useEntities();
+
   return (
     <PageHeader
       title="Capture Invoice"
@@ -65,6 +68,21 @@ export function InvoiceHeader({
       }
     >
       <div className="flex flex-wrap items-end gap-x-5 gap-y-3 pb-1">
+        <div className={fieldGroup}>
+          <label className={fieldLabel}>Entity</label>
+          <select
+            value={entityId}
+            onChange={(e) => onEntityChange(e.target.value)}
+            className={cn(inputClass, 'w-44')}
+          >
+            {entities.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className={fieldGroup}>
           <label className={fieldLabel}>Invoice #</label>
           <input
@@ -112,19 +130,6 @@ export function InvoiceHeader({
             <option value="exclusive">+ VAT (exclusive)</option>
             <option value="inclusive">VAT included</option>
           </select>
-        </div>
-
-        <div className={fieldGroup}>
-          <label className={fieldLabel}>Rate %</label>
-          <input
-            type="number"
-            min={0}
-            max={100}
-            step={1}
-            value={vatRate}
-            onChange={(e) => onVatRateChange(Number(e.target.value))}
-            className={cn(inputClass, 'w-16 font-mono')}
-          />
         </div>
 
         {isDirty && (

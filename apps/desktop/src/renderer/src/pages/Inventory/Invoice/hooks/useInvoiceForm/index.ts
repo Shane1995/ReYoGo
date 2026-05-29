@@ -2,9 +2,10 @@ import { useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
+import { useEntities } from '@/Context/EntityContext';
 import { invoiceService } from '@/services/invoice';
 import type { ProcessReceiptLine, VatMode } from '../../types';
-import { getProcessLineComputed, DEFAULT_VAT_RATE } from '../../types';
+import { getProcessLineComputed } from '../../types';
 import { createEmptyLine } from '../../utils/createEmptyLine';
 import { loadDraft, useDraftPersistence } from '../useDraftPersistence';
 import { useLineManager } from '../useLineManager';
@@ -12,6 +13,7 @@ import { useInvoiceSummary } from '../useInvoiceSummary';
 
 export function useInvoiceForm() {
   const { items, categories, units, addCategory, addItem } = useInventory();
+  const { entities } = useEntities();
   const location = useLocation();
 
   const templateLines = (location.state as { templateLines?: ProcessReceiptLine[] } | null)
@@ -34,9 +36,9 @@ export function useInvoiceForm() {
   const [vatMode, setVatModeState] = useState<VatMode>(() =>
     isReused ? 'exclusive' : (loadDraft()?.vatMode ?? 'exclusive'),
   );
-  const [vatRate, setVatRateState] = useState<number>(() =>
-    isReused ? DEFAULT_VAT_RATE : (loadDraft()?.vatRate ?? DEFAULT_VAT_RATE),
-  );
+  const [entityId, setEntityId] = useState<string>(() => {
+    return localStorage.getItem('last-invoice-entity') ?? entities[0]?.id ?? '';
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -49,9 +51,7 @@ export function useInvoiceForm() {
     setVatModeState(mode);
   }, []);
 
-  const setVatRate = useCallback((rate: number) => {
-    setVatRateState(rate);
-  }, []);
+  const vatRate = entities.find((e) => e.id === entityId)?.defaultVatRate ?? 15;
 
   const { clearDraft } = useDraftPersistence(
     lines,
@@ -91,13 +91,25 @@ export function useInvoiceForm() {
     setInvoiceDate('');
     setSupplierId('');
     setVatModeState('exclusive');
-    setVatRateState(DEFAULT_VAT_RATE);
     setExpandedResultLineIds(new Set());
     clearDraft();
   }, [clearDraft, setLines]);
 
   const isDirty =
     lines.some((l) => l.itemId) || !!invoiceNumber.trim() || !!invoiceDate || !!supplierId;
+
+  const handleEntityChange = useCallback(
+    (newEntityId: string) => {
+      const isDirtyLines = lines.some((l) => l.itemId);
+      if (isDirtyLines) {
+        if (!window.confirm('Changing entity will clear your current lines. Continue?')) return;
+        setLines([createEmptyLine()]);
+      }
+      setEntityId(newEntityId);
+      localStorage.setItem('last-invoice-entity', newEntityId);
+    },
+    [lines, setLines],
+  );
 
   const handleSave = useCallback(async () => {
     if (!canSave) {
@@ -109,7 +121,7 @@ export function useInvoiceForm() {
     try {
       await invoiceService.saveAndPostInvoice({
         id: window.crypto.randomUUID(),
-        entityId: 'default',
+        entityId,
         supplierId: supplierId || null,
         invoiceNumber: invoiceNumber.trim() || null,
         invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
@@ -137,6 +149,7 @@ export function useInvoiceForm() {
   }, [
     canSave,
     validLines,
+    entityId,
     invoiceNumber,
     invoiceDate,
     supplierId,
@@ -156,7 +169,7 @@ export function useInvoiceForm() {
     try {
       await invoiceService.saveInvoice({
         id: window.crypto.randomUUID(),
-        entityId: 'default',
+        entityId,
         supplierId: supplierId || null,
         invoiceNumber: invoiceNumber.trim() || null,
         invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
@@ -184,6 +197,7 @@ export function useInvoiceForm() {
   }, [
     canSave,
     validLines,
+    entityId,
     invoiceNumber,
     invoiceDate,
     supplierId,
@@ -208,7 +222,8 @@ export function useInvoiceForm() {
     vatMode,
     setVatMode,
     vatRate,
-    setVatRate,
+    entityId,
+    handleEntityChange,
     expandedResultLineIds,
     isReused,
     reuseNoticeDismissed,
