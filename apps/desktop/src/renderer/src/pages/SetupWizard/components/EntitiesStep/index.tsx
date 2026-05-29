@@ -1,5 +1,3 @@
-import { Button, Input } from '@reyogo/ui';
-
 interface EntitiesStepProps {
   entityNames: string[];
   onAdd: () => void;
@@ -24,48 +22,57 @@ export function EntitiesStep({
   submitError,
 }: EntitiesStepProps) {
   return (
-    <div className="flex flex-col gap-6 max-w-sm mx-auto">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       <div>
-        <h1 className="text-xl font-semibold text-white mb-1">Add your venues</h1>
-        <p className="text-sm text-muted-foreground">
-          Each venue is a separate legal trading entity. You need at least one.
+        <h1
+          style={{
+            fontSize: 22,
+            fontWeight: 700,
+            letterSpacing: '-0.03em',
+            color: '#F8F9FA',
+            margin: '0 0 8px',
+          }}
+        >
+          Add your venues
+        </h1>
+        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', margin: 0, lineHeight: 1.6 }}>
+          Each venue is a separate legal trading entity. Invoices, stock, and costs are tracked per
+          venue. You need at least one.
         </p>
       </div>
-      <div className="flex flex-col gap-2">
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {entityNames.map((name, i) => (
-          <div key={i} className="flex gap-2 items-center">
-            <Input
+          <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input
+              className="rg-input"
               value={name}
               onChange={(e) => onNameChange(i, e.target.value)}
               placeholder={`Venue ${i + 1}`}
               autoFocus={i === entityNames.length - 1}
             />
             {entityNames.length > 1 && (
-              <button
-                onClick={() => onRemove(i)}
-                className="text-muted-foreground hover:text-white transition-colors px-2"
-                aria-label="Remove"
-              >
+              <button className="rg-remove" onClick={() => onRemove(i)} aria-label="Remove">
                 ×
               </button>
             )}
           </div>
         ))}
-        <button
-          onClick={onAdd}
-          className="text-sm text-muted-foreground hover:text-white border border-dashed border-border rounded-lg px-4 py-2 transition-colors text-left"
-        >
+
+        <button className="rg-add-venue" onClick={onAdd}>
           + Add another venue
         </button>
       </div>
-      {submitError && <p className="text-sm text-destructive">{submitError}</p>}
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={onBack}>
+
+      {submitError && <p style={{ fontSize: 13, color: '#E63946', margin: 0 }}>{submitError}</p>}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <button className="rg-btn-ghost" onClick={onBack}>
           ← Back
-        </Button>
-        <Button onClick={onSubmit} disabled={!canSubmit || isSubmitting}>
+        </button>
+        <button className="rg-btn-primary" onClick={onSubmit} disabled={!canSubmit || isSubmitting}>
           {isSubmitting ? 'Setting up…' : 'Get started'}
-        </Button>
+        </button>
       </div>
     </div>
   );

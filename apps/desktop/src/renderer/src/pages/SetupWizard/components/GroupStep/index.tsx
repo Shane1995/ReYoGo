@@ -1,5 +1,3 @@
-import { Button, Input } from '@reyogo/ui';
-
 interface GroupStepProps {
   groupName: string;
   onGroupNameChange: (v: string) => void;
@@ -8,18 +6,39 @@ interface GroupStepProps {
 
 export function GroupStep({ groupName, onGroupNameChange, onNext }: GroupStepProps) {
   return (
-    <div className="flex flex-col gap-6 max-w-sm mx-auto">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       <div>
-        <h1 className="text-xl font-semibold text-white mb-1">Welcome to ReYoGo</h1>
-        <p className="text-sm text-muted-foreground">
-          Start with the name of your business group — the umbrella for all your venues.
+        <h1
+          style={{
+            fontSize: 22,
+            fontWeight: 700,
+            letterSpacing: '-0.03em',
+            color: '#F8F9FA',
+            margin: '0 0 8px',
+          }}
+        >
+          Name your business group
+        </h1>
+        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', margin: 0, lineHeight: 1.6 }}>
+          This is the umbrella name for all your venues — e.g. "The Crown Group". You can change it
+          anytime.
         </p>
       </div>
-      <div className="flex flex-col gap-2">
-        <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <label
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.35)',
+          }}
+        >
           Business group name
         </label>
-        <Input
+        <input
+          className="rg-input"
           value={groupName}
           onChange={(e) => onGroupNameChange(e.target.value)}
           placeholder="e.g. The Crown Group"
@@ -27,10 +46,11 @@ export function GroupStep({ groupName, onGroupNameChange, onNext }: GroupStepPro
           autoFocus
         />
       </div>
-      <div className="flex justify-end">
-        <Button onClick={onNext} disabled={!groupName.trim()}>
-          Next →
-        </Button>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button className="rg-btn-primary" onClick={onNext} disabled={!groupName.trim()}>
+          Continue →
+        </button>
       </div>
     </div>
   );
