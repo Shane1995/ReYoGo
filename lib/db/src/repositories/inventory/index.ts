@@ -209,10 +209,17 @@ export function createInventoryRepo(db: DbClient) {
     },
 
     async archiveCategory(id: string): Promise<void> {
+      const ts = now();
       await db
         .update(schema.inventoryCategories)
-        .set({ archivedAt: now() })
+        .set({ archivedAt: ts })
         .where(eq(schema.inventoryCategories.id, id));
+      await db
+        .update(schema.inventoryItems)
+        .set({ archivedAt: ts })
+        .where(
+          and(eq(schema.inventoryItems.categoryId, id), isNull(schema.inventoryItems.archivedAt)),
+        );
     },
 
     async restoreCategory(id: string): Promise<void> {
@@ -220,6 +227,10 @@ export function createInventoryRepo(db: DbClient) {
         .update(schema.inventoryCategories)
         .set({ archivedAt: null })
         .where(eq(schema.inventoryCategories.id, id));
+      await db
+        .update(schema.inventoryItems)
+        .set({ archivedAt: null })
+        .where(eq(schema.inventoryItems.categoryId, id));
     },
 
     async hardDeleteCategory(id: string): Promise<void> {

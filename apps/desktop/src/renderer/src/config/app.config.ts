@@ -83,7 +83,7 @@ export const appConfig: AppConfig = {
       { label: 'Add', pathKey: 'stock.addItems', icon: 'ListPlus', end: true },
       { label: 'Import', pathKey: 'stock.import', icon: 'Upload', end: false },
       { label: 'Analysis', pathKey: 'stock.analysis', icon: 'TrendingUp', end: false },
-      { label: 'Manage', pathKey: 'stock.manage', icon: 'Archive', end: false },
+      { label: 'Archive', pathKey: 'stock.manage', icon: 'Archive', end: false },
     ],
     invoices: [
       { label: 'Capture Invoice', pathKey: 'invoices', icon: 'Receipt', end: true },

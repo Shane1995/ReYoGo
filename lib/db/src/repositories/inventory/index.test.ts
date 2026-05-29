@@ -234,6 +234,39 @@ describe('archiveCategory / restoreCategory / hardDeleteCategory', () => {
     expect(cats.find((c) => c.id === 'cat-1')).toBeDefined();
   });
 
+  it('archiveCategory cascades to archive items in that category', async () => {
+    await repo.upsertItem({
+      id: 'item-1',
+      entityId: 'default',
+      name: 'Chips',
+      categoryId: 'cat-1',
+      unitOfMeasureId: null,
+      sku: null,
+      reorderPoint: null,
+      reorderQty: null,
+    });
+    await repo.archiveCategory('cat-1');
+    const items = await repo.getItems();
+    expect(items.find((i) => i.id === 'item-1')).toBeUndefined();
+  });
+
+  it('restoreCategory cascades to restore items in that category', async () => {
+    await repo.upsertItem({
+      id: 'item-1',
+      entityId: 'default',
+      name: 'Chips',
+      categoryId: 'cat-1',
+      unitOfMeasureId: null,
+      sku: null,
+      reorderPoint: null,
+      reorderQty: null,
+    });
+    await repo.archiveCategory('cat-1');
+    await repo.restoreCategory('cat-1');
+    const items = await repo.getItems();
+    expect(items.find((i) => i.id === 'item-1')).toBeDefined();
+  });
+
   it('getArchivedCategories returns only archived', async () => {
     await repo.archiveCategory('cat-1');
     const archived = await repo.getArchivedCategories();

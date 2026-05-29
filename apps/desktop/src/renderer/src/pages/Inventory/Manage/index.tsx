@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { ArchiveRestoreIcon } from 'lucide-react';
 import { PageHeader, Badge } from '@reyogo/ui';
-import { cn } from '@reyogo/ui';
 import { DataTable } from '@/components/DataTable';
 import type { ColumnDef } from '@/components/DataTable';
 import { useEntities } from '@/Context/EntityContext';
@@ -16,23 +15,22 @@ const ENTITY_COLORS = [
   { bg: 'rgba(236,72,153,0.12)', fg: '#9D174D' },
 ] as const;
 
-type ArchivedRow = {
+type ArchivedItem = {
   id: string;
   entityId: string;
   name: string;
-  categoryId: string;
   categoryName: string;
   unitOfMeasure?: string;
 };
 
 export default function ManagePage() {
   const { entities } = useEntities();
-  const [rows, setRows] = useState<ArchivedRow[]>([]);
+  const [itemRows, setItemRows] = useState<ArchivedItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const entityIndexMap = new Map(entities.map((e, i) => [e.id, i]));
 
-  const load = useCallback(async () => {
+  const loadItems = useCallback(async () => {
     setLoading(true);
     try {
       const [archivedItems, categories, units] = await Promise.all([
@@ -42,12 +40,11 @@ export default function ManagePage() {
       ]);
       const catMap = new Map(categories.map((c) => [c.id, c.name]));
       const unitMap = new Map(units.map((u) => [u.id, u.name]));
-      setRows(
+      setItemRows(
         archivedItems.map((item) => ({
           id: item.id,
           entityId: item.entityId,
           name: item.name,
-          categoryId: item.categoryId,
           categoryName: catMap.get(item.categoryId) ?? '—',
           unitOfMeasure: item.unitOfMeasureId ? unitMap.get(item.unitOfMeasureId) : undefined,
         })),
@@ -58,23 +55,23 @@ export default function ManagePage() {
   }, []);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    loadItems();
+  }, [loadItems]);
 
-  const handleUnarchive = useCallback(
+  const handleUnarchiveItem = useCallback(
     async (id: string) => {
       await ipcInvoke('inventory:restore-item', id);
-      load();
+      loadItems();
     },
-    [load],
+    [loadItems],
   );
 
-  const columns: ColumnDef<ArchivedRow>[] = [
+  const itemColumns: ColumnDef<ArchivedItem>[] = [
     {
       key: 'name',
       header: 'Item',
       cell: (row) => (
-        <span className={cn('font-medium text-foreground/60 line-through')}>{row.name}</span>
+        <span className="font-medium text-foreground/60 line-through">{row.name}</span>
       ),
     },
     ...(entities.length > 1
@@ -83,7 +80,7 @@ export default function ManagePage() {
             key: 'entity' as const,
             header: 'Venue',
             width: '140px',
-            cell: (row: ArchivedRow) => {
+            cell: (row: ArchivedItem) => {
               const idx = entityIndexMap.get(row.entityId) ?? 0;
               const color = ENTITY_COLORS[idx % ENTITY_COLORS.length]!;
               const name = entities.find((e) => e.id === row.entityId)?.name ?? '—';
@@ -124,7 +121,7 @@ export default function ManagePage() {
       cell: (row) => (
         <button
           type="button"
-          onClick={() => handleUnarchive(row.id)}
+          onClick={() => handleUnarchiveItem(row.id)}
           className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium text-[var(--nav-active-border)] hover:bg-[var(--nav-active-border)]/10 transition-colors"
         >
           <ArchiveRestoreIcon className="size-3" />
@@ -136,15 +133,15 @@ export default function ManagePage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      <PageHeader title="Manage Archived" />
+      <PageHeader title="Archived" />
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-4 my-4">
           {loading ? (
             <p className="text-sm text-muted-foreground py-8 text-center">Loading…</p>
           ) : (
             <DataTable
-              columns={columns}
-              data={rows}
+              columns={itemColumns}
+              data={itemRows}
               hideFilters
               rowKey={(row) => row.id}
               emptyMessage="No archived items."

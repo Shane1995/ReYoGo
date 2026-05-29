@@ -26,7 +26,7 @@ describe('CapturedInventorySectionLayout', () => {
     expect(screen.getByText('Add')).toBeInTheDocument();
     expect(screen.getByText('Import')).toBeInTheDocument();
     expect(screen.getByText('Analysis')).toBeInTheDocument();
-    expect(screen.getByText('Manage')).toBeInTheDocument();
+    expect(screen.getByText('Archive')).toBeInTheDocument();
   });
 
   it('renders the collapse button', () => {
