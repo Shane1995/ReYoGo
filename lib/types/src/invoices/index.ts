@@ -68,6 +68,7 @@ export interface IInvoiceLine {
 
 export interface IInvoice {
   id: string;
+  entityId: string;
   supplierId: string | null;
   invoiceNumber?: string | null;
   invoiceDate?: Date | null;
@@ -100,6 +101,7 @@ export type IInvoiceLinePayload = Omit<IInvoiceLine, 'invoiceId'>;
 
 export interface ISaveInvoicePayload {
   id: string;
+  entityId: string;
   supplierId?: string | null;
   invoiceNumber?: string | null;
   invoiceDate?: Date | null;
