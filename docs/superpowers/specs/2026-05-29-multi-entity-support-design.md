@@ -49,6 +49,7 @@ entities
 ### Modified tables
 
 ```
+accounts          + setup_complete INTEGER NOT NULL DEFAULT 0
 inventory_items   + entity_id TEXT NOT NULL FK→entities (RESTRICT)
 invoices          + entity_id TEXT NOT NULL FK→entities (RESTRICT)
 stock_movements   + entity_id TEXT NOT NULL FK→entities (RESTRICT)
@@ -78,7 +79,7 @@ UPDATE stock_movements  SET entity_id = 'default-entity' WHERE entity_id IS NULL
 
 ## Setup Wizard
 
-Runs once on first launch. Triggered by checking `entities.name = 'My Venue'` (placeholder still in place) or a `setupComplete` boolean on `accounts`.
+Runs once on first launch. Triggered by `accounts.setup_complete = 0`.
 
 Same flow for fresh installs and existing installs.
 
@@ -86,7 +87,7 @@ Same flow for fresh installs and existing installs.
 
 **Step 2 — Entities:** List of entity name inputs. At least one required. Inline "Add another venue" input. Can remove any except the last. "Get started" disabled until at least one entity is named.
 
-On completion: upserts the group name and creates/renames entities. Sets `setupComplete = true`. Never appears again.
+On completion: upserts the group name and creates/renames entities. Sets `accounts.setup_complete = 1`. Never appears again.
 
 ---
 
@@ -176,7 +177,7 @@ Added to primary sidebar as a full nav item (`Settings` / `Settings` icon from L
 
 **Entities** — list of active entities. Each row: colour-coded initial avatar, entity name, item count, Rename button. "Add entity" dashed button at the bottom. `archivedAt` column exists in schema but archive UI is out of scope for this card.
 
-**Tax** — per-entity `defaultVatRate` (numeric input + %) and `defaultVatMode` (inclusive/exclusive toggle). Displayed under the selected entity's row or as a sub-section per entity if there are multiple.
+**Tax** — one row per entity showing `defaultVatRate` (numeric input + %) and `defaultVatMode` (inclusive/exclusive toggle). Each entity's VAT config is editable inline in its own row.
 
 **Units of measure** — existing units management surfaced here (currently only accessible via the setup flow).
 
@@ -266,7 +267,6 @@ CSV import (`reyogo-import-template.xlsx`) gains a required `Entity` column. Imp
 
 - `entityId` on `stockMovements` is always stamped from the invoice — never derived from the item. `NOT NULL` DB constraint is the final backstop.
 - WAC must never be blended across entities. Since items are hard-assigned to one entity this is guaranteed by the data model.
-- The two `saveInvoice()` calls during any future multi-invoice operation must always be wrapped in a single DB transaction.
 - No `as` type casts anywhere. IPC enums → `as const` objects. DB column types → `.$type<T>()`. Fix the types at source.
 - Every new artifact: `<dir>/<Name>/index.ts[x]` + co-located `<dir>/<Name>/index.test.ts[x]`. No exceptions.
 - No code comments.
