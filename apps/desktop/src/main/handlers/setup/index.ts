@@ -9,11 +9,13 @@ export function registerSetupHandlers(): void {
     getRepos().setup.upsertUnit(unit),
   );
   ipcMain.handle(SetupIPC.DELETE_UNIT, (_e, id: string) => getRepos().setup.deleteUnit(id));
-  ipcMain.handle('setup:archive-unit', (_e, id: string) => getRepos().setup.archiveUnit(id));
-  ipcMain.handle('setup:restore-unit', (_e, id: string) => getRepos().setup.restoreUnit(id));
-  ipcMain.handle('setup:hard-delete-unit', (_e, id: string) => getRepos().setup.hardDeleteUnit(id));
-  ipcMain.handle('setup:get-unit-usage-count', (_e, id: string) =>
+  ipcMain.handle(SetupIPC.ARCHIVE_UNIT, (_e, id: string) => getRepos().setup.archiveUnit(id));
+  ipcMain.handle(SetupIPC.RESTORE_UNIT, (_e, id: string) => getRepos().setup.restoreUnit(id));
+  ipcMain.handle(SetupIPC.HARD_DELETE_UNIT, (_e, id: string) =>
+    getRepos().setup.hardDeleteUnit(id),
+  );
+  ipcMain.handle(SetupIPC.GET_UNIT_USAGE_COUNT, (_e, id: string) =>
     getRepos().setup.getUnitUsageCount(id),
   );
-  ipcMain.handle('setup:get-archived-units', () => getRepos().setup.getArchivedUnits());
+  ipcMain.handle(SetupIPC.GET_ARCHIVED_UNITS, () => getRepos().setup.getArchivedUnits());
 }
