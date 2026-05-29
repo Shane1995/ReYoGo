@@ -14,7 +14,7 @@ type Props = {
   items: ItemOption[];
   value: string;
   onChange: (itemId: string) => void;
-  entityId?: string;
+  entityId: string;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
@@ -33,7 +33,7 @@ export function ItemAutocomplete({
   inputId,
   onSelectComplete,
 }: Props) {
-  const entityFilteredItems = entityId ? items.filter((item) => item.entityId === entityId) : items;
+  const entityFilteredItems = items.filter((item) => item.entityId === entityId);
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);

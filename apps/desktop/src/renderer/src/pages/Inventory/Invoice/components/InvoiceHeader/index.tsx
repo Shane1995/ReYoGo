@@ -124,7 +124,10 @@ export function InvoiceHeader({
           <label className={fieldLabel}>VAT treatment</label>
           <select
             value={vatMode}
-            onChange={(e) => onVatModeChange(e.target.value as VatMode)}
+            onChange={(e) => {
+              const mode = e.target.value;
+              if (mode === 'exclusive' || mode === 'inclusive') onVatModeChange(mode);
+            }}
             className={cn(inputClass, 'w-40')}
           >
             <option value="exclusive">+ VAT (exclusive)</option>

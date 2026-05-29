@@ -120,6 +120,7 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
                     items={[...itemsWithCategory].sort((a, b) => a.name.localeCompare(b.name))}
                     value={line.itemId}
                     onChange={(itemId) => updateLine(line.id, { itemId })}
+                    entityId={invoice.entityId}
                     placeholder="Select item…"
                   />
                 </td>
