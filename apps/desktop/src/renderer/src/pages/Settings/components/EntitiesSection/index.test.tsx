@@ -32,8 +32,8 @@ describe('EntitiesSection', () => {
     vi.mocked(entitiesService.createEntity).mockResolvedValue([]);
     const onSaved = vi.fn().mockResolvedValue(undefined);
     render(<EntitiesSection entities={mockEntities} onSaved={onSaved} />);
-    fireEvent.click(screen.getByRole('button', { name: /add entity/i }));
-    fireEvent.change(screen.getByPlaceholderText(/new entity name/i), {
+    fireEvent.click(screen.getByRole('button', { name: /add venue/i }));
+    fireEvent.change(screen.getByPlaceholderText(/new venue name/i), {
       target: { value: 'Gin on Tap' },
     });
     fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
