@@ -43,19 +43,32 @@ export function EntitiesStep({
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {entityNames.map((name, i) => (
-          <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input
-              className="rg-input"
-              value={name}
-              onChange={(e) => onNameChange(i, e.target.value)}
-              placeholder={`Venue ${i + 1}`}
-              autoFocus={i === entityNames.length - 1}
-            />
-            {entityNames.length > 1 && (
-              <button className="rg-remove" onClick={() => onRemove(i)} aria-label="Remove">
-                ×
-              </button>
-            )}
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: i === 0 ? '#20C997' : 'rgba(255,255,255,0.25)',
+              }}
+            >
+              {i === 0 ? 'Primary venue' : `Additional venue ${i}`}
+            </span>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                className="rg-input"
+                value={name}
+                onChange={(e) => onNameChange(i, e.target.value)}
+                placeholder={i === 0 ? 'e.g. The Crown Pub' : `e.g. Venue ${i + 1}`}
+                autoFocus={i === entityNames.length - 1}
+              />
+              {entityNames.length > 1 && (
+                <button className="rg-remove" onClick={() => onRemove(i)} aria-label="Remove">
+                  ×
+                </button>
+              )}
+            </div>
           </div>
         ))}
 
