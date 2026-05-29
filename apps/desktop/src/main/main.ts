@@ -34,6 +34,9 @@ function createWindow(): BrowserWindow {
     console.error('[ReYoGo] Failed to load:', code, errDesc, url);
   });
 
+  // Block cmd+click / middle-click from spawning new windows
+  window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+
   // In production: getAppPath() already points at app.asar (or its root); do not add 'app.asar' again
   const htmlPath = app.isPackaged
     ? join(app.getAppPath(), 'out', 'renderer', 'index.html')
