@@ -10,7 +10,7 @@ type Props = {
   suppliers: Supplier[];
   onSave: (fields: {
     supplierId: string | null;
-    invoiceNumber: string | null;
+    invoiceNumber: string;
     invoiceDate: Date | null;
     note: string;
   }) => Promise<void>;
@@ -37,7 +37,7 @@ export function MetadataEditPanel({ invoice, suppliers, onSave, onCancel }: Prop
     try {
       await onSave({
         supplierId: supplierId || null,
-        invoiceNumber: invoiceNumber.trim() || null,
+        invoiceNumber: invoiceNumber.trim(),
         invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
         note,
       });

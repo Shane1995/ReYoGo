@@ -33,7 +33,7 @@ function makeInvoice(
     id: 'inv-1',
     entityId: 'default',
     supplierId: null,
-    invoiceNumber: null,
+    invoiceNumber: 'INV-TEST',
     invoiceDate: null,
     status: InvoiceStatus.Draft,
     vatMode: 'exclusive',

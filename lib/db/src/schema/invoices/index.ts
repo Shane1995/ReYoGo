@@ -15,7 +15,7 @@ export const invoices = sqliteTable(
       .notNull()
       .references(() => entities.id, { onDelete: 'restrict' }),
     supplierId: text('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
-    invoiceNumber: text('invoice_number'),
+    invoiceNumber: text('invoice_number').notNull(),
     invoiceDate: integer('invoice_date', { mode: 'timestamp' }),
     status: text('status')
       .notNull()
