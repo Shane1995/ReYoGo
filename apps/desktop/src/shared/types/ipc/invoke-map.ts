@@ -1,4 +1,5 @@
 import type { Category, InventoryItem, InventorySubmitPayload, UnitOfMeasure } from '@reyogo/types';
+import type { IBusinessGroup, ICompleteSetupPayload, IEntity, VatMode } from '@reyogo/types';
 import type {
   IInvoice,
   IInvoiceAuditEntry,
@@ -52,6 +53,17 @@ export interface IPCInvokeMap {
   'suppliers:upsert-supplier': { args: [payload: UpsertSupplierPayload]; return: void };
   'suppliers:delete-supplier': { args: [id: string]; return: void };
   'shell:save-file': { args: [payload: { filename: string; data: number[] }]; return: string };
+  'entities:get-group': { args: []; return: IBusinessGroup | null };
+  'entities:get-entities': { args: []; return: IEntity[] };
+  'entities:get-setup-state': { args: []; return: { setupComplete: boolean } };
+  'entities:complete-setup': { args: [payload: ICompleteSetupPayload]; return: void };
+  'entities:update-group-name': { args: [name: string]; return: void };
+  'entities:create-entity': { args: [name: string]; return: IEntity[] };
+  'entities:rename-entity': { args: [entityId: string, name: string]; return: void };
+  'entities:update-entity-vat': {
+    args: [entityId: string, vatRate: number, vatMode: VatMode];
+    return: void;
+  };
 }
 
 export type IPCChannel = keyof IPCInvokeMap;
