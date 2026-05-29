@@ -165,6 +165,7 @@ export default function AddInventoryPage() {
   const canSubmitCats = catRows.some((r) => r.name.trim() && !catDupes.has(r.id));
 
   const venueName = entities.find((e) => e.id === venueId)?.name;
+  const noVenue = mode === 'items' && entities.length > 1 && !venueId;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -224,7 +225,12 @@ export default function AddInventoryPage() {
           )}
 
           {/* Table */}
-          <div className="rounded-lg border border-[var(--nav-border)] bg-background">
+          <div
+            className={cn(
+              'rounded-lg border border-[var(--nav-border)] bg-background',
+              noVenue && 'opacity-40 pointer-events-none',
+            )}
+          >
             {mode === 'items' ? (
               <Table>
                 <TableHeader>
