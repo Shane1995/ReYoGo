@@ -47,11 +47,7 @@ export function createSetupRepo(db: DbClient) {
     },
 
     async hardDeleteUnit(id: string): Promise<void> {
-      const [result] = await db
-        .select({ n: count() })
-        .from(schema.inventoryItems)
-        .where(eq(schema.inventoryItems.unitOfMeasureId, id));
-      const usage = result?.n ?? 0;
+      const usage = await this.getUnitUsageCount(id);
       if (usage > 0) throw new Error(`Unit has ${usage} items using it and cannot be deleted.`);
       await db.delete(schema.unitsOfMeasure).where(eq(schema.unitsOfMeasure.id, id));
     },
