@@ -1,6 +1,7 @@
 import { useEntities } from '@/Context/EntityContext';
 import { BusinessSection } from './components/BusinessSection';
 import { EntitiesSection } from './components/EntitiesSection';
+import { ManageSection } from './components/ManageSection';
 import { TaxSection } from './components/TaxSection';
 
 export default function SettingsPage() {
@@ -18,6 +19,7 @@ export default function SettingsPage() {
         <BusinessSection group={group} onSaved={refetchEntities} />
         <EntitiesSection entities={entities} onSaved={refetchEntities} />
         <TaxSection entities={entities} onSaved={refetchEntities} />
+        <ManageSection />
       </div>
     </div>
   );
