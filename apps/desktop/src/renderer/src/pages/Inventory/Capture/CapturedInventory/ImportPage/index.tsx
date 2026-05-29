@@ -61,7 +61,7 @@ export default function ImportPage() {
         });
       }
     },
-    [existingCats, existingItems, entities],
+    [existingCats, existingItems, selectedEntity],
   );
 
   const handleCommit = useCallback(

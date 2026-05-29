@@ -106,7 +106,7 @@ export function AddItemsSidebar({
       });
     });
     setRows([createEmptyRow()]);
-  }, [rows, duplicateIds, onAddItem]);
+  }, [rows, duplicateIds, onAddItem, entities]);
 
   const hasValidRows = rows.some((r) => r.name.trim() && r.categoryId && !duplicateIds.has(r.id));
 
