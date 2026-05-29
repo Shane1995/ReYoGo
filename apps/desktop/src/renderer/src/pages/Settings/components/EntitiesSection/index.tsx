@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Input } from '@reyogo/ui';
 import type { IEntity } from '@reyogo/types';
 import { entitiesService } from '@/services/entities';
+import { getEntityLogo, setEntityLogo, clearEntityLogo, pickImageFile } from '@/utils/logoStorage';
 import { SectionHeader } from '../SectionHeader';
 
 interface EntitiesSectionProps {
@@ -35,6 +36,7 @@ function EntityRow({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(entity.name);
   const [saving, setSaving] = useState(false);
+  const [logo, setLogo] = useState<string | null>(() => getEntityLogo(entity.id));
   const color = avatarColor(index);
   const initial = entity.name[0]?.toUpperCase() ?? '?';
 
@@ -50,14 +52,54 @@ function EntityRow({
     }
   };
 
+  const handleLogoClick = async () => {
+    const dataUrl = await pickImageFile();
+    if (!dataUrl) return;
+    setEntityLogo(entity.id, dataUrl);
+    setLogo(dataUrl);
+  };
+
+  const handleLogoClear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    clearEntityLogo(entity.id);
+    setLogo(null);
+  };
+
   return (
     <div className="group flex items-center justify-between gap-3 px-5 py-3.5 border-b border-border last:border-0 hover:bg-accent/40 transition-colors">
       <div className="flex items-center gap-3 min-w-0">
-        <div
-          className="size-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-          style={{ background: color.bg, color: color.fg }}
-        >
-          {initial}
+        <div className="relative group/logo shrink-0">
+          <button
+            onClick={handleLogoClick}
+            className="size-8 rounded-lg overflow-hidden flex items-center justify-center border border-transparent hover:border-primary/40 transition-colors"
+            title="Upload logo"
+          >
+            {logo ? (
+              <img src={logo} alt={entity.name} className="size-full object-cover" />
+            ) : (
+              <div
+                className="size-full flex items-center justify-center text-xs font-bold"
+                style={{ background: color.bg, color: color.fg }}
+              >
+                {initial}
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/logo:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M1 9L4 6L6 8.5L8.5 5L11 9H1Z" fill="white" opacity="0.9" />
+                <circle cx="3.5" cy="3.5" r="1.5" fill="white" opacity="0.9" />
+              </svg>
+            </div>
+          </button>
+          {logo && (
+            <button
+              onClick={handleLogoClear}
+              className="absolute -top-1 -right-1 size-3.5 rounded-full bg-destructive text-white text-[9px] flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity leading-none"
+              title="Remove logo"
+            >
+              ×
+            </button>
+          )}
         </div>
         {editing ? (
           <Input
