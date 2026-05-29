@@ -301,7 +301,7 @@ export default function InvoiceHistoryPage() {
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {loading ? (
           <p className="text-muted-foreground text-sm">Loading…</p>
-        ) : invoices.length === 0 ? (
+        ) : visibleInvoices.length === 0 ? (
           <div className="rounded-lg border border-[var(--nav-border)] bg-muted/10 p-10 text-center text-sm text-muted-foreground/60">
             {hasFilters ? (
               <p>No invoices match the current filters.</p>

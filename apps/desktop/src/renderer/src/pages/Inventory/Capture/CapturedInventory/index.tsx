@@ -67,7 +67,7 @@ export default function InventoryIndex() {
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-4 my-4">
           <ItemsTable
-            items={items}
+            items={entityFilteredItems}
             filteredItems={filteredItems}
             allTypes={allTypes}
             categories={categories}
