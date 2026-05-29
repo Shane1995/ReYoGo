@@ -56,4 +56,10 @@ describe('entitiesService', () => {
     await entitiesService.updateEntityVat('e1', 20, 'inclusive');
     expect(mockInvoke).toHaveBeenCalledWith('entities:update-entity-vat', 'e1', 20, 'inclusive');
   });
+
+  it('createEntity calls the correct channel', async () => {
+    mockInvoke.mockResolvedValue([]);
+    await entitiesService.createEntity('New Entity');
+    expect(mockInvoke).toHaveBeenCalledWith('entities:create-entity', 'New Entity');
+  });
 });
