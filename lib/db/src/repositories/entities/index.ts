@@ -84,31 +84,33 @@ export function createEntitiesRepo(db: DbClient) {
       groupName: string,
       entityNames: string[],
     ): Promise<void> {
-      const groupRows = await db
-        .select()
-        .from(schema.businessGroups)
-        .where(eq(schema.businessGroups.accountId, accountId))
-        .limit(1);
-
       await db.transaction(async (tx) => {
-        if (groupRows[0]) {
-          await tx
-            .update(schema.businessGroups)
-            .set({ name: groupName })
-            .where(eq(schema.businessGroups.id, groupRows[0].id));
+        const groupRows = await tx
+          .select()
+          .from(schema.businessGroups)
+          .where(eq(schema.businessGroups.accountId, accountId))
+          .limit(1);
 
-          await tx.delete(schema.entities).where(eq(schema.entities.groupId, groupRows[0].id));
+        if (!groupRows[0]) {
+          throw new Error(`No business group found for account ${accountId}`);
+        }
 
-          for (const name of entityNames) {
-            await tx.insert(schema.entities).values({
-              id: crypto.randomUUID(),
-              groupId: groupRows[0].id,
-              name,
-              defaultVatRate: 15,
-              defaultVatMode: 'exclusive',
-              createdAt: new Date(),
-            });
-          }
+        await tx
+          .update(schema.businessGroups)
+          .set({ name: groupName })
+          .where(eq(schema.businessGroups.id, groupRows[0].id));
+
+        await tx.delete(schema.entities).where(eq(schema.entities.groupId, groupRows[0].id));
+
+        for (const name of entityNames) {
+          await tx.insert(schema.entities).values({
+            id: crypto.randomUUID(),
+            groupId: groupRows[0].id,
+            name,
+            defaultVatRate: 15,
+            defaultVatMode: 'exclusive',
+            createdAt: new Date(),
+          });
         }
 
         await tx

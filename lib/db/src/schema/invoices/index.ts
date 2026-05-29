@@ -17,8 +17,14 @@ export const invoices = sqliteTable(
     supplierId: text('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
     invoiceNumber: text('invoice_number'),
     invoiceDate: integer('invoice_date', { mode: 'timestamp' }),
-    status: text('status').notNull().default('DRAFT'),
-    vatMode: text('vat_mode').notNull().default('exclusive'),
+    status: text('status')
+      .notNull()
+      .default('DRAFT')
+      .$type<import('@reyogo/types').InvoiceStatus>(),
+    vatMode: text('vat_mode')
+      .notNull()
+      .default('exclusive')
+      .$type<import('@reyogo/types').VatMode>(),
     vatRate: real('vat_rate').notNull().default(15),
     totalExclTax: real('total_excl_tax').notNull().default(0),
     taxAmount: real('tax_amount').notNull().default(0),

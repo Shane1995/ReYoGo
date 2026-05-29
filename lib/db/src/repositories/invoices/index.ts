@@ -8,7 +8,6 @@ import type {
   ISaveCapturedInvoicePayload,
   IUpdateCapturedInvoicePayload,
   IUpdateCapturedInvoiceMetadataPayload,
-  VatMode,
   InvoiceLineWithDate,
 } from '@reyogo/types';
 import type { DbClient } from '../../client';
@@ -28,8 +27,8 @@ function toIInvoice(row: schema.InvoiceRow): IInvoice {
     supplierId: row.supplierId ?? null,
     invoiceNumber: row.invoiceNumber ?? null,
     invoiceDate: row.invoiceDate ?? null,
-    status: (row.status as InvoiceStatus) ?? InvoiceStatus.Draft,
-    vatMode: (row.vatMode as VatMode) ?? 'exclusive',
+    status: row.status ?? InvoiceStatus.Draft,
+    vatMode: row.vatMode ?? 'exclusive',
     vatRate: row.vatRate ?? 15,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt ?? null,
@@ -73,6 +72,7 @@ async function insertMovementsForLines(
   referenceId: string,
   occurredAt: Date,
   createdAt: Date,
+  entityId: string,
 ): Promise<void> {
   for (const line of lines.filter((l) => l.quantity > 0)) {
     const prev = await getLatestMovement(tx, line.itemId);
@@ -88,7 +88,7 @@ async function insertMovementsForLines(
       id: generateId(),
       inventoryItemId: line.itemId,
       accountId: 'default',
-      entityId: 'default',
+      entityId,
       movementType: MovementType.In,
       qty: line.quantity,
       unitCostAtTime: unitCost,
@@ -129,7 +129,7 @@ export function createInvoicesRepo(db: DbClient) {
           entityId: payload.entityId,
           invoiceNumber: payload.invoiceNumber ?? null,
           invoiceDate: payload.invoiceDate ?? null,
-          status: 'DRAFT',
+          status: InvoiceStatus.Draft,
           vatMode: payload.vatMode,
           vatRate: payload.vatRate,
           totalExclTax,
@@ -377,13 +377,16 @@ export function createInvoicesRepo(db: DbClient) {
         .from(schema.invoiceAuditLog)
         .where(eq(schema.invoiceAuditLog.invoiceId, invoiceId))
         .orderBy(desc(schema.invoiceAuditLog.editedAt));
-      return rows.map((r) => ({
-        id: r.id,
-        invoiceId: r.invoiceId,
-        editedAt: r.editedAt,
-        note: r.note ?? null,
-        snapshot: JSON.parse(r.snapshot) as IInvoiceWithLines,
-      }));
+      return rows.map((r) => {
+        const snapshot: IInvoiceWithLines = JSON.parse(r.snapshot);
+        return {
+          id: r.id,
+          invoiceId: r.invoiceId,
+          editedAt: r.editedAt,
+          note: r.note ?? null,
+          snapshot,
+        };
+      });
     },
 
     async saveAndPostInvoice(payload: ISaveCapturedInvoicePayload): Promise<void> {
@@ -426,7 +429,14 @@ export function createInvoicesRepo(db: DbClient) {
           );
         }
 
-        await insertMovementsForLines(tx, validLines, payload.id, occurredAt, createdAt);
+        await insertMovementsForLines(
+          tx,
+          validLines,
+          payload.id,
+          occurredAt,
+          createdAt,
+          payload.entityId,
+        );
       });
     },
 
@@ -440,7 +450,14 @@ export function createInvoicesRepo(db: DbClient) {
       const occurredAt = invoice.invoiceDate ?? postedAt;
 
       await db.transaction(async (tx) => {
-        await insertMovementsForLines(tx, invoice.lines, id, occurredAt, postedAt);
+        await insertMovementsForLines(
+          tx,
+          invoice.lines,
+          id,
+          occurredAt,
+          postedAt,
+          invoice.entityId,
+        );
         await tx
           .update(schema.invoices)
           .set({ status: InvoiceStatus.Posted, updatedAt: postedAt })

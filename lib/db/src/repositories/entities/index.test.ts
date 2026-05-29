@@ -58,6 +58,15 @@ describe('createEntitiesRepo', () => {
     });
   });
 
+  describe('updateEntityVat', () => {
+    it('updates vat rate and mode on an entity', async () => {
+      await repo.updateEntityVat('default', 20, 'inclusive');
+      const ents = await repo.getEntities('default');
+      expect(ents[0]!.defaultVatRate).toBe(20);
+      expect(ents[0]!.defaultVatMode).toBe('inclusive');
+    });
+  });
+
   describe('completeSetup', () => {
     it('sets setupComplete=true and renames group and entities', async () => {
       await repo.completeSetup('default', 'The Crown Group', ['The Crown Pub', 'Gin on Tap']);
@@ -66,6 +75,8 @@ describe('createEntitiesRepo', () => {
       const ents = await repo.getEntities('default');
       expect(ents.map((e) => e.name)).toContain('The Crown Pub');
       expect(ents.map((e) => e.name)).toContain('Gin on Tap');
+      const state = await repo.getSetupState('default');
+      expect(state.setupComplete).toBe(true);
     });
   });
 
