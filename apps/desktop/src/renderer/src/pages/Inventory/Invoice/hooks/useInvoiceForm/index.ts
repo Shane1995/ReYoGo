@@ -36,9 +36,7 @@ export function useInvoiceForm() {
   const [vatMode, setVatModeState] = useState<VatMode>(() =>
     isReused ? 'exclusive' : (loadDraft()?.vatMode ?? 'exclusive'),
   );
-  const [entityId, setEntityId] = useState<string>(() => {
-    return localStorage.getItem('last-invoice-entity') ?? entities[0]?.id ?? '';
-  });
+  const [entityId, setEntityId] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -99,7 +97,6 @@ export function useInvoiceForm() {
         setLines([createEmptyLine()]);
       }
       setEntityId(newEntityId);
-      localStorage.setItem('last-invoice-entity', newEntityId);
     },
     [lines, setLines],
   );

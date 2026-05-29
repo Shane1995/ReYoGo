@@ -50,17 +50,17 @@ export function EntitiesStep({
                 fontWeight: 600,
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
-                color: i === 0 ? '#20C997' : 'rgba(255,255,255,0.25)',
+                color: 'rgba(255,255,255,0.25)',
               }}
             >
-              {i === 0 ? 'Primary venue' : `Additional venue ${i}`}
+              {`Venue ${i + 1}`}
             </span>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <input
                 className="rg-input"
                 value={name}
                 onChange={(e) => onNameChange(i, e.target.value)}
-                placeholder={i === 0 ? 'e.g. The Crown Pub' : `e.g. Venue ${i + 1}`}
+                placeholder={`e.g. Venue ${i + 1}`}
                 autoFocus={i === entityNames.length - 1}
               />
               {entityNames.length > 1 && (

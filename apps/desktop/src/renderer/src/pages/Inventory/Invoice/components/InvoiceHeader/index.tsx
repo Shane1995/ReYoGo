@@ -73,8 +73,11 @@ export function InvoiceHeader({
           <select
             value={entityId}
             onChange={(e) => onEntityChange(e.target.value)}
-            className={cn(inputClass, 'w-44')}
+            className={cn(inputClass, 'w-44', !entityId && 'text-muted-foreground')}
           >
+            <option value="" disabled>
+              Select venue…
+            </option>
             {entities.map((e) => (
               <option key={e.id} value={e.id}>
                 {e.name}
