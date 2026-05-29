@@ -18,13 +18,38 @@ export async function createTestDb(): Promise<DbClient> {
   await migrate(db, {
     migrationsFolder: join(__dirname, '../../migrations'),
   });
-  await db.insert(schema.accounts).values({
-    id: 'default',
-    name: 'Default',
-    isCurrent: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  });
+  const now = new Date();
+  await db
+    .insert(schema.accounts)
+    .values({
+      id: 'default',
+      name: 'Default',
+      isCurrent: true,
+      setupComplete: false,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoNothing();
+  await db
+    .insert(schema.businessGroups)
+    .values({
+      id: 'default-group',
+      accountId: 'default',
+      name: 'Test Group',
+      createdAt: now,
+    })
+    .onConflictDoNothing();
+  await db
+    .insert(schema.entities)
+    .values({
+      id: 'default',
+      groupId: 'default-group',
+      name: 'Test Entity',
+      defaultVatRate: 15,
+      defaultVatMode: 'exclusive',
+      createdAt: now,
+    })
+    .onConflictDoNothing();
   return db;
 }
 
