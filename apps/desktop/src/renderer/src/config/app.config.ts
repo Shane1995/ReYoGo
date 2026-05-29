@@ -19,6 +19,8 @@ export interface RouteConfig {
   'costing.costReport': string;
   suppliers: string;
   settings: string;
+  'settings.business': string;
+  'settings.tax': string;
   [key: string]: string;
 }
 
@@ -67,6 +69,8 @@ export const appConfig: AppConfig = {
     'costing.costReport': '/costing/cost-report',
     suppliers: '/suppliers',
     settings: '/settings',
+    'settings.business': '/settings/business',
+    'settings.tax': '/settings/tax',
   },
   nav: {
     primary: [

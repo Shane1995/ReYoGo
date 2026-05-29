@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from '@/layouts/AppLayout';
 import { CapturedInventorySectionLayout } from '@/layouts/CapturedInventorySectionLayout';
 import { InventoryLayout as CapturedInventoryLayout } from '@/pages/Inventory/Capture/CapturedInventory/Layout/InventoryLayout';
@@ -17,7 +17,9 @@ import PriceVariancePage from '@/pages/Inventory/Costing/PriceVariance';
 import CostReportPage from '@/pages/Inventory/Costing/CostReport';
 import DashboardPage from '@/pages/Dashboard';
 import SuppliersPage from '@/pages/Suppliers';
-import SettingsPage from '@/pages/Settings';
+import { SettingsLayout } from '@/pages/Settings/Layout';
+import BusinessPage from '@/pages/Settings/pages/BusinessPage';
+import TaxPage from '@/pages/Settings/pages/TaxPage';
 import {
   UserRoutes,
   StockRouteSegments,
@@ -25,6 +27,7 @@ import {
   CostingRouteSegments,
   SuppliersRouteSegments,
   SettingsRouteSegments,
+  SettingsRoutes,
 } from './routePaths';
 
 export {
@@ -74,7 +77,11 @@ export function AppRoutesComponent() {
         </Route>
 
         <Route path={SuppliersRouteSegments.root} element={<SuppliersPage />} />
-        <Route path={SettingsRouteSegments.root} element={<SettingsPage />} />
+        <Route path={SettingsRouteSegments.root} element={<SettingsLayout />}>
+          <Route index element={<Navigate to={SettingsRoutes.Business} replace />} />
+          <Route path={SettingsRouteSegments.business} element={<BusinessPage />} />
+          <Route path={SettingsRouteSegments.tax} element={<TaxPage />} />
+        </Route>
       </Route>
     </Routes>
   );
