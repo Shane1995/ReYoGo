@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { InventoryType } from '@reyogo/types';
 import type { MovementType } from '@reyogo/types';
 import { createTestDb, type DbClient } from '../../__tests__/helpers';
 import { createStocktakeRepo } from '.';
@@ -12,7 +13,7 @@ async function seedItem(db: DbClient, itemId: string) {
     id: 'cat-1',
     accountId: 'default',
     name: 'Food',
-    type: 'food',
+    type: InventoryType.Food,
     createdAt: new Date(),
     updatedAt: new Date(),
   });

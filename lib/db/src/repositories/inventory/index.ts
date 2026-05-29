@@ -16,13 +16,14 @@ export function createInventoryRepo(db: DbClient) {
         .select()
         .from(schema.inventoryCategories)
         .orderBy(schema.inventoryCategories.name);
-      return rows.map((r) => ({ id: r.id, name: r.name, type: r.type as Category['type'] }));
+      return rows.map((r) => ({ id: r.id, name: r.name, type: r.type }));
     },
 
-    async getItems(): Promise<InventoryItem[]> {
+    async getItems(entityId?: string): Promise<InventoryItem[]> {
       const itemRows = await db
         .select()
         .from(schema.inventoryItems)
+        .where(entityId ? eq(schema.inventoryItems.entityId, entityId) : undefined)
         .orderBy(asc(schema.inventoryItems.name));
       const movementRows = await db
         .select({

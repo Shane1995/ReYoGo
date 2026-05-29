@@ -1,5 +1,6 @@
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
+import type { InventoryType } from '@reyogo/types';
 import { accounts } from '../accounts';
 
 export const inventoryCategories = sqliteTable(
@@ -10,7 +11,7 @@ export const inventoryCategories = sqliteTable(
       .notNull()
       .references(() => accounts.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
-    type: text('type').notNull(),
+    type: text('type').notNull().$type<InventoryType>(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
   },

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { InventoryType } from '@reyogo/types';
 import { createTestDb, type DbClient } from '../../__tests__/helpers';
 import { createInvoicesRepo } from '.';
 import * as schema from '../../schema';
@@ -35,7 +36,7 @@ beforeEach(async () => {
     id: 'cat-1',
     accountId: 'default',
     name: 'Food',
-    type: 'food',
+    type: InventoryType.Food,
     createdAt: new Date(),
     updatedAt: new Date(),
   });
