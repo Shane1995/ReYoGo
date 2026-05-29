@@ -100,17 +100,30 @@ export function createEntitiesRepo(db: DbClient) {
           .set({ name: groupName })
           .where(eq(schema.businessGroups.id, groupRows[0].id));
 
-        await tx.delete(schema.entities).where(eq(schema.entities.groupId, groupRows[0].id));
+        const existing = await tx
+          .select()
+          .from(schema.entities)
+          .where(eq(schema.entities.groupId, groupRows[0].id))
+          .orderBy(schema.entities.createdAt);
 
-        for (const name of entityNames) {
-          await tx.insert(schema.entities).values({
-            id: crypto.randomUUID(),
-            groupId: groupRows[0].id,
-            name,
-            defaultVatRate: 15,
-            defaultVatMode: 'exclusive',
-            createdAt: new Date(),
-          });
+        for (let i = 0; i < entityNames.length; i++) {
+          const existingRow = existing[i];
+          const name = entityNames[i];
+          if (existingRow && name) {
+            await tx
+              .update(schema.entities)
+              .set({ name })
+              .where(eq(schema.entities.id, existingRow.id));
+          } else if (name) {
+            await tx.insert(schema.entities).values({
+              id: crypto.randomUUID(),
+              groupId: groupRows[0].id,
+              name,
+              defaultVatRate: 15,
+              defaultVatMode: 'exclusive' as const,
+              createdAt: new Date(),
+            });
+          }
         }
 
         await tx
