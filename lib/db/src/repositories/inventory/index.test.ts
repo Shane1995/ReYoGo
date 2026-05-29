@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { InventoryType } from '@reyogo/types';
+import { InventoryType, MovementType } from '@reyogo/types';
 import { createTestDb, type DbClient } from '../../__tests__/helpers';
 import { createInventoryRepo } from '.';
 import * as schema from '../../schema';
@@ -196,6 +196,21 @@ describe('archiveItem / restoreItem / hardDeleteItem', () => {
     expect(rows).toHaveLength(0);
   });
 
+  it('hardDeleteItem throws when item has usage', async () => {
+    await db.insert(schema.stockMovements).values({
+      id: 'mv-1',
+      inventoryItemId: 'item-1',
+      accountId: 'default',
+      entityId: 'default',
+      movementType: MovementType.In,
+      qty: 5,
+      stockQtyAfter: 5,
+      occurredAt: new Date(),
+      createdAt: new Date(),
+    });
+    await expect(repo.hardDeleteItem('item-1')).rejects.toThrow();
+  });
+
   it('getItemUsageCount returns 0 for unused item', async () => {
     expect(await repo.getItemUsageCount('item-1')).toBe(0);
   });
@@ -228,6 +243,20 @@ describe('archiveCategory / restoreCategory / hardDeleteCategory', () => {
   it('hardDeleteCategory removes category with zero usage', async () => {
     await repo.hardDeleteCategory('cat-1');
     expect(await db.select().from(schema.inventoryCategories)).toHaveLength(0);
+  });
+
+  it('hardDeleteCategory throws when category has assigned items', async () => {
+    await repo.upsertItem({
+      id: 'item-1',
+      entityId: 'default',
+      name: 'Chips',
+      categoryId: 'cat-1',
+      unitOfMeasureId: null,
+      sku: null,
+      reorderPoint: null,
+      reorderQty: null,
+    });
+    await expect(repo.hardDeleteCategory('cat-1')).rejects.toThrow();
   });
 
   it('getCategoryUsageCount returns 0 for empty category', async () => {
