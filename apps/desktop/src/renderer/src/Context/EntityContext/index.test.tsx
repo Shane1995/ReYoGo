@@ -1,22 +1,27 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import type { IEntity, IBusinessGroup } from '@reyogo/types';
 import { EntityProvider, useEntities } from '.';
+
+const { mockEntities, mockGroup } = vi.hoisted(() => {
+  const mockEntities: IEntity[] = [
+    {
+      id: 'e1',
+      groupId: 'g1',
+      name: 'The Crown Pub',
+      defaultVatRate: 15,
+      defaultVatMode: 'exclusive',
+      archivedAt: null,
+    },
+  ];
+  const mockGroup: IBusinessGroup = { id: 'g1', name: 'The Crown Group' };
+  return { mockEntities, mockGroup };
+});
 
 vi.mock('@/services/entities', () => ({
   entitiesService: {
-    getEntities: vi
-      .fn()
-      .mockResolvedValue([
-        {
-          id: 'e1',
-          groupId: 'g1',
-          name: 'The Crown Pub',
-          defaultVatRate: 15,
-          defaultVatMode: 'exclusive' as const,
-          archivedAt: null,
-        },
-      ]),
-    getGroup: vi.fn().mockResolvedValue({ id: 'g1', name: 'The Crown Group' }),
+    getEntities: vi.fn().mockResolvedValue(mockEntities),
+    getGroup: vi.fn().mockResolvedValue(mockGroup),
   },
 }));
 
