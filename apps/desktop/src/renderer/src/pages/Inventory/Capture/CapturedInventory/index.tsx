@@ -72,6 +72,7 @@ export default function InventoryIndex() {
             allTypes={allTypes}
             categories={categories}
             units={units}
+            entityFilter={entityFilter}
             onUpdate={handleUpdate}
             onDelete={deleteItemFromBackend}
             onViewInsights={handleViewInsights}
