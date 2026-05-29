@@ -29,9 +29,8 @@ export function useInvoiceForm() {
   const [invoiceNumber, setInvoiceNumber] = useState<string>(() =>
     isReused ? '' : (loadDraft()?.invoiceNumber ?? ''),
   );
-  const todayIso = new Date().toISOString().slice(0, 10);
   const [invoiceDate, setInvoiceDate] = useState<string>(() =>
-    isReused ? todayIso : (loadDraft()?.invoiceDate ?? todayIso),
+    isReused ? '' : (loadDraft()?.invoiceDate ?? ''),
   );
   const [supplierId, setSupplierId] = useState<string>('');
   const [vatMode, setVatModeState] = useState<VatMode>(() =>
@@ -81,7 +80,7 @@ export function useInvoiceForm() {
   const clearForm = useCallback(() => {
     setLines([createEmptyLine()]);
     setInvoiceNumber('');
-    setInvoiceDate(new Date().toISOString().slice(0, 10));
+    setInvoiceDate('');
     setSupplierId('');
     setEntityId('');
     setVatModeState('exclusive');

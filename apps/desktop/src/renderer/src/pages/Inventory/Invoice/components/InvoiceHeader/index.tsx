@@ -54,6 +54,19 @@ export function InvoiceHeader({
       title="Capture Invoice"
       actions={
         <div className="flex items-center gap-2">
+          {isDirty && (
+            <>
+              <button
+                type="button"
+                onClick={onClear}
+                className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive transition-colors"
+              >
+                <RotateCcwIcon className="size-3" />
+                Clear
+              </button>
+              <div className="h-4 w-px bg-border" />
+            </>
+          )}
           <Button asChild variant="ghost" size="sm">
             <Link to={InvoiceRoutes.History}>History</Link>
           </Button>
@@ -137,17 +150,6 @@ export function InvoiceHeader({
             <option value="inclusive">VAT included</option>
           </select>
         </div>
-
-        {isDirty && (
-          <button
-            type="button"
-            onClick={onClear}
-            className="flex items-center gap-1.5 self-end mb-0.5 text-xs text-muted-foreground/60 hover:text-destructive transition-colors"
-          >
-            <RotateCcwIcon className="size-3" />
-            Clear
-          </button>
-        )}
       </div>
     </PageHeader>
   );
