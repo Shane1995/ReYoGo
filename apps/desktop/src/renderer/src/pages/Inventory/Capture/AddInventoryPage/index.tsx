@@ -79,7 +79,11 @@ export default function AddInventoryPage() {
   );
 
   const itemDupes = useMemo(() => {
-    const existing = new Set(items.map((i) => i.name.trim().toLowerCase()));
+    const existing = new Set(
+      items
+        .filter((i) => !venueId || i.entityId === venueId)
+        .map((i) => i.name.trim().toLowerCase()),
+    );
     const seen = new Map<string, string>();
     const dupes = new Set<string>();
     for (const row of itemRows) {
@@ -93,10 +97,12 @@ export default function AddInventoryPage() {
       } else seen.set(key, row.id);
     }
     return dupes;
-  }, [itemRows, items]);
+  }, [itemRows, items, venueId]);
 
   const submitItems = useCallback(() => {
-    const valid = itemRows.filter((r) => r.name.trim() && r.categoryId && !itemDupes.has(r.id));
+    const valid = itemRows.filter(
+      (r) => r.name.trim() && r.categoryId && r.unitOfMeasure && !itemDupes.has(r.id),
+    );
     if (!valid.length || !venueId) return;
     valid.forEach((r) =>
       addItem({
@@ -112,9 +118,8 @@ export default function AddInventoryPage() {
 
   const namedItemRows = itemRows.filter((r) => r.name.trim());
   const canSubmitItems =
-    namedItemRows.some((r) => r.categoryId && !itemDupes.has(r.id)) &&
-    !namedItemRows.some((r) => !r.categoryId) &&
-    !!venueId;
+    namedItemRows.some((r) => r.categoryId && r.unitOfMeasure && !itemDupes.has(r.id)) && !!venueId;
+  const hasIncompleteItemRows = namedItemRows.some((r) => !r.categoryId || !r.unitOfMeasure);
 
   // --- Category logic ---
   const addCatRow = useCallback(() => {
@@ -161,6 +166,7 @@ export default function AddInventoryPage() {
   const canSubmitCats = catRows.some((r) => r.name.trim() && !catDupes.has(r.id));
 
   const venueName = entities.find((e) => e.id === venueId)?.name;
+  const noVenue = mode === 'items' && entities.length > 1 && !venueId;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -220,7 +226,12 @@ export default function AddInventoryPage() {
           )}
 
           {/* Table */}
-          <div className="rounded-lg border border-[var(--nav-border)] bg-background">
+          <div
+            className={cn(
+              'rounded-lg border border-[var(--nav-border)] bg-background',
+              noVenue && 'opacity-40 pointer-events-none',
+            )}
+          >
             {mode === 'items' ? (
               <Table>
                 <TableHeader>
@@ -234,7 +245,6 @@ export default function AddInventoryPage() {
                 <TableBody>
                   {itemRows.map((row) => {
                     const isDupe = itemDupes.has(row.id);
-                    const isIncomplete = !!row.name.trim() && !row.categoryId;
                     return (
                       <TableRow
                         key={row.id}
@@ -274,11 +284,7 @@ export default function AddInventoryPage() {
                                 cat ? { categoryId, type: cat.type } : { categoryId },
                               );
                             }}
-                            className={cn(
-                              inputClass,
-                              'min-w-[10rem] cursor-pointer',
-                              isIncomplete && 'border-destructive focus:ring-destructive/50',
-                            )}
+                            className={cn(inputClass, 'min-w-[10rem] cursor-pointer')}
                           >
                             <option value="">Select a category…</option>
                             {categoryTypes.map((type) => (
@@ -293,9 +299,6 @@ export default function AddInventoryPage() {
                               </optgroup>
                             ))}
                           </select>
-                          {isIncomplete && (
-                            <span className="text-xs text-destructive mt-0.5 block">Required</span>
-                          )}
                         </TableCell>
                         <TableCell className="py-2 px-3">
                           <select
@@ -311,7 +314,7 @@ export default function AddInventoryPage() {
                             }}
                             className={cn(inputClass, 'min-w-[6rem] cursor-pointer')}
                           >
-                            <option value="">— none —</option>
+                            <option value="">Select a unit…</option>
                             {units.map((u) => (
                               <option key={u} value={u}>
                                 {u}
@@ -428,7 +431,12 @@ export default function AddInventoryPage() {
                   Add row
                 </Button>
               </div>
-              <div className="flex justify-end gap-2 border-t border-[var(--nav-border)] px-3 py-2">
+              <div className="flex justify-end gap-2 border-t border-[var(--nav-border)] px-3 py-2 items-center">
+                {mode === 'items' && hasIncompleteItemRows && (
+                  <p className="text-xs text-muted-foreground mr-auto">
+                    Incomplete rows will be skipped
+                  </p>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
