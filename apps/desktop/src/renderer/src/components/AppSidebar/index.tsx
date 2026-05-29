@@ -6,7 +6,6 @@ import { ChevronRightIcon, Settings as SettingsIcon } from 'lucide-react';
 import { useNavItems } from '@/config/nav';
 import { SettingsRoutes } from '@/components/AppRoutes/routePaths';
 import { useEntities } from '@/Context/EntityContext';
-import { getGroupLogo } from '@/utils/logoStorage';
 
 const EXPANDED_W = 224;
 const COLLAPSED_W = 56;
@@ -21,7 +20,6 @@ const labelAnim = {
 export function AppSidebar() {
   const { primary } = useNavItems();
   const { group } = useEntities();
-  const groupLogo = getGroupLogo();
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem('sidebar-primary-collapsed') === 'true',
   );
@@ -57,15 +55,7 @@ export function AppSidebar() {
           collapsed ? 'justify-center' : 'gap-2.5',
         )}
       >
-        {groupLogo ? (
-          <img src={groupLogo} alt="Logo" className="size-6 shrink-0 rounded object-cover" />
-        ) : (
-          <img
-            src={`${import.meta.env.BASE_URL}logo.svg`}
-            alt="ReYoGo"
-            className="size-6 shrink-0"
-          />
-        )}
+        <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="ReYoGo" className="size-6 shrink-0" />
         <AnimatePresence initial={false}>
           {!collapsed && (
             <motion.div
