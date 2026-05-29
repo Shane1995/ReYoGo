@@ -40,7 +40,7 @@ export default function ImportPage() {
       e.target.value = '';
       setState({ phase: 'parsing' });
       try {
-        const parsed = await parseFile(file);
+        const parsed = await parseFile(file, entities);
         setState({ phase: 'loading-db' });
         const units = await window.electronAPI.ipcRenderer.invoke('setup:get-units');
         const existing: ExistingInventory = {
@@ -58,7 +58,7 @@ export default function ImportPage() {
         });
       }
     },
-    [existingCats, existingItems],
+    [existingCats, existingItems, entities],
   );
 
   const handleCommit = useCallback(
@@ -104,7 +104,7 @@ export default function ImportPage() {
             type: (cat?.type as 'food' | 'beverage' | 'non-food') ?? 'food',
             unitOfMeasureId,
             unitOfMeasure: item.unit,
-            entityId: entities[0]?.id ?? '',
+            entityId: item.entityId ?? '',
           });
         }
 

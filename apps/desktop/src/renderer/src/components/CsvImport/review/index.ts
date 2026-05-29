@@ -31,6 +31,8 @@ export interface ReviewItem {
   name: string;
   categoryName: string;
   unit?: string;
+  entityId?: string;
+  entityName?: string;
   status: ItemStatus;
   selected: boolean;
   unresolvedReason?: string;

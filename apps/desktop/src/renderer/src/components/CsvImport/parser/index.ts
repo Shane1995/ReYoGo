@@ -1,7 +1,8 @@
 import * as XLSX from 'xlsx';
 import { InventoryType } from '@reyogo/types';
+import type { IEntity } from '@reyogo/types';
 
-export type { InventoryType };
+export type { InventoryType, IEntity };
 
 export interface ParsedUnit {
   name: string;
@@ -16,6 +17,8 @@ export interface ParsedItem {
   name: string;
   categoryName: string;
   unit?: string;
+  entityId?: string;
+  entityName?: string;
 }
 
 export interface ParseResult {
@@ -69,7 +72,7 @@ function parseCategoriesSheet(sheet: XLSX.WorkSheet, result: ParseResult) {
   });
 }
 
-function parseItemsSheet(sheet: XLSX.WorkSheet, result: ParseResult) {
+function parseItemsSheet(sheet: XLSX.WorkSheet, result: ParseResult, entities: IEntity[]) {
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
   rows.forEach((row, i) => {
     const name = col(row, 'name', 'Name', 'item', 'Item');
@@ -83,11 +86,25 @@ function parseItemsSheet(sheet: XLSX.WorkSheet, result: ParseResult) {
       return;
     }
     const unit = col(row, 'unit', 'Unit', 'unit_of_measure', 'Unit of Measure') || undefined;
-    result.items.push({ name, categoryName, unit });
+    const entityValue = col(row, 'entity', 'Entity');
+    if (!entityValue) {
+      result.errors.push(
+        `Items row ${i + 2}: "${name}" is missing an Entity. Valid values: ${entities.map((e) => e.name).join(', ')}`,
+      );
+      return;
+    }
+    const entity = entities.find((e) => e.name.toLowerCase() === entityValue.toLowerCase());
+    if (!entity) {
+      result.errors.push(
+        `Items row ${i + 2}: "${name}" — Entity '${entityValue}' not found. Valid values: ${entities.map((e) => e.name).join(', ')}`,
+      );
+      return;
+    }
+    result.items.push({ name, categoryName, unit, entityId: entity.id, entityName: entity.name });
   });
 }
 
-export function parseFile(file: File): Promise<ParseResult> {
+export function parseFile(file: File, entities: IEntity[]): Promise<ParseResult> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -101,7 +118,7 @@ export function parseFile(file: File): Promise<ParseResult> {
           const key = name.toLowerCase();
           if (key === 'units' || key === 'unit') parseUnitsSheet(sheet, result);
           else if (key === 'categories' || key === 'category') parseCategoriesSheet(sheet, result);
-          else if (key === 'items' || key === 'item') parseItemsSheet(sheet, result);
+          else if (key === 'items' || key === 'item') parseItemsSheet(sheet, result, entities);
         });
 
         if (
@@ -144,12 +161,12 @@ export function downloadTemplate(): void {
   XLSX.utils.book_append_sheet(wb, catsSheet, 'Categories');
 
   const itemsSheet = XLSX.utils.aoa_to_sheet([
-    ['name', 'category_name', 'unit'],
-    ['Full Cream Milk', 'Dairy', 'litres'],
-    ['Orange Juice', 'Beverages', 'litres'],
-    ['Bleach', 'Cleaning Supplies', 'unit'],
+    ['name', 'category_name', 'unit', 'entity'],
+    ['Full Cream Milk', 'Dairy', 'litres', 'My Entity'],
+    ['Orange Juice', 'Beverages', 'litres', 'My Entity'],
+    ['Bleach', 'Cleaning Supplies', 'unit', 'My Entity'],
   ]);
-  itemsSheet['!cols'] = [{ wch: 28 }, { wch: 24 }, { wch: 16 }];
+  itemsSheet['!cols'] = [{ wch: 28 }, { wch: 24 }, { wch: 16 }, { wch: 20 }];
   XLSX.utils.book_append_sheet(wb, itemsSheet, 'Items');
 
   const buf = Array.from(XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as Uint8Array);

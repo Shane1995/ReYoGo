@@ -24,6 +24,7 @@ export function FormatGuide() {
               { name: 'name' },
               { name: 'category_name', note: 'must match a category name' },
               { name: 'unit', note: 'optional' },
+              { name: 'entity', note: 'must match an existing entity name' },
             ],
           },
         ].map((s) => (
