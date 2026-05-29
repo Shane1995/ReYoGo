@@ -109,6 +109,7 @@ export function useInvoiceForm() {
     try {
       await invoiceService.saveAndPostInvoice({
         id: window.crypto.randomUUID(),
+        entityId: 'default',
         supplierId: supplierId || null,
         invoiceNumber: invoiceNumber.trim() || null,
         invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
@@ -155,6 +156,7 @@ export function useInvoiceForm() {
     try {
       await invoiceService.saveInvoice({
         id: window.crypto.randomUUID(),
+        entityId: 'default',
         supplierId: supplierId || null,
         invoiceNumber: invoiceNumber.trim() || null,
         invoiceDate: invoiceDate ? new Date(invoiceDate) : null,

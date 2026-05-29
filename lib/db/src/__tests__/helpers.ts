@@ -38,7 +38,7 @@ export async function createTestDb(): Promise<DbClient> {
       name: 'Test Group',
       createdAt: now,
     })
-    .onConflictDoNothing();
+    .onConflictDoUpdate({ target: schema.businessGroups.id, set: { name: 'Test Group' } });
   await db
     .insert(schema.entities)
     .values({
@@ -49,7 +49,7 @@ export async function createTestDb(): Promise<DbClient> {
       defaultVatMode: 'exclusive',
       createdAt: now,
     })
-    .onConflictDoNothing();
+    .onConflictDoUpdate({ target: schema.entities.id, set: { name: 'Test Entity' } });
   return db;
 }
 

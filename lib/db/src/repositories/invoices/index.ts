@@ -24,6 +24,7 @@ type TxClient = Parameters<DbClient['transaction']>[0] extends (tx: infer T) => 
 function toIInvoice(row: schema.InvoiceRow): IInvoice {
   return {
     id: row.id,
+    entityId: row.entityId,
     supplierId: row.supplierId ?? null,
     invoiceNumber: row.invoiceNumber ?? null,
     invoiceDate: row.invoiceDate ?? null,
@@ -125,7 +126,7 @@ export function createInvoicesRepo(db: DbClient) {
           id: payload.id,
           supplierId: payload.supplierId ?? null,
           accountId: 'default',
-          entityId: 'default',
+          entityId: payload.entityId,
           invoiceNumber: payload.invoiceNumber ?? null,
           invoiceDate: payload.invoiceDate ?? null,
           status: 'DRAFT',
@@ -396,7 +397,7 @@ export function createInvoicesRepo(db: DbClient) {
           id: payload.id,
           supplierId: payload.supplierId ?? null,
           accountId: 'default',
-          entityId: 'default',
+          entityId: payload.entityId,
           invoiceNumber: payload.invoiceNumber ?? null,
           invoiceDate: payload.invoiceDate ?? null,
           status: InvoiceStatus.Posted,

@@ -66,6 +66,7 @@ describe('createInvoicesRepo', () => {
     it('creates the invoice and its line items', async () => {
       await repo.saveInvoice({
         id: 'inv-1',
+        entityId: 'default',
         supplierId: null,
         invoiceDate: null,
         invoiceNumber: 'INV-001',
@@ -82,6 +83,7 @@ describe('createInvoicesRepo', () => {
     it('saves with DRAFT status and no stock movements', async () => {
       await repo.saveInvoice({
         id: 'inv-1',
+        entityId: 'default',
         supplierId: null,
         invoiceDate: null,
         invoiceNumber: null,
@@ -97,6 +99,7 @@ describe('createInvoicesRepo', () => {
     it('computes zero tax for non-vatable lines', async () => {
       await repo.saveInvoice({
         id: 'inv-1',
+        entityId: 'default',
         supplierId: null,
         invoiceDate: null,
         invoiceNumber: null,
@@ -113,6 +116,7 @@ describe('createInvoicesRepo', () => {
     it('creates the invoice as POSTED with stock movements in one step', async () => {
       await repo.saveAndPostInvoice({
         id: 'inv-1',
+        entityId: 'default',
         supplierId: null,
         invoiceNumber: 'INV-001',
         invoiceDate: new Date('2024-01-01'),
@@ -133,6 +137,7 @@ describe('createInvoicesRepo', () => {
       const invoiceDate = new Date('2024-03-15');
       await repo.saveAndPostInvoice({
         id: 'inv-1',
+        entityId: 'default',
         supplierId: null,
         invoiceNumber: null,
         invoiceDate,
@@ -147,6 +152,7 @@ describe('createInvoicesRepo', () => {
     it('skips lines with zero quantity for movements', async () => {
       await repo.saveAndPostInvoice({
         id: 'inv-1',
+        entityId: 'default',
         supplierId: null,
         invoiceNumber: null,
         invoiceDate: null,
@@ -166,6 +172,7 @@ describe('createInvoicesRepo', () => {
     beforeEach(() =>
       repo.saveInvoice({
         id: 'inv-1',
+        entityId: 'default',
         supplierId: null,
         invoiceNumber: 'INV-001',
         invoiceDate: new Date('2024-01-01'),
@@ -189,6 +196,7 @@ describe('createInvoicesRepo', () => {
     it('blends WAC correctly across two posted invoices', async () => {
       await repo.saveInvoice({
         id: 'inv-2',
+        entityId: 'default',
         supplierId: null,
         invoiceNumber: null,
         invoiceDate: new Date('2024-01-02'),
@@ -220,6 +228,7 @@ describe('createInvoicesRepo', () => {
     beforeEach(() =>
       repo.saveInvoice({
         id: 'inv-1',
+        entityId: 'default',
         supplierId: null,
         invoiceNumber: 'INV-001',
         invoiceDate: new Date('2024-01-01'),
@@ -266,6 +275,7 @@ describe('createInvoicesRepo', () => {
     it('returns all invoices ordered by createdAt descending', async () => {
       await repo.saveInvoice({
         id: 'inv-1',
+        entityId: 'default',
         supplierId: null,
         invoiceNumber: null,
         invoiceDate: null,
@@ -275,6 +285,7 @@ describe('createInvoicesRepo', () => {
       });
       await repo.saveInvoice({
         id: 'inv-2',
+        entityId: 'default',
         supplierId: null,
         invoiceNumber: null,
         invoiceDate: null,
@@ -295,6 +306,7 @@ describe('createInvoicesRepo', () => {
     it('returns the invoice with its lines', async () => {
       await repo.saveInvoice({
         id: 'inv-1',
+        entityId: 'default',
         supplierId: null,
         invoiceNumber: 'INV-001',
         invoiceDate: null,
@@ -312,6 +324,7 @@ describe('createInvoicesRepo', () => {
     it('returns the most recent unit price per item', async () => {
       await repo.saveInvoice({
         id: 'inv-1',
+        entityId: 'default',
         supplierId: null,
         invoiceNumber: null,
         invoiceDate: null,

@@ -31,6 +31,7 @@ function makeInvoice(
 ): ICapturedInvoiceWithLines {
   return {
     id: 'inv-1',
+    entityId: 'default',
     supplierId: null,
     invoiceNumber: null,
     invoiceDate: null,
