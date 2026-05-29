@@ -7,6 +7,7 @@ import type { ItemCostEntry } from '../../../../hooks/useInventoryCosts';
 function makeItem(overrides: Partial<InventoryItem> = {}): InventoryItem {
   return {
     id: 'item-1',
+    entityId: 'entity-1',
     name: 'Chicken Breast',
     type: 'food',
     categoryId: 'cat-1',

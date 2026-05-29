@@ -12,6 +12,15 @@ import type { FlatItem, ItemsTableProps } from './types';
 import { useItemSelection } from './hooks/useItemSelection';
 import { SelectionBar } from './SelectionBar';
 import { ItemRowActions } from './ItemRowActions';
+import { useEntities } from '@/Context/EntityContext';
+
+const ENTITY_COLORS = [
+  { bg: 'rgba(32,201,151,0.12)', fg: '#0D6E4F' },
+  { bg: 'rgba(14,165,233,0.12)', fg: '#0369A1' },
+  { bg: 'rgba(253,126,20,0.12)', fg: '#9A3412' },
+  { bg: 'rgba(168,85,247,0.12)', fg: '#6B21A8' },
+  { bg: 'rgba(236,72,153,0.12)', fg: '#9D174D' },
+] as const;
 
 export function ItemsTable({
   items,
@@ -19,12 +28,16 @@ export function ItemsTable({
   allTypes,
   categories,
   units,
+  entityFilter,
   onUpdate,
   onDelete,
   onViewInsights,
 }: ItemsTableProps) {
   const navigate = useNavigate();
+  const { entities } = useEntities();
   const [editingItem, setEditingItem] = useState<InventoryItem | null | undefined>(undefined);
+
+  const entityIndexMap = useMemo(() => new Map(entities.map((e, i) => [e.id, i])), [entities]);
 
   const filteredIds = useMemo(() => filteredItems.map((i) => i.id), [filteredItems]);
 
@@ -71,6 +84,28 @@ export function ItemsTable({
       header: 'Item',
       cell: (row) => <span className="font-medium text-foreground">{row.name}</span>,
     },
+    ...(entityFilter === null
+      ? [
+          {
+            key: 'entity' as const,
+            header: 'Venue',
+            width: '140px',
+            cell: (row: FlatItem) => {
+              const idx = entityIndexMap.get(row.entityId) ?? 0;
+              const color = ENTITY_COLORS[idx % ENTITY_COLORS.length]!;
+              const name = entities.find((e) => e.id === row.entityId)?.name ?? '—';
+              return (
+                <span
+                  className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium whitespace-nowrap"
+                  style={{ background: color.bg, color: color.fg }}
+                >
+                  {name}
+                </span>
+              );
+            },
+          },
+        ]
+      : []),
     {
       key: 'type',
       header: 'Type',
@@ -106,7 +141,7 @@ export function ItemsTable({
       align: 'right',
       cell: (row) =>
         row.lastCostPerUnit !== undefined ? (
-          <span className="font-mono text-sm tabular-nums text-foreground">
+          <span className="font-mono text-xs tabular-nums text-foreground">
             {row.lastCostPerUnit.toFixed(2)}
             {row.lastCostUom ? (
               <span className="text-muted-foreground/60"> / {row.lastCostUom}</span>
@@ -122,7 +157,7 @@ export function ItemsTable({
       align: 'right',
       cell: (row) =>
         row.weightedAvgCost != null ? (
-          <span className="font-mono text-sm tabular-nums text-foreground">
+          <span className="font-mono text-xs tabular-nums text-foreground">
             {row.weightedAvgCost.toFixed(2)}
             {row.unitOfMeasure ? (
               <span className="text-muted-foreground/60"> / {row.unitOfMeasure}</span>
@@ -138,7 +173,7 @@ export function ItemsTable({
       align: 'right',
       cell: (row) =>
         row.currentStock !== undefined ? (
-          <span className="font-mono text-sm tabular-nums text-foreground">
+          <span className="font-mono text-xs tabular-nums text-foreground">
             {row.currentStock % 1 === 0 ? row.currentStock.toFixed(0) : row.currentStock.toFixed(2)}
             {row.unitOfMeasure ? (
               <span className="text-muted-foreground/60"> {row.unitOfMeasure}</span>

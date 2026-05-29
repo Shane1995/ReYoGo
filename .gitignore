@@ -14,7 +14,6 @@ coverage
 .env.local
 .env.*.local
 .data
-docs/
 .turbo
 packages/*/.turbo
 apps/*/.turbo
@@ -32,4 +31,6 @@ apps/*/out
 apps/*/release
 apps/*/coverage
 apps/*/node_modules
-apps/*/.data
+apps/*/.data.worktrees/
+docs/superpowers/
+.superpowers/

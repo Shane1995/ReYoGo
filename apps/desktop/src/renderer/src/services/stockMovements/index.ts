@@ -13,6 +13,6 @@ export const stockMovementsService = {
   getItemCostHistory: (itemId: string): Promise<ItemCostHistory> =>
     invoke()(StockMovementsIPC.GET_ITEM_COST_HISTORY, itemId) as Promise<ItemCostHistory>,
 
-  getCOGS: (fromDate?: string, toDate?: string): Promise<COGSSummary> =>
-    invoke()(StockMovementsIPC.GET_COGS, fromDate, toDate) as Promise<COGSSummary>,
+  getCOGS: (fromDate?: string, toDate?: string, entityId?: string): Promise<COGSSummary> =>
+    invoke()(StockMovementsIPC.GET_COGS, fromDate, toDate, entityId) as Promise<COGSSummary>,
 };

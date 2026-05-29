@@ -9,6 +9,7 @@ import {
   createStockMovementsRepo,
   createInvoicesRepo,
   createSetupRepo,
+  createEntitiesRepo,
   schema,
   type DbClient,
 } from '@reyogo/db';
@@ -24,6 +25,7 @@ type Repos = {
   stockMovements: ReturnType<typeof createStockMovementsRepo>;
   invoices: ReturnType<typeof createInvoicesRepo>;
   setup: ReturnType<typeof createSetupRepo>;
+  entities: ReturnType<typeof createEntitiesRepo>;
 };
 
 let _db: DbClient | null = null;
@@ -83,5 +85,6 @@ export async function initDatabase(): Promise<void> {
     stockMovements: createStockMovementsRepo(db),
     invoices: createInvoicesRepo(db),
     setup: createSetupRepo(db),
+    entities: createEntitiesRepo(db),
   };
 }

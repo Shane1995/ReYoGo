@@ -2,9 +2,10 @@ import { useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
+import { useEntities } from '@/Context/EntityContext';
 import { invoiceService } from '@/services/invoice';
 import type { ProcessReceiptLine, VatMode } from '../../types';
-import { getProcessLineComputed, DEFAULT_VAT_RATE } from '../../types';
+import { getProcessLineComputed } from '../../types';
 import { createEmptyLine } from '../../utils/createEmptyLine';
 import { loadDraft, useDraftPersistence } from '../useDraftPersistence';
 import { useLineManager } from '../useLineManager';
@@ -12,6 +13,7 @@ import { useInvoiceSummary } from '../useInvoiceSummary';
 
 export function useInvoiceForm() {
   const { items, categories, units, addCategory, addItem } = useInventory();
+  const { entities } = useEntities();
   const location = useLocation();
 
   const templateLines = (location.state as { templateLines?: ProcessReceiptLine[] } | null)
@@ -34,9 +36,7 @@ export function useInvoiceForm() {
   const [vatMode, setVatModeState] = useState<VatMode>(() =>
     isReused ? 'exclusive' : (loadDraft()?.vatMode ?? 'exclusive'),
   );
-  const [vatRate, setVatRateState] = useState<number>(() =>
-    isReused ? DEFAULT_VAT_RATE : (loadDraft()?.vatRate ?? DEFAULT_VAT_RATE),
-  );
+  const [entityId, setEntityId] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -49,28 +49,20 @@ export function useInvoiceForm() {
     setVatModeState(mode);
   }, []);
 
-  const setVatRate = useCallback((rate: number) => {
-    setVatRateState(rate);
-  }, []);
+  const selectedEntity = entities.find((e) => e.id === entityId) ?? null;
 
-  const { clearDraft } = useDraftPersistence(
-    lines,
-    invoiceNumber,
-    invoiceDate,
-    vatMode,
-    vatRate,
-    isReused,
-  );
+  const { clearDraft } = useDraftPersistence(lines, invoiceNumber, invoiceDate, vatMode, isReused);
 
   const { invoiceSummary, validLines, itemsWithCategory, itemMetaMap } = useInvoiceSummary(
     lines,
     items,
     categories,
     vatMode,
-    vatRate,
+    selectedEntity?.defaultVatRate ?? 0,
   );
 
   const canSave =
+    !!invoiceNumber.trim() &&
     validLines.length > 0 &&
     !lines.some(
       (l) => (l.itemId && Number(l.quantity) <= 0) || (!l.itemId && Number(l.quantity) > 0),
@@ -90,27 +82,53 @@ export function useInvoiceForm() {
     setInvoiceNumber('');
     setInvoiceDate('');
     setSupplierId('');
+    setEntityId('');
     setVatModeState('exclusive');
-    setVatRateState(DEFAULT_VAT_RATE);
     setExpandedResultLineIds(new Set());
     clearDraft();
   }, [clearDraft, setLines]);
 
   const isDirty =
-    lines.some((l) => l.itemId) || !!invoiceNumber.trim() || !!invoiceDate || !!supplierId;
+    !!entityId ||
+    lines.some((l) => l.itemId) ||
+    !!invoiceNumber.trim() ||
+    !!invoiceDate ||
+    !!supplierId;
+
+  const handleEntityChange = useCallback(
+    (newEntityId: string) => {
+      const isDirtyLines = lines.some((l) => l.itemId);
+      if (isDirtyLines) {
+        if (!window.confirm('Changing entity will clear your current lines. Continue?')) return;
+        setLines([createEmptyLine()]);
+      }
+      setEntityId(newEntityId);
+    },
+    [lines, setLines],
+  );
 
   const handleSave = useCallback(async () => {
+    if (!selectedEntity) {
+      setSaveError('Select an entity before saving.');
+      return;
+    }
     if (!canSave) {
-      setSaveError('Complete all rows before saving — each row needs an item and quantity.');
+      setSaveError(
+        !invoiceNumber.trim()
+          ? 'Invoice number is required.'
+          : 'Complete all rows before saving — each row needs an item and quantity.',
+      );
       return;
     }
     setSaveError(null);
     setIsSaving(true);
+    const vatRate = selectedEntity.defaultVatRate;
     try {
       await invoiceService.saveAndPostInvoice({
         id: window.crypto.randomUUID(),
+        entityId,
         supplierId: supplierId || null,
-        invoiceNumber: invoiceNumber.trim() || null,
+        invoiceNumber: invoiceNumber.trim(),
         invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
         vatMode,
         vatRate,
@@ -134,29 +152,40 @@ export function useInvoiceForm() {
       setIsSaving(false);
     }
   }, [
+    selectedEntity,
     canSave,
     validLines,
+    entityId,
     invoiceNumber,
     invoiceDate,
     supplierId,
     vatMode,
-    vatRate,
     itemMetaMap,
     clearForm,
   ]);
 
   const handleSaveDraft = useCallback(async () => {
+    if (!selectedEntity) {
+      setSaveError('Select an entity before saving.');
+      return;
+    }
     if (!canSave) {
-      setSaveError('Complete all rows before saving — each row needs an item and quantity.');
+      setSaveError(
+        !invoiceNumber.trim()
+          ? 'Invoice number is required.'
+          : 'Complete all rows before saving — each row needs an item and quantity.',
+      );
       return;
     }
     setSaveError(null);
     setIsSavingDraft(true);
+    const vatRate = selectedEntity.defaultVatRate;
     try {
       await invoiceService.saveInvoice({
         id: window.crypto.randomUUID(),
+        entityId,
         supplierId: supplierId || null,
-        invoiceNumber: invoiceNumber.trim() || null,
+        invoiceNumber: invoiceNumber.trim(),
         invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
         vatMode,
         vatRate,
@@ -180,13 +209,14 @@ export function useInvoiceForm() {
       setIsSavingDraft(false);
     }
   }, [
+    selectedEntity,
     canSave,
     validLines,
+    entityId,
     invoiceNumber,
     invoiceDate,
     supplierId,
     vatMode,
-    vatRate,
     itemMetaMap,
     clearForm,
   ]);
@@ -205,8 +235,9 @@ export function useInvoiceForm() {
     setSupplierId,
     vatMode,
     setVatMode,
-    vatRate,
-    setVatRate,
+    selectedEntity,
+    entityId,
+    handleEntityChange,
     expandedResultLineIds,
     isReused,
     reuseNoticeDismissed,

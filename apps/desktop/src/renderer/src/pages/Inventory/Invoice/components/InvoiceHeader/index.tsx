@@ -6,6 +6,7 @@ import type { Supplier } from '@reyogo/types';
 import type { VatMode } from '../../types';
 import { inputClass } from '../../utils/inputClass';
 import { cn } from '@reyogo/ui';
+import { useEntities } from '@/Context/EntityContext';
 
 type Props = {
   invoiceNumber: string;
@@ -17,8 +18,8 @@ type Props = {
   suppliers: Supplier[];
   vatMode: VatMode;
   onVatModeChange: (mode: VatMode) => void;
-  vatRate: number;
-  onVatRateChange: (rate: number) => void;
+  entityId: string;
+  onEntityChange: (id: string) => void;
   onAddCategory: () => void;
   onAddItem: () => void;
   isDirty: boolean;
@@ -39,18 +40,33 @@ export function InvoiceHeader({
   suppliers,
   vatMode,
   onVatModeChange,
-  vatRate,
-  onVatRateChange,
+  entityId,
+  onEntityChange,
   onAddCategory,
   onAddItem,
   isDirty,
   onClear,
 }: Props) {
+  const { entities } = useEntities();
+
   return (
     <PageHeader
       title="Capture Invoice"
       actions={
         <div className="flex items-center gap-2">
+          {isDirty && (
+            <>
+              <button
+                type="button"
+                onClick={onClear}
+                className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive transition-colors"
+              >
+                <RotateCcwIcon className="size-3" />
+                Clear
+              </button>
+              <div className="h-4 w-px bg-border" />
+            </>
+          )}
           <Button asChild variant="ghost" size="sm">
             <Link to={InvoiceRoutes.History}>History</Link>
           </Button>
@@ -65,6 +81,24 @@ export function InvoiceHeader({
       }
     >
       <div className="flex flex-wrap items-end gap-x-5 gap-y-3 pb-1">
+        <div className={fieldGroup}>
+          <label className={fieldLabel}>Entity</label>
+          <select
+            value={entityId}
+            onChange={(e) => onEntityChange(e.target.value)}
+            className={cn(inputClass, 'w-44', !entityId && 'text-muted-foreground')}
+          >
+            <option value="" disabled>
+              Select venue…
+            </option>
+            {entities.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className={fieldGroup}>
           <label className={fieldLabel}>Invoice #</label>
           <input
@@ -106,37 +140,16 @@ export function InvoiceHeader({
           <label className={fieldLabel}>VAT treatment</label>
           <select
             value={vatMode}
-            onChange={(e) => onVatModeChange(e.target.value as VatMode)}
+            onChange={(e) => {
+              const mode = e.target.value;
+              if (mode === 'exclusive' || mode === 'inclusive') onVatModeChange(mode);
+            }}
             className={cn(inputClass, 'w-40')}
           >
             <option value="exclusive">+ VAT (exclusive)</option>
             <option value="inclusive">VAT included</option>
           </select>
         </div>
-
-        <div className={fieldGroup}>
-          <label className={fieldLabel}>Rate %</label>
-          <input
-            type="number"
-            min={0}
-            max={100}
-            step={1}
-            value={vatRate}
-            onChange={(e) => onVatRateChange(Number(e.target.value))}
-            className={cn(inputClass, 'w-16 font-mono')}
-          />
-        </div>
-
-        {isDirty && (
-          <button
-            type="button"
-            onClick={onClear}
-            className="flex items-center gap-1.5 self-end mb-0.5 text-xs text-muted-foreground/60 hover:text-destructive transition-colors"
-          >
-            <RotateCcwIcon className="size-3" />
-            Clear
-          </button>
-        )}
       </div>
     </PageHeader>
   );

@@ -68,8 +68,9 @@ export interface IInvoiceLine {
 
 export interface IInvoice {
   id: string;
+  entityId: string;
   supplierId: string | null;
-  invoiceNumber?: string | null;
+  invoiceNumber: string;
   invoiceDate?: Date | null;
   status: InvoiceStatus;
   vatMode: VatMode;
@@ -100,8 +101,9 @@ export type IInvoiceLinePayload = Omit<IInvoiceLine, 'invoiceId'>;
 
 export interface ISaveInvoicePayload {
   id: string;
+  entityId: string;
   supplierId?: string | null;
-  invoiceNumber?: string | null;
+  invoiceNumber: string;
   invoiceDate?: Date | null;
   vatMode: VatMode;
   vatRate: number;
@@ -119,7 +121,7 @@ export interface IUpdateInvoicePayload {
 export interface IUpdateInvoiceMetadataPayload {
   id: string;
   supplierId?: string | null;
-  invoiceNumber?: string | null;
+  invoiceNumber?: string;
   invoiceDate?: Date | null;
   note?: string;
 }

@@ -10,3 +10,5 @@ export * from './stockMovements';
 export * from './stockCountSessions';
 export * from './stockCountLines';
 export * from './costingSnapshots';
+export * from './businessGroups';
+export * from './entities';

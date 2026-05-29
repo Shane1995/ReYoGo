@@ -12,12 +12,14 @@ export interface RouteConfig {
   'stock.addItems': string;
   'stock.categories': string;
   'stock.analysis': string;
+  'stock.manage': string;
   invoices: string;
   'invoices.history': string;
   costing: string;
   'costing.priceVariance': string;
   'costing.costReport': string;
   suppliers: string;
+  settings: string;
   [key: string]: string;
 }
 
@@ -59,12 +61,14 @@ export const appConfig: AppConfig = {
     'stock.addItems': '/stock/add-items',
     'stock.categories': '/stock/categories',
     'stock.analysis': '/stock/analysis',
+    'stock.manage': '/stock/manage',
     invoices: '/invoices',
     'invoices.history': '/invoices/history',
     costing: '/costing',
     'costing.priceVariance': '/costing/price-variance',
     'costing.costReport': '/costing/cost-report',
     suppliers: '/suppliers',
+    settings: '/settings',
   },
   nav: {
     primary: [
@@ -76,10 +80,10 @@ export const appConfig: AppConfig = {
     ],
     stock: [
       { label: 'Captured Inventory', pathKey: 'stock', icon: 'PackagePlus', end: true },
-      { label: 'Add Items', pathKey: 'stock.addItems', icon: 'ListPlus', end: true },
-      { label: 'Add Categories', pathKey: 'stock.categories', icon: 'FolderPlus', end: true },
+      { label: 'Add', pathKey: 'stock.addItems', icon: 'ListPlus', end: true },
       { label: 'Import', pathKey: 'stock.import', icon: 'Upload', end: false },
       { label: 'Analysis', pathKey: 'stock.analysis', icon: 'TrendingUp', end: false },
+      { label: 'Archive', pathKey: 'stock.manage', icon: 'Archive', end: false },
     ],
     invoices: [
       { label: 'Capture Invoice', pathKey: 'invoices', icon: 'Receipt', end: true },

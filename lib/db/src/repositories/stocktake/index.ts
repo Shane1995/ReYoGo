@@ -125,6 +125,7 @@ export function createStocktakeRepo(db: DbClient) {
           await tx.insert(schema.stockMovements).values({
             id: generateId(),
             accountId: 'default',
+            entityId: 'default',
             inventoryItemId: line.inventoryItemId,
             movementType: 'ADJUSTMENT' as MovementType,
             qty: variance,

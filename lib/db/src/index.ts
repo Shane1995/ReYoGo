@@ -10,3 +10,4 @@ export * from './repositories/stockMovements';
 export * from './repositories/invoices';
 export * from './repositories/setup';
 export * from './repositories/stocktake';
+export { createEntitiesRepo } from './repositories/entities';

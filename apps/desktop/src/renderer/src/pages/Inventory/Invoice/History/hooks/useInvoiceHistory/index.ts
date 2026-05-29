@@ -183,7 +183,7 @@ export function useInvoiceHistory() {
       id: string,
       fields: {
         supplierId: string | null;
-        invoiceNumber: string | null;
+        invoiceNumber: string;
         invoiceDate: Date | null;
         note: string;
       },

@@ -4,7 +4,7 @@ import { Button } from '@reyogo/ui';
 import { Spinner } from '@reyogo/ui';
 import { cn } from '@reyogo/ui';
 import { parseFile, downloadTemplate } from './parser';
-import type { ParseResult } from './parser';
+import type { ParseResult, IEntity } from './parser';
 import { enrichParseResult } from './review';
 import type { ReviewResult } from './review';
 import { ImportReview } from './ImportReview';
@@ -14,6 +14,7 @@ export { downloadTemplate };
 
 interface CsvImportButtonProps {
   onImport: (result: ParseResult, review: ReviewResult) => void;
+  entity: Pick<IEntity, 'id' | 'name'>;
   label?: string;
   variant?: 'default' | 'outline' | 'ghost' | 'secondary';
   size?: 'default' | 'sm';
@@ -29,6 +30,7 @@ type Phase =
 
 export function CsvImportButton({
   onImport,
+  entity,
   label = 'Import',
   variant = 'outline',
   size = 'sm',
@@ -47,7 +49,7 @@ export function CsvImportButton({
     setOpen(true);
     setPhase({ kind: 'parsing' });
     try {
-      const parsed = await parseFile(file);
+      const parsed = await parseFile(file, entity);
       setPhase({ kind: 'loading-db' });
       const existing = await fetchExisting();
       const review = enrichParseResult(parsed, existing);

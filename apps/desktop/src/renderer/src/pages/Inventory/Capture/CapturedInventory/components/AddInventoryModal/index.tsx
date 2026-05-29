@@ -3,6 +3,7 @@ import { Button } from '@reyogo/ui';
 import { INVENTORY_TYPES, InventoryType } from '@reyogo/types';
 import { useInventory } from '../../Context/InventoryContext';
 import { cn } from '@reyogo/ui';
+import { useEntities } from '@/Context/EntityContext';
 
 const inputClass = cn(
   'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm',
@@ -69,6 +70,7 @@ function CategoryForm({ onDone }: { onDone: () => void }) {
 }
 
 function ItemForm({ onDone }: { onDone: () => void }) {
+  const { entities } = useEntities();
   const { categories, units, addItem } = useInventory();
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -84,6 +86,7 @@ function ItemForm({ onDone }: { onDone: () => void }) {
       categoryId,
       type: category.type,
       unitOfMeasure: unitOfMeasure || undefined,
+      entityId: entities[0]?.id ?? '',
     });
     setName('');
     setCategoryId('');

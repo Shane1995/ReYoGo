@@ -5,6 +5,7 @@ import { cn } from '@reyogo/ui';
 export type ItemOption = {
   id: string;
   name: string;
+  entityId?: string;
   categoryName?: string;
   typeLabel?: string;
 };
@@ -13,6 +14,7 @@ type Props = {
   items: ItemOption[];
   value: string;
   onChange: (itemId: string) => void;
+  entityId: string;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
@@ -24,12 +26,14 @@ export function ItemAutocomplete({
   items,
   value,
   onChange,
+  entityId,
   placeholder = 'Search or select item…',
   className,
   disabled,
   inputId,
   onSelectComplete,
 }: Props) {
+  const entityFilteredItems = items.filter((item) => item.entityId === entityId);
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
@@ -37,14 +41,17 @@ export function ItemAutocomplete({
   const [containerId] = useState(() => `item-autocomplete-${window.crypto.randomUUID()}`);
   const listId = `${containerId}-list`;
 
-  const selectedItem = useMemo(() => items.find((i) => i.id === value), [items, value]);
+  const selectedItem = useMemo(
+    () => entityFilteredItems.find((i) => i.id === value),
+    [entityFilteredItems, value],
+  );
 
   const filteredItems = useMemo(() => {
-    const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name));
+    const sorted = [...entityFilteredItems].sort((a, b) => a.name.localeCompare(b.name));
     const q = query.trim().toLowerCase();
     if (!q) return sorted;
     return sorted.filter((i) => i.name.toLowerCase().includes(q));
-  }, [items, query]);
+  }, [entityFilteredItems, query]);
 
   const displayValue = isOpen ? query : (selectedItem?.name ?? '');
 

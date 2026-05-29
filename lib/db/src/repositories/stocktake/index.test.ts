@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { InventoryType } from '@reyogo/types';
 import type { MovementType } from '@reyogo/types';
 import { createTestDb, type DbClient } from '../../__tests__/helpers';
 import { createStocktakeRepo } from '.';
@@ -12,13 +13,14 @@ async function seedItem(db: DbClient, itemId: string) {
     id: 'cat-1',
     accountId: 'default',
     name: 'Food',
-    type: 'food',
+    type: InventoryType.Food,
     createdAt: new Date(),
     updatedAt: new Date(),
   });
   await db.insert(schema.inventoryItems).values({
     id: itemId,
     accountId: 'default',
+    entityId: 'default',
     name: 'Flour',
     categoryId: 'cat-1',
     createdAt: new Date(),
@@ -30,6 +32,7 @@ async function seedMovement(db: DbClient, itemId: string, stockAfter: number) {
   await db.insert(schema.stockMovements).values({
     id: `mv-${Math.random()}`,
     accountId: 'default',
+    entityId: 'default',
     inventoryItemId: itemId,
     movementType: 'IN' as MovementType,
     qty: stockAfter,

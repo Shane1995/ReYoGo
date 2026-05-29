@@ -1,7 +1,8 @@
 import * as XLSX from 'xlsx';
 import { InventoryType } from '@reyogo/types';
+import type { IEntity } from '@reyogo/types';
 
-export type { InventoryType };
+export type { InventoryType, IEntity };
 
 export interface ParsedUnit {
   name: string;
@@ -16,6 +17,8 @@ export interface ParsedItem {
   name: string;
   categoryName: string;
   unit?: string;
+  entityId?: string;
+  entityName?: string;
 }
 
 export interface ParseResult {
@@ -63,13 +66,24 @@ function parseCategoriesSheet(sheet: XLSX.WorkSheet, result: ParseResult) {
       result.errors.push(`Categories row ${i + 2}: missing name`);
       return;
     }
-    const type = (col(row, 'type', 'Type', 'category_type', 'Category Type').toLowerCase() ||
-      InventoryType.Food) as InventoryType;
+    const rawType =
+      col(row, 'type', 'Type', 'category_type', 'Category Type').toLowerCase() ||
+      InventoryType.Food;
+    const type: InventoryType =
+      rawType === InventoryType.Beverage
+        ? InventoryType.Beverage
+        : rawType === InventoryType.NonFood
+          ? InventoryType.NonFood
+          : InventoryType.Food;
     result.categories.push({ name, type });
   });
 }
 
-function parseItemsSheet(sheet: XLSX.WorkSheet, result: ParseResult) {
+function parseItemsSheet(
+  sheet: XLSX.WorkSheet,
+  result: ParseResult,
+  entity: Pick<IEntity, 'id' | 'name'>,
+) {
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
   rows.forEach((row, i) => {
     const name = col(row, 'name', 'Name', 'item', 'Item');
@@ -83,16 +97,20 @@ function parseItemsSheet(sheet: XLSX.WorkSheet, result: ParseResult) {
       return;
     }
     const unit = col(row, 'unit', 'Unit', 'unit_of_measure', 'Unit of Measure') || undefined;
-    result.items.push({ name, categoryName, unit });
+    result.items.push({ name, categoryName, unit, entityId: entity.id, entityName: entity.name });
   });
 }
 
-export function parseFile(file: File): Promise<ParseResult> {
+export function parseFile(file: File, entity: Pick<IEntity, 'id' | 'name'>): Promise<ParseResult> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = e.target?.result as ArrayBuffer;
+        const data = e.target?.result;
+        if (!(data instanceof ArrayBuffer)) {
+          reject(new Error('Unexpected result type'));
+          return;
+        }
         const wb = XLSX.read(data, { type: 'array' });
         const result: ParseResult = { units: [], categories: [], items: [], errors: [] };
 
@@ -101,7 +119,7 @@ export function parseFile(file: File): Promise<ParseResult> {
           const key = name.toLowerCase();
           if (key === 'units' || key === 'unit') parseUnitsSheet(sheet, result);
           else if (key === 'categories' || key === 'category') parseCategoriesSheet(sheet, result);
-          else if (key === 'items' || key === 'item') parseItemsSheet(sheet, result);
+          else if (key === 'items' || key === 'item') parseItemsSheet(sheet, result, entity);
         });
 
         if (
@@ -152,9 +170,9 @@ export function downloadTemplate(): void {
   itemsSheet['!cols'] = [{ wch: 28 }, { wch: 24 }, { wch: 16 }];
   XLSX.utils.book_append_sheet(wb, itemsSheet, 'Items');
 
-  const buf = Array.from(XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as Uint8Array);
-  window.electronAPI.ipcRenderer.invoke('shell:save-file', {
+  const base64: string = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+  window.electronAPI.ipcRenderer.invoke('shell:save-file-base64', {
     filename: 'reyogo-import-template.xlsx',
-    data: buf,
+    base64,
   });
 }

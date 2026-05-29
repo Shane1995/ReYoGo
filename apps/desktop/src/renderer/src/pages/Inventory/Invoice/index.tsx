@@ -31,8 +31,9 @@ export default function InvoicePage() {
     setSupplierId,
     vatMode,
     setVatMode,
-    vatRate,
-    setVatRate,
+    selectedEntity,
+    entityId,
+    handleEntityChange,
     expandedResultLineIds,
     isReused,
     reuseNoticeDismissed,
@@ -75,8 +76,8 @@ export default function InvoicePage() {
         suppliers={suppliers}
         vatMode={vatMode}
         onVatModeChange={setVatMode}
-        vatRate={vatRate}
-        onVatRateChange={setVatRate}
+        entityId={entityId}
+        onEntityChange={handleEntityChange}
         onAddCategory={() => setCategoryModalOpen(true)}
         onAddItem={() => setItemModalOpen(true)}
         isDirty={isDirty}
@@ -115,10 +116,11 @@ export default function InvoicePage() {
                     key={line.id}
                     line={line}
                     vatMode={vatMode}
-                    vatRate={vatRate}
+                    vatRate={selectedEntity?.defaultVatRate ?? 0}
                     isExpanded={expandedResultLineIds.has(line.id)}
                     isLast={i === lines.length - 1}
                     sortedItems={sortedItems}
+                    entityId={entityId}
                     itemMeta={itemMetaMap.get(line.itemId)}
                     onToggleExpand={() => toggleResultRow(line.id)}
                     onUpdate={(updates) => updateLine(line.id, updates)}

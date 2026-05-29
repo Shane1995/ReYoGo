@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button, PageHeader } from '@reyogo/ui';
 import { itemTrendPath } from '@/components/AppRoutes/routePaths';
 import { FilterBar } from '@/components/DataTable';
+import { useEntities } from '@/Context/EntityContext';
+import { EntityFilter } from '@/components/EntityFilter';
 import { useInventory } from './Context/InventoryContext';
 import { ItemsTable } from './components/ItemsTable';
 import { AddInventoryModal } from './components/AddInventoryModal';
@@ -14,15 +16,21 @@ import { useItemFilters } from './components/ItemsTable/hooks/useItemFilters';
 import type { InventoryItem } from './types';
 
 export default function InventoryIndex() {
-  const { categories, items, units, updateItem, deleteItemFromBackend } = useInventory();
+  const { categories, items, units, updateItem, archiveItemInBackend } = useInventory();
+  const { entities } = useEntities();
 
   const navigate = useNavigate();
   const costMap = useInventoryCosts();
   const stockMap = useItemStock();
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [entityFilter, setEntityFilter] = useState<string | null>(null);
+
+  const entityFilteredItems = entityFilter
+    ? items.filter((item) => item.entityId === entityFilter)
+    : items;
 
   const { filterValues, filteredItems, filters, allTypes, handleFilterChange, clearFilters } =
-    useItemFilters({ items, categories, costMap, stockMap });
+    useItemFilters({ items: entityFilteredItems, categories, costMap, stockMap });
 
   const handleViewInsights = useCallback(
     (itemId: string) => navigate(itemTrendPath(itemId)),
@@ -45,24 +53,28 @@ export default function InventoryIndex() {
           </Button>
         }
       >
-        <FilterBar
-          filters={filters}
-          values={filterValues}
-          onChange={handleFilterChange}
-          onClearAll={clearFilters}
-        />
+        <div className="space-y-2">
+          <EntityFilter entities={entities} selected={entityFilter} onChange={setEntityFilter} />
+          <FilterBar
+            filters={filters}
+            values={filterValues}
+            onChange={handleFilterChange}
+            onClearAll={clearFilters}
+          />
+        </div>
       </PageHeader>
 
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-4 my-4">
           <ItemsTable
-            items={items}
+            items={entityFilteredItems}
             filteredItems={filteredItems}
             allTypes={allTypes}
             categories={categories}
             units={units}
+            entityFilter={entityFilter}
             onUpdate={handleUpdate}
-            onDelete={deleteItemFromBackend}
+            onDelete={archiveItemInBackend}
             onViewInsights={handleViewInsights}
           />
         </div>

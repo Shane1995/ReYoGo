@@ -4,6 +4,7 @@ export const accounts = sqliteTable('accounts', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   isCurrent: integer('is_current', { mode: 'boolean' }).notNull().default(false),
+  setupComplete: integer('setup_complete', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });

@@ -13,6 +13,15 @@ vi.mock('@/services/app', () => ({
   },
 }));
 
+vi.mock('@/Context/EntityContext', () => ({
+  useEntities: () => ({
+    group: { id: 'g1', name: 'Test Group' },
+    entities: [],
+    refetchEntities: vi.fn(),
+  }),
+  EntityProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 function renderSidebar() {
   return render(
     <AppConfigProvider>

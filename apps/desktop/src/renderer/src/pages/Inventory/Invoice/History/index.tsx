@@ -1,8 +1,10 @@
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, PageHeader, DateRangePicker, cn } from '@reyogo/ui';
 import { InvoiceStatus } from '@reyogo/types';
 import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
+import { useEntities } from '@/Context/EntityContext';
+import { EntityFilter } from '@/components/EntityFilter';
 import { ReceiptIcon, ChevronDownIcon, ChevronRightIcon, SearchIcon, XIcon } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { EditPanel } from './components/EditPanel';
@@ -18,7 +20,7 @@ import { formatMoney } from '../utils/formatMoney';
 import { invoiceTotals } from '../utils/invoiceTotals';
 import type { ICapturedInvoice } from '@reyogo/types';
 
-const COLUMN_COUNT = 9;
+const COLUMN_COUNT = 10;
 
 const fieldLabel =
   'text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 mb-1 block';
@@ -53,8 +55,15 @@ export default function InvoiceHistoryPage() {
     postingId,
   } = useInvoiceHistory();
 
-  const drafts = invoices.filter((inv) => inv.status === InvoiceStatus.Draft);
-  const posted = invoices.filter((inv) => inv.status !== InvoiceStatus.Draft);
+  const { entities } = useEntities();
+  const [entityFilter, setEntityFilter] = useState<string | null>(null);
+
+  const visibleInvoices = entityFilter
+    ? invoices.filter((inv) => inv.entityId === entityFilter)
+    : invoices;
+
+  const drafts = visibleInvoices.filter((inv) => inv.status === InvoiceStatus.Draft);
+  const posted = visibleInvoices.filter((inv) => inv.status !== InvoiceStatus.Draft);
 
   const renderRow = (inv: ICapturedInvoice) => {
     const mode = rowMode[inv.id]?.kind ?? RowModeKind.View;
@@ -102,15 +111,9 @@ export default function InvoiceHistoryPage() {
               />
             )}
           </TableCell>
-          <TableCell className="font-medium">
-            <span className="text-sm">
-              {inv.invoiceDate ? formatDate(inv.invoiceDate) : formatDate(inv.createdAt)}
-            </span>
-            {inv.invoiceNumber && (
-              <p className="text-[11px] font-mono text-muted-foreground/60 mt-0.5">
-                {inv.invoiceNumber}
-              </p>
-            )}
+          <TableCell className="font-mono text-sm">{inv.invoiceNumber}</TableCell>
+          <TableCell className="text-sm text-muted-foreground">
+            {inv.invoiceDate ? formatDate(inv.invoiceDate) : formatDate(inv.createdAt)}
             {inv.supplierId && suppliers.length > 0 && (
               <p className="text-[11px] text-muted-foreground/50 mt-0.5">
                 {suppliers.find((s) => s.id === inv.supplierId)?.name}
@@ -216,6 +219,7 @@ export default function InvoiceHistoryPage() {
         }
       >
         <div className="space-y-3">
+          <EntityFilter entities={entities} selected={entityFilter} onChange={setEntityFilter} />
           <div className="relative">
             <SearchIcon className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/40 pointer-events-none" />
             <input
@@ -291,7 +295,7 @@ export default function InvoiceHistoryPage() {
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {loading ? (
           <p className="text-muted-foreground text-sm">Loading…</p>
-        ) : invoices.length === 0 ? (
+        ) : visibleInvoices.length === 0 ? (
           <div className="rounded-lg border border-[var(--nav-border)] bg-muted/10 p-10 text-center text-sm text-muted-foreground/60">
             {hasFilters ? (
               <p>No invoices match the current filters.</p>
@@ -310,6 +314,9 @@ export default function InvoiceHistoryPage() {
               <TableHeader>
                 <TableRow className="bg-muted/30 hover:bg-muted/30">
                   <TableHead className="w-8 p-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70" />
+                  <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70">
+                    Invoice #
+                  </TableHead>
                   <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70">
                     Date
                   </TableHead>

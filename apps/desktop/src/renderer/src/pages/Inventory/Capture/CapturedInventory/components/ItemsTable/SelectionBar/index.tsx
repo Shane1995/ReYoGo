@@ -32,11 +32,11 @@ export function SelectionBar({
           <Button
             type="button"
             size="sm"
-            variant="destructive"
-            className="h-7 text-xs"
+            variant="outline"
+            className="h-7 text-xs border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:text-amber-600"
             onClick={onConfirmDelete}
           >
-            Delete {selectedCount}
+            Archive {selectedCount}
           </Button>
           <button
             type="button"
@@ -63,11 +63,11 @@ export function SelectionBar({
             type="button"
             size="sm"
             variant="ghost"
-            className="h-7 gap-1.5 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            className="h-7 gap-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
             onClick={onRequestDelete}
           >
             <Trash2Icon className="size-3" />
-            Delete
+            Archive
           </Button>
           <button
             type="button"

@@ -1,4 +1,5 @@
 export { AppIPC } from './app';
+export { EntitiesIPC } from './entities';
 export { InventoryIPC } from './inventory';
 export { InvoicesIPC } from './invoices';
 export { SetupIPC } from './setup';

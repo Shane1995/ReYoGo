@@ -13,6 +13,7 @@ export const StockRoutes = {
   AddItems: r['stock.addItems'],
   Categories: r['stock.categories'],
   Analysis: r['stock.analysis'],
+  Manage: r['stock.manage'],
 } as const;
 
 export function itemTrendPath(itemId: string) {
@@ -49,6 +50,7 @@ export const StockRouteSegments = {
   addItems: lastSeg(r['stock.addItems']),
   categories: lastSeg(r['stock.categories']),
   analysis: lastSeg(r['stock.analysis']),
+  manage: lastSeg(r['stock.manage']),
 } as const;
 
 export const InvoiceRouteSegments = {
@@ -64,4 +66,12 @@ export const CostingRouteSegments = {
 
 export const SuppliersRouteSegments = {
   root: lastSeg(r.suppliers),
+} as const;
+
+export const SettingsRoutes = {
+  Base: r.settings,
+} as const;
+
+export const SettingsRouteSegments = {
+  root: lastSeg(r.settings),
 } as const;

@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { TypeValue, InventoryCategory, InventoryItem } from '../../types';
 import { AddCategoryModal } from '../AddCategoryModal';
 import { cn } from '@reyogo/ui';
+import { useEntities } from '@/Context/EntityContext';
 
 const inputClass = cn(
   'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm',
@@ -40,6 +41,7 @@ export function AddItemsSidebar({
   onAddCategory,
   onClose,
 }: AddItemsSidebarProps) {
+  const { entities } = useEntities();
   const [rows, setRows] = useState<PendingRow[]>([createEmptyRow()]);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [lastAddedRowId, setLastAddedRowId] = useState<string | null>(null);
@@ -100,6 +102,7 @@ export function AddItemsSidebar({
         categoryId: r.categoryId,
         type: r.type,
         unitOfMeasure: r.unitOfMeasure || undefined,
+        entityId: entities[0]?.id ?? '',
       });
     });
     setRows([createEmptyRow()]);

@@ -16,7 +16,7 @@ export function FormatGuide() {
           },
           {
             sheet: 'Categories',
-            cols: [{ name: 'name' }, { name: 'type', note: 'food · drink · non-perishable' }],
+            cols: [{ name: 'name' }, { name: 'type', note: 'food · beverage · non-food' }],
           },
           {
             sheet: 'Items',
