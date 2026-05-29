@@ -31,7 +31,7 @@ export default function InvoicePage() {
     setSupplierId,
     vatMode,
     setVatMode,
-    vatRate,
+    selectedEntity,
     entityId,
     handleEntityChange,
     expandedResultLineIds,
@@ -116,7 +116,7 @@ export default function InvoicePage() {
                     key={line.id}
                     line={line}
                     vatMode={vatMode}
-                    vatRate={vatRate}
+                    vatRate={selectedEntity?.defaultVatRate ?? 0}
                     isExpanded={expandedResultLineIds.has(line.id)}
                     isLast={i === lines.length - 1}
                     sortedItems={sortedItems}

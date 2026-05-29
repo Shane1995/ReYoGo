@@ -6,7 +6,6 @@ export type DraftState = {
   invoiceNumber: string;
   invoiceDate: string;
   vatMode: VatMode;
-  vatRate: number;
 };
 
 const DRAFT_KEY = 'reyogo:invoice-draft';
@@ -34,7 +33,6 @@ export function useDraftPersistence(
   invoiceNumber: string,
   invoiceDate: string,
   vatMode: VatMode,
-  vatRate: number,
   isReused: boolean,
 ): { clearDraft: () => void } {
   const save = useCallback(() => {
@@ -42,11 +40,11 @@ export function useDraftPersistence(
     const hasMeaningfulContent =
       lines.some((l) => l.itemId) || !!invoiceNumber.trim() || !!invoiceDate;
     if (hasMeaningfulContent) {
-      saveDraft({ lines, invoiceNumber, invoiceDate, vatMode, vatRate });
+      saveDraft({ lines, invoiceNumber, invoiceDate, vatMode });
     } else {
       clearDraft();
     }
-  }, [lines, invoiceNumber, invoiceDate, vatMode, vatRate, isReused]);
+  }, [lines, invoiceNumber, invoiceDate, vatMode, isReused]);
 
   useEffect(() => {
     save();

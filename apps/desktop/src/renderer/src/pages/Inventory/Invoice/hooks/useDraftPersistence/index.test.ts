@@ -16,7 +16,6 @@ describe('loadDraft', () => {
       invoiceNumber: 'INV-001',
       invoiceDate: '2026-01-01',
       vatMode: 'exclusive' as const,
-      vatRate: 15,
     };
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
     expect(loadDraft()).toEqual(draft);
@@ -35,7 +34,6 @@ describe('saveDraft', () => {
       invoiceNumber: '',
       invoiceDate: '',
       vatMode: 'exclusive' as const,
-      vatRate: 15,
     };
     saveDraft(draft);
     expect(JSON.parse(localStorage.getItem(DRAFT_KEY)!)).toEqual(draft);

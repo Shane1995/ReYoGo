@@ -51,23 +51,16 @@ export function useInvoiceForm() {
     setVatModeState(mode);
   }, []);
 
-  const vatRate = entities.find((e) => e.id === entityId)?.defaultVatRate ?? 15;
+  const selectedEntity = entities.find((e) => e.id === entityId) ?? null;
 
-  const { clearDraft } = useDraftPersistence(
-    lines,
-    invoiceNumber,
-    invoiceDate,
-    vatMode,
-    vatRate,
-    isReused,
-  );
+  const { clearDraft } = useDraftPersistence(lines, invoiceNumber, invoiceDate, vatMode, isReused);
 
   const { invoiceSummary, validLines, itemsWithCategory, itemMetaMap } = useInvoiceSummary(
     lines,
     items,
     categories,
     vatMode,
-    vatRate,
+    selectedEntity?.defaultVatRate ?? 0,
   );
 
   const canSave =
@@ -112,12 +105,17 @@ export function useInvoiceForm() {
   );
 
   const handleSave = useCallback(async () => {
+    if (!selectedEntity) {
+      setSaveError('Select an entity before saving.');
+      return;
+    }
     if (!canSave) {
       setSaveError('Complete all rows before saving — each row needs an item and quantity.');
       return;
     }
     setSaveError(null);
     setIsSaving(true);
+    const vatRate = selectedEntity.defaultVatRate;
     try {
       await invoiceService.saveAndPostInvoice({
         id: window.crypto.randomUUID(),
@@ -147,6 +145,7 @@ export function useInvoiceForm() {
       setIsSaving(false);
     }
   }, [
+    selectedEntity,
     canSave,
     validLines,
     entityId,
@@ -154,18 +153,22 @@ export function useInvoiceForm() {
     invoiceDate,
     supplierId,
     vatMode,
-    vatRate,
     itemMetaMap,
     clearForm,
   ]);
 
   const handleSaveDraft = useCallback(async () => {
+    if (!selectedEntity) {
+      setSaveError('Select an entity before saving.');
+      return;
+    }
     if (!canSave) {
       setSaveError('Complete all rows before saving — each row needs an item and quantity.');
       return;
     }
     setSaveError(null);
     setIsSavingDraft(true);
+    const vatRate = selectedEntity.defaultVatRate;
     try {
       await invoiceService.saveInvoice({
         id: window.crypto.randomUUID(),
@@ -195,6 +198,7 @@ export function useInvoiceForm() {
       setIsSavingDraft(false);
     }
   }, [
+    selectedEntity,
     canSave,
     validLines,
     entityId,
@@ -202,7 +206,6 @@ export function useInvoiceForm() {
     invoiceDate,
     supplierId,
     vatMode,
-    vatRate,
     itemMetaMap,
     clearForm,
   ]);
@@ -221,7 +224,7 @@ export function useInvoiceForm() {
     setSupplierId,
     vatMode,
     setVatMode,
-    vatRate,
+    selectedEntity,
     entityId,
     handleEntityChange,
     expandedResultLineIds,
