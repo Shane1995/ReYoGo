@@ -1,6 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Category, InventoryItem, UnitOfMeasure } from '@reyogo/types';
-import type { TypedInvoke } from '@shared/types/ipc/invoke-map';
 import { Button, cn } from '@reyogo/ui';
 import { SectionHeader } from '../SectionHeader';
 
@@ -13,7 +11,7 @@ type ManagedRow = {
   archived: boolean;
 };
 
-const invoke = window.electronAPI.ipcRenderer.invoke as TypedInvoke;
+const ipcInvoke = window.electronAPI.ipcRenderer.invoke;
 
 function UsageBadge({ count }: { count: number }) {
   return (
@@ -30,19 +28,21 @@ function UsageBadge({ count }: { count: number }) {
 
 function ManageTable({
   rows,
+  showArchived,
+  onToggleArchived,
   onArchive,
   onRestore,
   onDelete,
 }: {
   rows: ManagedRow[];
+  showArchived: boolean;
+  onToggleArchived: () => void;
   onArchive: (id: string) => void;
   onRestore: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
   const active = rows.filter((r) => !r.archived);
   const archived = rows.filter((r) => r.archived);
-  const [showArchived, setShowArchived] = useState(false);
-
   const visible = showArchived ? [...active, ...archived] : active;
 
   if (visible.length === 0 && !showArchived) {
@@ -52,7 +52,7 @@ function ManageTable({
         {archived.length > 0 && (
           <button
             type="button"
-            onClick={() => setShowArchived(true)}
+            onClick={onToggleArchived}
             className="ml-2 text-[var(--nav-active-border)] hover:underline"
           >
             Show {archived.length} archived
@@ -68,7 +68,7 @@ function ManageTable({
         <div className="flex justify-end pb-1">
           <button
             type="button"
-            onClick={() => setShowArchived((v) => !v)}
+            onClick={onToggleArchived}
             className="text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             {showArchived ? 'Hide archived' : `Show ${archived.length} archived`}
@@ -132,6 +132,7 @@ function ManageTable({
 
 export function ManageSection() {
   const [tab, setTab] = useState<Tab>('items');
+  const [showArchived, setShowArchived] = useState(false);
   const [itemRows, setItemRows] = useState<ManagedRow[]>([]);
   const [catRows, setCatRows] = useState<ManagedRow[]>([]);
   const [unitRows, setUnitRows] = useState<ManagedRow[]>([]);
@@ -139,63 +140,74 @@ export function ManageSection() {
 
   const loadItems = useCallback(async () => {
     setLoading(true);
-    const [active, archived] = await Promise.all([
-      invoke('inventory:get-items'),
-      invoke('inventory:get-archived-items'),
-    ]);
-    const all = [...active, ...archived] as InventoryItem[];
-    const counts = await Promise.all(
-      all.map((i) => invoke('inventory:get-item-usage-count', i.id)),
-    );
-    setItemRows(
-      all.map((item, idx) => ({
-        id: item.id,
-        name: item.name,
-        usageCount: counts[idx] ?? 0,
-        archived: idx >= active.length,
-      })),
-    );
-    setLoading(false);
+    try {
+      const [active, archived] = await Promise.all([
+        ipcInvoke('inventory:get-items'),
+        ipcInvoke('inventory:get-archived-items'),
+      ]);
+      const all = [...active, ...archived];
+      const counts = await Promise.all(
+        all.map((i) => ipcInvoke('inventory:get-item-usage-count', i.id)),
+      );
+      setItemRows(
+        all.map((item, idx) => ({
+          id: item.id,
+          name: item.name,
+          usageCount: counts[idx] ?? 0,
+          archived: idx >= active.length,
+        })),
+      );
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const loadCategories = useCallback(async () => {
     setLoading(true);
-    const [active, archived] = await Promise.all([
-      invoke('inventory:get-categories'),
-      invoke('inventory:get-archived-categories'),
-    ]);
-    const all = [...active, ...archived] as Category[];
-    const counts = await Promise.all(
-      all.map((c) => invoke('inventory:get-category-usage-count', c.id)),
-    );
-    setCatRows(
-      all.map((cat, idx) => ({
-        id: cat.id,
-        name: cat.name,
-        usageCount: counts[idx] ?? 0,
-        archived: idx >= active.length,
-      })),
-    );
-    setLoading(false);
+    try {
+      const [active, archived] = await Promise.all([
+        ipcInvoke('inventory:get-categories'),
+        ipcInvoke('inventory:get-archived-categories'),
+      ]);
+      const all = [...active, ...archived];
+      const counts = await Promise.all(
+        all.map((c) => ipcInvoke('inventory:get-category-usage-count', c.id)),
+      );
+      setCatRows(
+        all.map((cat, idx) => ({
+          id: cat.id,
+          name: cat.name,
+          usageCount: counts[idx] ?? 0,
+          archived: idx >= active.length,
+        })),
+      );
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const loadUnits = useCallback(async () => {
     setLoading(true);
-    const [active, archived] = await Promise.all([
-      invoke('setup:get-units'),
-      invoke('setup:get-archived-units'),
-    ]);
-    const all = [...active, ...archived] as UnitOfMeasure[];
-    const counts = await Promise.all(all.map((u) => invoke('setup:get-unit-usage-count', u.id)));
-    setUnitRows(
-      all.map((unit, idx) => ({
-        id: unit.id,
-        name: unit.name,
-        usageCount: counts[idx] ?? 0,
-        archived: idx >= active.length,
-      })),
-    );
-    setLoading(false);
+    try {
+      const [active, archived] = await Promise.all([
+        ipcInvoke('setup:get-units'),
+        ipcInvoke('setup:get-archived-units'),
+      ]);
+      const all = [...active, ...archived];
+      const counts = await Promise.all(
+        all.map((u) => ipcInvoke('setup:get-unit-usage-count', u.id)),
+      );
+      setUnitRows(
+        all.map((unit, idx) => ({
+          id: unit.id,
+          name: unit.name,
+          usageCount: counts[idx] ?? 0,
+          archived: idx >= active.length,
+        })),
+      );
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -212,40 +224,40 @@ export function ManageSection() {
 
   const rows = tab === 'items' ? itemRows : tab === 'categories' ? catRows : unitRows;
 
+  const reload = useCallback(() => {
+    if (tab === 'items') loadItems();
+    else if (tab === 'categories') loadCategories();
+    else loadUnits();
+  }, [tab, loadItems, loadCategories, loadUnits]);
+
   const handleArchive = useCallback(
     async (id: string) => {
-      if (tab === 'items') await invoke('inventory:archive-item', id);
-      else if (tab === 'categories') await invoke('inventory:archive-category', id);
-      else await invoke('setup:archive-unit', id);
-      if (tab === 'items') loadItems();
-      else if (tab === 'categories') loadCategories();
-      else loadUnits();
+      if (tab === 'items') await ipcInvoke('inventory:archive-item', id);
+      else if (tab === 'categories') await ipcInvoke('inventory:archive-category', id);
+      else await ipcInvoke('setup:archive-unit', id);
+      reload();
     },
-    [tab, loadItems, loadCategories, loadUnits],
+    [tab, reload],
   );
 
   const handleRestore = useCallback(
     async (id: string) => {
-      if (tab === 'items') await invoke('inventory:restore-item', id);
-      else if (tab === 'categories') await invoke('inventory:restore-category', id);
-      else await invoke('setup:restore-unit', id);
-      if (tab === 'items') loadItems();
-      else if (tab === 'categories') loadCategories();
-      else loadUnits();
+      if (tab === 'items') await ipcInvoke('inventory:restore-item', id);
+      else if (tab === 'categories') await ipcInvoke('inventory:restore-category', id);
+      else await ipcInvoke('setup:restore-unit', id);
+      reload();
     },
-    [tab, loadItems, loadCategories, loadUnits],
+    [tab, reload],
   );
 
   const handleDelete = useCallback(
     async (id: string) => {
-      if (tab === 'items') await invoke('inventory:hard-delete-item', id);
-      else if (tab === 'categories') await invoke('inventory:hard-delete-category', id);
-      else await invoke('setup:hard-delete-unit', id);
-      if (tab === 'items') loadItems();
-      else if (tab === 'categories') loadCategories();
-      else loadUnits();
+      if (tab === 'items') await ipcInvoke('inventory:hard-delete-item', id);
+      else if (tab === 'categories') await ipcInvoke('inventory:hard-delete-category', id);
+      else await ipcInvoke('setup:hard-delete-unit', id);
+      reload();
     },
-    [tab, loadItems, loadCategories, loadUnits],
+    [tab, reload],
   );
 
   return (
@@ -278,6 +290,8 @@ export function ManageSection() {
       ) : (
         <ManageTable
           rows={rows}
+          showArchived={showArchived}
+          onToggleArchived={() => setShowArchived((v) => !v)}
           onArchive={handleArchive}
           onRestore={handleRestore}
           onDelete={handleDelete}
