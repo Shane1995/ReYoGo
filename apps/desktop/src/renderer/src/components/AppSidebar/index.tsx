@@ -5,6 +5,7 @@ import { cn, navLinkClass } from '@reyogo/ui';
 import { ChevronRightIcon, Settings as SettingsIcon } from 'lucide-react';
 import { useNavItems } from '@/config/nav';
 import { SettingsRoutes } from '@/components/AppRoutes/routePaths';
+import { useEntities } from '@/Context/EntityContext';
 
 const EXPANDED_W = 224;
 const COLLAPSED_W = 56;
@@ -18,6 +19,7 @@ const labelAnim = {
 
 export function AppSidebar() {
   const { primary } = useNavItems();
+  const { group } = useEntities();
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem('sidebar-primary-collapsed') === 'true',
   );
@@ -64,9 +66,11 @@ export function AppSidebar() {
               <span className="whitespace-nowrap text-sm font-semibold leading-none text-white">
                 ReYoGo
               </span>
-              <span className="whitespace-nowrap text-xs text-[rgba(255,255,255,0.3)]">
-                Pub &amp; Restaurant
-              </span>
+              {group?.name && (
+                <span className="whitespace-nowrap text-xs text-[rgba(255,255,255,0.3)]">
+                  {group.name}
+                </span>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
