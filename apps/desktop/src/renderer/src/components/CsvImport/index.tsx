@@ -42,25 +42,28 @@ export function CsvImportButton({
 
   const openPicker = useCallback(() => fileRef.current?.click(), []);
 
-  const handleFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = '';
-    setOpen(true);
-    setPhase({ kind: 'parsing' });
-    try {
-      const parsed = await parseFile(file, entity);
-      setPhase({ kind: 'loading-db' });
-      const existing = await fetchExisting();
-      const review = enrichParseResult(parsed, existing);
-      setPhase({ kind: 'review', parsed, review });
-    } catch {
-      setPhase({
-        kind: 'error',
-        message: 'Could not read the file. Make sure it is a valid .xlsx or .csv file.',
-      });
-    }
-  }, []);
+  const handleFile = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      e.target.value = '';
+      setOpen(true);
+      setPhase({ kind: 'parsing' });
+      try {
+        const parsed = await parseFile(file, entity);
+        setPhase({ kind: 'loading-db' });
+        const existing = await fetchExisting();
+        const review = enrichParseResult(parsed, existing);
+        setPhase({ kind: 'review', parsed, review });
+      } catch {
+        setPhase({
+          kind: 'error',
+          message: 'Could not read the file. Make sure it is a valid .xlsx or .csv file.',
+        });
+      }
+    },
+    [entity],
+  );
 
   const handleCommit = useCallback(
     (finalReview: ReviewResult) => {
