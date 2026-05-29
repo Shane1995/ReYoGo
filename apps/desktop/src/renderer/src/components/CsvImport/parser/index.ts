@@ -66,8 +66,15 @@ function parseCategoriesSheet(sheet: XLSX.WorkSheet, result: ParseResult) {
       result.errors.push(`Categories row ${i + 2}: missing name`);
       return;
     }
-    const type = (col(row, 'type', 'Type', 'category_type', 'Category Type').toLowerCase() ||
-      InventoryType.Food) as InventoryType;
+    const rawType =
+      col(row, 'type', 'Type', 'category_type', 'Category Type').toLowerCase() ||
+      InventoryType.Food;
+    const type: InventoryType =
+      rawType === InventoryType.Beverage
+        ? InventoryType.Beverage
+        : rawType === InventoryType.NonFood
+          ? InventoryType.NonFood
+          : InventoryType.Food;
     result.categories.push({ name, type });
   });
 }
@@ -109,7 +116,11 @@ export function parseFile(file: File, entities: IEntity[]): Promise<ParseResult>
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = e.target?.result as ArrayBuffer;
+        const data = e.target?.result;
+        if (!(data instanceof ArrayBuffer)) {
+          reject(new Error('Unexpected result type'));
+          return;
+        }
         const wb = XLSX.read(data, { type: 'array' });
         const result: ParseResult = { units: [], categories: [], items: [], errors: [] };
 
@@ -169,7 +180,9 @@ export function downloadTemplate(): void {
   itemsSheet['!cols'] = [{ wch: 28 }, { wch: 24 }, { wch: 16 }, { wch: 20 }];
   XLSX.utils.book_append_sheet(wb, itemsSheet, 'Items');
 
-  const buf = Array.from(XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as Uint8Array);
+  const written: unknown = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  if (!(written instanceof Uint8Array)) throw new Error('XLSX write returned unexpected type');
+  const buf = Array.from(written);
   window.electronAPI.ipcRenderer.invoke('shell:save-file', {
     filename: 'reyogo-import-template.xlsx',
     data: buf,
