@@ -1,6 +1,7 @@
 import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { MovementType, ReferenceType } from '@reyogo/types';
 import { accounts } from '../accounts';
+import { entities } from '../entities';
 import { inventoryItems } from '../inventoryItems';
 
 export const stockMovements = sqliteTable(
@@ -10,6 +11,9 @@ export const stockMovements = sqliteTable(
     accountId: text('account_id')
       .notNull()
       .references(() => accounts.id, { onDelete: 'cascade' }),
+    entityId: text('entity_id')
+      .notNull()
+      .references(() => entities.id, { onDelete: 'restrict' }),
     inventoryItemId: text('inventory_item_id')
       .notNull()
       .references(() => inventoryItems.id, { onDelete: 'restrict' }),
@@ -26,6 +30,7 @@ export const stockMovements = sqliteTable(
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   },
   (t) => ({
+    stockMovementsByEntity: index('stock_movements_entity_idx').on(t.entityId),
     stockMovementsByItemTime: index('stock_movements_item_time_idx').on(
       t.inventoryItemId,
       t.occurredAt,

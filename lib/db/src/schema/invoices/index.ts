@@ -1,6 +1,7 @@
 import { check, index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 import { accounts } from '../accounts';
+import { entities } from '../entities';
 import { suppliers } from '../suppliers';
 
 export const invoices = sqliteTable(
@@ -10,6 +11,9 @@ export const invoices = sqliteTable(
     accountId: text('account_id')
       .notNull()
       .references(() => accounts.id, { onDelete: 'cascade' }),
+    entityId: text('entity_id')
+      .notNull()
+      .references(() => entities.id, { onDelete: 'restrict' }),
     supplierId: text('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
     invoiceNumber: text('invoice_number'),
     invoiceDate: integer('invoice_date', { mode: 'timestamp' }),
@@ -24,6 +28,7 @@ export const invoices = sqliteTable(
   },
   (t) => ({
     invoicesBySupplier: index('invoices_supplier_idx').on(t.supplierId),
+    invoicesByEntity: index('invoices_entity_idx').on(t.entityId),
     statusCheck: check('invoices_status_check', sql`${t.status} IN ('DRAFT', 'POSTED')`),
   }),
 );

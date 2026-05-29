@@ -85,6 +85,7 @@ export function createInventoryRepo(db: DbClient) {
         .values({
           id: item.id,
           accountId: 'default',
+          entityId: 'default',
           name: item.name,
           categoryId: item.categoryId,
           unitOfMeasureId: item.unitOfMeasureId ?? null,

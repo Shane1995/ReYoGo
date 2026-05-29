@@ -19,6 +19,7 @@ async function seedItem(db: DbClient, itemId: string) {
   await db.insert(schema.inventoryItems).values({
     id: itemId,
     accountId: 'default',
+    entityId: 'default',
     name: 'Flour',
     categoryId: 'cat-1',
     createdAt: new Date(),
@@ -30,6 +31,7 @@ async function seedMovement(db: DbClient, itemId: string, stockAfter: number) {
   await db.insert(schema.stockMovements).values({
     id: `mv-${Math.random()}`,
     accountId: 'default',
+    entityId: 'default',
     inventoryItemId: itemId,
     movementType: 'IN' as MovementType,
     qty: stockAfter,
