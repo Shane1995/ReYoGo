@@ -155,3 +155,96 @@ describe('createInventoryRepo', () => {
     });
   });
 });
+
+describe('archiveItem / restoreItem / hardDeleteItem', () => {
+  beforeEach(async () => {
+    await repo.upsertCategory({ id: 'cat-1', name: 'Food', type: InventoryType.Food });
+    await repo.upsertItem({
+      id: 'item-1',
+      entityId: 'default',
+      name: 'Chips',
+      categoryId: 'cat-1',
+      unitOfMeasureId: null,
+      sku: null,
+      reorderPoint: null,
+      reorderQty: null,
+    });
+  });
+
+  it('archiveItem sets archived_at and item disappears from getItems', async () => {
+    await repo.archiveItem('item-1');
+    const items = await repo.getItems();
+    expect(items.find((i) => i.id === 'item-1')).toBeUndefined();
+  });
+
+  it('restoreItem clears archived_at and item reappears in getItems', async () => {
+    await repo.archiveItem('item-1');
+    await repo.restoreItem('item-1');
+    const items = await repo.getItems();
+    expect(items.find((i) => i.id === 'item-1')).toBeDefined();
+  });
+
+  it('getArchivedItems returns only archived items', async () => {
+    await repo.archiveItem('item-1');
+    const archived = await repo.getArchivedItems();
+    expect(archived.map((i) => i.id)).toContain('item-1');
+  });
+
+  it('hardDeleteItem removes item with zero usage', async () => {
+    await repo.hardDeleteItem('item-1');
+    const rows = await db.select().from(schema.inventoryItems);
+    expect(rows).toHaveLength(0);
+  });
+
+  it('getItemUsageCount returns 0 for unused item', async () => {
+    expect(await repo.getItemUsageCount('item-1')).toBe(0);
+  });
+});
+
+describe('archiveCategory / restoreCategory / hardDeleteCategory', () => {
+  beforeEach(async () => {
+    await repo.upsertCategory({ id: 'cat-1', name: 'Food', type: InventoryType.Food });
+  });
+
+  it('archiveCategory sets archived_at and category disappears from getCategories', async () => {
+    await repo.archiveCategory('cat-1');
+    const cats = await repo.getCategories();
+    expect(cats.find((c) => c.id === 'cat-1')).toBeUndefined();
+  });
+
+  it('restoreCategory clears archived_at', async () => {
+    await repo.archiveCategory('cat-1');
+    await repo.restoreCategory('cat-1');
+    const cats = await repo.getCategories();
+    expect(cats.find((c) => c.id === 'cat-1')).toBeDefined();
+  });
+
+  it('getArchivedCategories returns only archived', async () => {
+    await repo.archiveCategory('cat-1');
+    const archived = await repo.getArchivedCategories();
+    expect(archived.map((c) => c.id)).toContain('cat-1');
+  });
+
+  it('hardDeleteCategory removes category with zero usage', async () => {
+    await repo.hardDeleteCategory('cat-1');
+    expect(await db.select().from(schema.inventoryCategories)).toHaveLength(0);
+  });
+
+  it('getCategoryUsageCount returns 0 for empty category', async () => {
+    expect(await repo.getCategoryUsageCount('cat-1')).toBe(0);
+  });
+
+  it('getCategoryUsageCount counts assigned items', async () => {
+    await repo.upsertItem({
+      id: 'item-1',
+      entityId: 'default',
+      name: 'Chips',
+      categoryId: 'cat-1',
+      unitOfMeasureId: null,
+      sku: null,
+      reorderPoint: null,
+      reorderQty: null,
+    });
+    expect(await repo.getCategoryUsageCount('cat-1')).toBe(1);
+  });
+});
