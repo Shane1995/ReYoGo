@@ -18,6 +18,7 @@ export interface RouteConfig {
   'costing.priceVariance': string;
   'costing.costReport': string;
   suppliers: string;
+  settings: string;
   [key: string]: string;
 }
 
@@ -65,6 +66,7 @@ export const appConfig: AppConfig = {
     'costing.priceVariance': '/costing/price-variance',
     'costing.costReport': '/costing/cost-report',
     suppliers: '/suppliers',
+    settings: '/settings',
   },
   nav: {
     primary: [

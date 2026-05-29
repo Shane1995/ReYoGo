@@ -17,12 +17,14 @@ import PriceVariancePage from '@/pages/Inventory/Costing/PriceVariance';
 import CostReportPage from '@/pages/Inventory/Costing/CostReport';
 import DashboardPage from '@/pages/Dashboard';
 import SuppliersPage from '@/pages/Suppliers';
+import SettingsPage from '@/pages/Settings';
 import {
   UserRoutes,
   StockRouteSegments,
   InvoiceRouteSegments,
   CostingRouteSegments,
   SuppliersRouteSegments,
+  SettingsRouteSegments,
 } from './routePaths';
 
 export {
@@ -30,11 +32,13 @@ export {
   InvoiceRoutes,
   CostingRoutes,
   SuppliersRoutes,
+  SettingsRoutes,
   UserRoutes,
   StockRouteSegments,
   InvoiceRouteSegments,
   CostingRouteSegments,
   SuppliersRouteSegments,
+  SettingsRouteSegments,
   // Backward-compat aliases
   AnalysisRoutes,
   ProductRoutes,
@@ -70,6 +74,7 @@ export function AppRoutesComponent() {
         </Route>
 
         <Route path={SuppliersRouteSegments.root} element={<SuppliersPage />} />
+        <Route path={SettingsRouteSegments.root} element={<SettingsPage />} />
       </Route>
     </Routes>
   );

@@ -65,3 +65,11 @@ export const CostingRouteSegments = {
 export const SuppliersRouteSegments = {
   root: lastSeg(r.suppliers),
 } as const;
+
+export const SettingsRoutes = {
+  Base: r.settings,
+} as const;
+
+export const SettingsRouteSegments = {
+  root: lastSeg(r.settings),
+} as const;
