@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import type { IBusinessGroup, IEntity, VatMode } from '@reyogo/types';
 import type { DbClient } from '../../client';
@@ -116,7 +117,7 @@ export function createEntitiesRepo(db: DbClient) {
               .where(eq(schema.entities.id, existingRow.id));
           } else if (name) {
             await tx.insert(schema.entities).values({
-              id: crypto.randomUUID(),
+              id: randomUUID(),
               groupId: groupRows[0].id,
               name,
               defaultVatRate: 15,
