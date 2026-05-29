@@ -23,10 +23,10 @@ describe('CapturedInventorySectionLayout', () => {
   it('renders all five stock section nav items', () => {
     renderLayout();
     expect(screen.getByText('Captured Inventory')).toBeInTheDocument();
-    expect(screen.getByText('Add Items')).toBeInTheDocument();
-    expect(screen.getByText('Add Categories')).toBeInTheDocument();
+    expect(screen.getByText('Add')).toBeInTheDocument();
     expect(screen.getByText('Import')).toBeInTheDocument();
     expect(screen.getByText('Analysis')).toBeInTheDocument();
+    expect(screen.getByText('Manage')).toBeInTheDocument();
   });
 
   it('renders the collapse button', () => {

@@ -4,11 +4,11 @@ import { CapturedInventorySectionLayout } from '@/layouts/CapturedInventorySecti
 import { InventoryLayout as CapturedInventoryLayout } from '@/pages/Inventory/Capture/CapturedInventory/Layout/InventoryLayout';
 import CapturedInventoryIndex from '@/pages/Inventory/Capture/CapturedInventory';
 import ImportPage from '@/pages/Inventory/Capture/CapturedInventory/ImportPage';
-import AddItemsPage from '@/pages/Inventory/Capture/AddItemsPage';
-import AddCategoriesPage from '@/pages/Inventory/Capture/AddCategoriesPage';
+import AddInventoryPage from '@/pages/Inventory/Capture/AddInventoryPage';
 import { InvoiceLayout } from '@/pages/Inventory/Invoice/Layout';
 import InvoicePage from '@/pages/Inventory/Invoice';
 import InvoiceHistoryPage from '@/pages/Inventory/Invoice/History';
+import ManagePage from '@/pages/Inventory/Manage';
 import InventoryAnalysis from '@/pages/Inventory/Analysis';
 import ItemTrendPage from '@/pages/Inventory/Analysis/ItemTrendPage';
 import { CostingLayout } from '@/pages/Inventory/Costing/Layout';
@@ -55,10 +55,11 @@ export function AppRoutesComponent() {
           <Route element={<CapturedInventoryLayout />}>
             <Route index element={<CapturedInventoryIndex />} />
             <Route path={StockRouteSegments.import} element={<ImportPage />} />
-            <Route path={StockRouteSegments.addItems} element={<AddItemsPage />} />
-            <Route path={StockRouteSegments.categories} element={<AddCategoriesPage />} />
+            <Route path={StockRouteSegments.addItems} element={<AddInventoryPage />} />
+            <Route path={StockRouteSegments.categories} element={<AddInventoryPage />} />
           </Route>
           <Route path={StockRouteSegments.analysis} element={<InventoryAnalysis />} />
+          <Route path={StockRouteSegments.manage} element={<ManagePage />} />
           <Route path={`${StockRouteSegments.analysis}/item/:itemId`} element={<ItemTrendPage />} />
         </Route>
 
