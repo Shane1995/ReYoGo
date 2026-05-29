@@ -1,10 +1,11 @@
 import AppRoutes from '@/components/AppRoutes';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import SetupWizard from '@/pages/SetupWizard';
 import { LoadingSpinner } from './LoadingSpinner';
 import { useAppReady } from './hooks/useAppReady';
 
 const AppLoader = () => {
-  const { isReady, initError } = useAppReady();
+  const { isReady, setupComplete, initError } = useAppReady();
 
   if (initError) {
     return (
@@ -29,7 +30,9 @@ const AppLoader = () => {
     );
   }
 
-  if (!isReady) return <LoadingSpinner />;
+  if (!isReady || setupComplete === null) return <LoadingSpinner />;
+
+  if (!setupComplete) return <SetupWizard />;
 
   return (
     <ErrorBoundary>
