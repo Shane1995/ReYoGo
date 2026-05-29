@@ -19,8 +19,6 @@ export interface RouteConfig {
   'costing.costReport': string;
   suppliers: string;
   settings: string;
-  'settings.business': string;
-  'settings.tax': string;
   [key: string]: string;
 }
 
@@ -48,7 +46,6 @@ export interface AppConfig {
     stock: NavItemConfig[];
     invoices: NavItemConfig[];
     costing: NavItemConfig[];
-    settings: NavItemConfig[];
   };
   dashboard: {
     statCards: StatCardConfig[];
@@ -70,8 +67,6 @@ export const appConfig: AppConfig = {
     'costing.costReport': '/costing/cost-report',
     suppliers: '/suppliers',
     settings: '/settings',
-    'settings.business': '/settings/business',
-    'settings.tax': '/settings/tax',
   },
   nav: {
     primary: [
@@ -91,10 +86,6 @@ export const appConfig: AppConfig = {
     invoices: [
       { label: 'Capture Invoice', pathKey: 'invoices', icon: 'Receipt', end: true },
       { label: 'History', pathKey: 'invoices.history', icon: 'History', end: false },
-    ],
-    settings: [
-      { label: 'Business', pathKey: 'settings.business', icon: 'Building', end: true },
-      { label: 'Tax', pathKey: 'settings.tax', icon: 'Percent', end: true },
     ],
     costing: [
       { label: 'Dashboard', pathKey: 'costing', icon: 'LayoutDashboard', end: true },

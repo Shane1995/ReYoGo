@@ -68,12 +68,8 @@ export const SuppliersRouteSegments = {
 
 export const SettingsRoutes = {
   Base: r.settings,
-  Business: r['settings.business'],
-  Tax: r['settings.tax'],
 } as const;
 
 export const SettingsRouteSegments = {
   root: lastSeg(r.settings),
-  business: lastSeg(r['settings.business']),
-  tax: lastSeg(r['settings.tax']),
 } as const;
