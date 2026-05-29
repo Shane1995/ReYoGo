@@ -16,7 +16,7 @@ export function FormatGuide() {
           },
           {
             sheet: 'Categories',
-            cols: [{ name: 'name' }, { name: 'type', note: 'food · drink · non-perishable' }],
+            cols: [{ name: 'name' }, { name: 'type', note: 'food · beverage · non-food' }],
           },
           {
             sheet: 'Items',
@@ -24,10 +24,6 @@ export function FormatGuide() {
               { name: 'name' },
               { name: 'category_name', note: 'must match a category name' },
               { name: 'unit', note: 'optional' },
-              {
-                name: 'entity',
-                note: 'Required — must match an existing entity name (case-insensitive)',
-              },
             ],
           },
         ].map((s) => (

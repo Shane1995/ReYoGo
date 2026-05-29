@@ -12,4 +12,14 @@ export function registerShellHandlers(): void {
       return filePath;
     },
   );
+
+  ipcMain.handle(
+    'shell:save-file-base64',
+    async (_e, { filename, base64 }: { filename: string; base64: string }) => {
+      const filePath = path.join(app.getPath('downloads'), filename);
+      await fs.promises.writeFile(filePath, Buffer.from(base64, 'base64'));
+      await shell.openPath(filePath);
+      return filePath;
+    },
+  );
 }

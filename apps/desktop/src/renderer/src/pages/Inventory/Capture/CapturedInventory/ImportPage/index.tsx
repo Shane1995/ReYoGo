@@ -32,15 +32,18 @@ export default function ImportPage() {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<PageState>({ phase: 'idle' });
+  const [selectedEntityId, setSelectedEntityId] = useState('');
+
+  const selectedEntity = entities.find((e) => e.id === selectedEntityId);
 
   const handleFile = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (!file) return;
+      if (!file || !selectedEntity) return;
       e.target.value = '';
       setState({ phase: 'parsing' });
       try {
-        const parsed = await parseFile(file, entities);
+        const parsed = await parseFile(file, selectedEntity);
         setState({ phase: 'loading-db' });
         const units = await window.electronAPI.ipcRenderer.invoke('setup:get-units');
         const existing: ExistingInventory = {
@@ -132,8 +135,8 @@ export default function ImportPage() {
               <h1 className="text-lg font-semibold text-foreground">Import inventory</h1>
               <p className="mt-0.5 text-sm text-muted-foreground">
                 {state.phase === 'review'
-                  ? 'Review what will be added, then click commit.'
-                  : 'Upload an Excel or CSV file to bulk-add units, categories and items.'}
+                  ? `Review what will be added to ${selectedEntity?.name ?? 'your venue'}, then click commit.`
+                  : 'Select a venue, then upload an Excel or CSV file to bulk-add units, categories and items.'}
               </p>
             </div>
           </div>
@@ -168,8 +171,29 @@ export default function ImportPage() {
         <div className="mx-auto w-full max-w-2xl px-5 py-5">
           {state.phase === 'idle' && (
             <div className="space-y-4">
+              <div className="rounded-lg border border-[var(--nav-border)] bg-muted/20 p-4 space-y-2">
+                <p className="text-sm font-semibold text-foreground">Select venue</p>
+                <p className="text-xs text-muted-foreground">
+                  All items in the file will be imported for this venue.
+                </p>
+                <select
+                  value={selectedEntityId}
+                  onChange={(e) => setSelectedEntityId(e.target.value)}
+                  className="h-8 w-full max-w-xs rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50"
+                >
+                  <option value="">Choose a venue…</option>
+                  {entities.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <FormatGuide />
-              <DropZone onClick={() => fileRef.current?.click()} />
+              <DropZone
+                onClick={() => selectedEntity && fileRef.current?.click()}
+                disabled={!selectedEntity}
+              />
             </div>
           )}
 

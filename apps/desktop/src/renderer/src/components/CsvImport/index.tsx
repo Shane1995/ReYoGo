@@ -14,7 +14,7 @@ export { downloadTemplate };
 
 interface CsvImportButtonProps {
   onImport: (result: ParseResult, review: ReviewResult) => void;
-  entities: IEntity[];
+  entity: Pick<IEntity, 'id' | 'name'>;
   label?: string;
   variant?: 'default' | 'outline' | 'ghost' | 'secondary';
   size?: 'default' | 'sm';
@@ -30,7 +30,7 @@ type Phase =
 
 export function CsvImportButton({
   onImport,
-  entities,
+  entity,
   label = 'Import',
   variant = 'outline',
   size = 'sm',
@@ -49,7 +49,7 @@ export function CsvImportButton({
     setOpen(true);
     setPhase({ kind: 'parsing' });
     try {
-      const parsed = await parseFile(file, entities);
+      const parsed = await parseFile(file, entity);
       setPhase({ kind: 'loading-db' });
       const existing = await fetchExisting();
       const review = enrichParseResult(parsed, existing);

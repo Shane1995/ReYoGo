@@ -89,13 +89,14 @@ export function ItemsTable({
           {
             key: 'entity' as const,
             header: 'Venue',
+            width: '140px',
             cell: (row: FlatItem) => {
               const idx = entityIndexMap.get(row.entityId) ?? 0;
               const color = ENTITY_COLORS[idx % ENTITY_COLORS.length]!;
               const name = entities.find((e) => e.id === row.entityId)?.name ?? '—';
               return (
                 <span
-                  className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium"
+                  className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium whitespace-nowrap"
                   style={{ background: color.bg, color: color.fg }}
                 >
                   {name}

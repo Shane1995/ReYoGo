@@ -28,7 +28,7 @@ export function EntityFilter({ entities, selected, onChange }: EntityFilterProps
           key={e.id}
           onClick={() => onChange(e.id)}
           className={cn(
-            'rounded-full px-3 py-1 text-xs font-medium transition-colors',
+            'rounded-full px-3 py-1 text-xs font-medium transition-colors whitespace-nowrap',
             selected === e.id
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted text-muted-foreground hover:text-foreground',

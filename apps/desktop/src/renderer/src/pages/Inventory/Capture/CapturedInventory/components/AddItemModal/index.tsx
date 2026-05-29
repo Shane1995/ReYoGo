@@ -22,7 +22,7 @@ export function AddItemModal({ open, onClose, categories, units, onSave }: AddIt
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [unitOfMeasure, setUnitOfMeasure] = useState('');
-  const [entityId, setEntityId] = useState(entities[0]?.id ?? '');
+  const [entityId, setEntityId] = useState('');
 
   const category = categories.find((c) => c.id === categoryId);
   const type: TypeValue = category?.type ?? '';
@@ -40,17 +40,17 @@ export function AddItemModal({ open, onClose, categories, units, onSave }: AddIt
     setName('');
     setCategoryId('');
     setUnitOfMeasure('');
-    setEntityId(entities[0]?.id ?? '');
+    setEntityId('');
     onClose();
-  }, [name, categoryId, type, unitOfMeasure, entityId, entities, onSave, onClose]);
+  }, [name, categoryId, type, unitOfMeasure, entityId, onSave, onClose]);
 
   const handleClose = useCallback(() => {
     setName('');
     setCategoryId('');
     setUnitOfMeasure('');
-    setEntityId(entities[0]?.id ?? '');
+    setEntityId('');
     onClose();
-  }, [entities, onClose]);
+  }, [onClose]);
 
   if (!open) return null;
 

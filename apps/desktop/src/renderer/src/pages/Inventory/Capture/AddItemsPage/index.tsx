@@ -6,6 +6,7 @@ import { useInventory } from '../CapturedInventory/Context/InventoryContext';
 import type { TypeValue } from '../CapturedInventory/types';
 import { cn } from '@reyogo/ui';
 import { useEntities } from '@/Context/EntityContext';
+import { ChevronDownIcon } from 'lucide-react';
 
 const inputClass = cn(
   'h-8 w-full rounded-md border border-input bg-muted px-2.5 text-sm',
@@ -29,8 +30,14 @@ export default function AddItemsPage() {
   const { categories, items, units, addItem } = useInventory();
   const namedCategories = categories.filter((c) => c.name.trim());
   const categoryTypes = Array.from(new Set(namedCategories.map((c) => c.type)));
+
+  const [venueId, setVenueId] = useState(() => (entities.length === 1 ? entities[0]!.id : ''));
   const [rows, setRows] = useState<PendingRow[]>([createEmptyRow()]);
   const [lastAddedRowId, setLastAddedRowId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (entities.length === 1 && !venueId) setVenueId(entities[0]!.id);
+  }, [entities, venueId]);
 
   useEffect(() => {
     if (!lastAddedRowId) return;
@@ -77,24 +84,25 @@ export default function AddItemsPage() {
 
   const submit = useCallback(() => {
     const valid = rows.filter((r) => r.name.trim() && r.categoryId && !duplicateIds.has(r.id));
-    if (!valid.length) return;
+    if (!valid.length || !venueId) return;
     valid.forEach((r) => {
       addItem({
         name: r.name.trim(),
         categoryId: r.categoryId,
         type: r.type,
         unitOfMeasure: r.unitOfMeasure || undefined,
-        entityId: entities[0]?.id ?? '',
+        entityId: venueId,
       });
     });
     setRows([createEmptyRow()]);
-  }, [rows, duplicateIds, addItem]);
+  }, [rows, duplicateIds, addItem, venueId]);
 
-  // Require all named rows to also have a category before enabling Submit
   const namedRows = rows.filter((r) => r.name.trim());
   const hasValidRows = namedRows.some((r) => r.categoryId && !duplicateIds.has(r.id));
   const hasIncompleteRows = namedRows.some((r) => !r.categoryId);
-  const canSubmit = hasValidRows && !hasIncompleteRows;
+  const canSubmit = hasValidRows && !hasIncompleteRows && !!venueId;
+
+  const venueName = entities.find((e) => e.id === venueId)?.name;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -104,7 +112,39 @@ export default function AddItemsPage() {
       />
 
       <div className="min-h-0 flex-1 overflow-auto">
-        <div className="mx-6 my-5">
+        <div className="mx-6 my-5 space-y-3">
+          {/* Venue context bar — only shown when multiple entities */}
+          {entities.length > 1 && (
+            <div className="flex items-center gap-3 rounded-lg border border-[var(--nav-active-border)]/30 bg-[var(--nav-active-border)]/5 px-4 py-2.5">
+              <span className="text-xs text-muted-foreground shrink-0">Adding items to</span>
+              <div className="relative">
+                <select
+                  value={venueId}
+                  onChange={(e) => setVenueId(e.target.value)}
+                  className={cn(
+                    'appearance-none h-7 rounded-md border border-[var(--nav-active-border)]/40 bg-transparent',
+                    'pl-3 pr-7 text-sm font-medium text-foreground cursor-pointer',
+                    'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50',
+                    !venueId && 'text-muted-foreground',
+                  )}
+                >
+                  <option value="">Choose a venue…</option>
+                  {entities.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDownIcon className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+              </div>
+              {venueName && (
+                <span className="text-xs text-[var(--nav-active-border)] font-medium">
+                  ✓ {venueName}
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="rounded-lg border border-[var(--nav-border)] bg-background">
             <Table>
               <TableHeader>

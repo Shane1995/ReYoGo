@@ -9,8 +9,7 @@ const quickLinkGroups = [
     icon: PackagePlusIcon,
     links: [
       { label: 'Captured Inventory', to: StockRoutes.Base },
-      { label: 'Add items', to: StockRoutes.AddItems },
-      { label: 'Add categories', to: StockRoutes.Categories },
+      { label: 'Add items / categories', to: StockRoutes.AddItems },
     ],
   },
   {
