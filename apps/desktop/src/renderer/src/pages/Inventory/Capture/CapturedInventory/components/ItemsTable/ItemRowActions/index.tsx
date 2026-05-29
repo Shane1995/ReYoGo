@@ -42,7 +42,7 @@ export function ItemRowActions({ row, originalItem, onEdit, onViewInsights, onDe
         <PopoverContent className="w-40 p-1" align="end" sideOffset={4}>
           {confirming ? (
             <div className="px-2 py-1.5 text-xs text-muted-foreground">
-              <p className="mb-2 font-medium text-foreground">Delete this item?</p>
+              <p className="mb-2 font-medium text-foreground">Archive this item?</p>
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -50,9 +50,9 @@ export function ItemRowActions({ row, originalItem, onEdit, onViewInsights, onDe
                     onDelete(row.id);
                     close();
                   }}
-                  className="rounded px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
+                  className="rounded px-2 py-1 text-xs font-medium text-amber-600 hover:bg-amber-500/10 transition-colors"
                 >
-                  Delete
+                  Archive
                 </button>
                 <button
                   type="button"
@@ -90,10 +90,10 @@ export function ItemRowActions({ row, originalItem, onEdit, onViewInsights, onDe
               <button
                 type="button"
                 onClick={() => setConfirming(true)}
-                className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-left text-destructive hover:bg-destructive/10 transition-colors"
+                className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-left text-muted-foreground hover:bg-muted transition-colors"
               >
                 <Trash2Icon className="size-3.5" />
-                Delete
+                Archive
               </button>
             </div>
           )}

@@ -25,6 +25,7 @@ type InventoryContextValue = {
   removeItem: (id: string) => void;
   deleteCategoryFromBackend: (id: string) => Promise<void>;
   deleteItemFromBackend: (id: string) => Promise<void>;
+  archiveItemInBackend: (id: string) => Promise<void>;
 };
 
 const InventoryContext = createContext<InventoryContextValue | null>(null);
@@ -123,6 +124,14 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
       .catch(console.error);
   }, []);
 
+  const archiveItemInBackend = useCallback((id: string): Promise<void> => {
+    return invokeInventory(InventoryIPC.ARCHIVE_ITEM, id)
+      .then(() => {
+        setItems((prev) => prev.filter((i) => i.id !== id));
+      })
+      .catch(console.error);
+  }, []);
+
   const categoryTypeMap = useMemo(
     () => new Map(categories.map((c) => [c.id, c.type])),
     [categories],
@@ -151,6 +160,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     removeItem,
     deleteCategoryFromBackend,
     deleteItemFromBackend,
+    archiveItemInBackend,
   };
 
   return <InventoryContext.Provider value={value}>{children}</InventoryContext.Provider>;
