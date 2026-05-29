@@ -81,12 +81,13 @@ export function createStockMovementsRepo(db: DbClient) {
       };
     },
 
-    async getCOGS(fromDate?: string, toDate?: string): Promise<COGSSummary> {
+    async getCOGS(fromDate?: string, toDate?: string, entityId?: string): Promise<COGSSummary> {
       const conditions = [eq(schema.stockMovements.movementType, MovementType.Out)];
       if (fromDate)
         conditions.push(gte(schema.stockMovements.occurredAt, new Date(fromDate + 'T00:00:00')));
       if (toDate)
         conditions.push(lte(schema.stockMovements.occurredAt, new Date(toDate + 'T23:59:59')));
+      if (entityId) conditions.push(eq(schema.inventoryItems.entityId, entityId));
 
       const rows = await db
         .select({

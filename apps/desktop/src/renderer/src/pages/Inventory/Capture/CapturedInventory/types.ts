@@ -8,6 +8,7 @@ export type InventoryCategory = {
 
 export type InventoryItem = {
   id: string;
+  entityId: string;
   name: string;
   categoryId: string;
   unitOfMeasureId?: string | null;

@@ -45,7 +45,10 @@ export interface IPCInvokeMap {
   'stock-movements:get-current-stock': { args: []; return: Record<string, number> };
   'stock-movements:get-weighted-avg-costs': { args: []; return: Record<string, number | null> };
   'stock-movements:get-item-cost-history': { args: [itemId: string]; return: ItemCostHistory };
-  'stock-movements:get-cogs': { args: [fromDate?: string, toDate?: string]; return: COGSSummary };
+  'stock-movements:get-cogs': {
+    args: [fromDate?: string, toDate?: string, entityId?: string];
+    return: COGSSummary;
+  };
   'setup:get-units': { args: []; return: UnitOfMeasure[] };
   'setup:upsert-unit': { args: [unit: UnitOfMeasure]; return: void };
   'setup:delete-unit': { args: [id: string]; return: void };

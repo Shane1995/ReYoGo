@@ -1,8 +1,10 @@
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, PageHeader, DateRangePicker, cn } from '@reyogo/ui';
 import { InvoiceStatus } from '@reyogo/types';
 import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
+import { useEntities } from '@/Context/EntityContext';
+import { EntityFilter } from '@/components/EntityFilter';
 import { ReceiptIcon, ChevronDownIcon, ChevronRightIcon, SearchIcon, XIcon } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { EditPanel } from './components/EditPanel';
@@ -53,8 +55,15 @@ export default function InvoiceHistoryPage() {
     postingId,
   } = useInvoiceHistory();
 
-  const drafts = invoices.filter((inv) => inv.status === InvoiceStatus.Draft);
-  const posted = invoices.filter((inv) => inv.status !== InvoiceStatus.Draft);
+  const { entities } = useEntities();
+  const [entityFilter, setEntityFilter] = useState<string | null>(null);
+
+  const visibleInvoices = entityFilter
+    ? invoices.filter((inv) => inv.entityId === entityFilter)
+    : invoices;
+
+  const drafts = visibleInvoices.filter((inv) => inv.status === InvoiceStatus.Draft);
+  const posted = visibleInvoices.filter((inv) => inv.status !== InvoiceStatus.Draft);
 
   const renderRow = (inv: ICapturedInvoice) => {
     const mode = rowMode[inv.id]?.kind ?? RowModeKind.View;
@@ -216,6 +225,7 @@ export default function InvoiceHistoryPage() {
         }
       >
         <div className="space-y-3">
+          <EntityFilter entities={entities} selected={entityFilter} onChange={setEntityFilter} />
           <div className="relative">
             <SearchIcon className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/40 pointer-events-none" />
             <input
