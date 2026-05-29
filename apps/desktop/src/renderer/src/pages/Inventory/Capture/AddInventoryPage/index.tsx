@@ -79,7 +79,11 @@ export default function AddInventoryPage() {
   );
 
   const itemDupes = useMemo(() => {
-    const existing = new Set(items.map((i) => i.name.trim().toLowerCase()));
+    const existing = new Set(
+      items
+        .filter((i) => !venueId || i.entityId === venueId)
+        .map((i) => i.name.trim().toLowerCase()),
+    );
     const seen = new Map<string, string>();
     const dupes = new Set<string>();
     for (const row of itemRows) {
@@ -93,7 +97,7 @@ export default function AddInventoryPage() {
       } else seen.set(key, row.id);
     }
     return dupes;
-  }, [itemRows, items]);
+  }, [itemRows, items, venueId]);
 
   const submitItems = useCallback(() => {
     const valid = itemRows.filter((r) => r.name.trim() && r.categoryId && !itemDupes.has(r.id));
