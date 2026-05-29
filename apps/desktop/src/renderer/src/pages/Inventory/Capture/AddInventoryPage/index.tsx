@@ -100,7 +100,9 @@ export default function AddInventoryPage() {
   }, [itemRows, items, venueId]);
 
   const submitItems = useCallback(() => {
-    const valid = itemRows.filter((r) => r.name.trim() && r.categoryId && !itemDupes.has(r.id));
+    const valid = itemRows.filter(
+      (r) => r.name.trim() && r.categoryId && r.unitOfMeasure && !itemDupes.has(r.id),
+    );
     if (!valid.length || !venueId) return;
     valid.forEach((r) =>
       addItem({
@@ -116,8 +118,8 @@ export default function AddInventoryPage() {
 
   const namedItemRows = itemRows.filter((r) => r.name.trim());
   const canSubmitItems =
-    namedItemRows.some((r) => r.categoryId && !itemDupes.has(r.id)) &&
-    !namedItemRows.some((r) => !r.categoryId) &&
+    namedItemRows.some((r) => r.categoryId && r.unitOfMeasure && !itemDupes.has(r.id)) &&
+    !namedItemRows.some((r) => !r.categoryId || !r.unitOfMeasure) &&
     !!venueId;
 
   // --- Category logic ---
@@ -244,7 +246,9 @@ export default function AddInventoryPage() {
                 <TableBody>
                   {itemRows.map((row) => {
                     const isDupe = itemDupes.has(row.id);
-                    const isIncomplete = !!row.name.trim() && !row.categoryId;
+                    const hasName = !!row.name.trim();
+                    const isIncomplete = hasName && !row.categoryId;
+                    const missingUnit = hasName && !row.unitOfMeasure;
                     return (
                       <TableRow
                         key={row.id}
@@ -319,15 +323,22 @@ export default function AddInventoryPage() {
                                 addItemRow();
                               }
                             }}
-                            className={cn(inputClass, 'min-w-[6rem] cursor-pointer')}
+                            className={cn(
+                              inputClass,
+                              'min-w-[6rem] cursor-pointer',
+                              missingUnit && 'border-destructive focus:ring-destructive/50',
+                            )}
                           >
-                            <option value="">— none —</option>
+                            <option value="">Select a unit…</option>
                             {units.map((u) => (
                               <option key={u} value={u}>
                                 {u}
                               </option>
                             ))}
                           </select>
+                          {missingUnit && (
+                            <span className="text-xs text-destructive mt-0.5 block">Required</span>
+                          )}
                         </TableCell>
                         <TableCell className="py-2 px-2">
                           <Button
