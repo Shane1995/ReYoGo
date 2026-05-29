@@ -8,6 +8,7 @@ export const unitsOfMeasure = sqliteTable('units_of_measure', {
     .references(() => accounts.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  archivedAt: integer('archived_at', { mode: 'timestamp' }),
 });
 export type UnitOfMeasureRow = typeof unitsOfMeasure.$inferSelect;
 export type NewUnitOfMeasureRow = typeof unitsOfMeasure.$inferInsert;

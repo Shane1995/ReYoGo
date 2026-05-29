@@ -14,6 +14,7 @@ export const inventoryCategories = sqliteTable(
     type: text('type').notNull().$type<InventoryType>(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+    archivedAt: integer('archived_at', { mode: 'timestamp' }),
   },
   (t) => ({
     typeCheck: check(

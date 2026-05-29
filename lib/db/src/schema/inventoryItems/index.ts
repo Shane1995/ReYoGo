@@ -24,6 +24,7 @@ export const inventoryItems = sqliteTable('inventory_items', {
   reorderQty: real('reorder_qty'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  archivedAt: integer('archived_at', { mode: 'timestamp' }),
 });
 export type InventoryItemRow = typeof inventoryItems.$inferSelect;
 export type NewInventoryItemRow = typeof inventoryItems.$inferInsert;
