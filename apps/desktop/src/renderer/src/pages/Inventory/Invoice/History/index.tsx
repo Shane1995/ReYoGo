@@ -20,7 +20,7 @@ import { formatMoney } from '../utils/formatMoney';
 import { invoiceTotals } from '../utils/invoiceTotals';
 import type { ICapturedInvoice } from '@reyogo/types';
 
-const COLUMN_COUNT = 9;
+const COLUMN_COUNT = 10;
 
 const fieldLabel =
   'text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 mb-1 block';
@@ -111,15 +111,9 @@ export default function InvoiceHistoryPage() {
               />
             )}
           </TableCell>
-          <TableCell className="font-medium">
-            <span className="text-sm">
-              {inv.invoiceDate ? formatDate(inv.invoiceDate) : formatDate(inv.createdAt)}
-            </span>
-            {inv.invoiceNumber && (
-              <p className="text-[11px] font-mono text-muted-foreground/60 mt-0.5">
-                {inv.invoiceNumber}
-              </p>
-            )}
+          <TableCell className="font-mono text-sm">{inv.invoiceNumber}</TableCell>
+          <TableCell className="text-sm text-muted-foreground">
+            {inv.invoiceDate ? formatDate(inv.invoiceDate) : formatDate(inv.createdAt)}
             {inv.supplierId && suppliers.length > 0 && (
               <p className="text-[11px] text-muted-foreground/50 mt-0.5">
                 {suppliers.find((s) => s.id === inv.supplierId)?.name}
@@ -320,6 +314,9 @@ export default function InvoiceHistoryPage() {
               <TableHeader>
                 <TableRow className="bg-muted/30 hover:bg-muted/30">
                   <TableHead className="w-8 p-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70" />
+                  <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70">
+                    Invoice #
+                  </TableHead>
                   <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70">
                     Date
                   </TableHead>
