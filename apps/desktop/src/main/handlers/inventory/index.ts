@@ -19,4 +19,32 @@ export function registerInventoryHandlers(): void {
   ipcMain.handle(InventoryIPC.SUBMIT, (_e, payload: InventorySubmitPayload) =>
     getRepos().inventory.submitInventory(payload),
   );
+  ipcMain.handle('inventory:archive-item', (_e, id: string) =>
+    getRepos().inventory.archiveItem(id),
+  );
+  ipcMain.handle('inventory:restore-item', (_e, id: string) =>
+    getRepos().inventory.restoreItem(id),
+  );
+  ipcMain.handle('inventory:hard-delete-item', (_e, id: string) =>
+    getRepos().inventory.hardDeleteItem(id),
+  );
+  ipcMain.handle('inventory:get-item-usage-count', (_e, id: string) =>
+    getRepos().inventory.getItemUsageCount(id),
+  );
+  ipcMain.handle('inventory:get-archived-items', () => getRepos().inventory.getArchivedItems());
+  ipcMain.handle('inventory:archive-category', (_e, id: string) =>
+    getRepos().inventory.archiveCategory(id),
+  );
+  ipcMain.handle('inventory:restore-category', (_e, id: string) =>
+    getRepos().inventory.restoreCategory(id),
+  );
+  ipcMain.handle('inventory:hard-delete-category', (_e, id: string) =>
+    getRepos().inventory.hardDeleteCategory(id),
+  );
+  ipcMain.handle('inventory:get-category-usage-count', (_e, id: string) =>
+    getRepos().inventory.getCategoryUsageCount(id),
+  );
+  ipcMain.handle('inventory:get-archived-categories', () =>
+    getRepos().inventory.getArchivedCategories(),
+  );
 }
