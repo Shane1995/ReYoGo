@@ -28,6 +28,7 @@ export default function SetupWizard() {
             onSubmit={wizard.submit}
             canSubmit={wizard.canSubmit}
             isSubmitting={wizard.isSubmitting}
+            submitError={wizard.submitError}
           />
         )}
       </div>

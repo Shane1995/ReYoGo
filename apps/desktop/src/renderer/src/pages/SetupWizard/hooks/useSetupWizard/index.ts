@@ -6,6 +6,7 @@ export function useSetupWizard() {
   const [groupName, setGroupName] = useState('');
   const [entityNames, setEntityNames] = useState(['']);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const next = useCallback(() => {
     if (step === 1 && groupName.trim()) setStep(2);
@@ -35,12 +36,15 @@ export function useSetupWizard() {
   const submit = useCallback(async () => {
     if (!canSubmit) return;
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
       await entitiesService.completeSetup({
         groupName: groupName.trim(),
         entityNames: entityNames.filter((n) => n.trim()).map((n) => n.trim()),
       });
       window.location.reload();
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Setup failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -56,6 +60,7 @@ export function useSetupWizard() {
     setEntityName,
     canSubmit,
     isSubmitting,
+    submitError,
     next,
     back,
     submit,

@@ -9,6 +9,7 @@ interface EntitiesStepProps {
   onSubmit: () => void;
   canSubmit: boolean;
   isSubmitting: boolean;
+  submitError?: string | null;
 }
 
 export function EntitiesStep({
@@ -20,6 +21,7 @@ export function EntitiesStep({
   onSubmit,
   canSubmit,
   isSubmitting,
+  submitError,
 }: EntitiesStepProps) {
   return (
     <div className="flex flex-col gap-6 max-w-sm mx-auto">
@@ -56,6 +58,7 @@ export function EntitiesStep({
           + Add another venue
         </button>
       </div>
+      {submitError && <p className="text-sm text-destructive">{submitError}</p>}
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>
           ← Back
