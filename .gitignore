@@ -32,3 +32,4 @@ apps/*/release
 apps/*/coverage
 apps/*/node_modules
 apps/*/.data.worktrees/
+docs/superpowers/
