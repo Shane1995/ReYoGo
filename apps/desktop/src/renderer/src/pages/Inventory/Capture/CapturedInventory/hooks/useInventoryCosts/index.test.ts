@@ -37,7 +37,7 @@ describe('useInventoryCosts', () => {
         qty: 2,
         unitCost: 10,
         totalCost: 20,
-        invoiceCreatedAt: new Date('2025-01-01'),
+        invoiceDate: new Date('2025-01-01'),
         categoryType: null,
         categoryName: null,
       },
@@ -47,6 +47,38 @@ describe('useInventoryCosts', () => {
     const entry = result.current.get('item-1');
     expect(entry?.lastUnitCost).toBe(10);
     expect(entry?.lastCostDate).toEqual(new Date('2025-01-01'));
+  });
+
+  it('uses the later invoice date as the last cost, not the capture order', async () => {
+    vi.mocked(invoiceService.getLinesForAnalysis).mockResolvedValue([
+      {
+        id: 'l1',
+        invoiceId: 'inv1',
+        inventoryItemId: 'item-1',
+        qty: 1,
+        unitCost: 9.28,
+        totalCost: 9.28,
+        invoiceDate: new Date('2025-05-13'),
+        categoryType: null,
+        categoryName: null,
+      },
+      {
+        id: 'l2',
+        invoiceId: 'inv2',
+        inventoryItemId: 'item-1',
+        qty: 1,
+        unitCost: 5.88,
+        totalCost: 5.88,
+        invoiceDate: new Date('2025-05-14'),
+        categoryType: null,
+        categoryName: null,
+      },
+    ]);
+    const { result } = renderHook(() => useInventoryCosts());
+    await waitFor(() => expect(result.current.size).toBe(1));
+    const entry = result.current.get('item-1');
+    expect(entry?.lastUnitCost).toBe(5.88);
+    expect(entry?.lastCostDate).toEqual(new Date('2025-05-14'));
   });
 
   it('includes weightedAvgCost from wacRecord for items with no invoice lines', async () => {
@@ -69,7 +101,7 @@ describe('useInventoryCosts', () => {
         qty: 0,
         unitCost: 10,
         totalCost: 0,
-        invoiceCreatedAt: new Date('2025-01-01'),
+        invoiceDate: new Date('2025-01-01'),
         categoryType: null,
         categoryName: null,
       },

@@ -42,7 +42,6 @@ export function CloudSyncSection() {
         toast.success('Cloud sync activated');
       } else if (event.type === CloudSyncEventType.BackgroundSync) {
         refreshStatus();
-        toast.success('Synced', { description: 'Your data is up to date.', duration: 2500 });
       } else if (event.type === CloudSyncEventType.Error) {
         setActivating(false);
         setProgressLabel('');

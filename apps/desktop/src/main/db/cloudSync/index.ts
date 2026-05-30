@@ -31,6 +31,10 @@ export function hasLocalReplica(localDbPath: string): boolean {
   return existsSync(localDbPath);
 }
 
+export function hasEverSynced(): boolean {
+  return !!store.get(STORE_KEY_LAST_SYNCED);
+}
+
 export function getStoredCredentials(): CloudSyncCredentials | null {
   const tursoUrl = store.get(STORE_KEY_URL);
   const encryptedB64 = store.get(STORE_KEY_TOKEN_ENC);
@@ -62,6 +66,15 @@ export function clearCredentials(): void {
 
 export function getSyncStatus(): SyncStatus {
   return _syncStatus;
+}
+
+export function markOffline(): void {
+  const lastSyncedAtStr = store.get(STORE_KEY_LAST_SYNCED);
+  updateSyncStatus({
+    state: SyncState.Error,
+    lastSyncedAt: lastSyncedAtStr ? new Date(lastSyncedAtStr) : null,
+    error: 'No internet connection',
+  });
 }
 
 export function _resetForTest(): void {
@@ -229,9 +242,15 @@ export function recordSyncError(message: string): void {
   });
 }
 
-export function scheduleErrorAfterTimeout(): () => void {
-  const timer = setTimeout(() => recordSyncError('Sync timed out'), 300000);
-  return () => clearTimeout(timer);
+const SYNC_TIMEOUT_MS = 15_000;
+
+export function withSyncTimeout<T>(promise: Promise<T>): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Sync timed out')), SYNC_TIMEOUT_MS),
+    ),
+  ]);
 }
 
 export function deleteLocalBackup(localDbPath: string): void {

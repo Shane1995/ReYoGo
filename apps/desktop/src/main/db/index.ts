@@ -18,7 +18,14 @@ import {
 } from '@reyogo/db';
 import { eq } from 'drizzle-orm';
 import { DB_READY_CHANNEL } from '@shared/ipc-events';
-import { hasCloudCredentials, getStoredCredentials } from './cloudSync';
+import {
+  hasCloudCredentials,
+  getStoredCredentials,
+  clearCredentials,
+  recordSyncError,
+  hasEverSynced,
+  withSyncTimeout,
+} from './cloudSync';
 
 const isDev = !app.isPackaged || process.env.NODE_ENV === 'development';
 const DB_FILENAME = isDev ? 'app-dev.db' : 'app.db';
@@ -111,6 +118,21 @@ export async function syncNow(): Promise<void> {
   }
 }
 
+function isPermanentSyncError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return (
+    msg.includes('404') ||
+    msg.includes('401') ||
+    msg.includes('auth role not found') ||
+    msg.includes('WriteDelegation')
+  );
+}
+
+function isCorruptedReplicaError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.includes('database disk image is malformed');
+}
+
 async function ensureDefaultAccount(db: DbClient): Promise<void> {
   const existing = await db
     .select()
@@ -136,18 +158,57 @@ export async function initDatabase(): Promise<void> {
       const credentials = getStoredCredentials();
       if (credentials) {
         const replicaPath = getReplicaPath();
-        let handle;
+        const hadExistingReplica = existsSync(replicaPath);
+        const canBootOffline = hadExistingReplica && hasEverSynced();
+        let handle: ReplicaHandle;
         try {
           handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
         } catch {
           wipeReplicaFiles(replicaPath);
           handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
         }
-        await handle.sync();
-        await ensureDefaultAccount(handle.db);
-        _handle = handle;
-        _db = handle.db;
-        _repos = buildRepos(handle.db);
+
+        const boot = async (h: typeof handle) => {
+          await withSyncTimeout(h.sync());
+          await migrate(h.db, { migrationsFolder });
+          await ensureDefaultAccount(h.db);
+          _handle = h;
+          _db = h.db;
+          _repos = buildRepos(h.db);
+        };
+
+        try {
+          await boot(handle);
+        } catch (bootErr) {
+          if (isPermanentSyncError(bootErr)) {
+            handle.close();
+            clearCredentials();
+            wipeReplicaFiles(replicaPath);
+            throw new Error(
+              'Cloud database no longer accessible. Reconnect your account in Settings.',
+            );
+          }
+          if (isCorruptedReplicaError(bootErr)) {
+            handle.close();
+            wipeReplicaFiles(replicaPath);
+            handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
+            await boot(handle);
+          } else if (!canBootOffline) {
+            handle.close();
+            wipeReplicaFiles(replicaPath);
+            throw new Error(
+              'Could not connect to cloud database. Check your internet connection and relaunch.',
+            );
+          } else {
+            recordSyncError(bootErr instanceof Error ? bootErr.message : String(bootErr));
+            await migrate(handle.db, { migrationsFolder });
+            await ensureDefaultAccount(handle.db);
+            _handle = handle;
+            _db = handle.db;
+            _repos = buildRepos(handle.db);
+          }
+        }
+
         return;
       }
     }

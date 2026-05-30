@@ -16,7 +16,7 @@ export function buildItemGroups(
   const map = new Map<string, ItemGroup>();
   for (const line of lines) {
     if (line.qty <= 0) continue;
-    const date = new Date(line.invoiceCreatedAt);
+    const date = new Date(line.invoiceDate);
     if (from && date < from) continue;
     if (to && date > to) continue;
 

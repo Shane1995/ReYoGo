@@ -19,7 +19,7 @@ export function useInventoryCosts(): Map<string, ItemCostEntry> {
     const map = new Map<string, ItemCostEntry>();
     for (const line of lines) {
       if (line.qty <= 0) continue;
-      const date = new Date(line.invoiceCreatedAt);
+      const date = new Date(line.invoiceDate);
       const existing = map.get(line.inventoryItemId);
       if (!existing || date > (existing.lastCostDate ?? new Date(0))) {
         map.set(line.inventoryItemId, {

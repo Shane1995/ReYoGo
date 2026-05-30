@@ -14,7 +14,8 @@ vi.mock('../../db/cloudSync', () => ({
   hasCloudCredentials: vi.fn(() => false),
   deleteLocalBackup: vi.fn(),
   recordSyncSuccess: vi.fn(),
-  scheduleErrorAfterTimeout: vi.fn(() => () => {}),
+  recordSyncError: vi.fn(),
+  withSyncTimeout: vi.fn((p: Promise<unknown>) => p),
 }));
 
 vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }));

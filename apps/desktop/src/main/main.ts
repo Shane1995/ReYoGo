@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, net } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { join } from 'path';
 import {
@@ -7,12 +7,28 @@ import {
   CLOUD_SYNC_EVENT_CHANNEL,
 } from '@shared/ipc-events';
 import { CloudSyncEventType } from '@shared/types/cloudSync';
-import { getDbReadyChannel, initDatabase, syncNow, isReplicaMode } from './db';
-import { recordSyncSuccess, recordSyncError } from './db/cloudSync';
+import {
+  getDbReadyChannel,
+  initDatabase,
+  syncNow,
+  isReplicaMode,
+  getReplicaPath,
+  getLocalDbPath,
+  wipeReplicaFiles,
+} from './db';
+import {
+  recordSyncSuccess,
+  recordSyncError,
+  markOffline,
+  clearCredentials,
+  deleteLocalBackup,
+  withSyncTimeout,
+} from './db/cloudSync';
 import { registerRoute } from './lib/electron-router-dom';
 import { registerIPC } from './ipc';
 
 const BACKGROUND_SYNC_INTERVAL_MS = 5 * 60 * 1000;
+let _bgSyncing = false;
 
 function broadcastToWindows(channel: string, payload: unknown): void {
   for (const win of BrowserWindow.getAllWindows()) {
@@ -20,17 +36,43 @@ function broadcastToWindows(channel: string, payload: unknown): void {
   }
 }
 
+function isPermanentSyncError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.includes('404') || msg.includes('401') || msg.includes('auth role not found');
+}
+
 async function runBackgroundSync(): Promise<void> {
   if (!isReplicaMode()) return;
+  if (_bgSyncing) return;
+  if (!net.isOnline()) return;
+  _bgSyncing = true;
   try {
     broadcastToWindows(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.Syncing });
-    await syncNow();
+    await withSyncTimeout(syncNow());
     recordSyncSuccess();
     broadcastToWindows(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.BackgroundSync });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    recordSyncError(msg);
     console.error('[ReYoGo] Background sync failed:', err);
+    if (isPermanentSyncError(err)) {
+      clearCredentials();
+      wipeReplicaFiles(getReplicaPath());
+      deleteLocalBackup(getLocalDbPath());
+      broadcastToWindows(CLOUD_SYNC_EVENT_CHANNEL, {
+        type: CloudSyncEventType.Error,
+        message: 'Cloud database unreachable. Reconnect in Settings.',
+        retryable: false,
+      });
+    } else {
+      recordSyncError(msg);
+      broadcastToWindows(CLOUD_SYNC_EVENT_CHANNEL, {
+        type: CloudSyncEventType.Error,
+        message: msg,
+        retryable: true,
+      });
+    }
+  } finally {
+    _bgSyncing = false;
   }
 }
 
@@ -52,20 +94,15 @@ function createWindow(): BrowserWindow {
     window.show();
     if (isDev || process.env.ROYOGO_DEBUG === '1') {
       window.webContents.openDevTools();
-      // Note: "ReferenceError: dragEvent is not defined" in console is a known Chrome DevTools bug
-      // when switching tabs; not from app code. Safe to ignore.
     }
   });
 
-  // Log load failures (e.g. file not found) so you can see them when running from terminal
   window.webContents.on('did-fail-load', (_event, code, errDesc, url) => {
     console.error('[ReYoGo] Failed to load:', code, errDesc, url);
   });
 
-  // Block cmd+click / middle-click from spawning new windows
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
 
-  // In production: getAppPath() already points at app.asar (or its root); do not add 'app.asar' again
   const htmlPath = app.isPackaged
     ? join(app.getAppPath(), 'out', 'renderer', 'index.html')
     : join(__dirname, '../../out/renderer/index.html');
@@ -111,6 +148,9 @@ app.whenReady().then(() => {
 
   initDatabase()
     .then(() => {
+      if (isReplicaMode() && !net.isOnline()) {
+        markOffline();
+      }
       dbReady = true;
       trySendDbReady();
       if (isReplicaMode()) {

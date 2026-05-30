@@ -32,7 +32,7 @@ export interface InvoiceWithLines extends Invoice {
 export type InvoiceLinePayload = Omit<InvoiceLine, 'invoiceId'>;
 
 export interface InvoiceLineWithDate extends InvoiceLine {
-  invoiceCreatedAt: Date;
+  invoiceDate: Date;
   categoryType: string | null;
   categoryName: string | null;
 }

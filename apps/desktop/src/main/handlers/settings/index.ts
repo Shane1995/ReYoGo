@@ -10,7 +10,8 @@ import {
   hasLocalReplica,
   deleteLocalBackup,
   recordSyncSuccess,
-  scheduleErrorAfterTimeout,
+  recordSyncError,
+  withSyncTimeout,
 } from '../../db/cloudSync';
 
 export function registerSettingsHandlers(): void {
@@ -18,9 +19,11 @@ export function registerSettingsHandlers(): void {
     const replicaPath = getReplicaPath();
     await activateCloudSync(event.sender, getDb(), tursoUrl, authToken);
     wipeReplicaFiles(replicaPath);
-    reinitialise(replicaPath, tursoUrl, authToken).catch((err: unknown) => {
-      console.error('[ReYoGo] Failed to hot-swap to replica after activation:', err);
-    });
+    reinitialise(replicaPath, tursoUrl, authToken)
+      .then(() => deleteLocalBackup(getLocalDbPath()))
+      .catch((err: unknown) => {
+        console.error('[ReYoGo] Failed to hot-swap to replica after activation:', err);
+      });
   });
 
   ipcMain.handle(CloudSyncIPC.GET_STATUS, () => {
@@ -36,12 +39,14 @@ export function registerSettingsHandlers(): void {
   ipcMain.handle(CloudSyncIPC.MANUAL_SYNC, async () => {
     const credentials = getStoredCredentials();
     if (!credentials) throw new Error('Cloud sync is not active.');
-    const cancel = scheduleErrorAfterTimeout();
     try {
-      await reinitialise(getReplicaPath(), credentials.tursoUrl, credentials.authToken);
+      await withSyncTimeout(
+        reinitialise(getReplicaPath(), credentials.tursoUrl, credentials.authToken),
+      );
       recordSyncSuccess();
-    } finally {
-      cancel();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      recordSyncError(msg);
     }
   });
 
