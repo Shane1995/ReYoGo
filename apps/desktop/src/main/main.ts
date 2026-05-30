@@ -21,6 +21,7 @@ import {
   recordSyncError,
   clearCredentials,
   deleteLocalBackup,
+  withSyncTimeout,
 } from './db/cloudSync';
 import { registerRoute } from './lib/electron-router-dom';
 import { registerIPC } from './ipc';
@@ -42,7 +43,7 @@ async function runBackgroundSync(): Promise<void> {
   if (!isReplicaMode()) return;
   try {
     broadcastToWindows(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.Syncing });
-    await syncNow();
+    await withSyncTimeout(syncNow());
     recordSyncSuccess();
     broadcastToWindows(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.BackgroundSync });
   } catch (err) {

@@ -11,7 +11,7 @@ import {
   deleteLocalBackup,
   recordSyncSuccess,
   recordSyncError,
-  scheduleErrorAfterTimeout,
+  withSyncTimeout,
 } from '../../db/cloudSync';
 
 export function registerSettingsHandlers(): void {
@@ -39,15 +39,14 @@ export function registerSettingsHandlers(): void {
   ipcMain.handle(CloudSyncIPC.MANUAL_SYNC, async () => {
     const credentials = getStoredCredentials();
     if (!credentials) throw new Error('Cloud sync is not active.');
-    const cancel = scheduleErrorAfterTimeout();
     try {
-      await reinitialise(getReplicaPath(), credentials.tursoUrl, credentials.authToken);
+      await withSyncTimeout(
+        reinitialise(getReplicaPath(), credentials.tursoUrl, credentials.authToken),
+      );
       recordSyncSuccess();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       recordSyncError(msg);
-    } finally {
-      cancel();
     }
   });
 

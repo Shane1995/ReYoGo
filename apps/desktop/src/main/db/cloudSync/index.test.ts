@@ -101,7 +101,7 @@ import {
   activateCloudSync,
   recordSyncSuccess,
   recordSyncError,
-  scheduleErrorAfterTimeout,
+  withSyncTimeout,
   _resetForTest,
 } from './index';
 import { SyncState, CloudSyncEventType, CloudSyncStage } from '@shared/types/cloudSync';
@@ -295,7 +295,7 @@ describe('recordSyncError', () => {
   });
 });
 
-describe('scheduleErrorAfterTimeout', () => {
+describe('withSyncTimeout', () => {
   beforeEach(() => {
     resetStore();
     clearCredentials();
@@ -306,23 +306,21 @@ describe('scheduleErrorAfterTimeout', () => {
     vi.useRealTimers();
   });
 
-  it('returns a cancel function', () => {
-    const cancel = scheduleErrorAfterTimeout();
-    expect(typeof cancel).toBe('function');
-    cancel();
+  it('resolves when the wrapped promise resolves before timeout', async () => {
+    const result = await withSyncTimeout(Promise.resolve('ok'));
+    expect(result).toBe('ok');
   });
 
-  it('does not call recordSyncError when cancel is called before timeout', () => {
-    const cancel = scheduleErrorAfterTimeout();
-    cancel();
-    vi.advanceTimersByTime(300000);
-    expect(store['cloudSync.syncError']).toBeUndefined();
+  it('rejects with Sync timed out after 15000ms', async () => {
+    const hanging = new Promise<never>(() => {});
+    const race = withSyncTimeout(hanging);
+    vi.advanceTimersByTime(15000);
+    await expect(race).rejects.toThrow('Sync timed out');
   });
 
-  it('calls recordSyncError after 300000ms', () => {
-    scheduleErrorAfterTimeout();
-    vi.advanceTimersByTime(300000);
-    expect(store['cloudSync.syncError']).toBe('Sync timed out');
+  it('rejects with the wrapped promise error when it rejects before timeout', async () => {
+    const race = withSyncTimeout(Promise.reject(new Error('network down')));
+    await expect(race).rejects.toThrow('network down');
   });
 });
 

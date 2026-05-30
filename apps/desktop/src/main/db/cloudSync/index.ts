@@ -229,9 +229,15 @@ export function recordSyncError(message: string): void {
   });
 }
 
-export function scheduleErrorAfterTimeout(): () => void {
-  const timer = setTimeout(() => recordSyncError('Sync timed out'), 300000);
-  return () => clearTimeout(timer);
+const SYNC_TIMEOUT_MS = 15_000;
+
+export function withSyncTimeout<T>(promise: Promise<T>): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Sync timed out')), SYNC_TIMEOUT_MS),
+    ),
+  ]);
 }
 
 export function deleteLocalBackup(localDbPath: string): void {
