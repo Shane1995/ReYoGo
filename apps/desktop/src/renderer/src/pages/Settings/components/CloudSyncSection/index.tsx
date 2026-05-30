@@ -3,26 +3,13 @@ import { Button, Input } from '@reyogo/ui';
 import { toast } from 'sonner';
 import { SectionHeader } from '../SectionHeader';
 import { cloudSyncService } from '@/services/cloudSync';
-import { CloudSyncEventType, CloudSyncStage } from '@shared/types/cloudSync';
+import { CloudSyncEventType } from '@shared/types/cloudSync';
 import type { CloudSyncEvent } from '@shared/types/cloudSync';
-
-type Status = {
-  state: string;
-  lastSyncedAt: string | null;
-  error: string | null;
-  isActive: boolean;
-};
-
-const STAGE_LABEL: Record<CloudSyncStage, string> = {
-  [CloudSyncStage.Migrating]: 'Applying schema to cloud…',
-  [CloudSyncStage.Pushing]: 'Uploading your data…',
-  [CloudSyncStage.Verifying]: 'Verifying data integrity…',
-  [CloudSyncStage.Activating]: 'Activating cloud sync…',
-  [CloudSyncStage.Syncing]: 'Syncing…',
-};
+import { STAGE_LABEL } from './constants';
+import type { CloudSyncStatus } from './types';
 
 export function CloudSyncSection() {
-  const [status, setStatus] = useState<Status | null>(null);
+  const [status, setStatus] = useState<CloudSyncStatus | null>(null);
   const [tursoUrl, setTursoUrl] = useState('');
   const [authToken, setAuthToken] = useState('');
   const [activating, setActivating] = useState(false);
