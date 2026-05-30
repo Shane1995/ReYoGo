@@ -1,4 +1,4 @@
-import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { check, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 import type { InventoryType } from '@reyogo/types';
 import { accounts } from '../accounts';
@@ -21,6 +21,7 @@ export const inventoryCategories = sqliteTable(
       'inventory_categories_type_check',
       sql`${t.type} IN ('food', 'beverage', 'non-food')`,
     ),
+    nameAccountUnique: uniqueIndex('inventory_categories_name_account_idx').on(t.accountId, t.name),
   }),
 );
 export type InventoryCategoryRow = typeof inventoryCategories.$inferSelect;
