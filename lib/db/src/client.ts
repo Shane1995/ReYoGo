@@ -22,7 +22,7 @@ export function createReplicaClient(
   syncUrl: string,
   authToken: string,
 ): ReplicaHandle {
-  const client = createClient({ url: `file:${replicaPath}`, syncUrl, authToken });
+  const client = createClient({ url: `file:${replicaPath}`, syncUrl, authToken, offline: true });
   return {
     db: drizzle(client, { schema }),
     sync: () => client.sync().then(() => undefined),

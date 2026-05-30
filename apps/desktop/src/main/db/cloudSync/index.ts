@@ -31,6 +31,10 @@ export function hasLocalReplica(localDbPath: string): boolean {
   return existsSync(localDbPath);
 }
 
+export function hasEverSynced(): boolean {
+  return !!store.get(STORE_KEY_LAST_SYNCED);
+}
+
 export function getStoredCredentials(): CloudSyncCredentials | null {
   const tursoUrl = store.get(STORE_KEY_URL);
   const encryptedB64 = store.get(STORE_KEY_TOKEN_ENC);
@@ -62,6 +66,15 @@ export function clearCredentials(): void {
 
 export function getSyncStatus(): SyncStatus {
   return _syncStatus;
+}
+
+export function markOffline(): void {
+  const lastSyncedAtStr = store.get(STORE_KEY_LAST_SYNCED);
+  updateSyncStatus({
+    state: SyncState.Error,
+    lastSyncedAt: lastSyncedAtStr ? new Date(lastSyncedAtStr) : null,
+    error: 'No internet connection',
+  });
 }
 
 export function _resetForTest(): void {

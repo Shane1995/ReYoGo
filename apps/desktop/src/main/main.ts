@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, net } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { join } from 'path';
 import {
@@ -19,6 +19,7 @@ import {
 import {
   recordSyncSuccess,
   recordSyncError,
+  markOffline,
   clearCredentials,
   deleteLocalBackup,
   withSyncTimeout,
@@ -27,6 +28,7 @@ import { registerRoute } from './lib/electron-router-dom';
 import { registerIPC } from './ipc';
 
 const BACKGROUND_SYNC_INTERVAL_MS = 5 * 60 * 1000;
+let _bgSyncing = false;
 
 function broadcastToWindows(channel: string, payload: unknown): void {
   for (const win of BrowserWindow.getAllWindows()) {
@@ -41,6 +43,9 @@ function isPermanentSyncError(err: unknown): boolean {
 
 async function runBackgroundSync(): Promise<void> {
   if (!isReplicaMode()) return;
+  if (_bgSyncing) return;
+  if (!net.isOnline()) return;
+  _bgSyncing = true;
   try {
     broadcastToWindows(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.Syncing });
     await withSyncTimeout(syncNow());
@@ -60,7 +65,14 @@ async function runBackgroundSync(): Promise<void> {
       });
     } else {
       recordSyncError(msg);
+      broadcastToWindows(CLOUD_SYNC_EVENT_CHANNEL, {
+        type: CloudSyncEventType.Error,
+        message: msg,
+        retryable: true,
+      });
     }
+  } finally {
+    _bgSyncing = false;
   }
 }
 
@@ -136,6 +148,9 @@ app.whenReady().then(() => {
 
   initDatabase()
     .then(() => {
+      if (isReplicaMode() && !net.isOnline()) {
+        markOffline();
+      }
       dbReady = true;
       trySendDbReady();
       if (isReplicaMode()) {

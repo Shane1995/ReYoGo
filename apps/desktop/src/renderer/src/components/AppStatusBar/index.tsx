@@ -5,15 +5,40 @@ import { appService, type AppVersionInfo } from '@/services/app';
 import { CloudSyncEventType } from '@shared/types/cloudSync';
 import type { CloudSyncEvent } from '@shared/types/cloudSync';
 
-type SyncStatus = { isActive: boolean; lastSyncedAt: string | null };
+type SyncStatus = {
+  isActive: boolean;
+  lastSyncedAt: string | null;
+  state: string;
+  error: string | null;
+};
+
+function syncLabel(sync: SyncStatus | null, syncing: boolean, isOnline: boolean): string {
+  if (!sync?.isActive) return 'Local only';
+  if (!isOnline) return 'Offline';
+  if (syncing) return 'Syncing…';
+  if (sync.state === 'error') return 'Sync failed';
+  return 'Connected';
+}
 
 export function AppStatusBar() {
   const [version, setVersion] = useState<AppVersionInfo | null>(null);
   const [sync, setSync] = useState<SyncStatus | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
     appService.getVersion().then(setVersion);
+  }, []);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   useEffect(() => {
@@ -22,7 +47,12 @@ export function AppStatusBar() {
     const refresh = async () => {
       const status = await cloudSyncService.getStatus().catch(() => null);
       if (active && status)
-        setSync({ isActive: status.isActive, lastSyncedAt: status.lastSyncedAt });
+        setSync({
+          isActive: status.isActive,
+          lastSyncedAt: status.lastSyncedAt,
+          state: status.state,
+          error: status.error,
+        });
     };
 
     refresh();
@@ -39,6 +69,7 @@ export function AppStatusBar() {
         refresh();
       } else if (event.type === CloudSyncEventType.Error) {
         setSyncing(false);
+        refresh();
       }
     });
 
@@ -48,7 +79,8 @@ export function AppStatusBar() {
     };
   }, []);
 
-  const connected = sync?.isActive ?? false;
+  const label = syncLabel(sync, syncing, isOnline);
+  const connected = sync?.isActive === true && isOnline && sync.state !== 'error' && !syncing;
 
   return (
     <div
@@ -65,7 +97,7 @@ export function AppStatusBar() {
           <CloudOff className="size-3.5 shrink-0" aria-hidden />
         )}
         <span>
-          {syncing ? 'Syncing database…' : connected ? 'Cloud connected' : 'Local only'}
+          {label}
           {!syncing && version && ` · v${version.version}`}
         </span>
       </div>
