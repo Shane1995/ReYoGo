@@ -1,4 +1,4 @@
-import { asc, desc, eq, gt } from 'drizzle-orm';
+import { asc, desc, eq, gt, sql } from 'drizzle-orm';
 import { MovementType, InvoiceStatus } from '@reyogo/types';
 import type {
   IInvoice,
@@ -318,6 +318,7 @@ export function createInvoicesRepo(db: DbClient) {
     },
 
     async getLinesForAnalysis(): Promise<InvoiceLineWithDate[]> {
+      const effectiveDate = sql<Date>`COALESCE(${schema.invoices.invoiceDate}, ${schema.invoices.createdAt})`;
       const rows = await db
         .select({
           id: schema.invoiceLineItems.id,
@@ -326,7 +327,7 @@ export function createInvoicesRepo(db: DbClient) {
           qty: schema.invoiceLineItems.qty,
           unitCost: schema.invoiceLineItems.unitCost,
           totalCost: schema.invoiceLineItems.totalCost,
-          invoiceCreatedAt: schema.invoices.createdAt,
+          invoiceDate: effectiveDate,
           categoryType: schema.inventoryCategories.type,
           categoryName: schema.inventoryCategories.name,
         })
@@ -340,7 +341,7 @@ export function createInvoicesRepo(db: DbClient) {
           schema.inventoryCategories,
           eq(schema.inventoryItems.categoryId, schema.inventoryCategories.id),
         )
-        .orderBy(asc(schema.invoices.createdAt));
+        .orderBy(asc(effectiveDate));
       return rows.map((r) => ({
         id: r.id,
         invoiceId: r.invoiceId,
@@ -348,7 +349,7 @@ export function createInvoicesRepo(db: DbClient) {
         qty: r.qty,
         unitCost: r.unitCost,
         totalCost: r.totalCost,
-        invoiceCreatedAt: r.invoiceCreatedAt,
+        invoiceDate: r.invoiceDate,
         categoryType: r.categoryType ?? null,
         categoryName: r.categoryName ?? null,
       }));
@@ -363,7 +364,7 @@ export function createInvoicesRepo(db: DbClient) {
         .from(schema.invoiceLineItems)
         .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
         .where(gt(schema.invoiceLineItems.qty, 0))
-        .orderBy(desc(schema.invoices.createdAt));
+        .orderBy(desc(sql`COALESCE(${schema.invoices.invoiceDate}, ${schema.invoices.createdAt})`));
       const result: Record<string, number> = {};
       for (const row of rows) {
         if (!(row.inventoryItemId in result)) result[row.inventoryItemId] = row.unitCost;
