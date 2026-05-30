@@ -322,11 +322,14 @@ describe('activateCloudSync', () => {
 
   it('emits Progress events and Success on the success path', async () => {
     const mockSend = vi.fn();
-    const mockWebContents = { send: mockSend } as unknown as import('electron').WebContents;
+    const mockWebContents = { send: mockSend } satisfies Pick<
+      import('electron').WebContents,
+      'send'
+    >;
 
     const mockLocalDb = {
       prepare: vi.fn(() => ({ all: vi.fn((): Record<string, unknown>[] => []) })),
-    } as unknown as import('better-sqlite3').Database;
+    } satisfies { prepare(sql: string): { all(): Record<string, unknown>[] } };
 
     await activateCloudSync(
       mockWebContents,
@@ -349,7 +352,10 @@ describe('activateCloudSync', () => {
 
   it('emits Error event when row count mismatch occurs', async () => {
     const mockSend = vi.fn();
-    const mockWebContents = { send: mockSend } as unknown as import('electron').WebContents;
+    const mockWebContents = { send: mockSend } satisfies Pick<
+      import('electron').WebContents,
+      'send'
+    >;
 
     let prepareCallCount = 0;
     const mockLocalDb = {
@@ -359,17 +365,7 @@ describe('activateCloudSync', () => {
           return prepareCallCount > 14 ? [{ id: '1' }] : [];
         }),
       })),
-    } as unknown as import('better-sqlite3').Database;
-
-    const { drizzle } = await import('drizzle-orm/libsql');
-    vi.mocked(drizzle).mockReturnValueOnce({
-      select: vi.fn(() => ({
-        from: vi.fn(() => Promise.resolve([])),
-      })),
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({ onConflictDoNothing: vi.fn(() => Promise.resolve()) })),
-      })),
-    } as unknown as ReturnType<typeof drizzle>);
+    } satisfies { prepare(sql: string): { all(): Record<string, unknown>[] } };
 
     await activateCloudSync(
       mockWebContents,

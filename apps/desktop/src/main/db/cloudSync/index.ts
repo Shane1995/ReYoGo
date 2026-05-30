@@ -4,7 +4,6 @@ import Store from 'electron-store';
 import { existsSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { createClient } from '@libsql/client';
-import type BetterSQLite3 from 'better-sqlite3';
 import type { SQLiteTable } from 'drizzle-orm/sqlite-core';
 import type { InferInsertModel } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/libsql';
@@ -14,6 +13,10 @@ import { CloudSyncEventType, CloudSyncStage, SyncState } from '@shared/types/clo
 import type { CloudSyncEvent } from '@shared/types/cloudSync';
 import type { CloudSyncCredentials, SyncStatus } from './types';
 import { CLOUD_SYNC_EVENT_CHANNEL } from '@shared/ipc-events';
+
+interface RawDb {
+  prepare(sql: string): { all(): Record<string, unknown>[] };
+}
 
 const STORE_KEY_URL = 'cloudSync.tursoUrl';
 const STORE_KEY_TOKEN_ENC = 'cloudSync.authTokenEncrypted';
@@ -31,7 +34,7 @@ const store = new Store<StoreSchema>();
 
 let _syncStatus: SyncStatus = { state: SyncState.Idle, lastSyncedAt: null, error: null };
 
-function sendEvent(webContents: WebContents, event: CloudSyncEvent): void {
+function sendEvent(webContents: Pick<WebContents, 'send'>, event: CloudSyncEvent): void {
   webContents.send(CLOUD_SYNC_EVENT_CHANNEL, event);
 }
 
@@ -131,9 +134,9 @@ function toInsertRows(rows: Record<string, unknown>[]): AnySchemaInsert[] {
 }
 
 export async function activateCloudSync(
-  webContents: WebContents,
+  webContents: Pick<WebContents, 'send'>,
   _localDbPath: string,
-  localDb: BetterSQLite3.Database,
+  localDb: RawDb,
   tursoUrl: string,
   authToken: string,
 ): Promise<void> {
@@ -169,7 +172,7 @@ export async function activateCloudSync(
     for (const tableName of FK_ORDER_TABLES) {
       const table = SCHEMA_TABLE_MAP[tableName];
       const sqlName = TABLE_SQL_NAMES[tableName];
-      const rows = localDb.prepare<[], Record<string, unknown>>(`SELECT * FROM ${sqlName}`).all();
+      const rows = localDb.prepare(`SELECT * FROM ${sqlName}`).all();
 
       if (rows.length > 0) {
         for (let i = 0; i < rows.length; i += BATCH_SIZE) {
@@ -198,9 +201,7 @@ export async function activateCloudSync(
     for (const tableName of FK_ORDER_TABLES) {
       const table = SCHEMA_TABLE_MAP[tableName];
       const sqlName = TABLE_SQL_NAMES[tableName];
-      const localRows = localDb
-        .prepare<[], Record<string, unknown>>(`SELECT * FROM ${sqlName}`)
-        .all();
+      const localRows = localDb.prepare(`SELECT * FROM ${sqlName}`).all();
       const remoteRows = await remoteDb.select().from(table);
 
       if (localRows.length !== remoteRows.length) {
