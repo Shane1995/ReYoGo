@@ -139,6 +139,12 @@ export async function activateCloudSync(
 
     await migrate(remoteHandle.db, { migrationsFolder: getMigrationsFolder() });
 
+    // Migrations seed default rows (e.g. 'My Business', 'My Venue'). Clear all
+    // tables in reverse FK order so the local data copy below always wins.
+    for (const table of [...FK_ORDER_TABLES].reverse()) {
+      await remoteHandle.db.delete(table);
+    }
+
     sendEvent(webContents, {
       type: CloudSyncEventType.Progress,
       stage: CloudSyncStage.Migrating,
