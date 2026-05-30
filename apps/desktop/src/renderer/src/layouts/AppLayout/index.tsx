@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { AppSidebar } from '@/components/AppSidebar';
+import { AppStatusBar } from '@/components/AppStatusBar';
 import UpdateToast from '@/components/UpdateToast';
 
 const AppLayout = () => (
@@ -10,6 +11,7 @@ const AppLayout = () => (
         <Outlet />
       </main>
     </div>
+    <AppStatusBar />
     <UpdateToast />
   </div>
 );

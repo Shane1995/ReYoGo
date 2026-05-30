@@ -6,7 +6,6 @@ import { ChevronRightIcon, Settings as SettingsIcon } from 'lucide-react';
 import { useNavItems } from '@/config/nav';
 import { SettingsRoutes } from '@/components/AppRoutes/routePaths';
 import { useEntities } from '@/Context/EntityContext';
-import { AppStatusBar } from '@/components/AppStatusBar';
 
 const EXPANDED_W = 224;
 const COLLAPSED_W = 56;
@@ -143,8 +142,6 @@ export function AppSidebar() {
           </button>
         </div>
       </div>
-
-      <AppStatusBar collapsed={collapsed} />
     </motion.div>
   );
 }
