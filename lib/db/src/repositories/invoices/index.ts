@@ -349,7 +349,7 @@ export function createInvoicesRepo(db: DbClient) {
         qty: r.qty,
         unitCost: r.unitCost,
         totalCost: r.totalCost,
-        invoiceDate: r.invoiceDate,
+        invoiceDate: new Date(Number(r.invoiceDate) * 1000),
         categoryType: r.categoryType ?? null,
         categoryName: r.categoryName ?? null,
       }));

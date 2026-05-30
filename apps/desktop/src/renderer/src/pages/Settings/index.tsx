@@ -9,7 +9,7 @@ export default function SettingsPage() {
   const { group, entities, refetchEntities } = useEntities();
 
   return (
-    <div className="min-h-full bg-background">
+    <div className="flex-1 overflow-y-auto bg-background">
       <div className="max-w-2xl px-8 py-8 flex flex-col gap-10">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Settings</h1>
