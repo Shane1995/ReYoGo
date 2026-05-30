@@ -148,10 +148,10 @@ export async function reinitialise(
 ): Promise<void> {
   _reinitialising = true;
   try {
-    if (_handle) _handle.close();
     const handle = createReplicaClient(replicaPath, syncUrl, authToken);
     await handle.sync();
     await migrate(handle.db, { migrationsFolder: getMigrationsFolder() });
+    if (_handle) _handle.close();
     _handle = handle;
     _db = handle.db;
     _repos = buildRepos(handle.db);
