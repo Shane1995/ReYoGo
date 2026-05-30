@@ -10,7 +10,7 @@ export function useAppReady() {
   const [initError, setInitError] = useState<string | null>(null);
 
   const checkSetup = useCallback(async () => {
-    const isFresh = await cloudSyncService.isFreshReplica();
+    const isFresh = await cloudSyncService.isFreshReplica().catch(() => false);
     if (isFresh) {
       setPhase('fresh-replica');
       return;

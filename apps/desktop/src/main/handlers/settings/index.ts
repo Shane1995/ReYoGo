@@ -8,6 +8,7 @@ import {
   getStoredCredentials,
   getTursoUrl,
   hasCloudCredentials,
+  hasLocalReplica,
   deleteLocalBackup,
   recordSyncSuccess,
   scheduleErrorAfterTimeout,
@@ -56,4 +57,9 @@ export function registerSettingsHandlers(): void {
     if (!tursoUrl) return null;
     return { tursoUrl };
   });
+
+  ipcMain.handle(
+    CloudSyncIPC.IS_FRESH_REPLICA,
+    () => hasCloudCredentials() && !hasLocalReplica(getReplicaPath()),
+  );
 }
