@@ -1,22 +1,38 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-const { mockExistsSync, mockUnlinkSync, store, makeTable, mockDb } = vi.hoisted(() => {
-  const store: Record<string, unknown> = {};
-  const mockExistsSync = vi.fn(() => false);
-  const mockUnlinkSync = vi.fn();
-  function makeTable(sqlName: string): object {
-    const t: Record<symbol, string> = {};
-    t[Symbol.for('drizzle:Name')] = sqlName;
-    return t;
-  }
-  const mockDb = {
-    selectFrom: vi.fn((): Promise<Record<string, unknown>[]> => Promise.resolve([])),
-    insert: vi.fn(() => ({
-      values: vi.fn(() => ({ onConflictDoNothing: vi.fn(() => Promise.resolve()) })),
-    })),
-  };
-  return { mockExistsSync, mockUnlinkSync, store, makeTable, mockDb };
-});
+const { mockExistsSync, mockUnlinkSync, store, makeTable, mockLocalDb, mockRemoteDb } = vi.hoisted(
+  () => {
+    const store: Record<string, unknown> = {};
+    const mockExistsSync = vi.fn(() => false);
+    const mockUnlinkSync = vi.fn();
+
+    function makeTable(sqlName: string): object {
+      const t: Record<symbol, string> = {};
+      t[Symbol.for('drizzle:Name')] = sqlName;
+      return t;
+    }
+
+    const mockRemoteDb = {
+      select: vi.fn(() => ({
+        from: vi.fn((): Promise<Record<string, unknown>[]> => Promise.resolve([])),
+      })),
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({ onConflictDoNothing: vi.fn(() => Promise.resolve()) })),
+      })),
+    };
+
+    const mockLocalDb = {
+      select: vi.fn(() => ({
+        from: vi.fn((): Promise<Record<string, unknown>[]> => Promise.resolve([])),
+      })),
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({ onConflictDoNothing: vi.fn(() => Promise.resolve()) })),
+      })),
+    };
+
+    return { mockExistsSync, mockUnlinkSync, store, makeTable, mockLocalDb, mockRemoteDb };
+  },
+);
 
 vi.mock('electron', () => ({
   app: { getPath: vi.fn(() => '/tmp/test-userdata'), isPackaged: false },
@@ -46,24 +62,8 @@ vi.mock('fs', () => ({
   unlinkSync: mockUnlinkSync,
 }));
 
-vi.mock('@libsql/client', () => ({
-  createClient: vi.fn(() => ({
-    close: vi.fn(),
-  })),
-}));
-
-vi.mock('drizzle-orm/libsql', () => ({
-  drizzle: vi.fn(() => ({
-    select: vi.fn(() => ({ from: mockDb.selectFrom })),
-    insert: mockDb.insert,
-  })),
-}));
-
-vi.mock('drizzle-orm/libsql/migrator', () => ({
-  migrate: vi.fn(() => Promise.resolve()),
-}));
-
 vi.mock('@reyogo/db', () => ({
+  createDbClient: vi.fn(() => ({ db: mockRemoteDb, close: vi.fn() })),
   schema: {
     accounts: makeTable('accounts'),
     businessGroups: makeTable('business_groups'),
@@ -80,6 +80,10 @@ vi.mock('@reyogo/db', () => ({
     stockCountLines: makeTable('stock_count_lines'),
     costingSnapshots: makeTable('costing_snapshots'),
   },
+}));
+
+vi.mock('drizzle-orm/libsql/migrator', () => ({
+  migrate: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock('@shared/ipc-events', () => ({
@@ -99,7 +103,6 @@ import {
   recordSyncError,
   scheduleErrorAfterTimeout,
   _resetForTest,
-  FK_ORDER_TABLES,
 } from './index';
 import { SyncState, CloudSyncEventType, CloudSyncStage } from '@shared/types/cloudSync';
 import { safeStorage } from 'electron';
@@ -328,9 +331,14 @@ describe('activateCloudSync', () => {
     resetStore();
     _resetForTest();
     vi.clearAllMocks();
-    mockDb.selectFrom.mockResolvedValue([]);
-    mockDb.insert.mockReturnValue({
+    mockRemoteDb.select.mockReturnValue({
+      from: vi.fn((): Promise<Record<string, unknown>[]> => Promise.resolve([])),
+    });
+    mockRemoteDb.insert.mockReturnValue({
       values: vi.fn(() => ({ onConflictDoNothing: vi.fn(() => Promise.resolve()) })),
+    });
+    mockLocalDb.select.mockReturnValue({
+      from: vi.fn((): Promise<Record<string, unknown>[]> => Promise.resolve([])),
     });
   });
 
@@ -341,16 +349,20 @@ describe('activateCloudSync', () => {
       'send'
     >;
 
-    mockDb.selectFrom.mockResolvedValue([{ id: 'row1' }]);
-
-    const mockLocalDb = {
-      prepare: vi.fn(() => ({ all: vi.fn((): Record<string, unknown>[] => [{ id: 'row1' }]) })),
-    } satisfies { prepare(sql: string): { all(): Record<string, unknown>[] } };
+    const row: Record<string, unknown> = { id: 'row1' };
+    mockLocalDb.select.mockReturnValue({
+      from: vi.fn((): Promise<Record<string, unknown>[]> => Promise.resolve([row])),
+    });
+    mockRemoteDb.select.mockReturnValue({
+      from: vi.fn((): Promise<Record<string, unknown>[]> => Promise.resolve([row])),
+    });
+    mockRemoteDb.insert.mockReturnValue({
+      values: vi.fn(() => ({ onConflictDoNothing: vi.fn(() => Promise.resolve()) })),
+    });
 
     await activateCloudSync(
       mockWebContents,
-      '/tmp/local.db',
-      mockLocalDb,
+      mockLocalDb as never,
       'libsql://example.turso.io',
       'my-token',
     );
@@ -364,32 +376,27 @@ describe('activateCloudSync', () => {
     expect(progressEvents.some((e) => e.stage === CloudSyncStage.Verifying)).toBe(true);
     expect(progressEvents.some((e) => e.stage === CloudSyncStage.Activating)).toBe(true);
     expect(successEvents).toHaveLength(1);
-    expect(mockDb.insert).toHaveBeenCalled();
+    expect(mockRemoteDb.insert).toHaveBeenCalled();
     expect(store['cloudSync.tursoUrl']).toBe('libsql://example.turso.io');
   });
 
-  it('emits Error event when row count mismatch occurs', async () => {
+  it('emits Error when remote has fewer rows than were pushed (data loss)', async () => {
     const mockSend = vi.fn();
     const mockWebContents = { send: mockSend } satisfies Pick<
       import('electron').WebContents,
       'send'
     >;
 
-    const tableCount = FK_ORDER_TABLES.length;
-    let prepareCallCount = 0;
-    const mockLocalDb = {
-      prepare: vi.fn((_sql: string) => ({
-        all: vi.fn((): Record<string, unknown>[] => {
-          prepareCallCount++;
-          return prepareCallCount > tableCount ? [{ id: 'extra' }] : [];
-        }),
-      })),
-    } satisfies { prepare(sql: string): { all(): Record<string, unknown>[] } };
+    mockLocalDb.select.mockReturnValue({
+      from: vi.fn((): Promise<Record<string, unknown>[]> => Promise.resolve([{ id: 'row1' }])),
+    });
+    mockRemoteDb.select.mockReturnValue({
+      from: vi.fn((): Promise<Record<string, unknown>[]> => Promise.resolve([])),
+    });
 
     await activateCloudSync(
       mockWebContents,
-      '/tmp/local.db',
-      mockLocalDb,
+      mockLocalDb as never,
       'libsql://example.turso.io',
       'my-token',
     );
@@ -399,5 +406,37 @@ describe('activateCloudSync', () => {
     expect(errorEvents.length).toBeGreaterThan(0);
     expect(errorEvents[0].retryable).toBe(true);
     expect(store['cloudSync.tursoUrl']).toBeUndefined();
+  });
+
+  it('succeeds when remote has more rows than local (pre-existing remote data)', async () => {
+    const mockSend = vi.fn();
+    const mockWebContents = { send: mockSend } satisfies Pick<
+      import('electron').WebContents,
+      'send'
+    >;
+
+    const localRow: Record<string, unknown> = { id: 'row1' };
+    const extraRow: Record<string, unknown> = { id: 'row2' };
+    mockLocalDb.select.mockReturnValue({
+      from: vi.fn((): Promise<Record<string, unknown>[]> => Promise.resolve([localRow])),
+    });
+    mockRemoteDb.select.mockReturnValue({
+      from: vi.fn((): Promise<Record<string, unknown>[]> => Promise.resolve([localRow, extraRow])),
+    });
+    mockRemoteDb.insert.mockReturnValue({
+      values: vi.fn(() => ({ onConflictDoNothing: vi.fn(() => Promise.resolve()) })),
+    });
+
+    await activateCloudSync(
+      mockWebContents,
+      mockLocalDb as never,
+      'libsql://example.turso.io',
+      'my-token',
+    );
+
+    const sentEvents = mockSend.mock.calls.map(([, event]) => event);
+    const successEvents = sentEvents.filter((e) => e.type === CloudSyncEventType.Success);
+    expect(successEvents).toHaveLength(1);
+    expect(store['cloudSync.tursoUrl']).toBe('libsql://example.turso.io');
   });
 });

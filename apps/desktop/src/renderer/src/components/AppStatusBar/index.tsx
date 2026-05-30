@@ -51,16 +51,24 @@ export function AppStatusBar() {
   const connected = sync?.isActive ?? false;
 
   return (
-    <div className="flex shrink-0 items-center gap-2 border-t border-border bg-background px-4 py-1 text-xs text-muted-foreground">
-      {connected ? (
-        <Cloud className="size-3.5 shrink-0 text-green-500" aria-hidden />
-      ) : (
-        <CloudOff className="size-3.5 shrink-0" aria-hidden />
-      )}
-      <span>
-        {syncing ? 'Syncing database…' : connected ? 'Cloud connected' : 'Local only'}
-        {!syncing && version && ` · v${version.version}`}
-      </span>
+    <div
+      className="flex shrink-0 items-center border-t border-[rgba(255,255,255,0.07)] px-4 py-1 text-xs text-[rgba(255,255,255,0.4)]"
+      style={{
+        background: 'rgba(13,17,23,0.88)',
+        backdropFilter: 'blur(28px) saturate(200%)',
+      }}
+    >
+      <div className="ml-auto flex items-center gap-2">
+        {connected ? (
+          <Cloud className="size-3.5 shrink-0 text-green-500" aria-hidden />
+        ) : (
+          <CloudOff className="size-3.5 shrink-0" aria-hidden />
+        )}
+        <span>
+          {syncing ? 'Syncing database…' : connected ? 'Cloud connected' : 'Local only'}
+          {!syncing && version && ` · v${version.version}`}
+        </span>
+      </div>
     </div>
   );
 }

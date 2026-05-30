@@ -1,7 +1,6 @@
 import { ipcMain } from 'electron';
-import Database from 'better-sqlite3';
 import { CloudSyncIPC } from '@shared/types/ipc';
-import { getLocalDbPath, getReplicaPath, reinitialise } from '../../db';
+import { getDb, getLocalDbPath, getReplicaPath, reinitialise, wipeReplicaFiles } from '../../db';
 import {
   activateCloudSync,
   getSyncStatus,
@@ -16,17 +15,9 @@ import {
 
 export function registerSettingsHandlers(): void {
   ipcMain.handle(CloudSyncIPC.ACTIVATE, async (event, tursoUrl: string, authToken: string) => {
-    const localDbPath = getLocalDbPath();
     const replicaPath = getReplicaPath();
-    const localSqliteDb = new Database(localDbPath, { readonly: true });
-    try {
-      await activateCloudSync(event.sender, localDbPath, localSqliteDb, tursoUrl, authToken);
-    } finally {
-      localSqliteDb.close();
-    }
-    deleteLocalBackup(replicaPath);
-    deleteLocalBackup(`${replicaPath}-shm`);
-    deleteLocalBackup(`${replicaPath}-wal`);
+    await activateCloudSync(event.sender, getDb(), tursoUrl, authToken);
+    wipeReplicaFiles(replicaPath);
     reinitialise(replicaPath, tursoUrl, authToken).catch((err: unknown) => {
       console.error('[ReYoGo] Failed to hot-swap to replica after activation:', err);
     });

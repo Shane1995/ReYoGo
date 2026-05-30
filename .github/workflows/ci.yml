@@ -6,6 +6,7 @@ on:
     paths:
       - 'packages/**'
       - 'apps/**'
+      - 'lib/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'

@@ -2,21 +2,15 @@ import { safeStorage } from 'electron';
 import type { WebContents } from 'electron';
 import { existsSync, unlinkSync } from 'fs';
 import { join } from 'path';
-import { createClient } from '@libsql/client';
+import { createDbClient, schema, type DbClient, type DbHandle } from '@reyogo/db';
 import { getTableName } from 'drizzle-orm';
 import type { SQLiteTable } from 'drizzle-orm/sqlite-core';
-import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
-import { schema } from '@reyogo/db';
 import { CloudSyncEventType, CloudSyncStage, SyncState } from '@shared/types/cloudSync';
 import type { CloudSyncEvent } from '@shared/types/cloudSync';
 import type { CloudSyncCredentials, SyncStatus } from './types';
 import { CLOUD_SYNC_EVENT_CHANNEL } from '@shared/ipc-events';
 import { store } from './store';
-
-interface RawDb {
-  prepare(sql: string): { all(): Record<string, unknown>[] };
-}
 
 const STORE_KEY_URL = 'cloudSync.tursoUrl';
 const STORE_KEY_TOKEN_ENC = 'cloudSync.authTokenEncrypted';
@@ -82,98 +76,48 @@ function getMigrationsFolder(): string {
   return join(__dirname, 'db', 'migrations');
 }
 
-const SCHEMA_TABLE_MAP = {
-  accounts: schema.accounts,
-  businessGroups: schema.businessGroups,
-  entities: schema.entities,
-  suppliers: schema.suppliers,
-  inventoryCategories: schema.inventoryCategories,
-  unitsOfMeasure: schema.unitsOfMeasure,
-  inventoryItems: schema.inventoryItems,
-  invoices: schema.invoices,
-  invoiceLineItems: schema.invoiceLineItems,
-  stockMovements: schema.stockMovements,
-  invoiceAuditLog: schema.invoiceAuditLog,
-  stockCountSessions: schema.stockCountSessions,
-  stockCountLines: schema.stockCountLines,
-  costingSnapshots: schema.costingSnapshots,
-} satisfies Record<string, SQLiteTable>;
-
-type TableMeta = { nameMap: Record<string, string>; timestampFields: Set<string> };
-
-function buildTableMeta(table: SQLiteTable): TableMeta {
-  const nameMap: Record<string, string> = {};
-  const timestampFields = new Set<string>();
-  for (const [field, col] of Object.entries(table as unknown as Record<string, unknown>)) {
-    if (
-      col &&
-      typeof col === 'object' &&
-      'name' in col &&
-      typeof (col as { name: unknown }).name === 'string'
-    ) {
-      nameMap[(col as { name: string }).name] = field;
-      const mode = (col as { config?: { mode?: string } }).config?.mode;
-      if (mode === 'timestamp') timestampFields.add(field);
-    }
-  }
-  return { nameMap, timestampFields };
-}
-
-function remapRow(
-  { nameMap, timestampFields }: TableMeta,
-  row: Record<string, unknown>,
-): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [key, val] of Object.entries(row)) {
-    const field = nameMap[key] ?? key;
-    out[field] = timestampFields.has(field) && typeof val === 'number' ? new Date(val) : val;
-  }
-  return out;
-}
-
-function insertRows(
-  db: {
-    insert(table: SQLiteTable): {
-      values(rows: Record<string, unknown>[]): { onConflictDoNothing(): Promise<unknown> };
-    };
-  },
-  table: SQLiteTable,
-  rows: Record<string, unknown>[],
-): Promise<unknown> {
-  const meta = buildTableMeta(table);
-  return db
-    .insert(table)
-    .values(rows.map((r) => remapRow(meta, r)))
-    .onConflictDoNothing();
-}
-
-export const FK_ORDER_TABLES: Array<keyof typeof SCHEMA_TABLE_MAP> = [
-  'accounts',
-  'businessGroups',
-  'entities',
-  'suppliers',
-  'inventoryCategories',
-  'unitsOfMeasure',
-  'inventoryItems',
-  'invoices',
-  'invoiceLineItems',
-  'stockMovements',
-  'invoiceAuditLog',
-  'stockCountSessions',
-  'stockCountLines',
-  'costingSnapshots',
-] satisfies Array<keyof typeof SCHEMA_TABLE_MAP>;
+// Tables ordered to satisfy FK constraints (parents before children).
+export const FK_ORDER_TABLES: SQLiteTable[] = [
+  schema.accounts,
+  schema.businessGroups,
+  schema.entities,
+  schema.suppliers,
+  schema.inventoryCategories,
+  schema.unitsOfMeasure,
+  schema.inventoryItems,
+  schema.invoices,
+  schema.invoiceLineItems,
+  schema.stockMovements,
+  schema.invoiceAuditLog,
+  schema.stockCountSessions,
+  schema.stockCountLines,
+  schema.costingSnapshots,
+];
 
 const BATCH_SIZE = 500;
 
+async function copyTable<T extends SQLiteTable>(
+  from: DbClient,
+  to: DbClient,
+  table: T,
+): Promise<number> {
+  const rows = await from.select().from(table);
+  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+    const batch = rows.slice(i, i + BATCH_SIZE);
+    // Drizzle select/insert generics diverge on key constraints for abstract T.
+    // @ts-expect-error TS2769
+    await to.insert(table).values(batch).onConflictDoNothing();
+  }
+  return rows.length;
+}
+
 export async function activateCloudSync(
   webContents: Pick<WebContents, 'send'>,
-  _localDbPath: string,
-  localDb: RawDb,
+  localDb: DbClient,
   tursoUrl: string,
   authToken: string,
 ): Promise<void> {
-  const remoteClient = createClient({ url: tursoUrl, authToken });
+  const remoteHandle: DbHandle = createDbClient(tursoUrl, authToken);
   try {
     sendEvent(webContents, {
       type: CloudSyncEventType.Progress,
@@ -182,9 +126,8 @@ export async function activateCloudSync(
       total: 1,
     });
 
-    const remoteDb = drizzle(remoteClient, { schema });
+    await migrate(remoteHandle.db, { migrationsFolder: getMigrationsFolder() });
 
-    await migrate(remoteDb, { migrationsFolder: getMigrationsFolder() });
     sendEvent(webContents, {
       type: CloudSyncEventType.Progress,
       stage: CloudSyncStage.Migrating,
@@ -193,7 +136,7 @@ export async function activateCloudSync(
     });
 
     const totalTables = FK_ORDER_TABLES.length;
-    let tablesDone = 0;
+    const pushed: Array<{ table: SQLiteTable; localCount: number }> = [];
 
     sendEvent(webContents, {
       type: CloudSyncEventType.Progress,
@@ -202,22 +145,12 @@ export async function activateCloudSync(
       total: totalTables,
     });
 
-    for (const tableName of FK_ORDER_TABLES) {
-      const table = SCHEMA_TABLE_MAP[tableName];
-      const rows = localDb.prepare(`SELECT * FROM ${getTableName(table)}`).all();
-
-      if (rows.length > 0) {
-        for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-          const batch = rows.slice(i, i + BATCH_SIZE);
-          await insertRows(remoteDb, table, batch);
-        }
-      }
-
-      tablesDone++;
+    for (const table of FK_ORDER_TABLES) {
+      pushed.push({ table, localCount: await copyTable(localDb, remoteHandle.db, table) });
       sendEvent(webContents, {
         type: CloudSyncEventType.Progress,
         stage: CloudSyncStage.Pushing,
-        done: tablesDone,
+        done: pushed.length,
         total: totalTables,
       });
     }
@@ -230,16 +163,13 @@ export async function activateCloudSync(
     });
 
     let verifyDone = 0;
-    for (const tableName of FK_ORDER_TABLES) {
-      const table = SCHEMA_TABLE_MAP[tableName];
-      const localRows = localDb.prepare(`SELECT * FROM ${getTableName(table)}`).all();
-      const remoteRows = await remoteDb.select().from(table);
+    for (const { table, localCount } of pushed) {
+      const remoteRows = await remoteHandle.db.select().from(table);
 
-      if (localRows.length !== remoteRows.length) {
-        await remoteClient.close();
+      if (remoteRows.length < localCount) {
         sendEvent(webContents, {
           type: CloudSyncEventType.Error,
-          message: `Row count mismatch in ${tableName}: local=${localRows.length} remote=${remoteRows.length}`,
+          message: `Data loss detected in ${getTableName(table)}: pushed ${localCount} rows but remote only has ${remoteRows.length}`,
           retryable: true,
         });
         return;
@@ -250,11 +180,9 @@ export async function activateCloudSync(
         type: CloudSyncEventType.Progress,
         stage: CloudSyncStage.Verifying,
         done: verifyDone,
-        total: FK_ORDER_TABLES.length,
+        total: totalTables,
       });
     }
-
-    await remoteClient.close();
 
     sendEvent(webContents, {
       type: CloudSyncEventType.Progress,
@@ -276,12 +204,13 @@ export async function activateCloudSync(
     });
     sendEvent(webContents, { type: CloudSyncEventType.Success });
   } catch (error) {
-    await remoteClient.close();
     sendEvent(webContents, {
       type: CloudSyncEventType.Error,
       message: error instanceof Error ? error.message : String(error),
       retryable: true,
     });
+  } finally {
+    remoteHandle.close();
   }
 }
 

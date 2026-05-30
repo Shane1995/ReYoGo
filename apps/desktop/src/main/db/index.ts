@@ -61,8 +61,14 @@ function getMigrationsFolder(): string {
   return join(__dirname, 'db', 'migrations');
 }
 
-function wipeReplicaFiles(replicaPath: string): void {
-  for (const p of [replicaPath, `${replicaPath}-shm`, `${replicaPath}-wal`]) {
+export function wipeReplicaFiles(replicaPath: string): void {
+  for (const p of [
+    replicaPath,
+    `${replicaPath}-shm`,
+    `${replicaPath}-wal`,
+    `${replicaPath}-info`,
+    `${replicaPath}-client_wal_index`,
+  ]) {
     if (existsSync(p)) unlinkSync(p);
   }
 }
@@ -138,7 +144,6 @@ export async function initDatabase(): Promise<void> {
           handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
         }
         await handle.sync();
-        await migrate(handle.db, { migrationsFolder });
         await ensureDefaultAccount(handle.db);
         _handle = handle;
         _db = handle.db;
@@ -166,9 +171,14 @@ export async function reinitialise(
 ): Promise<void> {
   _reinitialising = true;
   try {
-    const handle = createReplicaClient(replicaPath, syncUrl, authToken);
+    let handle;
+    try {
+      handle = createReplicaClient(replicaPath, syncUrl, authToken);
+    } catch {
+      wipeReplicaFiles(replicaPath);
+      handle = createReplicaClient(replicaPath, syncUrl, authToken);
+    }
     await handle.sync();
-    await migrate(handle.db, { migrationsFolder: getMigrationsFolder() });
     if (_handle) _handle.close();
     _handle = handle;
     _db = handle.db;
