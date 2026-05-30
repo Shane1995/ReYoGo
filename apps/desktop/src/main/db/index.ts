@@ -118,16 +118,17 @@ export async function syncNow(): Promise<void> {
 
 function isPermanentSyncError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
-  return msg.includes('404') || msg.includes('401') || msg.includes('auth role not found');
+  return (
+    msg.includes('404') ||
+    msg.includes('401') ||
+    msg.includes('auth role not found') ||
+    msg.includes('WriteDelegation')
+  );
 }
 
 function isCorruptedReplicaError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
-  return (
-    msg.includes('Invalid header') ||
-    msg.includes('WriteDelegation') ||
-    msg.includes('database disk image is malformed')
-  );
+  return msg.includes('database disk image is malformed');
 }
 
 async function ensureDefaultAccount(db: DbClient): Promise<void> {
