@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn, navLinkClass } from '@reyogo/ui';
@@ -6,8 +6,7 @@ import { ChevronRightIcon, Settings as SettingsIcon } from 'lucide-react';
 import { useNavItems } from '@/config/nav';
 import { SettingsRoutes } from '@/components/AppRoutes/routePaths';
 import { useEntities } from '@/Context/EntityContext';
-import { cloudSyncService } from '@/services/cloudSync';
-import { SyncState } from '@shared/types/cloudSync';
+import { AppStatusBar } from '@/components/AppStatusBar';
 
 const EXPANDED_W = 224;
 const COLLAPSED_W = 56;
@@ -25,21 +24,6 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem('sidebar-primary-collapsed') === 'true',
   );
-  const [syncState, setSyncState] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    const poll = async () => {
-      const status = await cloudSyncService.getStatus().catch(() => null);
-      if (active) setSyncState(status?.isActive ? status.state : null);
-    };
-    poll();
-    const interval = setInterval(poll, 30_000);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
-  }, []);
 
   const toggle = () =>
     setCollapsed((c) => {
@@ -126,15 +110,7 @@ export function AppSidebar() {
               cn(navLinkClass({ isActive }), collapsed && 'justify-center px-0')
             }
           >
-            <div className="relative shrink-0">
-              <SettingsIcon className="size-4" aria-hidden />
-              {syncState === SyncState.Idle && (
-                <span className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-green-500" />
-              )}
-              {syncState === SyncState.Error && (
-                <span className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-amber-500" />
-              )}
-            </div>
+            <SettingsIcon className="size-4 shrink-0" aria-hidden />
             <AnimatePresence initial={false}>
               {!collapsed && (
                 <motion.span key="settings-label" {...labelAnim} className="whitespace-nowrap">
@@ -167,6 +143,8 @@ export function AppSidebar() {
           </button>
         </div>
       </div>
+
+      <AppStatusBar collapsed={collapsed} />
     </motion.div>
   );
 }
