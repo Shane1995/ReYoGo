@@ -23,6 +23,7 @@ import {
   getStoredCredentials,
   clearCredentials,
   recordSyncError,
+  getSyncStatus,
   withSyncTimeout,
 } from './cloudSync';
 
@@ -157,7 +158,7 @@ export async function initDatabase(): Promise<void> {
       const credentials = getStoredCredentials();
       if (credentials) {
         const replicaPath = getReplicaPath();
-        const hadExistingReplica = existsSync(replicaPath);
+        const hasEverSynced = getSyncStatus().lastSyncedAt !== null;
         let handle: ReplicaHandle;
         try {
           handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
@@ -191,7 +192,7 @@ export async function initDatabase(): Promise<void> {
             wipeReplicaFiles(replicaPath);
             handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
             await boot(handle);
-          } else if (!hadExistingReplica) {
+          } else if (!hasEverSynced) {
             handle.close();
             wipeReplicaFiles(replicaPath);
             throw new Error(
