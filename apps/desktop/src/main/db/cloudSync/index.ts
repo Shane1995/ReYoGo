@@ -99,8 +99,11 @@ const SCHEMA_TABLE_MAP = {
   costingSnapshots: schema.costingSnapshots,
 } satisfies Record<string, SQLiteTable>;
 
-function buildSqlToFieldMap(table: SQLiteTable): Record<string, string> {
-  const map: Record<string, string> = {};
+type TableMeta = { nameMap: Record<string, string>; timestampFields: Set<string> };
+
+function buildTableMeta(table: SQLiteTable): TableMeta {
+  const nameMap: Record<string, string> = {};
+  const timestampFields = new Set<string>();
   for (const [field, col] of Object.entries(table as unknown as Record<string, unknown>)) {
     if (
       col &&
@@ -108,19 +111,22 @@ function buildSqlToFieldMap(table: SQLiteTable): Record<string, string> {
       'name' in col &&
       typeof (col as { name: unknown }).name === 'string'
     ) {
-      map[(col as { name: string }).name] = field;
+      nameMap[(col as { name: string }).name] = field;
+      const mode = (col as { config?: { mode?: string } }).config?.mode;
+      if (mode === 'timestamp') timestampFields.add(field);
     }
   }
-  return map;
+  return { nameMap, timestampFields };
 }
 
 function remapRow(
-  sqlToField: Record<string, string>,
+  { nameMap, timestampFields }: TableMeta,
   row: Record<string, unknown>,
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, val] of Object.entries(row)) {
-    out[sqlToField[key] ?? key] = val;
+    const field = nameMap[key] ?? key;
+    out[field] = timestampFields.has(field) && typeof val === 'number' ? new Date(val) : val;
   }
   return out;
 }
@@ -134,10 +140,10 @@ function insertRows(
   table: SQLiteTable,
   rows: Record<string, unknown>[],
 ): Promise<unknown> {
-  const sqlToField = buildSqlToFieldMap(table);
+  const meta = buildTableMeta(table);
   return db
     .insert(table)
-    .values(rows.map((r) => remapRow(sqlToField, r)))
+    .values(rows.map((r) => remapRow(meta, r)))
     .onConflictDoNothing();
 }
 
