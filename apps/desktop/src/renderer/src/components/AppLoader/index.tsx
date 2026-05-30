@@ -2,10 +2,11 @@ import AppRoutes from '@/components/AppRoutes';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import SetupWizard from '@/pages/SetupWizard';
 import { LoadingSpinner } from './LoadingSpinner';
+import { FreshReplicaScreen } from './FreshReplicaScreen';
 import { useAppReady } from './hooks/useAppReady';
 
 const AppLoader = () => {
-  const { isReady, setupComplete, initError } = useAppReady();
+  const { isReady, setupComplete, initError, phase } = useAppReady();
 
   if (initError) {
     const isMigrationError =
@@ -44,6 +45,8 @@ const AppLoader = () => {
   }
 
   if (!isReady || setupComplete === null) return <LoadingSpinner />;
+
+  if (phase === 'fresh-replica') return <FreshReplicaScreen />;
 
   if (!setupComplete) return <SetupWizard />;
 

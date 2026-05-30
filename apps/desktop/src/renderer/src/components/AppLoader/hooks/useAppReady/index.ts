@@ -1,16 +1,22 @@
 import { useCallback, useEffect, useState } from 'react';
 import { appService } from '@/services/app';
 import { entitiesService } from '@/services/entities';
+import { cloudSyncService } from '@/services/cloudSync';
+
+export type AppPhase = 'loading' | 'fresh-replica' | 'setup' | 'ready';
 
 export function useAppReady() {
-  const [isReady, setIsReady] = useState(false);
-  const [setupComplete, setSetupComplete] = useState<boolean | null>(null);
+  const [phase, setPhase] = useState<AppPhase>('loading');
   const [initError, setInitError] = useState<string | null>(null);
 
   const checkSetup = useCallback(async () => {
+    const isFresh = await cloudSyncService.isFreshReplica();
+    if (isFresh) {
+      setPhase('fresh-replica');
+      return;
+    }
     const state = await entitiesService.getSetupState();
-    setSetupComplete(state.setupComplete);
-    setIsReady(true);
+    setPhase(state.setupComplete ? 'ready' : 'setup');
   }, []);
 
   useEffect(() => {
@@ -19,5 +25,8 @@ export function useAppReady() {
     appService.requestAppReady();
   }, [checkSetup]);
 
-  return { isReady, setupComplete, initError };
+  const isReady = phase !== 'loading';
+  const setupComplete = phase === 'ready' ? true : phase === 'setup' ? false : null;
+
+  return { isReady, setupComplete, initError, phase };
 }
