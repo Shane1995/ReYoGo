@@ -8,3 +8,12 @@ export function createDbClient(url: string, authToken?: string) {
 }
 
 export type DbClient = ReturnType<typeof createDbClient>;
+
+export function createReplicaClient(
+  replicaPath: string,
+  syncUrl: string,
+  authToken: string,
+): { db: DbClient; sync: () => Promise<void> } {
+  const client = createClient({ url: `file:${replicaPath}`, syncUrl, authToken });
+  return { db: drizzle(client, { schema }), sync: () => client.sync().then(() => undefined) };
+}
