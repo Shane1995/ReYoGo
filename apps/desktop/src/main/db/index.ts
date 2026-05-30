@@ -157,6 +157,7 @@ export async function initDatabase(): Promise<void> {
       const credentials = getStoredCredentials();
       if (credentials) {
         const replicaPath = getReplicaPath();
+        const hadExistingReplica = existsSync(replicaPath);
         let handle: ReplicaHandle;
         try {
           handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
@@ -190,6 +191,12 @@ export async function initDatabase(): Promise<void> {
             wipeReplicaFiles(replicaPath);
             handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
             await boot(handle);
+          } else if (!hadExistingReplica) {
+            handle.close();
+            wipeReplicaFiles(replicaPath);
+            throw new Error(
+              'Could not connect to cloud database. Check your internet connection and relaunch.',
+            );
           } else {
             recordSyncError(bootErr instanceof Error ? bootErr.message : String(bootErr));
             await migrate(handle.db, { migrationsFolder });
