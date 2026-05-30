@@ -44,14 +44,10 @@ export default function VersionBar() {
 
   if (!info) return null;
 
-  const envLabel = info.env.charAt(0).toUpperCase() + info.env.slice(1);
-
   return (
     <>
       <div className="flex items-center justify-between border-t border-border bg-background px-4 py-1 text-xs text-muted-foreground">
-        <span>
-          v{info.version} • {envLabel}
-        </span>
+        <span>v{info.version}</span>
         <button
           type="button"
           onClick={handleCheck}

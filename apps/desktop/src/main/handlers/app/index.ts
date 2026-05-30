@@ -2,16 +2,8 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { AppIPC } from '@shared/types/ipc';
 
-interface AppVersionInfo {
-  version: string;
-  env: string;
-}
-
-function getVersion(): AppVersionInfo {
-  return {
-    version: app.getVersion(),
-    env: process.env.VITE_APP_ENV ?? 'development',
-  };
+function getVersion(): { version: string } {
+  return { version: app.getVersion() };
 }
 
 export function registerAppHandlers(): void {

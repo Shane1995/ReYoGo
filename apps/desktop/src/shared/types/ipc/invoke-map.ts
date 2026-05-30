@@ -14,7 +14,6 @@ import type { Supplier, UpsertSupplierPayload } from '@reyogo/types';
 
 export interface AppVersionInfo {
   version: string;
-  env: string;
 }
 
 export interface IPCInvokeMap {
