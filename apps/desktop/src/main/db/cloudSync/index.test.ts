@@ -258,7 +258,8 @@ describe('recordSyncSuccess', () => {
     const before = Date.now();
     recordSyncSuccess();
     const after = Date.now();
-    const stored = store['cloudSync.lastSyncedAt'] as string;
+    const stored = store['cloudSync.lastSyncedAt'];
+    if (typeof stored !== 'string') throw new Error('cloudSync.lastSyncedAt is not a string');
     const storedTime = new Date(stored).getTime();
     expect(storedTime).toBeGreaterThanOrEqual(before);
     expect(storedTime).toBeLessThanOrEqual(after);

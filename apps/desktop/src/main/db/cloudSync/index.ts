@@ -5,7 +5,6 @@ import { existsSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { createClient } from '@libsql/client';
 import type { SQLiteTable } from 'drizzle-orm/sqlite-core';
-import type { InferInsertModel } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { schema } from '@reyogo/db';
@@ -121,17 +120,36 @@ const TABLE_SQL_NAMES: Record<keyof typeof SCHEMA_TABLE_MAP, string> = {
   costing_snapshots: 'costing_snapshots',
 };
 
-const FK_ORDER_TABLES = Object.keys(SCHEMA_TABLE_MAP) as Array<keyof typeof SCHEMA_TABLE_MAP>;
+function insertRows(
+  db: {
+    insert(table: SQLiteTable): {
+      values(rows: Record<string, unknown>[]): { onConflictDoNothing(): Promise<unknown> };
+    };
+  },
+  table: SQLiteTable,
+  rows: Record<string, unknown>[],
+): Promise<unknown> {
+  return db.insert(table).values(rows).onConflictDoNothing();
+}
+
+const FK_ORDER_TABLES: Array<keyof typeof SCHEMA_TABLE_MAP> = [
+  'accounts',
+  'business_groups',
+  'entities',
+  'suppliers',
+  'inventory_categories',
+  'units_of_measure',
+  'inventory_items',
+  'invoices',
+  'invoice_line_items',
+  'stock_movements',
+  'invoice_audit_log',
+  'stock_count_sessions',
+  'stock_count_lines',
+  'costing_snapshots',
+] satisfies Array<keyof typeof SCHEMA_TABLE_MAP>;
 
 const BATCH_SIZE = 500;
-
-type AnySchemaInsert = {
-  [K in keyof typeof SCHEMA_TABLE_MAP]: InferInsertModel<(typeof SCHEMA_TABLE_MAP)[K]>;
-}[keyof typeof SCHEMA_TABLE_MAP];
-
-function toInsertRows(rows: Record<string, unknown>[]): AnySchemaInsert[] {
-  return rows as AnySchemaInsert[];
-}
 
 export async function activateCloudSync(
   webContents: Pick<WebContents, 'send'>,
@@ -176,8 +194,8 @@ export async function activateCloudSync(
 
       if (rows.length > 0) {
         for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-          const batch = toInsertRows(rows.slice(i, i + BATCH_SIZE));
-          await remoteDb.insert(table).values(batch).onConflictDoNothing();
+          const batch = rows.slice(i, i + BATCH_SIZE);
+          await insertRows(remoteDb, table, batch);
         }
       }
 
