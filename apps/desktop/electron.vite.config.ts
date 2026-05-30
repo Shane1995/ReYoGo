@@ -42,6 +42,7 @@ export default defineConfig({
     },
     build: {
       rollupOptions: {
+        external: [/^@libsql\/.*/],
         input: {
           index: resolve(__dirname, 'src/main/main.ts'),
         },
