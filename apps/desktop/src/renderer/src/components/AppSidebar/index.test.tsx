@@ -5,6 +5,15 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AppConfigProvider } from '@/Context';
 import { AppSidebar } from './index';
 
+vi.mock('@/services/cloudSync', () => ({
+  cloudSyncService: {
+    getStatus: vi
+      .fn()
+      .mockResolvedValue({ state: 'idle', lastSyncedAt: null, error: null, isActive: false }),
+    onSyncEvent: vi.fn(() => () => {}),
+  },
+}));
+
 vi.mock('@/services/app', () => ({
   appService: {
     getVersion: vi.fn().mockResolvedValue({ version: '0.0.0', env: 'development' }),

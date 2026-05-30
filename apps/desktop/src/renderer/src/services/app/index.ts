@@ -4,8 +4,8 @@ import type { AppVersionInfo } from '@shared/types/ipc/invoke-map';
 export type { AppVersionInfo };
 
 export const appService = {
-  onAppReady: (callback: () => void) => window.electronAPI.onAppReady(callback),
-  onAppInitError: (callback: (message: string) => void) =>
+  onAppReady: (callback: () => void): (() => void) => window.electronAPI.onAppReady(callback),
+  onAppInitError: (callback: (message: string) => void): (() => void) =>
     window.electronAPI.onAppInitError(callback),
   requestAppReady: () => window.electronAPI.requestAppReady(),
   getVersion: (): Promise<AppVersionInfo> =>

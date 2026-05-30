@@ -11,7 +11,11 @@ module.exports = {
     },
   }),
   files: ['out/**/*', 'package.json'],
-  asarUnpack: ['out/main/db/migrations/**', '**/node_modules/@libsql/**'],
+  asarUnpack: [
+    'out/main/db/migrations/**',
+    '**/node_modules/@libsql/**',
+    '**/node_modules/better-sqlite3/**',
+  ],
   win: {
     target: [
       { target: 'nsis', arch: ['x64'] },

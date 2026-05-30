@@ -14,7 +14,6 @@ import type { Supplier, UpsertSupplierPayload } from '@reyogo/types';
 
 export interface AppVersionInfo {
   version: string;
-  env: string;
 }
 
 export interface IPCInvokeMap {
@@ -86,6 +85,15 @@ export interface IPCInvokeMap {
     args: [entityId: string, vatRate: number, vatMode: VatMode];
     return: void;
   };
+  'cloud-sync:activate': { args: [tursoUrl: string, authToken: string]; return: void };
+  'cloud-sync:get-status': {
+    args: [];
+    return: { state: string; lastSyncedAt: string | null; error: string | null; isActive: boolean };
+  };
+  'cloud-sync:manual-sync': { args: []; return: void };
+  'cloud-sync:delete-backup': { args: []; return: void };
+  'cloud-sync:get-credentials': { args: []; return: { tursoUrl: string } | null };
+  'cloud-sync:is-fresh-replica': { args: []; return: boolean };
 }
 
 export type IPCChannel = keyof IPCInvokeMap;

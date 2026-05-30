@@ -6,3 +6,6 @@ export const DB_INIT_ERROR_CHANNEL = 'db:init-error';
 
 /** Renderer → main: renderer signals it is ready to receive db:ready. */
 export const DB_REQUEST_READY_CHANNEL = 'db:request-ready';
+
+/** Main → renderer: cloud sync activation progress/result events. Payload: CloudSyncEvent */
+export const CLOUD_SYNC_EVENT_CHANNEL = 'cloud-sync:event';

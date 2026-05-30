@@ -1,10 +1,38 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { join } from 'path';
-import { DB_REQUEST_READY_CHANNEL, DB_INIT_ERROR_CHANNEL } from '@shared/ipc-events';
-import { getDbReadyChannel, initDatabase } from './db';
+import {
+  DB_REQUEST_READY_CHANNEL,
+  DB_INIT_ERROR_CHANNEL,
+  CLOUD_SYNC_EVENT_CHANNEL,
+} from '@shared/ipc-events';
+import { CloudSyncEventType } from '@shared/types/cloudSync';
+import { getDbReadyChannel, initDatabase, syncNow, isReplicaMode } from './db';
+import { recordSyncSuccess, recordSyncError } from './db/cloudSync';
 import { registerRoute } from './lib/electron-router-dom';
 import { registerIPC } from './ipc';
+
+const BACKGROUND_SYNC_INTERVAL_MS = 5 * 60 * 1000;
+
+function broadcastToWindows(channel: string, payload: unknown): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) win.webContents.send(channel, payload);
+  }
+}
+
+async function runBackgroundSync(): Promise<void> {
+  if (!isReplicaMode()) return;
+  try {
+    broadcastToWindows(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.Syncing });
+    await syncNow();
+    recordSyncSuccess();
+    broadcastToWindows(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.BackgroundSync });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    recordSyncError(msg);
+    console.error('[ReYoGo] Background sync failed:', err);
+  }
+}
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
@@ -85,6 +113,11 @@ app.whenReady().then(() => {
     .then(() => {
       dbReady = true;
       trySendDbReady();
+      if (isReplicaMode()) {
+        const interval = setInterval(runBackgroundSync, BACKGROUND_SYNC_INTERVAL_MS);
+        app.once('will-quit', () => clearInterval(interval));
+        app.on('browser-window-focus', runBackgroundSync);
+      }
     })
     .catch((err) => {
       console.error('[ReYoGo] Failed to initialize database:', err);

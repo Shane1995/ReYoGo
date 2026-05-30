@@ -1,9 +1,10 @@
 import { app } from 'electron';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import {
   createDbClient,
+  createReplicaClient,
   createInventoryRepo,
   createSuppliersRepo,
   createStockMovementsRepo,
@@ -12,9 +13,12 @@ import {
   createEntitiesRepo,
   schema,
   type DbClient,
+  type DbHandle,
+  type ReplicaHandle,
 } from '@reyogo/db';
 import { eq } from 'drizzle-orm';
 import { DB_READY_CHANNEL } from '@shared/ipc-events';
+import { hasCloudCredentials, getStoredCredentials } from './cloudSync';
 
 const isDev = !app.isPackaged || process.env.NODE_ENV === 'development';
 const DB_FILENAME = isDev ? 'app-dev.db' : 'app.db';
@@ -28,22 +32,64 @@ type Repos = {
   entities: ReturnType<typeof createEntitiesRepo>;
 };
 
+let _handle: DbHandle | ReplicaHandle | null = null;
 let _db: DbClient | null = null;
 let _repos: Repos | null = null;
+let _initialising = false;
+let _reinitialising = false;
+
+function getDataDir(): string {
+  const userData = app.getPath('userData');
+  const dir = join(userData, 'data');
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  return dir;
+}
 
 function getDbPath(): string {
-  const userData = app.getPath('userData');
-  const dbDir = join(userData, 'data');
-  if (!existsSync(dbDir)) mkdirSync(dbDir, { recursive: true });
-  return join(dbDir, DB_FILENAME);
+  return join(getDataDir(), DB_FILENAME);
+}
+
+export function getLocalDbPath(): string {
+  return getDbPath();
+}
+
+export function getReplicaPath(): string {
+  return join(app.getPath('userData'), 'data', 'replica.db');
+}
+
+function getMigrationsFolder(): string {
+  return join(__dirname, 'db', 'migrations');
+}
+
+export function wipeReplicaFiles(replicaPath: string): void {
+  for (const p of [
+    replicaPath,
+    `${replicaPath}-shm`,
+    `${replicaPath}-wal`,
+    `${replicaPath}-info`,
+    `${replicaPath}-client_wal_index`,
+  ]) {
+    if (existsSync(p)) unlinkSync(p);
+  }
+}
+
+function buildRepos(db: DbClient): Repos {
+  return {
+    inventory: createInventoryRepo(db),
+    suppliers: createSuppliersRepo(db),
+    stockMovements: createStockMovementsRepo(db),
+    invoices: createInvoicesRepo(db),
+    setup: createSetupRepo(db),
+    entities: createEntitiesRepo(db),
+  };
 }
 
 export function getRepos(): Repos {
+  if (_reinitialising) throw new Error('Database is reinitialising — retry shortly');
   if (!_repos) throw new Error('Database not initialized. Wait for db:ready.');
   return _repos;
 }
 
-/** @deprecated Use getRepos() instead — will be removed in Task 11. */
 export function getDb(): DbClient {
   if (!_db) throw new Error('Database not initialized. Wait for db:ready.');
   return _db;
@@ -55,17 +101,17 @@ export function getDbReadyChannel(): string {
   return DB_READY_CHANNEL;
 }
 
-export async function initDatabase(): Promise<void> {
-  const dbPath = getDbPath();
-  const db: DbClient = createDbClient(`file:${dbPath}`);
-  _db = db;
+export function isReplicaMode(): boolean {
+  return _handle !== null && 'sync' in _handle;
+}
 
-  const migrationsFolder = app.isPackaged
-    ? join(__dirname, 'db', 'migrations')
-    : require.resolve('@reyogo/db/package.json').replace('package.json', 'migrations');
+export async function syncNow(): Promise<void> {
+  if (_handle && 'sync' in _handle) {
+    await (_handle as { sync(): Promise<void> }).sync();
+  }
+}
 
-  await migrate(db, { migrationsFolder });
-
+async function ensureDefaultAccount(db: DbClient): Promise<void> {
   const existing = await db
     .select()
     .from(schema.accounts)
@@ -78,13 +124,66 @@ export async function initDatabase(): Promise<void> {
       .insert(schema.accounts)
       .values({ id: 'default', name: 'Default', isCurrent: true, createdAt: ts, updatedAt: ts });
   }
+}
 
-  _repos = {
-    inventory: createInventoryRepo(db),
-    suppliers: createSuppliersRepo(db),
-    stockMovements: createStockMovementsRepo(db),
-    invoices: createInvoicesRepo(db),
-    setup: createSetupRepo(db),
-    entities: createEntitiesRepo(db),
-  };
+export async function initDatabase(): Promise<void> {
+  if (_db !== null || _initialising) return;
+  _initialising = true;
+  try {
+    const migrationsFolder = getMigrationsFolder();
+
+    if (hasCloudCredentials()) {
+      const credentials = getStoredCredentials();
+      if (credentials) {
+        const replicaPath = getReplicaPath();
+        let handle;
+        try {
+          handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
+        } catch {
+          wipeReplicaFiles(replicaPath);
+          handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
+        }
+        await handle.sync();
+        await ensureDefaultAccount(handle.db);
+        _handle = handle;
+        _db = handle.db;
+        _repos = buildRepos(handle.db);
+        return;
+      }
+    }
+
+    const dbPath = getDbPath();
+    const handle = createDbClient(`file:${dbPath}`);
+    _handle = handle;
+    _db = handle.db;
+    await migrate(handle.db, { migrationsFolder });
+    await ensureDefaultAccount(handle.db);
+    _repos = buildRepos(handle.db);
+  } finally {
+    _initialising = false;
+  }
+}
+
+export async function reinitialise(
+  replicaPath: string,
+  syncUrl: string,
+  authToken: string,
+): Promise<void> {
+  _reinitialising = true;
+  try {
+    let handle;
+    try {
+      handle = createReplicaClient(replicaPath, syncUrl, authToken);
+    } catch {
+      wipeReplicaFiles(replicaPath);
+      handle = createReplicaClient(replicaPath, syncUrl, authToken);
+    }
+    await handle.sync();
+    if (_handle) _handle.close();
+    _handle = handle;
+    _db = handle.db;
+    _repos = buildRepos(handle.db);
+  } finally {
+    _reinitialising = false;
+  }
 }

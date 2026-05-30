@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { AppSidebar } from '@/components/AppSidebar';
+import { AppStatusBar } from '@/components/AppStatusBar';
 import UpdateToast from '@/components/UpdateToast';
-import VersionBar from '@/components/VersionBar';
 
 const AppLayout = () => (
   <div className="flex h-screen flex-col overflow-hidden">
@@ -11,7 +11,7 @@ const AppLayout = () => (
         <Outlet />
       </main>
     </div>
-    <VersionBar />
+    <AppStatusBar />
     <UpdateToast />
   </div>
 );
