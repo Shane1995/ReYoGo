@@ -1,9 +1,12 @@
-import { app, safeStorage, BrowserWindow } from 'electron';
+import { app, safeStorage } from 'electron';
+import type { WebContents } from 'electron';
 import Store from 'electron-store';
 import { existsSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { createClient } from '@libsql/client';
+import type BetterSQLite3 from 'better-sqlite3';
 import type { SQLiteTable } from 'drizzle-orm/sqlite-core';
+import type { InferInsertModel } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { schema } from '@reyogo/db';
@@ -17,27 +20,32 @@ const STORE_KEY_TOKEN_ENC = 'cloudSync.authTokenEncrypted';
 const STORE_KEY_LAST_SYNCED = 'cloudSync.lastSyncedAt';
 const STORE_KEY_SYNC_ERROR = 'cloudSync.syncError';
 
-const store = new Store();
+type StoreSchema = {
+  'cloudSync.tursoUrl': string;
+  'cloudSync.authTokenEncrypted': string;
+  'cloudSync.lastSyncedAt': string;
+  'cloudSync.syncError': string;
+};
+
+const store = new Store<StoreSchema>();
 
 let _syncStatus: SyncStatus = { state: SyncState.Idle, lastSyncedAt: null, error: null };
-let _syncErrorTimer: ReturnType<typeof setTimeout> | null = null;
 
-function sendEvent(event: CloudSyncEvent): void {
-  BrowserWindow.getAllWindows()[0]?.webContents.send(CLOUD_SYNC_EVENT_CHANNEL, event);
+function sendEvent(webContents: WebContents, event: CloudSyncEvent): void {
+  webContents.send(CLOUD_SYNC_EVENT_CHANNEL, event);
 }
 
 export function hasCloudCredentials(): boolean {
   return !!store.get(STORE_KEY_URL) && !!store.get(STORE_KEY_TOKEN_ENC);
 }
 
-export function hasLocalReplica(): boolean {
-  const replicaPath = join(app.getPath('userData'), 'data', 'replica.db');
-  return existsSync(replicaPath);
+export function hasLocalReplica(localDbPath: string): boolean {
+  return existsSync(localDbPath);
 }
 
 export function getStoredCredentials(): CloudSyncCredentials | null {
-  const tursoUrl = store.get(STORE_KEY_URL) as string | undefined;
-  const encryptedB64 = store.get(STORE_KEY_TOKEN_ENC) as string | undefined;
+  const tursoUrl = store.get(STORE_KEY_URL);
+  const encryptedB64 = store.get(STORE_KEY_TOKEN_ENC);
   if (!tursoUrl || !encryptedB64) return null;
 
   if (!safeStorage.isEncryptionAvailable()) return null;
@@ -47,7 +55,7 @@ export function getStoredCredentials(): CloudSyncCredentials | null {
 }
 
 export function getTursoUrl(): string | null {
-  return (store.get(STORE_KEY_URL) as string | undefined) ?? null;
+  return store.get(STORE_KEY_URL) ?? null;
 }
 
 function persistCredentials(credentials: CloudSyncCredentials): void {
@@ -73,9 +81,7 @@ function updateSyncStatus(partial: Partial<SyncStatus>): void {
 }
 
 function getMigrationsFolder(): string {
-  return app.isPackaged
-    ? join(__dirname, '../db/migrations')
-    : require.resolve('@reyogo/db/package.json').replace('package.json', 'migrations');
+  return app.isPackaged ? join(__dirname, '../db/migrations') : join(__dirname, '..', 'migrations');
 }
 
 const SCHEMA_TABLE_MAP = {
@@ -95,123 +101,155 @@ const SCHEMA_TABLE_MAP = {
   costing_snapshots: schema.costingSnapshots,
 } satisfies Record<string, SQLiteTable>;
 
+const TABLE_SQL_NAMES: Record<keyof typeof SCHEMA_TABLE_MAP, string> = {
+  accounts: 'accounts',
+  business_groups: 'business_groups',
+  entities: 'entities',
+  suppliers: 'suppliers',
+  inventory_categories: 'inventory_categories',
+  units_of_measure: 'units_of_measure',
+  inventory_items: 'inventory_items',
+  invoices: 'invoices',
+  invoice_line_items: 'invoice_line_items',
+  stock_movements: 'stock_movements',
+  invoice_audit_log: 'invoice_audit_log',
+  stock_count_sessions: 'stock_count_sessions',
+  stock_count_lines: 'stock_count_lines',
+  costing_snapshots: 'costing_snapshots',
+};
+
 const FK_ORDER_TABLES = Object.keys(SCHEMA_TABLE_MAP) as Array<keyof typeof SCHEMA_TABLE_MAP>;
 
 const BATCH_SIZE = 500;
 
+type AnySchemaInsert = {
+  [K in keyof typeof SCHEMA_TABLE_MAP]: InferInsertModel<(typeof SCHEMA_TABLE_MAP)[K]>;
+}[keyof typeof SCHEMA_TABLE_MAP];
+
+function toInsertRows(rows: Record<string, unknown>[]): AnySchemaInsert[] {
+  return rows as AnySchemaInsert[];
+}
+
 export async function activateCloudSync(
-  localDbPath: string,
+  webContents: WebContents,
+  _localDbPath: string,
+  localDb: BetterSQLite3.Database,
   tursoUrl: string,
   authToken: string,
 ): Promise<void> {
-  sendEvent({
-    type: CloudSyncEventType.Progress,
-    stage: CloudSyncStage.Migrating,
-    done: 0,
-    total: 1,
-  });
+  try {
+    sendEvent(webContents, {
+      type: CloudSyncEventType.Progress,
+      stage: CloudSyncStage.Migrating,
+      done: 0,
+      total: 1,
+    });
 
-  const remoteClient = createClient({ url: tursoUrl, authToken });
-  const remoteDb = drizzle(remoteClient, { schema });
+    const remoteClient = createClient({ url: tursoUrl, authToken });
+    const remoteDb = drizzle(remoteClient, { schema });
 
-  await migrate(remoteDb, { migrationsFolder: getMigrationsFolder() });
-  sendEvent({
-    type: CloudSyncEventType.Progress,
-    stage: CloudSyncStage.Migrating,
-    done: 1,
-    total: 1,
-  });
+    await migrate(remoteDb, { migrationsFolder: getMigrationsFolder() });
+    sendEvent(webContents, {
+      type: CloudSyncEventType.Progress,
+      stage: CloudSyncStage.Migrating,
+      done: 1,
+      total: 1,
+    });
 
-  const localClient = createClient({ url: `file:${localDbPath}` });
-  const localDb = drizzle(localClient, { schema });
+    const totalTables = FK_ORDER_TABLES.length;
+    let tablesDone = 0;
 
-  const totalTables = FK_ORDER_TABLES.length;
-  let tablesDone = 0;
-
-  sendEvent({
-    type: CloudSyncEventType.Progress,
-    stage: CloudSyncStage.Pushing,
-    done: 0,
-    total: totalTables,
-  });
-
-  for (const tableName of FK_ORDER_TABLES) {
-    const table = SCHEMA_TABLE_MAP[tableName];
-    const rows = await localDb.select().from(table);
-
-    if (rows.length > 0) {
-      for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-        const batch = rows.slice(i, i + BATCH_SIZE);
-        await remoteDb.insert(table).values(batch).onConflictDoNothing();
-      }
-    }
-
-    tablesDone++;
-    sendEvent({
+    sendEvent(webContents, {
       type: CloudSyncEventType.Progress,
       stage: CloudSyncStage.Pushing,
-      done: tablesDone,
+      done: 0,
       total: totalTables,
     });
-  }
 
-  sendEvent({
-    type: CloudSyncEventType.Progress,
-    stage: CloudSyncStage.Verifying,
-    done: 0,
-    total: totalTables,
-  });
+    for (const tableName of FK_ORDER_TABLES) {
+      const table = SCHEMA_TABLE_MAP[tableName];
+      const sqlName = TABLE_SQL_NAMES[tableName];
+      const rows = localDb.prepare<[], Record<string, unknown>>(`SELECT * FROM ${sqlName}`).all();
 
-  let verifyDone = 0;
-  for (const tableName of FK_ORDER_TABLES) {
-    const table = SCHEMA_TABLE_MAP[tableName];
-    const [localRows, remoteRows] = await Promise.all([
-      localDb.select().from(table),
-      remoteDb.select().from(table),
-    ]);
+      if (rows.length > 0) {
+        for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+          const batch = toInsertRows(rows.slice(i, i + BATCH_SIZE));
+          await remoteDb.insert(table).values(batch).onConflictDoNothing();
+        }
+      }
 
-    if (localRows.length !== remoteRows.length) {
-      await remoteClient.close();
-      await localClient.close();
-      sendEvent({
-        type: CloudSyncEventType.Error,
-        message: `Row count mismatch in ${tableName}: local=${localRows.length} remote=${remoteRows.length}`,
-        retryable: true,
+      tablesDone++;
+      sendEvent(webContents, {
+        type: CloudSyncEventType.Progress,
+        stage: CloudSyncStage.Pushing,
+        done: tablesDone,
+        total: totalTables,
       });
-      throw new Error(`Row count mismatch in ${tableName}`);
     }
 
-    verifyDone++;
-    sendEvent({
+    sendEvent(webContents, {
       type: CloudSyncEventType.Progress,
       stage: CloudSyncStage.Verifying,
-      done: verifyDone,
-      total: FK_ORDER_TABLES.length,
+      done: 0,
+      total: totalTables,
+    });
+
+    let verifyDone = 0;
+    for (const tableName of FK_ORDER_TABLES) {
+      const table = SCHEMA_TABLE_MAP[tableName];
+      const sqlName = TABLE_SQL_NAMES[tableName];
+      const localRows = localDb
+        .prepare<[], Record<string, unknown>>(`SELECT * FROM ${sqlName}`)
+        .all();
+      const remoteRows = await remoteDb.select().from(table);
+
+      if (localRows.length !== remoteRows.length) {
+        await remoteClient.close();
+        sendEvent(webContents, {
+          type: CloudSyncEventType.Error,
+          message: `Row count mismatch in ${tableName}: local=${localRows.length} remote=${remoteRows.length}`,
+          retryable: true,
+        });
+        return;
+      }
+
+      verifyDone++;
+      sendEvent(webContents, {
+        type: CloudSyncEventType.Progress,
+        stage: CloudSyncStage.Verifying,
+        done: verifyDone,
+        total: FK_ORDER_TABLES.length,
+      });
+    }
+
+    await remoteClient.close();
+
+    sendEvent(webContents, {
+      type: CloudSyncEventType.Progress,
+      stage: CloudSyncStage.Activating,
+      done: 0,
+      total: 1,
+    });
+
+    persistCredentials({ tursoUrl, authToken });
+
+    updateSyncStatus({ state: SyncState.Idle, lastSyncedAt: new Date(), error: null });
+    store.set(STORE_KEY_LAST_SYNCED, new Date().toISOString());
+
+    sendEvent(webContents, {
+      type: CloudSyncEventType.Progress,
+      stage: CloudSyncStage.Activating,
+      done: 1,
+      total: 1,
+    });
+    sendEvent(webContents, { type: CloudSyncEventType.Success });
+  } catch (error) {
+    sendEvent(webContents, {
+      type: CloudSyncEventType.Error,
+      message: error instanceof Error ? error.message : String(error),
+      retryable: true,
     });
   }
-
-  await localClient.close();
-  await remoteClient.close();
-
-  sendEvent({
-    type: CloudSyncEventType.Progress,
-    stage: CloudSyncStage.Activating,
-    done: 0,
-    total: 1,
-  });
-
-  persistCredentials({ tursoUrl, authToken });
-
-  updateSyncStatus({ state: SyncState.Idle, lastSyncedAt: new Date(), error: null });
-  store.set(STORE_KEY_LAST_SYNCED, new Date().toISOString());
-
-  sendEvent({
-    type: CloudSyncEventType.Progress,
-    stage: CloudSyncStage.Activating,
-    done: 1,
-    total: 1,
-  });
-  sendEvent({ type: CloudSyncEventType.Success });
 }
 
 export function recordSyncSuccess(): void {
@@ -219,15 +257,11 @@ export function recordSyncSuccess(): void {
   updateSyncStatus({ state: SyncState.Idle, lastSyncedAt: now, error: null });
   store.set(STORE_KEY_LAST_SYNCED, now.toISOString());
   store.delete(STORE_KEY_SYNC_ERROR);
-  if (_syncErrorTimer) {
-    clearTimeout(_syncErrorTimer);
-    _syncErrorTimer = null;
-  }
 }
 
 export function recordSyncError(message: string): void {
   store.set(STORE_KEY_SYNC_ERROR, message);
-  const lastSyncedAtStr = store.get(STORE_KEY_LAST_SYNCED) as string | undefined;
+  const lastSyncedAtStr = store.get(STORE_KEY_LAST_SYNCED);
   updateSyncStatus({
     state: SyncState.Error,
     lastSyncedAt: lastSyncedAtStr ? new Date(lastSyncedAtStr) : null,
@@ -235,9 +269,9 @@ export function recordSyncError(message: string): void {
   });
 }
 
-export function scheduleErrorAfterTimeout(message: string, delayMs = 5 * 60 * 1000): void {
-  if (_syncErrorTimer) clearTimeout(_syncErrorTimer);
-  _syncErrorTimer = setTimeout(() => recordSyncError(message), delayMs);
+export function scheduleErrorAfterTimeout(): () => void {
+  const timer = setTimeout(() => recordSyncError('Sync timed out'), 300000);
+  return () => clearTimeout(timer);
 }
 
 export function deleteLocalBackup(localDbPath: string): void {

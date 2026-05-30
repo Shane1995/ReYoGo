@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const { mockExistsSync, mockUnlinkSync, store } = vi.hoisted(() => {
   const store: Record<string, unknown> = {};
@@ -89,6 +89,9 @@ import {
   clearCredentials,
   deleteLocalBackup,
   activateCloudSync,
+  recordSyncSuccess,
+  recordSyncError,
+  scheduleErrorAfterTimeout,
 } from './index';
 import { SyncState, CloudSyncEventType, CloudSyncStage } from '@shared/types/cloudSync';
 import { safeStorage } from 'electron';
@@ -133,13 +136,13 @@ describe('hasLocalReplica', () => {
 
   it('returns false when replica file does not exist', () => {
     mockExistsSync.mockReturnValue(false);
-    expect(hasLocalReplica()).toBe(false);
+    expect(hasLocalReplica('/tmp/test-userdata/data/replica.db')).toBe(false);
   });
 
   it('returns true when replica file exists', () => {
     mockExistsSync.mockReturnValue(true);
-    expect(hasLocalReplica()).toBe(true);
-    expect(mockExistsSync).toHaveBeenCalledWith(expect.stringContaining('replica.db'));
+    expect(hasLocalReplica('/tmp/test-userdata/data/replica.db')).toBe(true);
+    expect(mockExistsSync).toHaveBeenCalledWith('/tmp/test-userdata/data/replica.db');
   });
 });
 
@@ -244,6 +247,73 @@ describe('deleteLocalBackup', () => {
   });
 });
 
+describe('recordSyncSuccess', () => {
+  beforeEach(() => {
+    resetStore();
+    clearCredentials();
+    vi.clearAllMocks();
+  });
+
+  it('stores the current ISO timestamp in cloudSync.lastSyncedAt', () => {
+    const before = Date.now();
+    recordSyncSuccess();
+    const after = Date.now();
+    const stored = store['cloudSync.lastSyncedAt'] as string;
+    const storedTime = new Date(stored).getTime();
+    expect(storedTime).toBeGreaterThanOrEqual(before);
+    expect(storedTime).toBeLessThanOrEqual(after);
+  });
+
+  it('clears cloudSync.syncError', () => {
+    store['cloudSync.syncError'] = 'previous error';
+    recordSyncSuccess();
+    expect(store['cloudSync.syncError']).toBeUndefined();
+  });
+});
+
+describe('recordSyncError', () => {
+  beforeEach(() => {
+    resetStore();
+    clearCredentials();
+  });
+
+  it('stores the message in cloudSync.syncError', () => {
+    recordSyncError('Something went wrong');
+    expect(store['cloudSync.syncError']).toBe('Something went wrong');
+  });
+});
+
+describe('scheduleErrorAfterTimeout', () => {
+  beforeEach(() => {
+    resetStore();
+    clearCredentials();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns a cancel function', () => {
+    const cancel = scheduleErrorAfterTimeout();
+    expect(typeof cancel).toBe('function');
+    cancel();
+  });
+
+  it('does not call recordSyncError when cancel is called before timeout', () => {
+    const cancel = scheduleErrorAfterTimeout();
+    cancel();
+    vi.advanceTimersByTime(300000);
+    expect(store['cloudSync.syncError']).toBeUndefined();
+  });
+
+  it('calls recordSyncError after 300000ms', () => {
+    scheduleErrorAfterTimeout();
+    vi.advanceTimersByTime(300000);
+    expect(store['cloudSync.syncError']).toBe('Sync timed out');
+  });
+});
+
 describe('activateCloudSync', () => {
   beforeEach(() => {
     resetStore();
@@ -251,32 +321,20 @@ describe('activateCloudSync', () => {
   });
 
   it('emits Progress events and Success on the success path', async () => {
-    const { BrowserWindow } = await import('electron');
     const mockSend = vi.fn();
-    vi.mocked(BrowserWindow.getAllWindows).mockReturnValue([
-      { webContents: { send: mockSend } } as never,
-    ]);
+    const mockWebContents = { send: mockSend } as unknown as import('electron').WebContents;
 
-    const { createClient } = await import('@libsql/client');
-    const mockClose = vi.fn().mockResolvedValue(undefined);
-    const mockFromResult = vi.fn(() => Promise.resolve([]));
-    const mockFrom = vi.fn(() => mockFromResult());
-    const mockSelect = vi.fn(() => ({ from: mockFrom }));
-    const mockOnConflictDoNothing = vi.fn(() => Promise.resolve());
-    const mockValues = vi.fn(() => ({ onConflictDoNothing: mockOnConflictDoNothing }));
-    const mockInsert = vi.fn(() => ({ values: mockValues }));
+    const mockLocalDb = {
+      prepare: vi.fn(() => ({ all: vi.fn((): Record<string, unknown>[] => []) })),
+    } as unknown as import('better-sqlite3').Database;
 
-    vi.mocked(createClient).mockReturnValue({
-      close: mockClose,
-    } as never);
-
-    const { drizzle } = await import('drizzle-orm/libsql');
-    vi.mocked(drizzle).mockReturnValue({
-      select: mockSelect,
-      insert: mockInsert,
-    } as never);
-
-    await activateCloudSync('/tmp/local.db', 'libsql://example.turso.io', 'my-token');
+    await activateCloudSync(
+      mockWebContents,
+      '/tmp/local.db',
+      mockLocalDb,
+      'libsql://example.turso.io',
+      'my-token',
+    );
 
     const sentEvents = mockSend.mock.calls.map(([, event]) => event);
     const progressEvents = sentEvents.filter((e) => e.type === CloudSyncEventType.Progress);
@@ -290,42 +348,36 @@ describe('activateCloudSync', () => {
   });
 
   it('emits Error event when row count mismatch occurs', async () => {
-    const { BrowserWindow } = await import('electron');
     const mockSend = vi.fn();
-    vi.mocked(BrowserWindow.getAllWindows).mockReturnValue([
-      { webContents: { send: mockSend } } as never,
-    ]);
+    const mockWebContents = { send: mockSend } as unknown as import('electron').WebContents;
 
-    const { createClient } = await import('@libsql/client');
-    const mockClose = vi.fn().mockResolvedValue(undefined);
-    vi.mocked(createClient).mockReturnValue({ close: mockClose } as never);
-
-    let callCount = 0;
-    const mockFrom = vi.fn(() => {
-      callCount++;
-      if (callCount > 14 + 14) {
-        return Promise.resolve([{ id: '1' }]);
-      }
-      return Promise.resolve([]);
-    });
-    const mockSelect = vi.fn(() => ({ from: mockFrom }));
-    const mockOnConflictDoNothing = vi.fn(() => Promise.resolve());
-    const mockValues = vi.fn(() => ({ onConflictDoNothing: mockOnConflictDoNothing }));
-    const mockInsert = vi.fn(() => ({ values: mockValues }));
+    let prepareCallCount = 0;
+    const mockLocalDb = {
+      prepare: vi.fn(() => ({
+        all: vi.fn((): Record<string, unknown>[] => {
+          prepareCallCount++;
+          return prepareCallCount > 14 ? [{ id: '1' }] : [];
+        }),
+      })),
+    } as unknown as import('better-sqlite3').Database;
 
     const { drizzle } = await import('drizzle-orm/libsql');
-    vi.mocked(drizzle)
-      .mockReturnValueOnce({ select: mockSelect, insert: mockInsert } as never)
-      .mockReturnValueOnce({
-        select: vi.fn(() => ({
-          from: vi.fn(() => Promise.resolve([{ id: '1' }])),
-        })),
-        insert: mockInsert,
-      } as never);
+    vi.mocked(drizzle).mockReturnValueOnce({
+      select: vi.fn(() => ({
+        from: vi.fn(() => Promise.resolve([])),
+      })),
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({ onConflictDoNothing: vi.fn(() => Promise.resolve()) })),
+      })),
+    } as unknown as ReturnType<typeof drizzle>);
 
-    await expect(
-      activateCloudSync('/tmp/local.db', 'libsql://example.turso.io', 'my-token'),
-    ).rejects.toThrow('Row count mismatch');
+    await activateCloudSync(
+      mockWebContents,
+      '/tmp/local.db',
+      mockLocalDb,
+      'libsql://example.turso.io',
+      'my-token',
+    );
 
     const sentEvents = mockSend.mock.calls.map(([, event]) => event);
     const errorEvents = sentEvents.filter((e) => e.type === CloudSyncEventType.Error);
