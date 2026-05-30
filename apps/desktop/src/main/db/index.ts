@@ -144,6 +144,7 @@ export async function initDatabase(): Promise<void> {
           handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
         }
         await handle.sync();
+        await migrate(handle.db, { migrationsFolder });
         await ensureDefaultAccount(handle.db);
         _handle = handle;
         _db = handle.db;
