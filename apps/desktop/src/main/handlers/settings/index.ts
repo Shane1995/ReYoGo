@@ -18,9 +18,11 @@ export function registerSettingsHandlers(): void {
     const replicaPath = getReplicaPath();
     await activateCloudSync(event.sender, getDb(), tursoUrl, authToken);
     wipeReplicaFiles(replicaPath);
-    reinitialise(replicaPath, tursoUrl, authToken).catch((err: unknown) => {
-      console.error('[ReYoGo] Failed to hot-swap to replica after activation:', err);
-    });
+    reinitialise(replicaPath, tursoUrl, authToken)
+      .then(() => deleteLocalBackup(getLocalDbPath()))
+      .catch((err: unknown) => {
+        console.error('[ReYoGo] Failed to hot-swap to replica after activation:', err);
+      });
   });
 
   ipcMain.handle(CloudSyncIPC.GET_STATUS, () => {

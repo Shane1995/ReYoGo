@@ -161,26 +161,24 @@ export async function initDatabase(): Promise<void> {
             handle.close();
             clearCredentials();
             wipeReplicaFiles(replicaPath);
-          } else {
-            recordSyncError(syncErr instanceof Error ? syncErr.message : String(syncErr));
-            await migrate(handle.db, { migrationsFolder });
-            await ensureDefaultAccount(handle.db);
-            _handle = handle;
-            _db = handle.db;
-            _repos = buildRepos(handle.db);
-            return;
+            throw new Error(
+              'Cloud database no longer accessible. Reconnect your account in Settings.',
+            );
           }
+          recordSyncError(syncErr instanceof Error ? syncErr.message : String(syncErr));
+          await migrate(handle.db, { migrationsFolder });
+          await ensureDefaultAccount(handle.db);
+          _handle = handle;
+          _db = handle.db;
+          _repos = buildRepos(handle.db);
+          return;
         }
 
-        if (_db) return;
-
-        const dbPath = getDbPath();
-        const localHandle = createDbClient(`file:${dbPath}`);
-        _handle = localHandle;
-        _db = localHandle.db;
-        await migrate(localHandle.db, { migrationsFolder });
-        await ensureDefaultAccount(localHandle.db);
-        _repos = buildRepos(localHandle.db);
+        await migrate(handle.db, { migrationsFolder });
+        await ensureDefaultAccount(handle.db);
+        _handle = handle;
+        _db = handle.db;
+        _repos = buildRepos(handle.db);
         return;
       }
     }
