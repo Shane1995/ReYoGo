@@ -18,7 +18,12 @@ import {
 } from '@reyogo/db';
 import { eq } from 'drizzle-orm';
 import { DB_READY_CHANNEL } from '@shared/ipc-events';
-import { hasCloudCredentials, getStoredCredentials } from './cloudSync';
+import {
+  hasCloudCredentials,
+  getStoredCredentials,
+  clearCredentials,
+  recordSyncError,
+} from './cloudSync';
 
 const isDev = !app.isPackaged || process.env.NODE_ENV === 'development';
 const DB_FILENAME = isDev ? 'app-dev.db' : 'app.db';
@@ -111,6 +116,11 @@ export async function syncNow(): Promise<void> {
   }
 }
 
+function isPermanentSyncError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.includes('404') || msg.includes('401') || msg.includes('auth role not found');
+}
+
 async function ensureDefaultAccount(db: DbClient): Promise<void> {
   const existing = await db
     .select()
@@ -143,12 +153,34 @@ export async function initDatabase(): Promise<void> {
           wipeReplicaFiles(replicaPath);
           handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
         }
-        await handle.sync();
-        await migrate(handle.db, { migrationsFolder });
-        await ensureDefaultAccount(handle.db);
-        _handle = handle;
-        _db = handle.db;
-        _repos = buildRepos(handle.db);
+
+        try {
+          await handle.sync();
+        } catch (syncErr) {
+          if (isPermanentSyncError(syncErr)) {
+            handle.close();
+            clearCredentials();
+            wipeReplicaFiles(replicaPath);
+          } else {
+            recordSyncError(syncErr instanceof Error ? syncErr.message : String(syncErr));
+            await migrate(handle.db, { migrationsFolder });
+            await ensureDefaultAccount(handle.db);
+            _handle = handle;
+            _db = handle.db;
+            _repos = buildRepos(handle.db);
+            return;
+          }
+        }
+
+        if (_db) return;
+
+        const dbPath = getDbPath();
+        const localHandle = createDbClient(`file:${dbPath}`);
+        _handle = localHandle;
+        _db = localHandle.db;
+        await migrate(localHandle.db, { migrationsFolder });
+        await ensureDefaultAccount(localHandle.db);
+        _repos = buildRepos(localHandle.db);
         return;
       }
     }

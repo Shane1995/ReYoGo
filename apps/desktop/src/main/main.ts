@@ -13,9 +13,15 @@ import {
   syncNow,
   isReplicaMode,
   getReplicaPath,
+  getLocalDbPath,
   wipeReplicaFiles,
 } from './db';
-import { recordSyncSuccess, recordSyncError, clearCredentials } from './db/cloudSync';
+import {
+  recordSyncSuccess,
+  recordSyncError,
+  clearCredentials,
+  deleteLocalBackup,
+} from './db/cloudSync';
 import { registerRoute } from './lib/electron-router-dom';
 import { registerIPC } from './ipc';
 
@@ -29,7 +35,7 @@ function broadcastToWindows(channel: string, payload: unknown): void {
 
 function isPermanentSyncError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
-  return msg.includes('404') || msg.includes('auth role not found') || msg.includes('401');
+  return msg.includes('404') || msg.includes('401') || msg.includes('auth role not found');
 }
 
 async function runBackgroundSync(): Promise<void> {
@@ -45,6 +51,7 @@ async function runBackgroundSync(): Promise<void> {
     if (isPermanentSyncError(err)) {
       clearCredentials();
       wipeReplicaFiles(getReplicaPath());
+      deleteLocalBackup(getLocalDbPath());
       broadcastToWindows(CLOUD_SYNC_EVENT_CHANNEL, {
         type: CloudSyncEventType.Error,
         message: 'Cloud database unreachable. Reconnect in Settings.',
@@ -74,20 +81,15 @@ function createWindow(): BrowserWindow {
     window.show();
     if (isDev || process.env.ROYOGO_DEBUG === '1') {
       window.webContents.openDevTools();
-      // Note: "ReferenceError: dragEvent is not defined" in console is a known Chrome DevTools bug
-      // when switching tabs; not from app code. Safe to ignore.
     }
   });
 
-  // Log load failures (e.g. file not found) so you can see them when running from terminal
   window.webContents.on('did-fail-load', (_event, code, errDesc, url) => {
     console.error('[ReYoGo] Failed to load:', code, errDesc, url);
   });
 
-  // Block cmd+click / middle-click from spawning new windows
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
 
-  // In production: getAppPath() already points at app.asar (or its root); do not add 'app.asar' again
   const htmlPath = app.isPackaged
     ? join(app.getAppPath(), 'out', 'renderer', 'index.html')
     : join(__dirname, '../../out/renderer/index.html');
