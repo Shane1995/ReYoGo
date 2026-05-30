@@ -4,6 +4,7 @@ import Store from 'electron-store';
 import { existsSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { createClient } from '@libsql/client';
+import { getTableName } from 'drizzle-orm';
 import type { SQLiteTable } from 'drizzle-orm/sqlite-core';
 import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
@@ -78,6 +79,10 @@ export function getSyncStatus(): SyncStatus {
   return _syncStatus;
 }
 
+export function _resetForTest(): void {
+  _syncStatus = { state: SyncState.Idle, lastSyncedAt: null, error: null };
+}
+
 function updateSyncStatus(partial: Partial<SyncStatus>): void {
   _syncStatus = { ..._syncStatus, ...partial };
 }
@@ -88,37 +93,20 @@ function getMigrationsFolder(): string {
 
 const SCHEMA_TABLE_MAP = {
   accounts: schema.accounts,
-  business_groups: schema.businessGroups,
+  businessGroups: schema.businessGroups,
   entities: schema.entities,
   suppliers: schema.suppliers,
-  inventory_categories: schema.inventoryCategories,
-  units_of_measure: schema.unitsOfMeasure,
-  inventory_items: schema.inventoryItems,
+  inventoryCategories: schema.inventoryCategories,
+  unitsOfMeasure: schema.unitsOfMeasure,
+  inventoryItems: schema.inventoryItems,
   invoices: schema.invoices,
-  invoice_line_items: schema.invoiceLineItems,
-  stock_movements: schema.stockMovements,
-  invoice_audit_log: schema.invoiceAuditLog,
-  stock_count_sessions: schema.stockCountSessions,
-  stock_count_lines: schema.stockCountLines,
-  costing_snapshots: schema.costingSnapshots,
+  invoiceLineItems: schema.invoiceLineItems,
+  stockMovements: schema.stockMovements,
+  invoiceAuditLog: schema.invoiceAuditLog,
+  stockCountSessions: schema.stockCountSessions,
+  stockCountLines: schema.stockCountLines,
+  costingSnapshots: schema.costingSnapshots,
 } satisfies Record<string, SQLiteTable>;
-
-const TABLE_SQL_NAMES: Record<keyof typeof SCHEMA_TABLE_MAP, string> = {
-  accounts: 'accounts',
-  business_groups: 'business_groups',
-  entities: 'entities',
-  suppliers: 'suppliers',
-  inventory_categories: 'inventory_categories',
-  units_of_measure: 'units_of_measure',
-  inventory_items: 'inventory_items',
-  invoices: 'invoices',
-  invoice_line_items: 'invoice_line_items',
-  stock_movements: 'stock_movements',
-  invoice_audit_log: 'invoice_audit_log',
-  stock_count_sessions: 'stock_count_sessions',
-  stock_count_lines: 'stock_count_lines',
-  costing_snapshots: 'costing_snapshots',
-};
 
 function insertRows(
   db: {
@@ -134,19 +122,19 @@ function insertRows(
 
 const FK_ORDER_TABLES: Array<keyof typeof SCHEMA_TABLE_MAP> = [
   'accounts',
-  'business_groups',
+  'businessGroups',
   'entities',
   'suppliers',
-  'inventory_categories',
-  'units_of_measure',
-  'inventory_items',
+  'inventoryCategories',
+  'unitsOfMeasure',
+  'inventoryItems',
   'invoices',
-  'invoice_line_items',
-  'stock_movements',
-  'invoice_audit_log',
-  'stock_count_sessions',
-  'stock_count_lines',
-  'costing_snapshots',
+  'invoiceLineItems',
+  'stockMovements',
+  'invoiceAuditLog',
+  'stockCountSessions',
+  'stockCountLines',
+  'costingSnapshots',
 ] satisfies Array<keyof typeof SCHEMA_TABLE_MAP>;
 
 const BATCH_SIZE = 500;
@@ -158,6 +146,7 @@ export async function activateCloudSync(
   tursoUrl: string,
   authToken: string,
 ): Promise<void> {
+  const remoteClient = createClient({ url: tursoUrl, authToken });
   try {
     sendEvent(webContents, {
       type: CloudSyncEventType.Progress,
@@ -166,7 +155,6 @@ export async function activateCloudSync(
       total: 1,
     });
 
-    const remoteClient = createClient({ url: tursoUrl, authToken });
     const remoteDb = drizzle(remoteClient, { schema });
 
     await migrate(remoteDb, { migrationsFolder: getMigrationsFolder() });
@@ -189,8 +177,7 @@ export async function activateCloudSync(
 
     for (const tableName of FK_ORDER_TABLES) {
       const table = SCHEMA_TABLE_MAP[tableName];
-      const sqlName = TABLE_SQL_NAMES[tableName];
-      const rows = localDb.prepare(`SELECT * FROM ${sqlName}`).all();
+      const rows = localDb.prepare(`SELECT * FROM ${getTableName(table)}`).all();
 
       if (rows.length > 0) {
         for (let i = 0; i < rows.length; i += BATCH_SIZE) {
@@ -218,8 +205,7 @@ export async function activateCloudSync(
     let verifyDone = 0;
     for (const tableName of FK_ORDER_TABLES) {
       const table = SCHEMA_TABLE_MAP[tableName];
-      const sqlName = TABLE_SQL_NAMES[tableName];
-      const localRows = localDb.prepare(`SELECT * FROM ${sqlName}`).all();
+      const localRows = localDb.prepare(`SELECT * FROM ${getTableName(table)}`).all();
       const remoteRows = await remoteDb.select().from(table);
 
       if (localRows.length !== remoteRows.length) {
@@ -263,6 +249,7 @@ export async function activateCloudSync(
     });
     sendEvent(webContents, { type: CloudSyncEventType.Success });
   } catch (error) {
+    await remoteClient.close();
     sendEvent(webContents, {
       type: CloudSyncEventType.Error,
       message: error instanceof Error ? error.message : String(error),
