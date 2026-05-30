@@ -155,7 +155,7 @@ export async function initDatabase(): Promise<void> {
       const credentials = getStoredCredentials();
       if (credentials) {
         const replicaPath = getReplicaPath();
-        let handle;
+        let handle: ReplicaHandle;
         try {
           handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
         } catch {
@@ -163,10 +163,19 @@ export async function initDatabase(): Promise<void> {
           handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
         }
 
+        const boot = async (h: typeof handle) => {
+          await h.sync();
+          await migrate(h.db, { migrationsFolder });
+          await ensureDefaultAccount(h.db);
+          _handle = h;
+          _db = h.db;
+          _repos = buildRepos(h.db);
+        };
+
         try {
-          await handle.sync();
-        } catch (syncErr) {
-          if (isPermanentSyncError(syncErr)) {
+          await boot(handle);
+        } catch (bootErr) {
+          if (isPermanentSyncError(bootErr)) {
             handle.close();
             clearCredentials();
             wipeReplicaFiles(replicaPath);
@@ -174,27 +183,21 @@ export async function initDatabase(): Promise<void> {
               'Cloud database no longer accessible. Reconnect your account in Settings.',
             );
           }
-          if (isCorruptedReplicaError(syncErr)) {
+          if (isCorruptedReplicaError(bootErr)) {
             handle.close();
             wipeReplicaFiles(replicaPath);
             handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
-            await handle.sync();
+            await boot(handle);
           } else {
-            recordSyncError(syncErr instanceof Error ? syncErr.message : String(syncErr));
+            recordSyncError(bootErr instanceof Error ? bootErr.message : String(bootErr));
             await migrate(handle.db, { migrationsFolder });
             await ensureDefaultAccount(handle.db);
             _handle = handle;
             _db = handle.db;
             _repos = buildRepos(handle.db);
-            return;
           }
         }
 
-        await migrate(handle.db, { migrationsFolder });
-        await ensureDefaultAccount(handle.db);
-        _handle = handle;
-        _db = handle.db;
-        _repos = buildRepos(handle.db);
         return;
       }
     }
