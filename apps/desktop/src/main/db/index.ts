@@ -58,7 +58,7 @@ export function getReplicaPath(): string {
 }
 
 function getMigrationsFolder(): string {
-  return app.isPackaged ? join(__dirname, 'db', 'migrations') : join(__dirname, 'migrations');
+  return join(__dirname, 'db', 'migrations');
 }
 
 function buildRepos(db: DbClient): Repos {

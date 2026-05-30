@@ -1,4 +1,4 @@
-import { app, safeStorage } from 'electron';
+import { safeStorage } from 'electron';
 import type { WebContents } from 'electron';
 import { existsSync, unlinkSync } from 'fs';
 import { join } from 'path';
@@ -79,7 +79,7 @@ function updateSyncStatus(partial: Partial<SyncStatus>): void {
 }
 
 function getMigrationsFolder(): string {
-  return app.isPackaged ? join(__dirname, '../db/migrations') : join(__dirname, '..', 'migrations');
+  return join(__dirname, 'db', 'migrations');
 }
 
 const SCHEMA_TABLE_MAP = {
