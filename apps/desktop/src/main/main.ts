@@ -23,6 +23,7 @@ function broadcastToWindows(channel: string, payload: unknown): void {
 async function runBackgroundSync(): Promise<void> {
   if (!isReplicaMode()) return;
   try {
+    broadcastToWindows(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.Syncing });
     await syncNow();
     recordSyncSuccess();
     broadcastToWindows(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.BackgroundSync });

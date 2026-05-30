@@ -11,6 +11,7 @@ type SyncStatus = { isActive: boolean; lastSyncedAt: string | null };
 export function AppStatusBar({ collapsed }: { collapsed: boolean }) {
   const [version, setVersion] = useState<AppVersionInfo | null>(null);
   const [sync, setSync] = useState<SyncStatus | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     appService.getVersion().then(setVersion);
@@ -29,11 +30,16 @@ export function AppStatusBar({ collapsed }: { collapsed: boolean }) {
 
     const off = cloudSyncService.onSyncEvent((event: CloudSyncEvent) => {
       if (!active) return;
-      if (
+      if (event.type === CloudSyncEventType.Syncing) {
+        setSyncing(true);
+      } else if (
         event.type === CloudSyncEventType.Success ||
         event.type === CloudSyncEventType.BackgroundSync
       ) {
+        setSyncing(false);
         refresh();
+      } else if (event.type === CloudSyncEventType.Error) {
+        setSyncing(false);
       }
     });
 
@@ -59,8 +65,8 @@ export function AppStatusBar({ collapsed }: { collapsed: boolean }) {
       )}
       {!collapsed && (
         <span className="truncate">
-          {connected ? 'Cloud connected' : 'Local only'}
-          {version && ` · v${version.version}`}
+          {syncing ? 'Syncing database…' : connected ? 'Cloud connected' : 'Local only'}
+          {!syncing && version && ` · v${version.version}`}
         </span>
       )}
     </div>
