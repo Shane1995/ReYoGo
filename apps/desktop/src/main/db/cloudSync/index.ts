@@ -1,6 +1,5 @@
 import { app, safeStorage } from 'electron';
 import type { WebContents } from 'electron';
-import Store from 'electron-store';
 import { existsSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { createClient } from '@libsql/client';
@@ -13,6 +12,7 @@ import { CloudSyncEventType, CloudSyncStage, SyncState } from '@shared/types/clo
 import type { CloudSyncEvent } from '@shared/types/cloudSync';
 import type { CloudSyncCredentials, SyncStatus } from './types';
 import { CLOUD_SYNC_EVENT_CHANNEL } from '@shared/ipc-events';
+import { store } from './store';
 
 interface RawDb {
   prepare(sql: string): { all(): Record<string, unknown>[] };
@@ -22,15 +22,6 @@ const STORE_KEY_URL = 'cloudSync.tursoUrl';
 const STORE_KEY_TOKEN_ENC = 'cloudSync.authTokenEncrypted';
 const STORE_KEY_LAST_SYNCED = 'cloudSync.lastSyncedAt';
 const STORE_KEY_SYNC_ERROR = 'cloudSync.syncError';
-
-type StoreSchema = {
-  'cloudSync.tursoUrl': string;
-  'cloudSync.authTokenEncrypted': string;
-  'cloudSync.lastSyncedAt': string;
-  'cloudSync.syncError': string;
-};
-
-const store = new Store<StoreSchema>();
 
 let _syncStatus: SyncStatus = { state: SyncState.Idle, lastSyncedAt: null, error: null };
 
