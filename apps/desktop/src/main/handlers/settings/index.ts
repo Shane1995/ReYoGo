@@ -10,6 +10,7 @@ import {
   hasLocalReplica,
   deleteLocalBackup,
   recordSyncSuccess,
+  recordSyncError,
   scheduleErrorAfterTimeout,
 } from '../../db/cloudSync';
 
@@ -42,6 +43,9 @@ export function registerSettingsHandlers(): void {
     try {
       await reinitialise(getReplicaPath(), credentials.tursoUrl, credentials.authToken);
       recordSyncSuccess();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      recordSyncError(msg);
     } finally {
       cancel();
     }
