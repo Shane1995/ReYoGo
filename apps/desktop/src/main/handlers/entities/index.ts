@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron';
+import { randomUUID } from 'node:crypto';
 import type { ICompleteSetupPayload, VatMode } from '@reyogo/types';
 import { EntitiesIPC } from '@shared/types/ipc';
 import { getRepos } from '../../db';
@@ -14,7 +15,7 @@ export function registerEntitiesHandlers(): void {
     getRepos().entities.updateGroupName('default-group', name),
   );
   ipcMain.handle(EntitiesIPC.CREATE_ENTITY, async (_e, name: string) => {
-    const id = crypto.randomUUID();
+    const id = randomUUID();
     await getRepos().entities.createEntity({ id, groupId: 'default-group', name });
     return getRepos().entities.getEntities('default');
   });
