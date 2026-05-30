@@ -19,8 +19,8 @@ export function CloudSyncSection() {
 
   const refreshStatus = useCallback(async () => {
     const [s, c] = await Promise.all([
-      cloudSyncService.getStatus(),
-      cloudSyncService.getCredentials(),
+      cloudSyncService.getStatus().catch(() => null),
+      cloudSyncService.getCredentials().catch(() => null),
     ]);
     setStatus(s);
     setCredentials(c);

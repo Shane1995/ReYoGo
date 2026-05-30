@@ -30,8 +30,8 @@ export function AppSidebar() {
   useEffect(() => {
     let active = true;
     const poll = async () => {
-      const status = await cloudSyncService.getStatus();
-      if (active) setSyncState(status.isActive ? status.state : null);
+      const status = await cloudSyncService.getStatus().catch(() => null);
+      if (active) setSyncState(status?.isActive ? status.state : null);
     };
     poll();
     const interval = setInterval(poll, 30_000);
