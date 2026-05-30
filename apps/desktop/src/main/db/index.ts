@@ -1,5 +1,5 @@
 import { app } from 'electron';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import {
@@ -61,6 +61,12 @@ function getMigrationsFolder(): string {
   return join(__dirname, 'db', 'migrations');
 }
 
+function wipeReplicaFiles(replicaPath: string): void {
+  for (const p of [replicaPath, `${replicaPath}-shm`, `${replicaPath}-wal`]) {
+    if (existsSync(p)) unlinkSync(p);
+  }
+}
+
 function buildRepos(db: DbClient): Repos {
   return {
     inventory: createInventoryRepo(db),
@@ -114,16 +120,18 @@ export async function initDatabase(): Promise<void> {
       const credentials = getStoredCredentials();
       if (credentials) {
         const replicaPath = getReplicaPath();
-        const handle = createReplicaClient(
-          replicaPath,
-          credentials.tursoUrl,
-          credentials.authToken,
-        );
-        _handle = handle;
-        _db = handle.db;
+        let handle;
+        try {
+          handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
+        } catch {
+          wipeReplicaFiles(replicaPath);
+          handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
+        }
         await handle.sync();
         await migrate(handle.db, { migrationsFolder });
         await ensureDefaultAccount(handle.db);
+        _handle = handle;
+        _db = handle.db;
         _repos = buildRepos(handle.db);
         return;
       }
