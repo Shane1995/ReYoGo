@@ -102,6 +102,7 @@ import {
   recordSyncError,
   scheduleErrorAfterTimeout,
   _resetForTest,
+  FK_ORDER_TABLES,
 } from './index';
 import { SyncState, CloudSyncEventType, CloudSyncStage } from '@shared/types/cloudSync';
 import { safeStorage } from 'electron';
@@ -377,7 +378,7 @@ describe('activateCloudSync', () => {
       'send'
     >;
 
-    const tableCount = 14;
+    const tableCount = FK_ORDER_TABLES.length;
     let prepareCallCount = 0;
     const mockLocalDb = {
       prepare: vi.fn((_sql: string) => ({

@@ -120,7 +120,7 @@ function insertRows(
   return db.insert(table).values(rows).onConflictDoNothing();
 }
 
-const FK_ORDER_TABLES: Array<keyof typeof SCHEMA_TABLE_MAP> = [
+export const FK_ORDER_TABLES: Array<keyof typeof SCHEMA_TABLE_MAP> = [
   'accounts',
   'businessGroups',
   'entities',
