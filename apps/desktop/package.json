@@ -27,7 +27,7 @@
     "format:check": "oxfmt --check src/"
   },
   "dependencies": {
-    "@libsql/client": "^0.14.0",
+    "@libsql/client": "^0.17.3",
     "@reyogo/db": "workspace:*",
     "@reyogo/types": "workspace:*",
     "@reyogo/ui": "workspace:*",

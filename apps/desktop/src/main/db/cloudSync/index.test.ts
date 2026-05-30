@@ -28,20 +28,17 @@ vi.mock('electron', () => ({
   BrowserWindow: { getAllWindows: vi.fn(() => []) },
 }));
 
-vi.mock('electron-store', () => {
-  const MockStore = vi.fn(function () {
-    return {
-      get: (key: string, def?: unknown) => store[key] ?? def,
-      set: (key: string, val: unknown) => {
-        store[key] = val;
-      },
-      delete: (key: string) => {
-        delete store[key];
-      },
-    };
-  });
-  return { default: MockStore };
-});
+vi.mock('./store', () => ({
+  store: {
+    get: (key: string, def?: unknown) => store[key] ?? def,
+    set: (key: string, val: unknown) => {
+      store[key] = val;
+    },
+    delete: (key: string) => {
+      delete store[key];
+    },
+  },
+}));
 
 vi.mock('fs', () => ({
   default: { existsSync: mockExistsSync, unlinkSync: mockUnlinkSync },

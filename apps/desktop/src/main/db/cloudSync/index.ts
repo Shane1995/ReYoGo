@@ -99,6 +99,32 @@ const SCHEMA_TABLE_MAP = {
   costingSnapshots: schema.costingSnapshots,
 } satisfies Record<string, SQLiteTable>;
 
+function buildSqlToFieldMap(table: SQLiteTable): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const [field, col] of Object.entries(table as unknown as Record<string, unknown>)) {
+    if (
+      col &&
+      typeof col === 'object' &&
+      'name' in col &&
+      typeof (col as { name: unknown }).name === 'string'
+    ) {
+      map[(col as { name: string }).name] = field;
+    }
+  }
+  return map;
+}
+
+function remapRow(
+  sqlToField: Record<string, string>,
+  row: Record<string, unknown>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, val] of Object.entries(row)) {
+    out[sqlToField[key] ?? key] = val;
+  }
+  return out;
+}
+
 function insertRows(
   db: {
     insert(table: SQLiteTable): {
@@ -108,7 +134,11 @@ function insertRows(
   table: SQLiteTable,
   rows: Record<string, unknown>[],
 ): Promise<unknown> {
-  return db.insert(table).values(rows).onConflictDoNothing();
+  const sqlToField = buildSqlToFieldMap(table);
+  return db
+    .insert(table)
+    .values(rows.map((r) => remapRow(sqlToField, r)))
+    .onConflictDoNothing();
 }
 
 export const FK_ORDER_TABLES: Array<keyof typeof SCHEMA_TABLE_MAP> = [
