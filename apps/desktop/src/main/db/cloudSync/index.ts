@@ -1,8 +1,9 @@
 import { app, safeStorage, BrowserWindow } from 'electron';
 import Store from 'electron-store';
-import { existsSync } from 'fs';
+import { existsSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { createClient } from '@libsql/client';
+import type { SQLiteTable } from 'drizzle-orm/sqlite-core';
 import { drizzle } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { schema } from '@reyogo/db';
@@ -77,39 +78,24 @@ function getMigrationsFolder(): string {
     : require.resolve('@reyogo/db/package.json').replace('package.json', 'migrations');
 }
 
-const FK_ORDER_TABLES = [
-  'accounts',
-  'business_groups',
-  'entities',
-  'suppliers',
-  'inventory_categories',
-  'units_of_measure',
-  'inventory_items',
-  'invoices',
-  'invoice_line_items',
-  'stock_movements',
-  'invoice_audit_log',
-  'stock_count_sessions',
-  'stock_count_lines',
-  'costing_snapshots',
-] as const;
+const SCHEMA_TABLE_MAP = {
+  accounts: schema.accounts,
+  business_groups: schema.businessGroups,
+  entities: schema.entities,
+  suppliers: schema.suppliers,
+  inventory_categories: schema.inventoryCategories,
+  units_of_measure: schema.unitsOfMeasure,
+  inventory_items: schema.inventoryItems,
+  invoices: schema.invoices,
+  invoice_line_items: schema.invoiceLineItems,
+  stock_movements: schema.stockMovements,
+  invoice_audit_log: schema.invoiceAuditLog,
+  stock_count_sessions: schema.stockCountSessions,
+  stock_count_lines: schema.stockCountLines,
+  costing_snapshots: schema.costingSnapshots,
+} satisfies Record<string, SQLiteTable>;
 
-const SCHEMA_TABLE_MAP: Record<string, keyof typeof schema> = {
-  accounts: 'accounts',
-  business_groups: 'businessGroups',
-  entities: 'entities',
-  suppliers: 'suppliers',
-  inventory_categories: 'inventoryCategories',
-  units_of_measure: 'unitsOfMeasure',
-  inventory_items: 'inventoryItems',
-  invoices: 'invoices',
-  invoice_line_items: 'invoiceLineItems',
-  stock_movements: 'stockMovements',
-  invoice_audit_log: 'invoiceAuditLog',
-  stock_count_sessions: 'stockCountSessions',
-  stock_count_lines: 'stockCountLines',
-  costing_snapshots: 'costingSnapshots',
-};
+const FK_ORDER_TABLES = Object.keys(SCHEMA_TABLE_MAP) as Array<keyof typeof SCHEMA_TABLE_MAP>;
 
 const BATCH_SIZE = 500;
 
@@ -150,17 +136,13 @@ export async function activateCloudSync(
   });
 
   for (const tableName of FK_ORDER_TABLES) {
-    const schemaKey = SCHEMA_TABLE_MAP[tableName] as keyof typeof schema;
-    const table = schema[schemaKey];
-    const rows = await localDb.select().from(table as never);
+    const table = SCHEMA_TABLE_MAP[tableName];
+    const rows = await localDb.select().from(table);
 
     if (rows.length > 0) {
       for (let i = 0; i < rows.length; i += BATCH_SIZE) {
         const batch = rows.slice(i, i + BATCH_SIZE);
-        await remoteDb
-          .insert(table as never)
-          .values(batch as never)
-          .onConflictDoNothing();
+        await remoteDb.insert(table).values(batch).onConflictDoNothing();
       }
     }
 
@@ -180,12 +162,12 @@ export async function activateCloudSync(
     total: totalTables,
   });
 
+  let verifyDone = 0;
   for (const tableName of FK_ORDER_TABLES) {
-    const schemaKey = SCHEMA_TABLE_MAP[tableName] as keyof typeof schema;
-    const table = schema[schemaKey];
+    const table = SCHEMA_TABLE_MAP[tableName];
     const [localRows, remoteRows] = await Promise.all([
-      localDb.select().from(table as never),
-      remoteDb.select().from(table as never),
+      localDb.select().from(table),
+      remoteDb.select().from(table),
     ]);
 
     if (localRows.length !== remoteRows.length) {
@@ -198,6 +180,14 @@ export async function activateCloudSync(
       });
       throw new Error(`Row count mismatch in ${tableName}`);
     }
+
+    verifyDone++;
+    sendEvent({
+      type: CloudSyncEventType.Progress,
+      stage: CloudSyncStage.Verifying,
+      done: verifyDone,
+      total: FK_ORDER_TABLES.length,
+    });
   }
 
   await localClient.close();
@@ -251,6 +241,5 @@ export function scheduleErrorAfterTimeout(message: string, delayMs = 5 * 60 * 10
 }
 
 export function deleteLocalBackup(localDbPath: string): void {
-  const { unlinkSync, existsSync: fsExists } = require('fs') as typeof import('fs');
-  if (fsExists(localDbPath)) unlinkSync(localDbPath);
+  if (existsSync(localDbPath)) unlinkSync(localDbPath);
 }
