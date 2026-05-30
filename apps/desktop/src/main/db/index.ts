@@ -121,6 +121,15 @@ function isPermanentSyncError(err: unknown): boolean {
   return msg.includes('404') || msg.includes('401') || msg.includes('auth role not found');
 }
 
+function isCorruptedReplicaError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return (
+    msg.includes('Invalid header') ||
+    msg.includes('WriteDelegation') ||
+    msg.includes('database disk image is malformed')
+  );
+}
+
 async function ensureDefaultAccount(db: DbClient): Promise<void> {
   const existing = await db
     .select()
@@ -165,13 +174,20 @@ export async function initDatabase(): Promise<void> {
               'Cloud database no longer accessible. Reconnect your account in Settings.',
             );
           }
-          recordSyncError(syncErr instanceof Error ? syncErr.message : String(syncErr));
-          await migrate(handle.db, { migrationsFolder });
-          await ensureDefaultAccount(handle.db);
-          _handle = handle;
-          _db = handle.db;
-          _repos = buildRepos(handle.db);
-          return;
+          if (isCorruptedReplicaError(syncErr)) {
+            handle.close();
+            wipeReplicaFiles(replicaPath);
+            handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
+            await handle.sync();
+          } else {
+            recordSyncError(syncErr instanceof Error ? syncErr.message : String(syncErr));
+            await migrate(handle.db, { migrationsFolder });
+            await ensureDefaultAccount(handle.db);
+            _handle = handle;
+            _db = handle.db;
+            _repos = buildRepos(handle.db);
+            return;
+          }
         }
 
         await migrate(handle.db, { migrationsFolder });
