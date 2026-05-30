@@ -23,6 +23,7 @@ import {
   getStoredCredentials,
   clearCredentials,
   recordSyncError,
+  withSyncTimeout,
 } from './cloudSync';
 
 const isDev = !app.isPackaged || process.env.NODE_ENV === 'development';
@@ -165,7 +166,7 @@ export async function initDatabase(): Promise<void> {
         }
 
         const boot = async (h: typeof handle) => {
-          await h.sync();
+          await withSyncTimeout(h.sync());
           await migrate(h.db, { migrationsFolder });
           await ensureDefaultAccount(h.db);
           _handle = h;
