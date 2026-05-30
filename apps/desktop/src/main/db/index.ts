@@ -13,6 +13,8 @@ import {
   createEntitiesRepo,
   schema,
   type DbClient,
+  type DbHandle,
+  type ReplicaHandle,
 } from '@reyogo/db';
 import { eq } from 'drizzle-orm';
 import { DB_READY_CHANNEL } from '@shared/ipc-events';
@@ -30,8 +32,10 @@ type Repos = {
   entities: ReturnType<typeof createEntitiesRepo>;
 };
 
+let _handle: DbHandle | ReplicaHandle | null = null;
 let _db: DbClient | null = null;
 let _repos: Repos | null = null;
+let _initialising = false;
 let _reinitialising = false;
 
 function getDataDir(): string {
@@ -101,32 +105,40 @@ async function ensureDefaultAccount(db: DbClient): Promise<void> {
 }
 
 export async function initDatabase(): Promise<void> {
-  const migrationsFolder = getMigrationsFolder();
+  if (_db !== null || _initialising) return;
+  _initialising = true;
+  try {
+    const migrationsFolder = getMigrationsFolder();
 
-  if (hasCloudCredentials()) {
-    const credentials = getStoredCredentials();
-    if (credentials) {
-      const replicaPath = getReplicaPath();
-      const { db, sync } = createReplicaClient(
-        replicaPath,
-        credentials.tursoUrl,
-        credentials.authToken,
-      );
-      _db = db;
-      await sync();
-      await migrate(db, { migrationsFolder });
-      await ensureDefaultAccount(db);
-      _repos = buildRepos(db);
-      return;
+    if (hasCloudCredentials()) {
+      const credentials = getStoredCredentials();
+      if (credentials) {
+        const replicaPath = getReplicaPath();
+        const handle = createReplicaClient(
+          replicaPath,
+          credentials.tursoUrl,
+          credentials.authToken,
+        );
+        _handle = handle;
+        _db = handle.db;
+        await handle.sync();
+        await migrate(handle.db, { migrationsFolder });
+        await ensureDefaultAccount(handle.db);
+        _repos = buildRepos(handle.db);
+        return;
+      }
     }
-  }
 
-  const dbPath = getDbPath();
-  const db = createDbClient(`file:${dbPath}`);
-  _db = db;
-  await migrate(db, { migrationsFolder });
-  await ensureDefaultAccount(db);
-  _repos = buildRepos(db);
+    const dbPath = getDbPath();
+    const handle = createDbClient(`file:${dbPath}`);
+    _handle = handle;
+    _db = handle.db;
+    await migrate(handle.db, { migrationsFolder });
+    await ensureDefaultAccount(handle.db);
+    _repos = buildRepos(handle.db);
+  } finally {
+    _initialising = false;
+  }
 }
 
 export async function reinitialise(
@@ -136,11 +148,13 @@ export async function reinitialise(
 ): Promise<void> {
   _reinitialising = true;
   try {
-    const { db, sync } = createReplicaClient(replicaPath, syncUrl, authToken);
-    await sync();
-    await migrate(db, { migrationsFolder: getMigrationsFolder() });
-    _db = db;
-    _repos = buildRepos(db);
+    if (_handle) _handle.close();
+    const handle = createReplicaClient(replicaPath, syncUrl, authToken);
+    await handle.sync();
+    await migrate(handle.db, { migrationsFolder: getMigrationsFolder() });
+    _handle = handle;
+    _db = handle.db;
+    _repos = buildRepos(handle.db);
   } finally {
     _reinitialising = false;
   }
