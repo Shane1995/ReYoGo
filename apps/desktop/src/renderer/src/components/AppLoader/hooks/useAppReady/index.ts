@@ -20,9 +20,13 @@ export function useAppReady() {
   }, []);
 
   useEffect(() => {
-    appService.onAppReady(() => checkSetup().catch(console.error));
-    appService.onAppInitError((message) => setInitError(message));
+    const offReady = appService.onAppReady(() => checkSetup().catch(console.error));
+    const offError = appService.onAppInitError((message) => setInitError(message));
     appService.requestAppReady();
+    return () => {
+      offReady();
+      offError();
+    };
   }, [checkSetup]);
 
   const isReady = phase !== 'loading';

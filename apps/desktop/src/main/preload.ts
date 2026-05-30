@@ -20,9 +20,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   onAppReady: (callback: () => void) => {
     ipcRenderer.once(DB_READY_CHANNEL, callback);
+    return () => ipcRenderer.removeListener(DB_READY_CHANNEL, callback);
   },
   onAppInitError: (callback: (message: string) => void) => {
-    ipcRenderer.once(DB_INIT_ERROR_CHANNEL, (_event, message: string) => callback(message));
+    const wrapped = (_event: unknown, message: string) => callback(message);
+    ipcRenderer.once(DB_INIT_ERROR_CHANNEL, wrapped);
+    return () => ipcRenderer.removeListener(DB_INIT_ERROR_CHANNEL, wrapped);
   },
   requestAppReady: () => {
     ipcRenderer.send(DB_REQUEST_READY_CHANNEL);

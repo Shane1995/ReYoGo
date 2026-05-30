@@ -28,13 +28,17 @@ export function AppSidebar() {
   const [syncState, setSyncState] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
     const poll = async () => {
       const status = await cloudSyncService.getStatus();
-      setSyncState(status.isActive ? status.state : null);
+      if (active) setSyncState(status.isActive ? status.state : null);
     };
     poll();
     const interval = setInterval(poll, 30_000);
-    return () => clearInterval(interval);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const toggle = () =>

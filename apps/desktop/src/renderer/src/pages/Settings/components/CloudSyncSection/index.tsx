@@ -40,8 +40,10 @@ export function CloudSyncSection() {
   }, []);
 
   useEffect(() => {
+    let mounted = true;
     refreshStatus();
     const off = cloudSyncService.onSyncEvent((event: CloudSyncEvent) => {
+      if (!mounted) return;
       if (event.type === CloudSyncEventType.Progress) {
         setProgressLabel(STAGE_LABEL[event.stage] ?? event.stage);
         setProgressDetail(`${event.done}/${event.total}`);
@@ -61,7 +63,10 @@ export function CloudSyncSection() {
         );
       }
     });
-    return off;
+    return () => {
+      mounted = false;
+      off();
+    };
   }, [refreshStatus]);
 
   async function handleActivate() {
@@ -91,8 +96,12 @@ export function CloudSyncSection() {
   }
 
   async function handleDeleteBackup() {
-    await cloudSyncService.deleteBackup();
-    toast.success('Local backup deleted');
+    try {
+      await cloudSyncService.deleteBackup();
+      toast.success('Local backup deleted');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete backup');
+    }
   }
 
   const lastSynced = status?.lastSyncedAt ? new Date(status.lastSyncedAt).toLocaleString() : null;
