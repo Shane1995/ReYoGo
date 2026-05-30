@@ -95,6 +95,16 @@ export function getDbReadyChannel(): string {
   return DB_READY_CHANNEL;
 }
 
+export function isReplicaMode(): boolean {
+  return _handle !== null && 'sync' in _handle;
+}
+
+export async function syncNow(): Promise<void> {
+  if (_handle && 'sync' in _handle) {
+    await (_handle as { sync(): Promise<void> }).sync();
+  }
+}
+
 async function ensureDefaultAccount(db: DbClient): Promise<void> {
   const existing = await db
     .select()

@@ -1,6 +1,7 @@
 export enum CloudSyncEventType {
   Progress = 'progress',
   Success = 'success',
+  BackgroundSync = 'background-sync',
   Error = 'error',
 }
 
@@ -21,4 +22,5 @@ export enum SyncState {
 export type CloudSyncEvent =
   | { type: CloudSyncEventType.Progress; stage: CloudSyncStage; done: number; total: number }
   | { type: CloudSyncEventType.Success }
+  | { type: CloudSyncEventType.BackgroundSync }
   | { type: CloudSyncEventType.Error; message: string; retryable: boolean };
