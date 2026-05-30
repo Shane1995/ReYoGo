@@ -42,7 +42,7 @@ export default defineConfig({
     },
     build: {
       rollupOptions: {
-        external: [/^@libsql\/.*/],
+        external: [/^@libsql\/.*/, 'better-sqlite3'],
         input: {
           index: resolve(__dirname, 'src/main/main.ts'),
         },
