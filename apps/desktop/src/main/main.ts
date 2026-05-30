@@ -7,8 +7,15 @@ import {
   CLOUD_SYNC_EVENT_CHANNEL,
 } from '@shared/ipc-events';
 import { CloudSyncEventType } from '@shared/types/cloudSync';
-import { getDbReadyChannel, initDatabase, syncNow, isReplicaMode } from './db';
-import { recordSyncSuccess, recordSyncError } from './db/cloudSync';
+import {
+  getDbReadyChannel,
+  initDatabase,
+  syncNow,
+  isReplicaMode,
+  getReplicaPath,
+  wipeReplicaFiles,
+} from './db';
+import { recordSyncSuccess, recordSyncError, clearCredentials } from './db/cloudSync';
 import { registerRoute } from './lib/electron-router-dom';
 import { registerIPC } from './ipc';
 
@@ -20,6 +27,11 @@ function broadcastToWindows(channel: string, payload: unknown): void {
   }
 }
 
+function isPermanentSyncError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.includes('404') || msg.includes('auth role not found') || msg.includes('401');
+}
+
 async function runBackgroundSync(): Promise<void> {
   if (!isReplicaMode()) return;
   try {
@@ -29,8 +41,18 @@ async function runBackgroundSync(): Promise<void> {
     broadcastToWindows(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.BackgroundSync });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    recordSyncError(msg);
     console.error('[ReYoGo] Background sync failed:', err);
+    if (isPermanentSyncError(err)) {
+      clearCredentials();
+      wipeReplicaFiles(getReplicaPath());
+      broadcastToWindows(CLOUD_SYNC_EVENT_CHANNEL, {
+        type: CloudSyncEventType.Error,
+        message: 'Cloud database unreachable. Reconnect in Settings.',
+        retryable: false,
+      });
+    } else {
+      recordSyncError(msg);
+    }
   }
 }
 
