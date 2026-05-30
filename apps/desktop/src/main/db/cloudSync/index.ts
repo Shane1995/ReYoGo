@@ -76,7 +76,6 @@ function getMigrationsFolder(): string {
   return join(__dirname, 'db', 'migrations');
 }
 
-// Tables ordered to satisfy FK constraints (parents before children).
 export const FK_ORDER_TABLES: SQLiteTable[] = [
   schema.accounts,
   schema.businessGroups,
@@ -104,7 +103,6 @@ async function copyTable<T extends SQLiteTable>(
   const rows = await from.select().from(table);
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     const batch = rows.slice(i, i + BATCH_SIZE);
-    // Drizzle select/insert generics diverge on key constraints for abstract T.
     // @ts-expect-error TS2769
     await to.insert(table).values(batch).onConflictDoNothing();
   }
