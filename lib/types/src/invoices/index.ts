@@ -102,7 +102,16 @@ export interface IInvoiceAuditEntry {
   snapshot: IInvoiceWithLines;
 }
 
-export type IInvoiceLinePayload = Omit<IInvoiceLine, 'invoiceId'>;
+export interface IInvoiceLinePayload {
+  id: string;
+  itemId: string;
+  itemNameSnapshot: string;
+  unitOfMeasure?: string | null;
+  quantity: number;
+  unitPrice: number;
+  isVatable: boolean;
+  totalVatExclude: number;
+}
 
 export interface ISaveInvoicePayload {
   id: string;

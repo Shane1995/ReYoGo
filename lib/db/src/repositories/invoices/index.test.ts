@@ -16,6 +16,7 @@ function line(overrides: {
   id: string;
   itemId?: string;
   quantity?: number;
+  unitPrice?: number;
   totalVatExclude?: number;
   isVatable?: boolean;
   itemNameSnapshot?: string;
@@ -25,6 +26,7 @@ function line(overrides: {
     itemId: overrides.itemId ?? 'item-1',
     itemNameSnapshot: overrides.itemNameSnapshot ?? '',
     quantity: overrides.quantity ?? 10,
+    unitPrice: overrides.unitPrice ?? 10,
     isVatable: overrides.isVatable ?? true,
     totalVatExclude: overrides.totalVatExclude ?? 100,
   };
