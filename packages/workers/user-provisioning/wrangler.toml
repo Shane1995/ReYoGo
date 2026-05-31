@@ -1,9 +1,0 @@
-name = "reyogo-user-provisioning-staging"
-main = "src/index.ts"
-compatibility_date = "2024-01-01"
-
-[env.staging]
-name = "reyogo-user-provisioning-staging"
-
-[env.production]
-name = "reyogo-user-provisioning-production"
