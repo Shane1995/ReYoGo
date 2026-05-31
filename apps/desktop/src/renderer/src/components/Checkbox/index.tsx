@@ -11,7 +11,7 @@ export function Checkbox({ checked, indeterminate, onChange, disabled, label }: 
 
   const boxCls = [
     'inline-flex items-center justify-center size-[18px] rounded-[4px] border shrink-0',
-    'transition-[background-color,border-color] duration-150',
+    'transition-[background,border-color] duration-150',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#20C997]/50',
     disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer',
     checked || indeterminate

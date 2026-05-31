@@ -161,7 +161,7 @@ export function RaiseCreditNotePanel({ invoice, onConfirm, onCancel }: Props) {
                     {formatMoney(l.creditPrice)} = £{formatMoney(lineTotal)}
                   </td>
                   <td className={`${td} text-right tabular-nums font-mono`}>
-                    {l.isFreeGift ? (
+                    {l.isFreeGift && l.creditPrice === 0 ? (
                       <span className="text-white/40">Stock only</span>
                     ) : (
                       <span className="text-rose-400">-£{formatMoney(lineTotal)}</span>
