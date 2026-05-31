@@ -1,4 +1,4 @@
-import { asc, desc, eq, gt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, sql } from 'drizzle-orm';
 import { MovementType, InvoiceStatus, ReferenceType, VatMode } from '@reyogo/types';
 import type {
   IInvoice,
@@ -9,6 +9,7 @@ import type {
   IUpdateCapturedInvoicePayload,
   IUpdateCapturedInvoiceMetadataPayload,
   InvoiceLineWithDate,
+  ISaveCreditNotePayload,
 } from '@reyogo/types';
 import type { DbClient } from '../../client';
 import * as schema from '../../schema';
@@ -114,6 +115,30 @@ function computeTax(
     0,
   );
   return { totalExclTax, taxAmount };
+}
+
+async function getCreditNotedQtyByItem(
+  db: DbClient,
+  sourceInvoiceId: string,
+): Promise<Record<string, number>> {
+  const rows = await db
+    .select({
+      inventoryItemId: schema.invoiceLineItems.inventoryItemId,
+      qty: schema.invoiceLineItems.qty,
+    })
+    .from(schema.invoiceLineItems)
+    .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
+    .where(
+      and(
+        eq(schema.invoices.sourceInvoiceId, sourceInvoiceId),
+        eq(schema.invoices.status, InvoiceStatus.CreditNote),
+      ),
+    );
+  const result: Record<string, number> = {};
+  for (const row of rows) {
+    result[row.inventoryItemId] = (result[row.inventoryItemId] ?? 0) + row.qty;
+  }
+  return result;
 }
 
 export function createInvoicesRepo(db: DbClient) {
@@ -465,6 +490,140 @@ export function createInvoicesRepo(db: DbClient) {
           .set({ status: InvoiceStatus.Posted, updatedAt: postedAt })
           .where(eq(schema.invoices.id, id));
       });
+    },
+
+    async saveCreditNote(payload: ISaveCreditNotePayload): Promise<void> {
+      const createdAt = now();
+      const validLines = payload.lines.filter((l) => l.itemId && l.quantity > 0);
+
+      const sourceInvoice = await this.getInvoiceById(payload.sourceInvoiceId);
+      if (!sourceInvoice) throw new Error(`Source invoice not found: ${payload.sourceInvoiceId}`);
+      if (sourceInvoice.status !== InvoiceStatus.Posted)
+        throw new Error(`Credit notes can only be raised against posted invoices`);
+
+      const alreadyCredited = await getCreditNotedQtyByItem(db, payload.sourceInvoiceId);
+      for (const line of validLines) {
+        const sourceQty = sourceInvoice.lines.find((l) => l.itemId === line.itemId)?.quantity ?? 0;
+        const credited = alreadyCredited[line.itemId] ?? 0;
+        if (credited + line.quantity > sourceQty) {
+          throw new Error(
+            `Credited quantity exceeds original invoice quantity for item ${line.itemId}`,
+          );
+        }
+      }
+
+      const { totalExclTax, taxAmount } = computeTax(validLines, payload.vatRate);
+
+      await db.transaction(async (tx) => {
+        await tx.insert(schema.invoices).values({
+          id: payload.id,
+          sourceInvoiceId: payload.sourceInvoiceId,
+          supplierId: payload.supplierId ?? null,
+          accountId: 'default',
+          entityId: payload.entityId,
+          invoiceNumber: payload.invoiceNumber,
+          invoiceDate: null,
+          status: InvoiceStatus.CreditNote,
+          vatMode: payload.vatMode,
+          vatRate: payload.vatRate,
+          totalExclTax,
+          taxAmount,
+          totalInclTax: totalExclTax + taxAmount,
+          createdAt,
+        });
+
+        if (validLines.length > 0) {
+          const unitCostOf = (l: (typeof validLines)[number]) =>
+            l.quantity > 0 ? l.totalVatExclude / l.quantity : 0;
+          await tx.insert(schema.invoiceLineItems).values(
+            validLines.map((l) => ({
+              id: l.id,
+              invoiceId: payload.id,
+              inventoryItemId: l.itemId,
+              itemNameSnapshot: l.itemNameSnapshot ?? '',
+              qty: l.quantity,
+              unitCost: unitCostOf(l),
+              totalCost: l.totalVatExclude,
+              isVatable: l.isVatable,
+            })),
+          );
+        }
+
+        for (const line of validLines) {
+          const prev = await getLatestMovement(tx, line.itemId);
+          const unitCost = line.quantity > 0 ? line.totalVatExclude / line.quantity : 0;
+          const newQty = (prev?.stockQtyAfter ?? 0) - line.quantity;
+          await tx.insert(schema.stockMovements).values({
+            id: generateId(),
+            inventoryItemId: line.itemId,
+            accountId: 'default',
+            entityId: payload.entityId,
+            movementType: MovementType.Return,
+            qty: -line.quantity,
+            unitCostAtTime: unitCost,
+            totalCost: -line.totalVatExclude,
+            weightedAvgCostAfter: prev?.weightedAvgCostAfter ?? null,
+            stockQtyAfter: newQty,
+            referenceType: ReferenceType.CreditNote,
+            referenceId: payload.id,
+            occurredAt: createdAt,
+            createdAt,
+          });
+        }
+
+        await tx.insert(schema.invoiceAuditLog).values({
+          id: generateId(),
+          invoiceId: payload.sourceInvoiceId,
+          editedAt: createdAt,
+          note: `Credit note ${payload.invoiceNumber} raised`,
+          snapshot: JSON.stringify({ creditNoteId: payload.id }),
+        });
+      });
+    },
+
+    async getCreditNotesForInvoice(sourceInvoiceId: string): Promise<IInvoiceWithLines[]> {
+      const invoiceRows = await db
+        .select()
+        .from(schema.invoices)
+        .where(eq(schema.invoices.sourceInvoiceId, sourceInvoiceId))
+        .orderBy(desc(schema.invoices.createdAt));
+      if (invoiceRows.length === 0) return [];
+
+      const lineRows = await db
+        .select({
+          line: schema.invoiceLineItems,
+          itemName: schema.inventoryItems.name,
+          uomName: schema.unitsOfMeasure.name,
+        })
+        .from(schema.invoiceLineItems)
+        .leftJoin(
+          schema.inventoryItems,
+          eq(schema.invoiceLineItems.inventoryItemId, schema.inventoryItems.id),
+        )
+        .leftJoin(
+          schema.unitsOfMeasure,
+          eq(schema.inventoryItems.unitOfMeasureId, schema.unitsOfMeasure.id),
+        )
+        .where(
+          inArray(
+            schema.invoiceLineItems.invoiceId,
+            invoiceRows.map((r) => r.id),
+          ),
+        );
+
+      const linesByInvoice = new Map<string, typeof lineRows>();
+      for (const row of lineRows) {
+        if (!linesByInvoice.has(row.line.invoiceId)) linesByInvoice.set(row.line.invoiceId, []);
+        linesByInvoice.get(row.line.invoiceId)!.push(row);
+      }
+
+      return invoiceRows.map((inv) => ({
+        ...toIInvoice(inv),
+        lines: (linesByInvoice.get(inv.id) ?? []).map((r) => ({
+          ...toIInvoiceLine(r.line, r.itemName),
+          unitOfMeasure: r.uomName ?? null,
+        })),
+      }));
     },
   };
 }
