@@ -15,6 +15,7 @@ type CreditLine = {
   creditQty: number;
   creditPrice: number;
   selected: boolean;
+  isFreeGift: boolean;
 };
 
 type Props = {
@@ -27,11 +28,14 @@ const STEP_EDIT = 'edit' as const;
 const STEP_CONFIRM = 'confirm' as const;
 type Step = typeof STEP_EDIT | typeof STEP_CONFIRM;
 
-const inputCls =
-  'w-20 h-7 rounded border border-input bg-background px-2 text-right text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-ring/50 disabled:opacity-40';
+const inputBase =
+  'w-20 h-7 rounded border border-input bg-background px-2 text-right text-sm tabular-nums focus:outline-none disabled:opacity-40';
+const inputCls = `${inputBase} focus:ring-2 focus:ring-ring/50`;
 
 function priceCls(modified: boolean): string {
-  return modified ? `${inputCls} ring-1 ring-amber-400/50` : inputCls;
+  return modified
+    ? `${inputBase} ring-1 ring-amber-400/50 focus:ring-2 focus:ring-amber-400/50`
+    : inputCls;
 }
 
 function buildInitialLines(invoice: ICapturedInvoiceWithLines): CreditLine[] {
@@ -48,6 +52,7 @@ function buildInitialLines(invoice: ICapturedInvoiceWithLines): CreditLine[] {
       creditQty: l.quantity,
       creditPrice: origUnitPrice,
       selected: true,
+      isFreeGift: origUnitPrice === 0,
     };
   });
 }
@@ -143,7 +148,6 @@ export function RaiseCreditNotePanel({ invoice, onConfirm, onCancel }: Props) {
               const origTotal = l.origQty * l.origUnitPrice;
               const lineTotal = l.creditQty * l.creditPrice;
               const priceChanged = l.creditPrice !== l.origUnitPrice;
-              const isFreeGift = l.origUnitPrice === 0 && l.creditPrice === 0;
 
               return (
                 <tr key={l.lineId} className="border-b border-border/50">
@@ -157,7 +161,7 @@ export function RaiseCreditNotePanel({ invoice, onConfirm, onCancel }: Props) {
                     {formatMoney(l.creditPrice)} = £{formatMoney(lineTotal)}
                   </td>
                   <td className={`${td} text-right tabular-nums font-mono`}>
-                    {isFreeGift ? (
+                    {l.isFreeGift ? (
                       <span className="text-white/40">Stock only</span>
                     ) : (
                       <span className="text-rose-400">-£{formatMoney(lineTotal)}</span>
