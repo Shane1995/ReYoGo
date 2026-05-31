@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { EditPanel } from './components/EditPanel';
 import { MetadataEditPanel } from './components/MetadataEditPanel';
 import { AuditPanel } from './components/AuditPanel';
+import { RaiseCreditNotePanel } from './components/RaiseCreditNotePanel';
 import { StatusBadge } from './components/StatusBadge';
 import { RowActions } from './components/RowActions';
 import { InvoiceDetailLines } from './components/InvoiceDetailLines';
@@ -53,6 +54,8 @@ export default function InvoiceHistoryPage() {
     handleMetadataSave,
     handlePost,
     postingId,
+    handleRaiseCreditNoteClick,
+    handleSaveCreditNote,
   } = useInvoiceHistory();
 
   const { entities } = useEntities();
@@ -77,7 +80,8 @@ export default function InvoiceHistoryPage() {
       mode === RowModeKind.Detail ||
       mode === RowModeKind.Edit ||
       mode === RowModeKind.MetadataEdit ||
-      mode === RowModeKind.Audit;
+      mode === RowModeKind.Audit ||
+      mode === RowModeKind.CreditNote;
 
     return (
       <Fragment key={inv.id}>
@@ -120,6 +124,11 @@ export default function InvoiceHistoryPage() {
                 {suppliers.find((s) => s.id === inv.supplierId)?.name}
               </p>
             )}
+            {isCreditNote && inv.sourceInvoiceId && (
+              <p className="text-[11px] text-rose-500/70 mt-0.5">
+                CN of {detailCache[inv.sourceInvoiceId]?.invoiceNumber ?? inv.sourceInvoiceId}
+              </p>
+            )}
           </TableCell>
           <TableCell className="text-right text-sm text-muted-foreground tabular-nums">
             {detail ? detail.lines.length : '—'}
@@ -152,7 +161,7 @@ export default function InvoiceHistoryPage() {
               onEdit={() => handleEditClick(inv.id)}
               onPost={() => handlePost(inv.id)}
               onAudit={() => handleAuditClick(inv.id)}
-              onRaiseCreditNote={() => {}}
+              onRaiseCreditNote={() => handleRaiseCreditNoteClick(inv.id)}
             />
           </TableCell>
         </TableRow>
@@ -199,6 +208,18 @@ export default function InvoiceHistoryPage() {
                 invoiceId={inv.id}
                 suppliers={suppliers}
                 onClose={() => setMode(inv.id, { kind: RowModeKind.View })}
+              />
+            </TableCell>
+          </TableRow>
+        )}
+
+        {mode === RowModeKind.CreditNote && detail && (
+          <TableRow className="hover:bg-transparent">
+            <TableCell colSpan={COLUMN_COUNT} className="p-0">
+              <RaiseCreditNotePanel
+                invoice={detail}
+                onConfirm={handleSaveCreditNote}
+                onCancel={() => setMode(inv.id, { kind: RowModeKind.View })}
               />
             </TableCell>
           </TableRow>
