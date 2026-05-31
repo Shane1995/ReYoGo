@@ -5,6 +5,7 @@ import { VatMode } from '@reyogo/types';
 import { DataTable } from '@/components/DataTable';
 import type { ColumnDef } from '@/components/DataTable';
 import { cn } from '@reyogo/ui';
+import { Checkbox } from '@/components/Checkbox';
 import { getTypeConfig } from '../../utils/typeConfig';
 import { EditItemDialog } from '../EditItemDialog';
 import type { InventoryItem } from '../../types';
@@ -58,26 +59,15 @@ export function ItemsTable({
     {
       key: 'select',
       header: (
-        <input
-          type="checkbox"
+        <Checkbox
           checked={allSelected}
-          ref={(el) => {
-            if (el) el.indeterminate = someSelected && !allSelected;
-          }}
+          indeterminate={someSelected && !allSelected}
           onChange={toggleAll}
-          className="size-3.5 cursor-pointer rounded border-border accent-primary"
-          aria-label="Select all"
         />
       ),
       width: '40px',
       cell: (row) => (
-        <input
-          type="checkbox"
-          checked={selectedIds.has(row.id)}
-          onChange={() => toggleOne(row.id)}
-          className="size-3.5 cursor-pointer rounded border-border accent-primary"
-          aria-label={`Select ${row.name}`}
-        />
+        <Checkbox checked={selectedIds.has(row.id)} onChange={() => toggleOne(row.id)} />
       ),
     },
     {
