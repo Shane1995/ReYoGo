@@ -1,20 +1,36 @@
 import { useCallback, useState } from 'react';
 import { entitiesService } from '@/services/entities';
+import { cloudSyncService } from '@/services/cloudSync';
+import { SetupPath } from '../..';
+
+export type WizardPath = SetupPath | null;
 
 export function useSetupWizard() {
   const [step, setStep] = useState(1);
+  const [path, setPath] = useState<WizardPath>(null);
+
   const [groupName, setGroupName] = useState('');
   const [entityNames, setEntityNames] = useState(['']);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const [tursoUrl, setTursoUrl] = useState('');
+  const [authToken, setAuthToken] = useState('');
+  const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
+
+  const choosePath = useCallback((p: SetupPath) => {
+    setPath(p);
+    setStep(2);
+  }, []);
+
   const next = useCallback(() => {
-    if (step === 1 && groupName.trim()) setStep(2);
-  }, [step, groupName]);
+    setStep((s) => (s === 2 && path === SetupPath.Local && groupName.trim() ? s + 1 : s));
+  }, [path, groupName]);
 
   const back = useCallback(() => {
-    if (step > 1) setStep((s) => s - 1);
-  }, [step]);
+    setStep((s) => (s > 1 ? s - 1 : s));
+  }, []);
 
   const addEntity = useCallback(() => {
     setEntityNames((prev) => [...prev, '']);
@@ -50,8 +66,24 @@ export function useSetupWizard() {
     }
   }, [canSubmit, groupName, entityNames]);
 
+  const connect = useCallback(async () => {
+    if (!tursoUrl.trim() || !authToken.trim()) return;
+    setConnecting(true);
+    setConnectError(null);
+    try {
+      await cloudSyncService.connect(tursoUrl, authToken);
+      window.location.reload();
+    } catch (err) {
+      setConnectError(err instanceof Error ? err.message : 'Connection failed. Please try again.');
+    } finally {
+      setConnecting(false);
+    }
+  }, [tursoUrl, authToken]);
+
   return {
     step,
+    path,
+    choosePath,
     groupName,
     setGroupName,
     entityNames,
@@ -64,5 +96,12 @@ export function useSetupWizard() {
     next,
     back,
     submit,
+    tursoUrl,
+    setTursoUrl,
+    authToken,
+    setAuthToken,
+    connecting,
+    connectError,
+    connect,
   };
 }

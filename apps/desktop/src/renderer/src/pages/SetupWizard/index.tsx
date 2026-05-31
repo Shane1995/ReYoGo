@@ -1,166 +1,46 @@
 import { useSetupWizard } from './hooks/useSetupWizard';
+import type { WizardPath } from './hooks/useSetupWizard';
+import { ChoosePathStep } from './components/ChoosePathStep';
+import { ConnectCloudStep } from './components/ConnectCloudStep';
 import { GroupStep } from './components/GroupStep';
 import { EntitiesStep } from './components/EntitiesStep';
 
-const stepLabels = ['Business group', 'Venues'];
+export enum SetupPath {
+  Cloud = 'cloud',
+  Local = 'local',
+}
+
+function getStepLabels(path: WizardPath): string[] {
+  if (path === SetupPath.Cloud) return ['Get started', 'Connect database'];
+  if (path === SetupPath.Local) return ['Get started', 'Business group', 'Venues'];
+  return ['Get started'];
+}
 
 export default function SetupWizard() {
   const wizard = useSetupWizard();
+  const stepLabels = getStepLabels(wizard.path);
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        display: 'flex',
-        background: '#0D1117',
-        fontFamily: "'DM Sans', system-ui, sans-serif",
-        WebkitFontSmoothing: 'antialiased',
-      }}
-    >
-      <style>{`
-        @keyframes rg-fade-up {
-          from { opacity: 0; transform: translateY(16px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes rg-glow-pulse {
-          0%, 100% { opacity: 0.35; transform: scale(1); }
-          50%       { opacity: 0.5;  transform: scale(1.06); }
-        }
-        @keyframes rg-step-in {
-          from { opacity: 0; transform: translateX(20px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
-        .rg-step { animation: rg-step-in 0.32s cubic-bezier(0.22,1,0.36,1) both; }
-        .rg-input {
-          width: 100%;
-          background: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 10px;
-          padding: 12px 16px;
-          color: #F8F9FA;
-          font-size: 14px;
-          font-family: inherit;
-          outline: none;
-          transition: border-color 0.15s, background 0.15s;
-        }
-        .rg-input::placeholder { color: rgba(255,255,255,0.25); }
-        .rg-input:focus {
-          border-color: #20C997;
-          background: rgba(32,201,151,0.06);
-        }
-        .rg-btn-primary {
-          background: #20C997;
-          color: #0D1117;
-          border: none;
-          border-radius: 10px;
-          padding: 11px 24px;
-          font-size: 14px;
-          font-weight: 600;
-          font-family: inherit;
-          cursor: pointer;
-          transition: background 0.15s, transform 0.1s;
-          white-space: nowrap;
-        }
-        .rg-btn-primary:hover:not(:disabled) { background: #18a87a; }
-        .rg-btn-primary:active:not(:disabled) { transform: scale(0.97); }
-        .rg-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-        .rg-btn-ghost {
-          background: transparent;
-          color: rgba(255,255,255,0.4);
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 10px;
-          padding: 11px 20px;
-          font-size: 14px;
-          font-family: inherit;
-          cursor: pointer;
-          transition: border-color 0.15s, color 0.15s;
-        }
-        .rg-btn-ghost:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.7); }
-        .rg-remove {
-          background: transparent;
-          border: none;
-          color: rgba(255,255,255,0.2);
-          font-size: 18px;
-          line-height: 1;
-          cursor: pointer;
-          padding: 4px 8px;
-          border-radius: 6px;
-          transition: color 0.15s, background 0.15s;
-          flex-shrink: 0;
-        }
-        .rg-remove:hover { color: #E63946; background: rgba(230,57,70,0.1); }
-        .rg-add-venue {
-          background: transparent;
-          border: 1px dashed rgba(255,255,255,0.12);
-          border-radius: 10px;
-          padding: 11px 16px;
-          color: rgba(255,255,255,0.3);
-          font-size: 13px;
-          font-family: inherit;
-          cursor: pointer;
-          text-align: left;
-          transition: border-color 0.15s, color 0.15s;
-          width: 100%;
-        }
-        .rg-add-venue:hover { border-color: rgba(32,201,151,0.4); color: #20C997; }
-      `}</style>
-
-      {/* Left brand pane */}
-      <div
-        style={{
-          width: '42%',
-          minWidth: 280,
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          padding: '48px 40px',
-          borderRight: '1px solid rgba(255,255,255,0.06)',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Teal radial glow */}
+    <div className="fixed inset-0 flex bg-[#0D1117] font-sans antialiased">
+      <div className="w-[42%] min-w-[280px] relative flex flex-col justify-between p-12 border-r border-white/[0.06] overflow-hidden">
         <div
+          className="absolute top-[30%] -left-[20%] w-[70%] pb-[70%] rounded-full animate-rg-glow-pulse pointer-events-none"
           style={{
-            position: 'absolute',
-            top: '30%',
-            left: '-20%',
-            width: '70%',
-            paddingBottom: '70%',
-            borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(32,201,151,0.18) 0%, transparent 70%)',
-            animation: 'rg-glow-pulse 5s ease-in-out infinite',
-            pointerEvents: 'none',
           }}
         />
         <div
+          className="absolute bottom-[10%] -right-[10%] w-1/2 pb-[50%] rounded-full pointer-events-none"
           style={{
-            position: 'absolute',
-            bottom: '10%',
-            right: '-10%',
-            width: '50%',
-            paddingBottom: '50%',
-            borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(32,201,151,0.08) 0%, transparent 70%)',
-            pointerEvents: 'none',
           }}
         />
 
-        {/* Logo */}
-        <div style={{ position: 'relative' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="relative">
+          <div className="flex items-center gap-2.5">
             <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                background: 'linear-gradient(135deg, #20C997 0%, #0EA5E9 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: 'linear-gradient(135deg, #20C997 0%, #0EA5E9 100%)' }}
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path
@@ -172,55 +52,26 @@ export default function SetupWizard() {
                 />
               </svg>
             </div>
-            <span
-              style={{ color: '#F8F9FA', fontSize: 16, fontWeight: 600, letterSpacing: '-0.02em' }}
-            >
-              ReYoGo
-            </span>
+            <span className="text-[#F8F9FA] text-base font-semibold tracking-tight">ReYoGo</span>
           </div>
         </div>
 
-        {/* Central copy */}
-        <div
-          style={{
-            position: 'relative',
-            animation: 'rg-fade-up 0.6s cubic-bezier(0.22,1,0.36,1) 0.1s both',
-          }}
-        >
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              color: '#20C997',
-              marginBottom: 16,
-            }}
-          >
+        <div className="relative animate-rg-fade-up">
+          <div className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#20C997] mb-4">
             Getting started
           </div>
-          <div
-            style={{
-              fontSize: 28,
-              fontWeight: 700,
-              letterSpacing: '-0.03em',
-              lineHeight: 1.2,
-              color: '#F8F9FA',
-              marginBottom: 12,
-            }}
-          >
+          <div className="text-[28px] font-bold tracking-[-0.03em] leading-[1.2] text-[#F8F9FA] mb-3">
             Your operations,
             <br />
-            <span style={{ color: 'rgba(255,255,255,0.35)' }}>beautifully organised.</span>
+            <span className="text-white/35">beautifully organised.</span>
           </div>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6, margin: 0 }}>
+          <p className="text-[13px] text-white/40 leading-relaxed m-0">
             Takes about 60 seconds. You can change everything later from Settings.
           </p>
         </div>
 
-        {/* Step progress */}
-        <div style={{ position: 'relative' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div className="relative">
+          <div className="flex flex-col gap-2">
             {stepLabels.map((label, i) => {
               const stepNum = i + 1;
               const isDone = wizard.step > stepNum;
@@ -228,27 +79,10 @@ export default function SetupWizard() {
               return (
                 <div
                   key={label}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    opacity: isActive ? 1 : isDone ? 0.6 : 0.25,
-                    transition: 'opacity 0.3s',
-                  }}
+                  className={`flex items-center gap-3 transition-opacity duration-300 ${isActive ? 'opacity-100' : isDone ? 'opacity-60' : 'opacity-25'}`}
                 >
                   <div
-                    style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius: '50%',
-                      border: `1.5px solid ${isActive ? '#20C997' : isDone ? '#20C997' : 'rgba(255,255,255,0.2)'}`,
-                      background: isDone ? '#20C997' : 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      transition: 'all 0.3s',
-                    }}
+                    className={`w-[22px] h-[22px] rounded-full border-[1.5px] flex items-center justify-center shrink-0 transition-all duration-300 ${isDone ? 'bg-[#20C997] border-[#20C997]' : isActive ? 'bg-transparent border-[#20C997]' : 'bg-transparent border-white/20'}`}
                   >
                     {isDone ? (
                       <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
@@ -262,18 +96,14 @@ export default function SetupWizard() {
                       </svg>
                     ) : (
                       <span
-                        style={{
-                          fontSize: 10,
-                          color: isActive ? '#20C997' : 'rgba(255,255,255,0.4)',
-                          fontWeight: 600,
-                        }}
+                        className={`text-[10px] font-semibold ${isActive ? 'text-[#20C997]' : 'text-white/40'}`}
                       >
                         {stepNum}
                       </span>
                     )}
                   </div>
                   <span
-                    style={{ fontSize: 13, color: '#F8F9FA', fontWeight: isActive ? 500 : 400 }}
+                    className={`text-[13px] text-[#F8F9FA] ${isActive ? 'font-medium' : 'font-normal'}`}
                   >
                     {label}
                   </span>
@@ -284,20 +114,28 @@ export default function SetupWizard() {
         </div>
       </div>
 
-      {/* Right form pane */}
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '48px 40px',
-          overflowY: 'auto',
-        }}
-      >
-        <div style={{ width: '100%', maxWidth: 380 }}>
+      <div className="flex-1 flex items-center justify-center p-12 overflow-y-auto">
+        <div className="w-full max-w-[380px]">
           {wizard.step === 1 && (
-            <div className="rg-step" key="step-1">
+            <div className="animate-rg-step-in" key="step-1">
+              <ChoosePathStep onChoose={wizard.choosePath} />
+            </div>
+          )}
+          {wizard.step === 2 && wizard.path === SetupPath.Cloud && (
+            <div className="animate-rg-step-in" key="step-2-cloud">
+              <ConnectCloudStep
+                tursoUrl={wizard.tursoUrl}
+                authToken={wizard.authToken}
+                connecting={wizard.connecting}
+                connectError={wizard.connectError}
+                onTursoUrlChange={wizard.setTursoUrl}
+                onAuthTokenChange={wizard.setAuthToken}
+                onConnect={wizard.connect}
+              />
+            </div>
+          )}
+          {wizard.step === 2 && wizard.path === SetupPath.Local && (
+            <div className="animate-rg-step-in" key="step-2-local">
               <GroupStep
                 groupName={wizard.groupName}
                 onGroupNameChange={wizard.setGroupName}
@@ -305,8 +143,8 @@ export default function SetupWizard() {
               />
             </div>
           )}
-          {wizard.step === 2 && (
-            <div className="rg-step" key="step-2">
+          {wizard.step === 3 && wizard.path === SetupPath.Local && (
+            <div className="animate-rg-step-in" key="step-3-local">
               <EntitiesStep
                 entityNames={wizard.entityNames}
                 onAdd={wizard.addEntity}

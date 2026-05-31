@@ -101,6 +101,7 @@ export interface IPCInvokeMap {
   'cloud-sync:get-credentials': { args: []; return: { tursoUrl: string } | null };
   'cloud-sync:is-fresh-replica': { args: []; return: boolean };
   'cloud-sync:rotate-token': { args: [authToken: string]; return: void };
+  'cloud-sync:connect': { args: [tursoUrl: string, authToken: string]; return: void };
 }
 
 export type IPCChannel = keyof IPCInvokeMap;

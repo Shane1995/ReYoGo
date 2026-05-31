@@ -6,7 +6,7 @@ import { FreshReplicaScreen } from './FreshReplicaScreen';
 import { useAppReady } from './hooks/useAppReady';
 
 const AppLoader = () => {
-  const { isReady, setupComplete, initError, authError, phase } = useAppReady();
+  const { setupComplete, initError, authError, phase } = useAppReady();
 
   if (initError) {
     const isMigrationError =
@@ -44,7 +44,7 @@ const AppLoader = () => {
     );
   }
 
-  if (!isReady || setupComplete === null) return <LoadingSpinner />;
+  if (phase === 'loading') return <LoadingSpinner />;
 
   if (phase === 'fresh-replica') return <FreshReplicaScreen />;
 
