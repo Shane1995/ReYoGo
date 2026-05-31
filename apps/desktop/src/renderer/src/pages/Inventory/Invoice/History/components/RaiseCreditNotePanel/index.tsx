@@ -1,16 +1,20 @@
 import { useState, useCallback } from 'react';
 import { Button } from '@reyogo/ui';
 import type { ICapturedInvoiceWithLines, ISaveCreditNotePayload } from '@reyogo/types';
+import { Checkbox } from '@/components/Checkbox';
+import { formatMoney } from '../../../utils/formatMoney';
 
-type CreditNoteLine = {
+type CreditLine = {
   lineId: string;
   itemId: string;
   itemNameSnapshot: string;
-  originalQty: number;
-  unitCost: number;
-  qty: number;
-  selected: boolean;
+  unitOfMeasure?: string | null;
   isVatable: boolean;
+  origQty: number;
+  origUnitPrice: number;
+  creditQty: number;
+  creditPrice: number;
+  selected: boolean;
 };
 
 type Props = {
@@ -19,47 +23,80 @@ type Props = {
   onCancel: () => void;
 };
 
-type Step = 'edit' | 'confirm';
+const STEP_EDIT = 'edit' as const;
+const STEP_CONFIRM = 'confirm' as const;
+type Step = typeof STEP_EDIT | typeof STEP_CONFIRM;
 
-function buildInitialLines(invoice: ICapturedInvoiceWithLines): CreditNoteLine[] {
-  return invoice.lines.map((l) => ({
-    lineId: l.id,
-    itemId: l.itemId,
-    itemNameSnapshot: l.itemNameSnapshot,
-    originalQty: l.quantity,
-    unitCost: l.quantity > 0 ? l.totalVatExclude / l.quantity : 0,
-    qty: l.quantity,
-    selected: true,
-    isVatable: l.isVatable,
-  }));
+const inputCls =
+  'w-20 h-7 rounded border border-input bg-background px-2 text-right text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-ring/50 disabled:opacity-40';
+
+function priceCls(modified: boolean): string {
+  return modified ? `${inputCls} ring-1 ring-amber-400/50` : inputCls;
 }
 
-function activeLines(lines: CreditNoteLine[]) {
-  return lines.filter((l) => l.selected && l.qty > 0);
+function buildInitialLines(invoice: ICapturedInvoiceWithLines): CreditLine[] {
+  return invoice.lines.map((l) => {
+    const origUnitPrice = l.quantity > 0 ? l.totalVatExclude / l.quantity : 0;
+    return {
+      lineId: l.id,
+      itemId: l.itemId,
+      itemNameSnapshot: l.itemNameSnapshot,
+      unitOfMeasure: l.unitOfMeasure,
+      isVatable: l.isVatable,
+      origQty: l.quantity,
+      origUnitPrice,
+      creditQty: l.quantity,
+      creditPrice: origUnitPrice,
+      selected: true,
+    };
+  });
 }
+
+function getActiveLines(lines: CreditLine[]): CreditLine[] {
+  return lines.filter((l) => l.selected && l.creditQty > 0);
+}
+
+const th =
+  'px-3 py-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 text-left';
+const td = 'px-3 py-2 text-sm';
 
 export function RaiseCreditNotePanel({ invoice, onConfirm, onCancel }: Props) {
-  const [step, setStep] = useState<Step>('edit');
-  const [lines, setLines] = useState<CreditNoteLine[]>(() => buildInitialLines(invoice));
+  const [step, setStep] = useState<Step>(STEP_EDIT);
+  const [lines, setLines] = useState<CreditLine[]>(() => buildInitialLines(invoice));
 
-  const setQty = useCallback((lineId: string, qty: number) => {
-    setLines((prev) =>
-      prev.map((l) =>
-        l.lineId === lineId ? { ...l, qty: Math.min(Math.max(0, qty), l.originalQty) } : l,
-      ),
-    );
-  }, []);
+  const selectedCount = lines.filter((l) => l.selected).length;
+  const allSelected = selectedCount === lines.length;
+  const someSelected = selectedCount > 0 && selectedCount < lines.length;
 
-  const toggleSelected = useCallback((lineId: string) => {
+  const toggleAll = useCallback(() => {
+    const nextSelected = !allSelected;
+    setLines((prev) => prev.map((l) => ({ ...l, selected: nextSelected })));
+  }, [allSelected]);
+
+  const toggleLine = useCallback((lineId: string) => {
     setLines((prev) =>
       prev.map((l) => (l.lineId === lineId ? { ...l, selected: !l.selected } : l)),
     );
   }, []);
 
-  const canContinue = activeLines(lines).length > 0;
+  const setQty = useCallback((lineId: string, qty: number) => {
+    setLines((prev) =>
+      prev.map((l) =>
+        l.lineId === lineId ? { ...l, creditQty: Math.min(Math.max(0, qty), l.origQty) } : l,
+      ),
+    );
+  }, []);
+
+  const setPrice = useCallback((lineId: string, price: number) => {
+    setLines((prev) =>
+      prev.map((l) => (l.lineId === lineId ? { ...l, creditPrice: Math.max(0, price) } : l)),
+    );
+  }, []);
+
+  const canContinue = getActiveLines(lines).length > 0;
 
   const handleConfirm = useCallback(() => {
-    const creditLines = activeLines(lines);
+    const creditLines = getActiveLines(lines);
     const payload: ISaveCreditNotePayload = {
       id: crypto.randomUUID(),
       sourceInvoiceId: invoice.id,
@@ -72,22 +109,20 @@ export function RaiseCreditNotePanel({ invoice, onConfirm, onCancel }: Props) {
         id: crypto.randomUUID(),
         itemId: l.itemId,
         itemNameSnapshot: l.itemNameSnapshot,
-        quantity: l.qty,
-        unitPrice: l.unitCost,
+        unitOfMeasure: l.unitOfMeasure,
+        quantity: l.creditQty,
+        unitPrice: l.creditPrice,
         isVatable: l.isVatable,
-        totalVatExclude: l.qty * l.unitCost,
+        totalVatExclude: l.creditQty * l.creditPrice,
       })),
     };
     onConfirm(payload);
   }, [lines, invoice, onConfirm]);
 
-  const cell = 'px-3 py-2 text-sm';
-  const th =
-    'px-3 py-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 text-left';
+  if (step === STEP_CONFIRM) {
+    const confirmed = getActiveLines(lines);
+    const creditTotal = confirmed.reduce((s, l) => s + l.creditQty * l.creditPrice, 0);
 
-  if (step === 'confirm') {
-    const confirmed = activeLines(lines);
-    const total = confirmed.reduce((s, l) => s + l.qty * l.unitCost, 0);
     return (
       <div className="border-t border-[var(--nav-border)] bg-[var(--nav-accent)]/30 px-6 py-4 space-y-4">
         <p className="text-sm font-medium">Confirm credit note</p>
@@ -98,32 +133,53 @@ export function RaiseCreditNotePanel({ invoice, onConfirm, onCancel }: Props) {
           <thead>
             <tr className="border-b border-border">
               <th className={th}>Item</th>
-              <th className={`${th} text-right`}>Qty</th>
-              <th className={`${th} text-right`}>Value (excl. VAT)</th>
+              <th className={`${th} text-right`}>Was invoiced</th>
+              <th className={`${th} text-right`}>Crediting</th>
+              <th className={`${th} text-right`}>Δ</th>
             </tr>
           </thead>
           <tbody>
-            {confirmed.map((l) => (
-              <tr key={l.lineId} className="border-b border-border/50">
-                <td className={cell}>{l.itemNameSnapshot}</td>
-                <td className={`${cell} text-right tabular-nums`}>{l.qty}</td>
-                <td className={`${cell} text-right tabular-nums font-mono`}>
-                  {(l.qty * l.unitCost).toFixed(2)}
-                </td>
-              </tr>
-            ))}
+            {confirmed.map((l) => {
+              const origTotal = l.origQty * l.origUnitPrice;
+              const lineTotal = l.creditQty * l.creditPrice;
+              const priceChanged = l.creditPrice !== l.origUnitPrice;
+              const isFreeGift = l.origUnitPrice === 0 && l.creditPrice === 0;
+
+              return (
+                <tr key={l.lineId} className="border-b border-border/50">
+                  <td className={td}>{l.itemNameSnapshot}</td>
+                  <td className={`${td} text-right tabular-nums text-muted-foreground font-mono`}>
+                    {l.origQty} × £{formatMoney(l.origUnitPrice)} = £{formatMoney(origTotal)}
+                  </td>
+                  <td className={`${td} text-right tabular-nums font-mono`}>
+                    {l.creditQty} ×{' '}
+                    {priceChanged && <span className="text-amber-400 mr-0.5">●</span>}£
+                    {formatMoney(l.creditPrice)} = £{formatMoney(lineTotal)}
+                  </td>
+                  <td className={`${td} text-right tabular-nums font-mono`}>
+                    {isFreeGift ? (
+                      <span className="text-white/40">Stock only</span>
+                    ) : (
+                      <span className="text-rose-400">-£{formatMoney(lineTotal)}</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={2} className={`${cell} text-right font-medium`}>
-                Total
+              <td colSpan={3} className={`${td} text-right font-medium`}>
+                Credit total
               </td>
-              <td className={`${cell} text-right font-mono font-semibold`}>{total.toFixed(2)}</td>
+              <td className={`${td} text-right tabular-nums font-mono text-rose-400 font-semibold`}>
+                -£{formatMoney(creditTotal)}
+              </td>
             </tr>
           </tfoot>
         </table>
         <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => setStep('edit')}>
+          <Button variant="outline" size="sm" onClick={() => setStep(STEP_EDIT)}>
             Back
           </Button>
           <Button
@@ -138,16 +194,25 @@ export function RaiseCreditNotePanel({ invoice, onConfirm, onCancel }: Props) {
     );
   }
 
+  const editTotal = lines
+    .filter((l) => l.selected)
+    .reduce((s, l) => s + l.creditQty * l.creditPrice, 0);
+
   return (
     <div className="border-t border-[var(--nav-border)] bg-[var(--nav-accent)]/30 px-6 py-4 space-y-4">
       <p className="text-sm font-medium">Raise credit note against {invoice.invoiceNumber}</p>
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border">
-            <th className={th} />
+            <th className={th}>
+              <Checkbox checked={allSelected} indeterminate={someSelected} onChange={toggleAll} />
+            </th>
             <th className={th}>Item</th>
-            <th className={`${th} text-right`}>Original qty</th>
+            <th className={`${th} text-right`}>Orig qty</th>
+            <th className={`${th} text-right`}>Orig price</th>
             <th className={`${th} text-right`}>Credit qty</th>
+            <th className={`${th} text-right`}>Credit price</th>
+            <th className={`${th} text-right`}>Total</th>
           </tr>
         </thead>
         <tbody>
@@ -157,40 +222,56 @@ export function RaiseCreditNotePanel({ invoice, onConfirm, onCancel }: Props) {
               className={`border-b border-border/50 ${!l.selected ? 'opacity-40' : ''}`}
             >
               <td className="px-3 py-2 w-8">
-                <input
-                  type="checkbox"
-                  checked={l.selected}
-                  onChange={() => toggleSelected(l.lineId)}
-                  className="size-3.5 accent-[var(--primary)]"
-                />
+                <Checkbox checked={l.selected} onChange={() => toggleLine(l.lineId)} />
               </td>
-              <td className={cell}>{l.itemNameSnapshot}</td>
-              <td className={`${cell} text-right tabular-nums text-muted-foreground`}>
-                {l.originalQty}
+              <td className={td}>{l.itemNameSnapshot}</td>
+              <td className={`${td} text-right tabular-nums text-muted-foreground`}>{l.origQty}</td>
+              <td className={`${td} text-right tabular-nums text-muted-foreground font-mono`}>
+                £{formatMoney(l.origUnitPrice)}
               </td>
-              <td className={`${cell} text-right`}>
+              <td className={`${td} text-right`}>
                 <input
                   type="number"
                   min={0}
-                  max={l.originalQty}
+                  max={l.origQty}
                   step={1}
-                  value={l.qty}
+                  value={l.creditQty}
                   disabled={!l.selected}
                   onChange={(e) => setQty(l.lineId, Number(e.target.value))}
-                  className="w-20 h-7 rounded border border-input bg-background px-2 text-right text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 disabled:opacity-40"
+                  className={inputCls}
                 />
+              </td>
+              <td className={`${td} text-right`}>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  value={l.creditPrice}
+                  disabled={!l.selected}
+                  onChange={(e) => setPrice(l.lineId, Number(e.target.value))}
+                  className={priceCls(l.creditPrice !== l.origUnitPrice)}
+                />
+              </td>
+              <td className={`${td} text-right tabular-nums font-mono`}>
+                {l.selected ? `£${formatMoney(l.creditQty * l.creditPrice)}` : '—'}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" size="sm" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button size="sm" disabled={!canContinue} onClick={() => setStep('confirm')}>
-          Continue
-        </Button>
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-muted-foreground">
+          Credit total:{' '}
+          <span className="font-mono font-medium text-foreground">£{formatMoney(editTotal)}</span>
+        </span>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button size="sm" disabled={!canContinue} onClick={() => setStep(STEP_CONFIRM)}>
+            Continue
+          </Button>
+        </div>
       </div>
     </div>
   );
