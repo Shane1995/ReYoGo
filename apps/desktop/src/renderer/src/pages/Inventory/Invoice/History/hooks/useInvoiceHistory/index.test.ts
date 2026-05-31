@@ -33,6 +33,7 @@ function makeInvoice(
     id: 'inv-1',
     entityId: 'default',
     supplierId: null,
+    sourceInvoiceId: null,
     invoiceNumber: 'INV-TEST',
     invoiceDate: null,
     status: InvoiceStatus.Draft,

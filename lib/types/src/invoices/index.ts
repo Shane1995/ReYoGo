@@ -1,6 +1,7 @@
 export enum InvoiceStatus {
   Draft = 'DRAFT',
   Posted = 'POSTED',
+  CreditNote = 'CREDIT_NOTE',
 }
 
 export type VatMode = 'inclusive' | 'exclusive';
@@ -70,6 +71,7 @@ export interface IInvoice {
   id: string;
   entityId: string;
   supplierId: string | null;
+  sourceInvoiceId: string | null;
   invoiceNumber: string;
   invoiceDate?: Date | null;
   status: InvoiceStatus;
@@ -133,3 +135,15 @@ export type ICapturedInvoiceAuditEntry = IInvoiceAuditEntry;
 export type ISaveCapturedInvoicePayload = ISaveInvoicePayload;
 export type IUpdateCapturedInvoicePayload = IUpdateInvoicePayload;
 export type IUpdateCapturedInvoiceMetadataPayload = IUpdateInvoiceMetadataPayload;
+
+export interface ISaveCreditNotePayload {
+  id: string;
+  sourceInvoiceId: string;
+  entityId: string;
+  supplierId?: string | null;
+  invoiceNumber: string;
+  vatMode: VatMode;
+  vatRate: number;
+  note?: string;
+  lines: IInvoiceLinePayload[];
+}

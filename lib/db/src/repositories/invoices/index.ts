@@ -25,6 +25,7 @@ function toIInvoice(row: schema.InvoiceRow): IInvoice {
     id: row.id,
     entityId: row.entityId,
     supplierId: row.supplierId ?? null,
+    sourceInvoiceId: row.sourceInvoiceId ?? null,
     invoiceNumber: row.invoiceNumber,
     invoiceDate: row.invoiceDate ?? null,
     status: row.status ?? InvoiceStatus.Draft,
