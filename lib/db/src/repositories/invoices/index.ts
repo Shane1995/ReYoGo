@@ -118,10 +118,10 @@ function computeTax(
 }
 
 async function getCreditNotedQtyByItem(
-  db: DbClient,
+  client: DbClient | TxClient,
   sourceInvoiceId: string,
 ): Promise<Record<string, number>> {
-  const rows = await db
+  const rows = await client
     .select({
       inventoryItemId: schema.invoiceLineItems.inventoryItemId,
       qty: schema.invoiceLineItems.qty,
@@ -496,25 +496,36 @@ export function createInvoicesRepo(db: DbClient) {
       const createdAt = now();
       const validLines = payload.lines.filter((l) => l.itemId && l.quantity > 0);
 
-      const sourceInvoice = await this.getInvoiceById(payload.sourceInvoiceId);
-      if (!sourceInvoice) throw new Error(`Source invoice not found: ${payload.sourceInvoiceId}`);
-      if (sourceInvoice.status !== InvoiceStatus.Posted)
-        throw new Error(`Credit notes can only be raised against posted invoices`);
-
-      const alreadyCredited = await getCreditNotedQtyByItem(db, payload.sourceInvoiceId);
-      for (const line of validLines) {
-        const sourceQty = sourceInvoice.lines.find((l) => l.itemId === line.itemId)?.quantity ?? 0;
-        const credited = alreadyCredited[line.itemId] ?? 0;
-        if (credited + line.quantity > sourceQty) {
-          throw new Error(
-            `Credited quantity exceeds original invoice quantity for item ${line.itemId}`,
-          );
-        }
-      }
-
-      const { totalExclTax, taxAmount } = computeTax(validLines, payload.vatRate);
-
       await db.transaction(async (tx) => {
+        const sourceInvoice = await tx
+          .select()
+          .from(schema.invoices)
+          .where(eq(schema.invoices.id, payload.sourceInvoiceId))
+          .limit(1)
+          .then((rows) => rows[0] ?? null);
+
+        if (!sourceInvoice) throw new Error(`Source invoice not found: ${payload.sourceInvoiceId}`);
+        if (sourceInvoice.status !== InvoiceStatus.Posted)
+          throw new Error(`Credit notes can only be raised against posted invoices`);
+
+        const sourceLines = await tx
+          .select()
+          .from(schema.invoiceLineItems)
+          .where(eq(schema.invoiceLineItems.invoiceId, payload.sourceInvoiceId));
+
+        const alreadyCredited = await getCreditNotedQtyByItem(tx, payload.sourceInvoiceId);
+        for (const line of validLines) {
+          const sourceQty = sourceLines.find((l) => l.inventoryItemId === line.itemId)?.qty ?? 0;
+          const credited = alreadyCredited[line.itemId] ?? 0;
+          if (credited + line.quantity > sourceQty) {
+            throw new Error(
+              `Credited quantity exceeds original invoice quantity for item ${line.itemId}`,
+            );
+          }
+        }
+
+        const { totalExclTax, taxAmount } = computeTax(validLines, payload.vatRate);
+
         await tx.insert(schema.invoices).values({
           id: payload.id,
           sourceInvoiceId: payload.sourceInvoiceId,
@@ -575,7 +586,7 @@ export function createInvoicesRepo(db: DbClient) {
           id: generateId(),
           invoiceId: payload.sourceInvoiceId,
           editedAt: createdAt,
-          note: `Credit note ${payload.invoiceNumber} raised`,
+          note: payload.note ?? `Credit note ${payload.invoiceNumber} raised`,
           snapshot: JSON.stringify({ creditNoteId: payload.id }),
         });
       });

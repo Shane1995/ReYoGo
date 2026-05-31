@@ -506,6 +506,39 @@ describe('createInvoicesRepo', () => {
         }),
       ).rejects.toThrow('posted');
     });
+
+    it('rejects credit notes against a credit note invoice', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-8',
+        entityId: 'default',
+        invoiceNumber: 'INV-008',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-8', itemId: 'item-1', quantity: 5, totalVatExclude: 50 })],
+      });
+
+      await repo.saveCreditNote({
+        id: 'cn-8',
+        sourceInvoiceId: 'inv-8',
+        entityId: 'default',
+        invoiceNumber: 'CN-INV-008',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'cn-line-8', itemId: 'item-1', quantity: 2, totalVatExclude: 20 })],
+      });
+
+      await expect(
+        repo.saveCreditNote({
+          id: 'cn-8b',
+          sourceInvoiceId: 'cn-8',
+          entityId: 'default',
+          invoiceNumber: 'CN-CN-INV-008',
+          vatMode: VatMode.Exclusive,
+          vatRate: 15,
+          lines: [line({ id: 'cn-line-8b', itemId: 'item-1', quantity: 1, totalVatExclude: 10 })],
+        }),
+      ).rejects.toThrow('posted');
+    });
   });
 
   describe('getCreditNotesForInvoice', () => {
