@@ -188,6 +188,7 @@ export function useInvoiceHistory() {
                 ?.itemNameSnapshot ??
               'Unknown',
             quantity: Number(line.quantity) || 0,
+            unitPrice: computed.netUnitPrice,
             isVatable: line.isVatable,
             totalVatExclude: computed.netTotal,
           };

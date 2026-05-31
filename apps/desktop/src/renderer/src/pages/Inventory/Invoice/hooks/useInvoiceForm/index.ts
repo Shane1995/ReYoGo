@@ -140,6 +140,7 @@ export function useInvoiceForm() {
             itemId: line.itemId,
             itemNameSnapshot: itemMetaMap.get(line.itemId)?.name ?? '',
             quantity: Number(line.quantity),
+            unitPrice: computed.netUnitPrice,
             isVatable: line.isVatable,
             totalVatExclude: computed.netTotal,
           };
@@ -197,6 +198,7 @@ export function useInvoiceForm() {
             itemId: line.itemId,
             itemNameSnapshot: itemMetaMap.get(line.itemId)?.name ?? '',
             quantity: Number(line.quantity),
+            unitPrice: computed.netUnitPrice,
             isVatable: line.isVatable,
             totalVatExclude: computed.netTotal,
           };

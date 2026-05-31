@@ -495,6 +495,10 @@ export function createInvoicesRepo(db: DbClient) {
     async saveCreditNote(payload: ISaveCreditNotePayload): Promise<void> {
       const createdAt = now();
       const validLines = payload.lines.filter((l) => l.itemId && l.quantity > 0);
+      const creditLines = validLines.map((l) => ({
+        ...l,
+        totalVatExclude: l.unitPrice * l.quantity,
+      }));
 
       await db.transaction(async (tx) => {
         const sourceInvoice = await tx
@@ -524,7 +528,7 @@ export function createInvoicesRepo(db: DbClient) {
           }
         }
 
-        const { totalExclTax, taxAmount } = computeTax(validLines, payload.vatRate);
+        const { totalExclTax, taxAmount } = computeTax(creditLines, payload.vatRate);
 
         await tx.insert(schema.invoices).values({
           id: payload.id,
@@ -543,26 +547,23 @@ export function createInvoicesRepo(db: DbClient) {
           createdAt,
         });
 
-        if (validLines.length > 0) {
-          const unitCostOf = (l: (typeof validLines)[number]) =>
-            l.quantity > 0 ? l.totalVatExclude / l.quantity : 0;
+        if (creditLines.length > 0) {
           await tx.insert(schema.invoiceLineItems).values(
-            validLines.map((l) => ({
+            creditLines.map((l) => ({
               id: l.id,
               invoiceId: payload.id,
               inventoryItemId: l.itemId,
               itemNameSnapshot: l.itemNameSnapshot ?? '',
               qty: l.quantity,
-              unitCost: unitCostOf(l),
+              unitCost: l.unitPrice,
               totalCost: l.totalVatExclude,
               isVatable: l.isVatable,
             })),
           );
         }
 
-        for (const line of validLines) {
+        for (const line of creditLines) {
           const prev = await getLatestMovement(tx, line.itemId);
-          const unitCost = line.quantity > 0 ? line.totalVatExclude / line.quantity : 0;
           const newQty = (prev?.stockQtyAfter ?? 0) - line.quantity;
           await tx.insert(schema.stockMovements).values({
             id: generateId(),
@@ -571,7 +572,7 @@ export function createInvoicesRepo(db: DbClient) {
             entityId: payload.entityId,
             movementType: MovementType.Return,
             qty: -line.quantity,
-            unitCostAtTime: unitCost,
+            unitCostAtTime: line.unitPrice,
             totalCost: -line.totalVatExclude,
             weightedAvgCostAfter: prev?.weightedAvgCostAfter ?? null,
             stockQtyAfter: newQty,

@@ -73,6 +73,7 @@ export function RaiseCreditNotePanel({ invoice, onConfirm, onCancel }: Props) {
         itemId: l.itemId,
         itemNameSnapshot: l.itemNameSnapshot,
         quantity: l.qty,
+        unitPrice: l.unitCost,
         isVatable: l.isVatable,
         totalVatExclude: l.qty * l.unitCost,
       })),

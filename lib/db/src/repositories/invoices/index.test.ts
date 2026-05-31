@@ -509,6 +509,49 @@ describe('createInvoicesRepo', () => {
       ).rejects.toThrow('posted');
     });
 
+    it('recomputes totalVatExclude from unitPrice × quantity, ignoring passed totalVatExclude', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-r',
+        entityId: 'default',
+        invoiceNumber: 'INV-R',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [
+          line({ id: 'l-r', itemId: 'item-1', quantity: 10, totalVatExclude: 100, unitPrice: 10 }),
+        ],
+      });
+
+      await repo.saveCreditNote({
+        id: 'cn-r',
+        sourceInvoiceId: 'inv-r',
+        entityId: 'default',
+        invoiceNumber: 'CN-INV-R',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [
+          {
+            id: 'cn-l-r',
+            itemId: 'item-1',
+            itemNameSnapshot: '',
+            quantity: 3,
+            unitPrice: 12,
+            isVatable: true,
+            totalVatExclude: 999,
+          },
+        ],
+      });
+
+      const cn = await repo.getInvoiceById('cn-r');
+      expect(cn!.lines[0]!.totalVatExclude).toBe(36);
+      const cnRow = await db
+        .select()
+        .from(schema.invoices)
+        .where(eq(schema.invoices.id, 'cn-r'))
+        .limit(1)
+        .then((rows) => rows[0]);
+      expect(cnRow!.totalExclTax).toBe(36);
+    });
+
     it('rejects credit notes against a credit note invoice', async () => {
       await repo.saveAndPostInvoice({
         id: 'inv-8',
