@@ -11,6 +11,7 @@ coverage
 .vscode/*.code-snippets
 .idea
 *.local
+.env
 .env.local
 .env.*.local
 .data
