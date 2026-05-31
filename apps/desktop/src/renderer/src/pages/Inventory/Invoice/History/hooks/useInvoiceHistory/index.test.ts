@@ -218,4 +218,68 @@ describe('useInvoiceHistory', () => {
       expect(result.current.hasFilters).toBe(false);
     });
   });
+
+  describe('credit note actions', () => {
+    it('handleRaiseCreditNoteClick sets row mode to CreditNote', async () => {
+      const inv = makeInvoice({ id: 'inv-1', status: InvoiceStatus.Posted });
+      mockInvoke.mockResolvedValue([inv]);
+
+      const { result } = renderHook(() => useInvoiceHistory());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      act(() => result.current.handleRaiseCreditNoteClick('inv-1'));
+      expect(result.current.rowMode['inv-1']?.kind).toBe('credit-note');
+    });
+
+    it('handleSaveCreditNote calls invoiceService.saveCreditNote and reloads invoices', async () => {
+      const inv = makeInvoice({ id: 'inv-1', status: InvoiceStatus.Posted });
+      mockInvoke.mockResolvedValue([inv]);
+
+      const { result } = renderHook(() => useInvoiceHistory());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      const initialCallCount = mockInvoke.mock.calls.length;
+
+      const payload = {
+        id: 'cn-1',
+        sourceInvoiceId: 'inv-1',
+        entityId: 'default',
+        invoiceNumber: 'CN-INV-001',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [],
+      };
+
+      await act(async () => {
+        await result.current.handleSaveCreditNote(payload);
+      });
+
+      expect(mockInvoke.mock.calls.length).toBeGreaterThan(initialCallCount);
+    });
+
+    it('handleSaveCreditNote resets row mode to View after save', async () => {
+      const inv = makeInvoice({ id: 'inv-1', status: InvoiceStatus.Posted });
+      mockInvoke.mockResolvedValue([inv]);
+
+      const { result } = renderHook(() => useInvoiceHistory());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      act(() => result.current.handleRaiseCreditNoteClick('inv-1'));
+      expect(result.current.rowMode['inv-1']?.kind).toBe('credit-note');
+
+      await act(async () => {
+        await result.current.handleSaveCreditNote({
+          id: 'cn-1',
+          sourceInvoiceId: 'inv-1',
+          entityId: 'default',
+          invoiceNumber: 'CN-INV-001',
+          vatMode: VatMode.Exclusive,
+          vatRate: 15,
+          lines: [],
+        });
+      });
+
+      expect(result.current.rowMode['inv-1']?.kind).toBe('view');
+    });
+  });
 });

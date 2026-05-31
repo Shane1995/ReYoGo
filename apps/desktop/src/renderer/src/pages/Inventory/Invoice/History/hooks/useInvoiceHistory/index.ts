@@ -1,6 +1,11 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { ICapturedInvoice, ICapturedInvoiceWithLines, Supplier } from '@reyogo/types';
+import type {
+  ICapturedInvoice,
+  ICapturedInvoiceWithLines,
+  ISaveCreditNotePayload,
+  Supplier,
+} from '@reyogo/types';
 import { InvoiceStatus } from '@reyogo/types';
 import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
@@ -24,6 +29,7 @@ export function useInvoiceHistory() {
   const [supplierFilter, setSupplierFilter] = useState('');
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [postingId, setPostingId] = useState<string | null>(null);
+  const [creditNoteSubmitting, setCreditNoteSubmitting] = useState(false);
 
   const { items } = useInventory();
   const navigate = useNavigate();
@@ -141,6 +147,27 @@ export function useInvoiceHistory() {
       }
     },
     [loadInvoices],
+  );
+
+  const handleRaiseCreditNoteClick = useCallback(
+    (id: string) => {
+      setMode(id, { kind: RowModeKind.CreditNote });
+    },
+    [setMode],
+  );
+
+  const handleSaveCreditNote = useCallback(
+    async (payload: ISaveCreditNotePayload) => {
+      setCreditNoteSubmitting(true);
+      try {
+        await invoiceService.saveCreditNote(payload);
+        await loadInvoices();
+        setMode(payload.sourceInvoiceId, { kind: RowModeKind.View });
+      } finally {
+        setCreditNoteSubmitting(false);
+      }
+    },
+    [loadInvoices, setMode],
   );
 
   const handleSaveEdit = useCallback(
@@ -269,6 +296,9 @@ export function useInvoiceHistory() {
     handleMetadataSave,
     handlePost,
     postingId,
+    handleRaiseCreditNoteClick,
+    handleSaveCreditNote,
+    creditNoteSubmitting,
     lineToEditLine,
   };
 }
