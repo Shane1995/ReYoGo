@@ -10,6 +10,7 @@ import { CloudSyncEventType } from '@shared/types/cloudSync';
 import {
   getDbReadyChannel,
   initDatabase,
+  repairUomLinksIfNeeded,
   syncNow,
   isReplicaMode,
   getReplicaPath,
@@ -153,6 +154,9 @@ app.whenReady().then(() => {
       }
       dbReady = true;
       trySendDbReady();
+      repairUomLinksIfNeeded().catch((err) => {
+        console.error('[ReYoGo] UoM repair failed:', err);
+      });
       if (isReplicaMode()) {
         const interval = setInterval(runBackgroundSync, BACKGROUND_SYNC_INTERVAL_MS);
         app.once('will-quit', () => clearInterval(interval));
