@@ -132,18 +132,20 @@ app.whenReady().then(() => {
   let pendingSender: Electron.WebContents | null = null;
 
   const trySendDbReady = () => {
-    if (pendingSender && !pendingSender.isDestroyed()) {
-      if (dbAuthError !== null) {
-        pendingSender.send(DB_AUTH_ERROR_CHANNEL, dbAuthError);
-      } else if (dbError !== null) {
-        pendingSender.send(DB_INIT_ERROR_CHANNEL, dbError);
-      } else if (dbReady) {
-        pendingSender.send(getDbReadyChannel());
-      } else {
-        return;
-      }
-      pendingSender = null;
-    }
+    if (!pendingSender || pendingSender.isDestroyed()) return;
+
+    const signal: [string, string?] | null =
+      dbAuthError !== null
+        ? [DB_AUTH_ERROR_CHANNEL, dbAuthError]
+        : dbError !== null
+          ? [DB_INIT_ERROR_CHANNEL, dbError]
+          : dbReady
+            ? [getDbReadyChannel()]
+            : null;
+
+    if (!signal) return;
+    pendingSender.send(...signal);
+    pendingSender = null;
   };
 
   ipcMain.on(DB_REQUEST_READY_CHANNEL, (event) => {
