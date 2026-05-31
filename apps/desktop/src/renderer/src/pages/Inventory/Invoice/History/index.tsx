@@ -152,7 +152,7 @@ export default function InvoiceHistoryPage() {
               onEdit={() => handleEditClick(inv.id)}
               onPost={() => handlePost(inv.id)}
               onAudit={() => handleAuditClick(inv.id)}
-              onRaiseCreditNote={() => console.log('TODO: handle raise credit note')}
+              onRaiseCreditNote={() => {}}
             />
           </TableCell>
         </TableRow>
