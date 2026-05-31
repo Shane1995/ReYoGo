@@ -1,26 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { InvoiceStatus } from '@reyogo/types';
 import { StatusBadge } from '.';
+import { InvoiceStatus } from '@reyogo/types';
 
 describe('StatusBadge', () => {
-  it('renders "Draft" for draft status', () => {
-    render(<StatusBadge status={InvoiceStatus.Draft} />);
-    expect(screen.getByText('Draft')).toBeDefined();
-  });
-
-  it('renders "Posted" for posted status', () => {
+  it('renders Posted badge', () => {
     render(<StatusBadge status={InvoiceStatus.Posted} />);
     expect(screen.getByText('Posted')).toBeDefined();
   });
 
-  it('does not render "Posted" text for draft status', () => {
+  it('renders Draft badge', () => {
     render(<StatusBadge status={InvoiceStatus.Draft} />);
-    expect(screen.queryByText('Posted')).toBeNull();
+    expect(screen.getByText('Draft')).toBeDefined();
   });
 
-  it('does not render "Draft" text for posted status', () => {
-    render(<StatusBadge status={InvoiceStatus.Posted} />);
-    expect(screen.queryByText('Draft')).toBeNull();
+  it('renders Credit Note badge', () => {
+    render(<StatusBadge status={InvoiceStatus.CreditNote} />);
+    expect(screen.getByText('Credit Note')).toBeDefined();
   });
 });

@@ -4,6 +4,7 @@ export enum RowModeKind {
   Edit = 'edit',
   MetadataEdit = 'metadata-edit',
   Audit = 'audit',
+  CreditNote = 'credit-note',
 }
 
 export type RowMode =
@@ -11,4 +12,5 @@ export type RowMode =
   | { kind: RowModeKind.Detail }
   | { kind: RowModeKind.Edit }
   | { kind: RowModeKind.MetadataEdit }
-  | { kind: RowModeKind.Audit };
+  | { kind: RowModeKind.Audit }
+  | { kind: RowModeKind.CreditNote };
