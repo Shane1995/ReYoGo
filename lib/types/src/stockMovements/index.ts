@@ -6,7 +6,12 @@ export enum MovementType {
   Return = 'RETURN',
 }
 
-export type ReferenceType = 'invoice' | 'manual' | 'adjustment';
+export enum ReferenceType {
+  Invoice = 'invoice',
+  Manual = 'manual',
+  Adjustment = 'adjustment',
+  CreditNote = 'credit_note',
+}
 
 export interface StockMovement {
   id: string;

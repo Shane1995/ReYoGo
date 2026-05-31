@@ -51,9 +51,16 @@ export function getTursoUrl(): string | null {
 }
 
 function persistCredentials(credentials: CloudSyncCredentials): void {
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error('Secure storage is not available on this system.');
+  }
   const encrypted = safeStorage.encryptString(credentials.authToken);
   store.set(STORE_KEY_URL, credentials.tursoUrl);
   store.set(STORE_KEY_TOKEN_ENC, encrypted.toString('base64'));
+}
+
+export function saveCredentials(tursoUrl: string, authToken: string): void {
+  persistCredentials({ tursoUrl, authToken });
 }
 
 export function clearCredentials(): void {
@@ -62,6 +69,12 @@ export function clearCredentials(): void {
   store.delete(STORE_KEY_LAST_SYNCED);
   store.delete(STORE_KEY_SYNC_ERROR);
   _syncStatus = { state: SyncState.Idle, lastSyncedAt: null, error: null };
+}
+
+export function updateStoredToken(authToken: string): void {
+  const tursoUrl = store.get(STORE_KEY_URL);
+  if (!tursoUrl) throw new Error('Cloud sync not active — no URL stored');
+  persistCredentials({ tursoUrl, authToken });
 }
 
 export function getSyncStatus(): SyncStatus {

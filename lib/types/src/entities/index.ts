@@ -1,4 +1,4 @@
-import type { VatMode } from '../invoices';
+import { VatMode } from '../invoices';
 
 export interface IBusinessGroup {
   id: string;

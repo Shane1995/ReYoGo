@@ -25,6 +25,11 @@ export const cloudSyncService = {
 
   isFreshReplica: (): Promise<boolean> => invoke()(CloudSyncIPC.IS_FRESH_REPLICA),
 
+  rotateToken: (authToken: string): Promise<void> => invoke()(CloudSyncIPC.ROTATE_TOKEN, authToken),
+
+  connect: (tursoUrl: string, authToken: string): Promise<void> =>
+    invoke()(CloudSyncIPC.CONNECT, tursoUrl, authToken),
+
   onSyncEvent: (callback: (event: CloudSyncEvent) => void): (() => void) =>
     window.electronAPI.onCloudSyncEvent(callback),
 };

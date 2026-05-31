@@ -228,20 +228,23 @@ export async function initDatabase(): Promise<void> {
 
         try {
           await boot(handle);
+          return;
         } catch (bootErr) {
           if (isPermanentSyncError(bootErr)) {
             handle.close();
             clearCredentials();
             wipeReplicaFiles(replicaPath);
-            throw new Error(
-              'Cloud database no longer accessible. Reconnect your account in Settings.',
+            const err = new Error(
+              'Cloud auth failed — update your auth token in Settings → Cloud Sync.',
             );
-          }
-          if (isCorruptedReplicaError(bootErr)) {
+            Object.assign(err, { isCloudAuthError: true });
+            throw err;
+          } else if (isCorruptedReplicaError(bootErr)) {
             handle.close();
             wipeReplicaFiles(replicaPath);
             handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
             await boot(handle);
+            return;
           } else if (!canBootOffline) {
             handle.close();
             wipeReplicaFiles(replicaPath);
@@ -255,10 +258,9 @@ export async function initDatabase(): Promise<void> {
             _handle = handle;
             _db = handle.db;
             _repos = buildRepos(handle.db);
+            return;
           }
         }
-
-        return;
       }
     }
 

@@ -4,6 +4,7 @@ import { join } from 'path';
 import {
   DB_REQUEST_READY_CHANNEL,
   DB_INIT_ERROR_CHANNEL,
+  DB_AUTH_ERROR_CHANNEL,
   CLOUD_SYNC_EVENT_CHANNEL,
 } from '@shared/ipc-events';
 import { CloudSyncEventType } from '@shared/types/cloudSync';
@@ -127,19 +128,24 @@ app.whenReady().then(() => {
 
   let dbReady = false;
   let dbError: string | null = null;
+  let dbAuthError: string | null = null;
   let pendingSender: Electron.WebContents | null = null;
 
   const trySendDbReady = () => {
-    if (pendingSender && !pendingSender.isDestroyed()) {
-      if (dbError !== null) {
-        pendingSender.send(DB_INIT_ERROR_CHANNEL, dbError);
-      } else if (dbReady) {
-        pendingSender.send(getDbReadyChannel());
-      } else {
-        return;
-      }
-      pendingSender = null;
-    }
+    if (!pendingSender || pendingSender.isDestroyed()) return;
+
+    const signal: [string, string?] | null =
+      dbAuthError !== null
+        ? [DB_AUTH_ERROR_CHANNEL, dbAuthError]
+        : dbError !== null
+          ? [DB_INIT_ERROR_CHANNEL, dbError]
+          : dbReady
+            ? [getDbReadyChannel()]
+            : null;
+
+    if (!signal) return;
+    pendingSender.send(...signal);
+    pendingSender = null;
   };
 
   ipcMain.on(DB_REQUEST_READY_CHANNEL, (event) => {
@@ -165,7 +171,12 @@ app.whenReady().then(() => {
     })
     .catch((err) => {
       console.error('[ReYoGo] Failed to initialize database:', err);
-      dbError = err instanceof Error ? err.message : String(err);
+      const isAuthError = (err as { isCloudAuthError?: boolean }).isCloudAuthError === true;
+      if (isAuthError) {
+        dbAuthError = err instanceof Error ? err.message : String(err);
+      } else {
+        dbError = err instanceof Error ? err.message : String(err);
+      }
       trySendDbReady();
     });
 

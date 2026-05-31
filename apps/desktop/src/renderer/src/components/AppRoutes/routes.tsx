@@ -5,9 +5,9 @@ import { InventoryLayout as CapturedInventoryLayout } from '@/pages/Inventory/Ca
 import CapturedInventoryIndex from '@/pages/Inventory/Capture/CapturedInventory';
 import ImportPage from '@/pages/Inventory/Capture/CapturedInventory/ImportPage';
 import AddInventoryPage from '@/pages/Inventory/Capture/AddInventoryPage';
-import { InvoiceLayout } from '@/pages/Inventory/Invoice/Layout';
-import InvoicePage from '@/pages/Inventory/Invoice';
-import InvoiceHistoryPage from '@/pages/Inventory/Invoice/History';
+import { InvoiceLayout } from '@/pages/Invoices/Layout';
+import InvoicePage from '@/pages/Invoices';
+import InvoiceHistoryPage from '@/pages/Invoices/History';
 import ManagePage from '@/pages/Inventory/Manage';
 import InventoryAnalysis from '@/pages/Inventory/Analysis';
 import ItemTrendPage from '@/pages/Inventory/Analysis/ItemTrendPage';

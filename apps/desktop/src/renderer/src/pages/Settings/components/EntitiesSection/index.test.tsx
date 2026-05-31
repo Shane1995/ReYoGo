@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { EntitiesSection } from '.';
 import { entitiesService } from '@/services/entities';
+import { VatMode } from '@reyogo/types';
 import type { IEntity } from '@reyogo/types';
 
 vi.mock('@/services/entities', () => ({
@@ -17,7 +18,7 @@ const mockEntities: IEntity[] = [
     groupId: 'g1',
     name: 'The Crown Pub',
     defaultVatRate: 15,
-    defaultVatMode: 'exclusive',
+    defaultVatMode: VatMode.Exclusive,
     archivedAt: null,
   },
 ];

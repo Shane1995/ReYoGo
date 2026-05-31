@@ -3,6 +3,7 @@ import type {
   ISaveCapturedInvoicePayload,
   IUpdateCapturedInvoicePayload,
   IUpdateCapturedInvoiceMetadataPayload,
+  ISaveCreditNotePayload,
 } from '@reyogo/types';
 import { InvoicesIPC } from '@shared/types/ipc';
 import { getRepos } from '../../db';
@@ -37,4 +38,10 @@ export function registerInvoicesHandlers(): void {
     getRepos().invoices.getInvoiceAudit(id),
   );
   ipcMain.handle(InvoicesIPC.GET_LAST_UNIT_PRICES, () => getRepos().invoices.getLastUnitPrices());
+  ipcMain.handle(InvoicesIPC.SAVE_CREDIT_NOTE, (_e, payload: ISaveCreditNotePayload) =>
+    getRepos().invoices.saveCreditNote(payload),
+  );
+  ipcMain.handle(InvoicesIPC.GET_CREDIT_NOTES_FOR_INVOICE, (_e, sourceInvoiceId: string) =>
+    getRepos().invoices.getCreditNotesForInvoice(sourceInvoiceId),
+  );
 }

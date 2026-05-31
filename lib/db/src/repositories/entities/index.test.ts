@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { VatMode } from '@reyogo/types';
 import { createTestDb, type DbClient } from '../../__tests__/helpers';
 import { createEntitiesRepo } from '.';
 
@@ -60,10 +61,10 @@ describe('createEntitiesRepo', () => {
 
   describe('updateEntityVat', () => {
     it('updates vat rate and mode on an entity', async () => {
-      await repo.updateEntityVat('default', 20, 'inclusive');
+      await repo.updateEntityVat('default', 20, VatMode.Inclusive);
       const ents = await repo.getEntities('default');
       expect(ents[0]!.defaultVatRate).toBe(20);
-      expect(ents[0]!.defaultVatMode).toBe('inclusive');
+      expect(ents[0]!.defaultVatMode).toBe(VatMode.Inclusive);
     });
   });
 

@@ -16,6 +16,9 @@ export function CloudSyncSection() {
   const [progressLabel, setProgressLabel] = useState('');
   const [progressDetail, setProgressDetail] = useState('');
   const [credentials, setCredentials] = useState<{ tursoUrl: string } | null>(null);
+  const [showRotateForm, setShowRotateForm] = useState(false);
+  const [rotateToken, setRotateToken] = useState('');
+  const [rotating, setRotating] = useState(false);
 
   const refreshStatus = useCallback(async () => {
     const [s, c] = await Promise.all([
@@ -84,6 +87,23 @@ export function CloudSyncSection() {
     }
   }
 
+  async function handleRotateToken() {
+    if (!rotateToken.trim()) {
+      toast.error('Auth token is required.');
+      return;
+    }
+    setRotating(true);
+    try {
+      await cloudSyncService.rotateToken(rotateToken.trim());
+      toast.success('Auth token updated — reloading…');
+      window.location.reload();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update token');
+    } finally {
+      setRotating(false);
+    }
+  }
+
   async function handleDeleteBackup() {
     try {
       await cloudSyncService.deleteBackup();
@@ -147,12 +167,50 @@ export function CloudSyncSection() {
             </Button>
             <Button
               variant="ghost"
+              onClick={() => setShowRotateForm((v) => !v)}
+              className="self-start"
+            >
+              Update auth token
+            </Button>
+            <Button
+              variant="ghost"
               onClick={handleDeleteBackup}
               className="self-start text-destructive hover:text-destructive"
             >
               Delete local backup
             </Button>
           </div>
+
+          {showRotateForm && (
+            <div className="flex flex-col gap-2 rounded-md border border-input p-3">
+              <p className="text-xs text-muted-foreground">
+                Paste your new Turso auth token below. The connection will be tested before saving.
+              </p>
+              <Input
+                type="password"
+                placeholder="New auth token"
+                value={rotateToken}
+                onChange={(e) => setRotateToken(e.target.value)}
+                disabled={rotating}
+              />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleRotateToken} disabled={rotating}>
+                  {rotating ? 'Updating…' : 'Update'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setShowRotateForm(false);
+                    setRotateToken('');
+                  }}
+                  disabled={rotating}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

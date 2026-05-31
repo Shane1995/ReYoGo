@@ -4,41 +4,28 @@ interface GroupStepProps {
   onNext: () => void;
 }
 
+const inputCls =
+  'w-full bg-white/5 border border-white/10 rounded-[10px] px-4 py-3 text-[#F8F9FA] text-sm font-sans outline-none transition-[border-color,background] duration-150 placeholder:text-white/25 focus:border-[#20C997] focus:bg-[rgba(32,201,151,0.06)] disabled:opacity-50 disabled:cursor-not-allowed';
+
 export function GroupStep({ groupName, onGroupNameChange, onNext }: GroupStepProps) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+    <div className="flex flex-col gap-8">
       <div>
-        <h1
-          style={{
-            fontSize: 22,
-            fontWeight: 700,
-            letterSpacing: '-0.03em',
-            color: '#F8F9FA',
-            margin: '0 0 8px',
-          }}
-        >
+        <h1 className="text-[22px] font-bold tracking-[-0.03em] text-[#F8F9FA] mb-2">
           Name your business group
         </h1>
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', margin: 0, lineHeight: 1.6 }}>
+        <p className="text-[13px] text-white/40 leading-relaxed m-0">
           This is the umbrella name for all your venues — e.g. "The Crown Group". You can change it
           anytime.
         </p>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <label
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: 'rgba(255,255,255,0.35)',
-          }}
-        >
+      <div className="flex flex-col gap-2">
+        <label className="text-[11px] font-semibold tracking-[0.08em] uppercase text-white/35">
           Business group name
         </label>
         <input
-          className="rg-input"
+          className={inputCls}
           value={groupName}
           onChange={(e) => onGroupNameChange(e.target.value)}
           placeholder="e.g. The Crown Group"
@@ -47,8 +34,12 @@ export function GroupStep({ groupName, onGroupNameChange, onNext }: GroupStepPro
         />
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <button className="rg-btn-primary" onClick={onNext} disabled={!groupName.trim()}>
+      <div className="flex justify-end">
+        <button
+          className="bg-[#20C997] text-[#0D1117] rounded-[10px] px-6 py-[11px] text-sm font-semibold font-sans cursor-pointer transition-[background,transform] duration-150 whitespace-nowrap hover:bg-[#18a87a] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+          onClick={onNext}
+          disabled={!groupName.trim()}
+        >
           Continue →
         </button>
       </div>
