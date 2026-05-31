@@ -5,6 +5,7 @@ export const CloudSyncIPC = {
   DELETE_BACKUP: 'cloud-sync:delete-backup',
   GET_CREDENTIALS: 'cloud-sync:get-credentials',
   IS_FRESH_REPLICA: 'cloud-sync:is-fresh-replica',
+  ROTATE_TOKEN: 'cloud-sync:rotate-token',
 } as const;
 
 export type CloudSyncIPC = (typeof CloudSyncIPC)[keyof typeof CloudSyncIPC];

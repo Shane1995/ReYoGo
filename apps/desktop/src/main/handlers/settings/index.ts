@@ -11,6 +11,7 @@ import {
   deleteLocalBackup,
   recordSyncSuccess,
   recordSyncError,
+  updateStoredToken,
   withSyncTimeout,
 } from '../../db/cloudSync';
 
@@ -64,4 +65,18 @@ export function registerSettingsHandlers(): void {
     CloudSyncIPC.IS_FRESH_REPLICA,
     () => hasCloudCredentials() && !hasLocalReplica(getReplicaPath()),
   );
+
+  ipcMain.handle(CloudSyncIPC.ROTATE_TOKEN, async (_event, authToken: string) => {
+    const tursoUrl = getTursoUrl();
+    if (!tursoUrl) throw new Error('Cloud sync is not active.');
+    try {
+      await withSyncTimeout(reinitialise(getReplicaPath(), tursoUrl, authToken));
+      updateStoredToken(authToken);
+      recordSyncSuccess();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      recordSyncError(msg);
+      throw err;
+    }
+  });
 }

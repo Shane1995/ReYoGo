@@ -64,6 +64,12 @@ export function clearCredentials(): void {
   _syncStatus = { state: SyncState.Idle, lastSyncedAt: null, error: null };
 }
 
+export function updateStoredToken(authToken: string): void {
+  const tursoUrl = store.get(STORE_KEY_URL);
+  if (!tursoUrl) throw new Error('Cloud sync not active — no URL stored');
+  persistCredentials({ tursoUrl, authToken });
+}
+
 export function getSyncStatus(): SyncStatus {
   return _syncStatus;
 }
