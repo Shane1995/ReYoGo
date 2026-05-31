@@ -550,6 +550,20 @@ describe('createInvoicesRepo', () => {
         .limit(1)
         .then((rows) => rows[0]);
       expect(cnRow!.totalExclTax).toBe(36);
+
+      const lineRow = await db
+        .select({ unitCost: schema.invoiceLineItems.unitCost })
+        .from(schema.invoiceLineItems)
+        .where(eq(schema.invoiceLineItems.invoiceId, 'cn-r'))
+        .then((rows) => rows[0] ?? null);
+      expect(lineRow!.unitCost).toBe(12);
+
+      const movementRow = await db
+        .select({ unitCostAtTime: schema.stockMovements.unitCostAtTime })
+        .from(schema.stockMovements)
+        .where(eq(schema.stockMovements.referenceId, 'cn-r'))
+        .then((rows) => rows[0] ?? null);
+      expect(movementRow!.unitCostAtTime).toBe(12);
     });
 
     it('rejects credit notes against a credit note invoice', async () => {
