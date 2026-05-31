@@ -71,6 +71,7 @@ export default function InvoiceHistoryPage() {
     const totals = detail ? invoiceTotals(detail) : null;
     const isDraft = inv.status === InvoiceStatus.Draft;
     const isPosted = inv.status === InvoiceStatus.Posted;
+    const isCreditNote = inv.status === InvoiceStatus.CreditNote;
     const isPosting = postingId === inv.id;
     const isExpanded =
       mode === RowModeKind.Detail ||
@@ -146,10 +147,12 @@ export default function InvoiceHistoryPage() {
             <RowActions
               isPosted={isPosted}
               isPosting={isPosting}
+              isCreditNote={isCreditNote}
               onReuse={() => handleReuse(inv.id)}
               onEdit={() => handleEditClick(inv.id)}
               onPost={() => handlePost(inv.id)}
               onAudit={() => handleAuditClick(inv.id)}
+              onRaiseCreditNote={() => console.log('TODO: handle raise credit note')}
             />
           </TableCell>
         </TableRow>
