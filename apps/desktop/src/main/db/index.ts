@@ -16,7 +16,7 @@ import {
   type DbHandle,
   type ReplicaHandle,
 } from '@reyogo/db';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull } from 'drizzle-orm';
 import { DB_READY_CHANNEL } from '@shared/ipc-events';
 import {
   hasCloudCredentials,
@@ -24,6 +24,8 @@ import {
   clearCredentials,
   recordSyncError,
   hasEverSynced,
+  hasUomRepairRun,
+  markUomRepairDone,
   withSyncTimeout,
 } from './cloudSync';
 
@@ -145,6 +147,43 @@ async function ensureDefaultAccount(db: DbClient): Promise<void> {
     await db
       .insert(schema.accounts)
       .values({ id: 'default', name: 'Default', isCurrent: true, createdAt: ts, updatedAt: ts });
+  }
+}
+
+export async function repairUomLinksIfNeeded(): Promise<void> {
+  if (!isReplicaMode()) return;
+  if (hasUomRepairRun()) return;
+
+  const localPath = getDbPath();
+  if (!existsSync(localPath)) {
+    markUomRepairDone();
+    return;
+  }
+
+  const localHandle = createDbClient(`file:${localPath}`);
+  try {
+    const db = getDb();
+
+    const sourceItems = await localHandle.db
+      .select({
+        id: schema.inventoryItems.id,
+        unitOfMeasureId: schema.inventoryItems.unitOfMeasureId,
+      })
+      .from(schema.inventoryItems)
+      .where(isNotNull(schema.inventoryItems.unitOfMeasureId));
+
+    for (const item of sourceItems) {
+      if (!item.unitOfMeasureId) continue;
+      await db
+        .update(schema.inventoryItems)
+        .set({ unitOfMeasureId: item.unitOfMeasureId })
+        .where(
+          and(eq(schema.inventoryItems.id, item.id), isNull(schema.inventoryItems.unitOfMeasureId)),
+        );
+    }
+  } finally {
+    localHandle.close();
+    markUomRepairDone();
   }
 }
 

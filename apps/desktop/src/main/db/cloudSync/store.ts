@@ -7,6 +7,7 @@ type StoreSchema = {
   'cloudSync.authTokenEncrypted': string;
   'cloudSync.lastSyncedAt': string;
   'cloudSync.syncError': string;
+  'repair.uomLinksAt': string;
 };
 
 type StoreKey = keyof StoreSchema;

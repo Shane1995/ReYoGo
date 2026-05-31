@@ -68,6 +68,14 @@ export function getSyncStatus(): SyncStatus {
   return _syncStatus;
 }
 
+export function hasUomRepairRun(): boolean {
+  return !!store.get('repair.uomLinksAt');
+}
+
+export function markUomRepairDone(): void {
+  store.set('repair.uomLinksAt', new Date().toISOString());
+}
+
 export function markOffline(): void {
   const lastSyncedAtStr = store.get(STORE_KEY_LAST_SYNCED);
   updateSyncStatus({
