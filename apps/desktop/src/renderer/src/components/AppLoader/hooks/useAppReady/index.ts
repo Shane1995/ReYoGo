@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { appService } from '@/services/app';
 import { entitiesService } from '@/services/entities';
 import { cloudSyncService } from '@/services/cloudSync';
+import { CloudSyncEventType } from '@shared/types/cloudSync';
 
 export type AppPhase = 'loading' | 'fresh-replica' | 'setup' | 'ready' | 'auth-error';
 
@@ -27,11 +28,18 @@ export function useAppReady() {
       setAuthError(message);
       setPhase('auth-error');
     });
+    const offSyncEvent = cloudSyncService.onSyncEvent((event) => {
+      if (event.type === CloudSyncEventType.Error && !event.retryable) {
+        setAuthError(event.message);
+        setPhase('auth-error');
+      }
+    });
     appService.requestAppReady();
     return () => {
       offReady();
       offError();
       offAuthError();
+      offSyncEvent();
     };
   }, [checkSetup]);
 
