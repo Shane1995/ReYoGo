@@ -8,6 +8,7 @@ import type {
   ISaveCapturedInvoicePayload,
   IUpdateCapturedInvoicePayload,
   IUpdateCapturedInvoiceMetadataPayload,
+  ISaveCreditNotePayload,
 } from '@reyogo/types';
 import type { ItemCostHistory, COGSSummary } from '@reyogo/types';
 import type { Supplier, UpsertSupplierPayload } from '@reyogo/types';
@@ -51,6 +52,11 @@ export interface IPCInvokeMap {
   };
   'invoices:get-invoice-audit': { args: [id: string]; return: IInvoiceAuditEntry[] };
   'invoices:get-last-unit-prices': { args: []; return: Record<string, number> };
+  'invoices:save-credit-note': { args: [payload: ISaveCreditNotePayload]; return: void };
+  'invoices:get-credit-notes-for-invoice': {
+    args: [sourceInvoiceId: string];
+    return: IInvoiceWithLines[];
+  };
   'stock-movements:get-current-stock': { args: []; return: Record<string, number> };
   'stock-movements:get-weighted-avg-costs': { args: []; return: Record<string, number | null> };
   'stock-movements:get-item-cost-history': { args: [itemId: string]; return: ItemCostHistory };

@@ -10,6 +10,8 @@ export const InvoicesIPC = {
   UPDATE_INVOICE_METADATA: 'invoices:update-invoice-metadata',
   GET_INVOICE_AUDIT: 'invoices:get-invoice-audit',
   GET_LAST_UNIT_PRICES: 'invoices:get-last-unit-prices',
+  SAVE_CREDIT_NOTE: 'invoices:save-credit-note',
+  GET_CREDIT_NOTES_FOR_INVOICE: 'invoices:get-credit-notes-for-invoice',
 } as const;
 
 export type InvoicesIPC = (typeof InvoicesIPC)[keyof typeof InvoicesIPC];

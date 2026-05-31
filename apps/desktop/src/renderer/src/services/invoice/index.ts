@@ -3,6 +3,7 @@ import type {
   ISaveCapturedInvoicePayload,
   IUpdateCapturedInvoicePayload,
   IUpdateCapturedInvoiceMetadataPayload,
+  ISaveCreditNotePayload,
 } from '@reyogo/types';
 
 const invoke = () => window.electronAPI.ipcRenderer.invoke;
@@ -22,4 +23,8 @@ export const invoiceService = {
     invoke()(InvoicesIPC.UPDATE_INVOICE_METADATA, payload),
   getInvoiceAudit: (id: string) => invoke()(InvoicesIPC.GET_INVOICE_AUDIT, id),
   getLastUnitPrices: () => invoke()(InvoicesIPC.GET_LAST_UNIT_PRICES),
+  saveCreditNote: (payload: ISaveCreditNotePayload) =>
+    invoke()(InvoicesIPC.SAVE_CREDIT_NOTE, payload),
+  getCreditNotesForInvoice: (sourceInvoiceId: string) =>
+    invoke()(InvoicesIPC.GET_CREDIT_NOTES_FOR_INVOICE, sourceInvoiceId),
 };
