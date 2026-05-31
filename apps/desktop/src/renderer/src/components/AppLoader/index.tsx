@@ -6,7 +6,7 @@ import { FreshReplicaScreen } from './FreshReplicaScreen';
 import { useAppReady } from './hooks/useAppReady';
 
 const AppLoader = () => {
-  const { isReady, setupComplete, initError, phase } = useAppReady();
+  const { isReady, setupComplete, initError, authError, phase } = useAppReady();
 
   if (initError) {
     const isMigrationError =
@@ -47,6 +47,30 @@ const AppLoader = () => {
   if (!isReady || setupComplete === null) return <LoadingSpinner />;
 
   if (phase === 'fresh-replica') return <FreshReplicaScreen />;
+
+  if (phase === 'auth-error') {
+    return (
+      <ErrorBoundary>
+        <div className="flex flex-col min-h-screen">
+          <div className="flex items-center gap-3 px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/30 text-sm text-amber-700 dark:text-amber-400 shrink-0">
+            <span className="size-1.5 rounded-full bg-amber-500 inline-block shrink-0" />
+            <span className="flex-1">
+              Cloud database connection failed — go to <strong>Settings → Cloud Sync</strong> to
+              update your auth token.
+            </span>
+            {authError && (
+              <code className="text-xs opacity-60 hidden sm:block truncate max-w-xs">
+                {authError}
+              </code>
+            )}
+          </div>
+          <div className="flex-1 min-h-0">
+            <AppRoutes />
+          </div>
+        </div>
+      </ErrorBoundary>
+    );
+  }
 
   if (!setupComplete) return <SetupWizard />;
 

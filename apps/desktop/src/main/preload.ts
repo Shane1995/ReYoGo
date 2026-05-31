@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 const DB_READY_CHANNEL = 'db:ready';
 const DB_INIT_ERROR_CHANNEL = 'db:init-error';
+const DB_AUTH_ERROR_CHANNEL = 'db:auth-error';
 const DB_REQUEST_READY_CHANNEL = 'db:request-ready';
 const UPDATE_DOWNLOADED_CHANNEL = 'app:update-downloaded';
 const UPDATE_ERROR_CHANNEL = 'app:update-error';
@@ -26,6 +27,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const wrapped = (_event: unknown, message: string) => callback(message);
     ipcRenderer.once(DB_INIT_ERROR_CHANNEL, wrapped);
     return () => ipcRenderer.removeListener(DB_INIT_ERROR_CHANNEL, wrapped);
+  },
+  onDbAuthError: (callback: (message: string) => void) => {
+    const wrapped = (_event: unknown, message: string) => callback(message);
+    ipcRenderer.once(DB_AUTH_ERROR_CHANNEL, wrapped);
+    return () => ipcRenderer.removeListener(DB_AUTH_ERROR_CHANNEL, wrapped);
   },
   requestAppReady: () => {
     ipcRenderer.send(DB_REQUEST_READY_CHANNEL);

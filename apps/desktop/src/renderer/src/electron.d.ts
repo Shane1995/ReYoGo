@@ -12,6 +12,7 @@ export interface ElectronAPI {
   ipcRenderer: IPCRenderer;
   onAppReady: (callback: () => void) => () => void;
   onAppInitError: (callback: (message: string) => void) => () => void;
+  onDbAuthError: (callback: (message: string) => void) => () => void;
   requestAppReady: () => void;
   onUpdateDownloaded: (callback: () => void) => () => void;
   onUpdateError: (callback: (message: string) => void) => () => void;

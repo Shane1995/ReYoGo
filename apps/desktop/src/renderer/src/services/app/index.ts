@@ -7,6 +7,8 @@ export const appService = {
   onAppReady: (callback: () => void): (() => void) => window.electronAPI.onAppReady(callback),
   onAppInitError: (callback: (message: string) => void): (() => void) =>
     window.electronAPI.onAppInitError(callback),
+  onDbAuthError: (callback: (message: string) => void): (() => void) =>
+    window.electronAPI.onDbAuthError(callback),
   requestAppReady: () => window.electronAPI.requestAppReady(),
   getVersion: (): Promise<AppVersionInfo> =>
     window.electronAPI.ipcRenderer.invoke(AppIPC.GET_VERSION),

@@ -234,8 +234,11 @@ export async function initDatabase(): Promise<void> {
             handle.close();
             clearCredentials();
             wipeReplicaFiles(replicaPath);
-            recordSyncError('Cloud auth failed — update your auth token in Settings → Cloud Sync.');
-            // Fall through to local DB so the app stays usable
+            const err = new Error(
+              'Cloud auth failed — update your auth token in Settings → Cloud Sync.',
+            );
+            Object.assign(err, { isCloudAuthError: true });
+            throw err;
           } else if (isCorruptedReplicaError(bootErr)) {
             handle.close();
             wipeReplicaFiles(replicaPath);

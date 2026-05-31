@@ -95,10 +95,8 @@ export function CloudSyncSection() {
     setRotating(true);
     try {
       await cloudSyncService.rotateToken(rotateToken.trim());
-      setRotateToken('');
-      setShowRotateForm(false);
-      await refreshStatus();
-      toast.success('Auth token updated');
+      toast.success('Auth token updated — reloading…');
+      window.location.reload();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update token');
     } finally {
