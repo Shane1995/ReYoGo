@@ -12,6 +12,7 @@ import { formatMoney } from '../../../utils/formatMoney';
 import { createEmptyLine } from '../../../utils/createEmptyLine';
 import { lineToEditLine } from '../../../utils/lineToEditLine';
 import { cn } from '@reyogo/ui';
+import { Checkbox } from '@/components/Checkbox';
 
 type Props = {
   invoice: ICapturedInvoiceWithLines;
@@ -141,12 +142,9 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
                   />
                 </td>
                 <td className="py-1.5 pr-3 text-center">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={line.isVatable}
-                    onChange={(e) => updateLine(line.id, { isVatable: e.target.checked })}
-                    className="size-4 cursor-pointer accent-primary"
-                    title="Taxable"
+                    onChange={(val) => updateLine(line.id, { isVatable: val })}
                   />
                 </td>
                 <td className="py-1.5 pr-3">
