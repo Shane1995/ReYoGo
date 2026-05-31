@@ -1,4 +1,5 @@
-export type VatMode = 'inclusive' | 'exclusive';
+export { VatMode } from '@reyogo/types';
+import { VatMode } from '@reyogo/types';
 
 export type ProcessReceiptLine = {
   id: string;
@@ -28,7 +29,7 @@ export function getProcessLineComputed(
     netTotal = entered;
     grossTotal = entered;
     vatAmount = 0;
-  } else if (vatMode === 'inclusive') {
+  } else if (vatMode === VatMode.Inclusive) {
     grossTotal = entered;
     netTotal = vatRate > 0 ? grossTotal / (1 + vatRate / 100) : grossTotal;
     vatAmount = grossTotal - netTotal;

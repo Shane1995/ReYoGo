@@ -4,7 +4,8 @@ import { toast } from 'sonner';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
 import { useEntities } from '@/Context/EntityContext';
 import { invoiceService } from '@/services/invoice';
-import type { ProcessReceiptLine, VatMode } from '../../types';
+import { VatMode } from '@reyogo/types';
+import type { ProcessReceiptLine } from '../../types';
 import { getProcessLineComputed } from '../../types';
 import { createEmptyLine } from '../../utils/createEmptyLine';
 import { loadDraft, useDraftPersistence } from '../useDraftPersistence';
@@ -34,7 +35,7 @@ export function useInvoiceForm() {
   );
   const [supplierId, setSupplierId] = useState<string>('');
   const [vatMode, setVatModeState] = useState<VatMode>(() =>
-    isReused ? 'exclusive' : (loadDraft()?.vatMode ?? 'exclusive'),
+    isReused ? VatMode.Exclusive : (loadDraft()?.vatMode ?? VatMode.Exclusive),
   );
   const [entityId, setEntityId] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
@@ -83,7 +84,7 @@ export function useInvoiceForm() {
     setInvoiceDate('');
     setSupplierId('');
     setEntityId('');
-    setVatModeState('exclusive');
+    setVatModeState(VatMode.Exclusive);
     setExpandedResultLineIds(new Set());
     clearDraft();
   }, [clearDraft, setLines]);

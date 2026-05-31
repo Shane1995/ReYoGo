@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { TaxSection } from '.';
+import { VatMode } from '@reyogo/types';
 import type { IEntity } from '@reyogo/types';
 
 vi.mock('@/services/entities', () => ({
@@ -13,7 +14,7 @@ const entities: IEntity[] = [
     groupId: 'g1',
     name: 'Pub',
     defaultVatRate: 15,
-    defaultVatMode: 'exclusive',
+    defaultVatMode: VatMode.Exclusive,
     archivedAt: null,
   },
   {
@@ -21,7 +22,7 @@ const entities: IEntity[] = [
     groupId: 'g1',
     name: 'Bar',
     defaultVatRate: 15,
-    defaultVatMode: 'exclusive',
+    defaultVatMode: VatMode.Exclusive,
     archivedAt: null,
   },
 ];

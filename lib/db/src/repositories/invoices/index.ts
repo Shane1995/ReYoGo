@@ -1,5 +1,5 @@
 import { asc, desc, eq, gt, sql } from 'drizzle-orm';
-import { MovementType, InvoiceStatus } from '@reyogo/types';
+import { MovementType, InvoiceStatus, ReferenceType, VatMode } from '@reyogo/types';
 import type {
   IInvoice,
   IInvoiceWithLines,
@@ -29,7 +29,7 @@ function toIInvoice(row: schema.InvoiceRow): IInvoice {
     invoiceNumber: row.invoiceNumber,
     invoiceDate: row.invoiceDate ?? null,
     status: row.status ?? InvoiceStatus.Draft,
-    vatMode: row.vatMode ?? 'exclusive',
+    vatMode: row.vatMode ?? VatMode.Exclusive,
     vatRate: row.vatRate ?? 15,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt ?? null,
@@ -96,7 +96,7 @@ async function insertMovementsForLines(
       totalCost: line.totalVatExclude,
       weightedAvgCostAfter: newWac,
       stockQtyAfter: newQty,
-      referenceType: 'invoice',
+      referenceType: ReferenceType.Invoice,
       referenceId,
       occurredAt,
       createdAt,

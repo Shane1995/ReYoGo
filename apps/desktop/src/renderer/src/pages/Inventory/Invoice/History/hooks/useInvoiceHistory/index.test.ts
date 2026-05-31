@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { InvoiceStatus } from '@reyogo/types';
+import { InvoiceStatus, VatMode } from '@reyogo/types';
 import type { ICapturedInvoiceWithLines } from '@reyogo/types';
 
 vi.mock('react-router-dom', () => ({
@@ -37,7 +37,7 @@ function makeInvoice(
     invoiceNumber: 'INV-TEST',
     invoiceDate: null,
     status: InvoiceStatus.Draft,
-    vatMode: 'exclusive',
+    vatMode: VatMode.Exclusive,
     vatRate: 15,
     createdAt: new Date('2026-01-15'),
     updatedAt: null,

@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { XIcon, CheckIcon } from 'lucide-react';
 import { Button } from '@reyogo/ui';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
+import { VatMode } from '@reyogo/types';
 import type { ICapturedInvoiceWithLines } from '@reyogo/types';
 import { ItemAutocomplete } from '../../../components/ItemAutocomplete';
 import type { ProcessReceiptLine } from '../../../types';
@@ -95,7 +96,7 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
           <span>
             VAT:{' '}
             <span className="text-foreground">
-              {vatMode === 'inclusive' ? 'Inclusive' : 'Exclusive'} · {vatRate}%
+              {vatMode === VatMode.Inclusive ? 'Inclusive' : 'Exclusive'} · {vatRate}%
             </span>
           </span>
         </div>

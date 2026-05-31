@@ -2,7 +2,8 @@ import { Fragment } from 'react';
 import { ChevronDownIcon, ChevronRightIcon, XIcon } from 'lucide-react';
 import { TableCell, TableRow } from '@reyogo/ui';
 import { ItemAutocomplete, type ItemOption } from '../ItemAutocomplete';
-import type { ProcessReceiptLine, VatMode } from '../../types';
+import { VatMode } from '@reyogo/types';
+import type { ProcessReceiptLine } from '../../types';
 import { getProcessLineComputed } from '../../types';
 import { formatMoney } from '../../utils/formatMoney';
 import { inputClass } from '../../utils/inputClass';
@@ -41,7 +42,7 @@ function ItemMetaHint({
 }) {
   const unitPrice =
     computed.netUnitPrice > 0
-      ? `${formatMoney(vatMode === 'inclusive' ? computed.grossUnitPrice : computed.netUnitPrice)} / unit`
+      ? `${formatMoney(vatMode === VatMode.Inclusive ? computed.grossUnitPrice : computed.netUnitPrice)} / unit`
       : null;
   const parts = [
     itemMeta.categoryName,

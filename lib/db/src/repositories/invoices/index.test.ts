@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { InventoryType } from '@reyogo/types';
+import { InventoryType, VatMode } from '@reyogo/types';
 import { createTestDb, type DbClient } from '../../__tests__/helpers';
 import { createInvoicesRepo } from '.';
 import * as schema from '../../schema';
@@ -71,7 +71,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceDate: null,
         invoiceNumber: 'INV-001',
-        vatMode: 'exclusive',
+        vatMode: VatMode.Exclusive,
         vatRate: 15,
         lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 50 })],
       });
@@ -88,7 +88,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceDate: null,
         invoiceNumber: 'INV-TEST',
-        vatMode: 'exclusive',
+        vatMode: VatMode.Exclusive,
         vatRate: 15,
         lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
       });
@@ -104,7 +104,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceDate: null,
         invoiceNumber: 'INV-TEST',
-        vatMode: 'exclusive',
+        vatMode: VatMode.Exclusive,
         vatRate: 15,
         lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100, isVatable: false })],
       });
@@ -121,7 +121,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: 'INV-001',
         invoiceDate: new Date('2024-01-01'),
-        vatMode: 'exclusive',
+        vatMode: VatMode.Exclusive,
         vatRate: 15,
         lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
       });
@@ -142,7 +142,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: 'INV-TEST',
         invoiceDate,
-        vatMode: 'exclusive',
+        vatMode: VatMode.Exclusive,
         vatRate: 15,
         lines: [line({ id: 'l-1', quantity: 5, totalVatExclude: 50 })],
       });
@@ -157,7 +157,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: 'INV-TEST',
         invoiceDate: null,
-        vatMode: 'exclusive',
+        vatMode: VatMode.Exclusive,
         vatRate: 15,
         lines: [
           line({ id: 'l-1', quantity: 10, totalVatExclude: 100 }),
@@ -177,7 +177,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: 'INV-001',
         invoiceDate: new Date('2024-01-01'),
-        vatMode: 'exclusive',
+        vatMode: VatMode.Exclusive,
         vatRate: 15,
         lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
       }),
@@ -201,7 +201,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: 'INV-TEST',
         invoiceDate: new Date('2024-01-02'),
-        vatMode: 'exclusive',
+        vatMode: VatMode.Exclusive,
         vatRate: 15,
         lines: [line({ id: 'l-2', quantity: 10, totalVatExclude: 200 })],
       });
@@ -233,7 +233,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: 'INV-001',
         invoiceDate: new Date('2024-01-01'),
-        vatMode: 'exclusive',
+        vatMode: VatMode.Exclusive,
         vatRate: 15,
         lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
       }),
@@ -280,7 +280,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: 'INV-TEST',
         invoiceDate: null,
-        vatMode: 'exclusive',
+        vatMode: VatMode.Exclusive,
         vatRate: 15,
         lines: [],
       });
@@ -290,7 +290,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: 'INV-TEST',
         invoiceDate: null,
-        vatMode: 'exclusive',
+        vatMode: VatMode.Exclusive,
         vatRate: 15,
         lines: [],
       });
@@ -311,7 +311,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: 'INV-001',
         invoiceDate: null,
-        vatMode: 'exclusive',
+        vatMode: VatMode.Exclusive,
         vatRate: 15,
         lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
       });
@@ -329,7 +329,7 @@ describe('createInvoicesRepo', () => {
         supplierId: null,
         invoiceNumber: 'INV-TEST',
         invoiceDate: null,
-        vatMode: 'exclusive',
+        vatMode: VatMode.Exclusive,
         vatRate: 15,
         lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
       });

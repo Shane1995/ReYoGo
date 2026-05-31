@@ -4,7 +4,10 @@ export enum InvoiceStatus {
   CreditNote = 'CREDIT_NOTE',
 }
 
-export type VatMode = 'inclusive' | 'exclusive';
+export enum VatMode {
+  Inclusive = 'inclusive',
+  Exclusive = 'exclusive',
+}
 
 export interface Invoice {
   id: string;

@@ -1,3 +1,4 @@
+import { VatMode } from '@reyogo/types';
 import type { ICapturedInvoiceWithLines } from '@reyogo/types';
 import { formatMoney } from '../../../utils/formatMoney';
 import { invoiceTotals } from '../../../utils/invoiceTotals';
@@ -87,7 +88,7 @@ export function InvoiceDetailLines({ invoice }: Props) {
         <span className="text-muted-foreground/60 text-[11px] uppercase tracking-widest font-medium">
           Mode{' '}
           <span className="font-medium text-foreground text-sm normal-case tracking-normal">
-            {invoice.vatMode === 'inclusive' ? 'Incl.' : 'Excl.'} · {invoice.vatRate}%
+            {invoice.vatMode === VatMode.Inclusive ? 'Incl.' : 'Excl.'} · {invoice.vatRate}%
           </span>
         </span>
       </div>

@@ -1,5 +1,5 @@
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import type { VatMode } from '@reyogo/types';
+import { VatMode } from '@reyogo/types';
 import { businessGroups } from '../businessGroups';
 
 export const entities = sqliteTable('entities', {
@@ -9,7 +9,7 @@ export const entities = sqliteTable('entities', {
     .references(() => businessGroups.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   defaultVatRate: integer('default_vat_rate').notNull().default(15),
-  defaultVatMode: text('default_vat_mode').$type<VatMode>().notNull().default('exclusive'),
+  defaultVatMode: text('default_vat_mode').$type<VatMode>().notNull().default(VatMode.Exclusive),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   archivedAt: integer('archived_at', { mode: 'timestamp' }),
 });

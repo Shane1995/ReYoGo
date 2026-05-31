@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@reyogo/ui';
+import { VatMode } from '@reyogo/types';
 import { DataTable } from '@/components/DataTable';
 import type { ColumnDef } from '@/components/DataTable';
 import { cn } from '@reyogo/ui';
@@ -211,7 +212,7 @@ export function ItemsTable({
               id: crypto.randomUUID(),
               itemId,
               quantity: 0,
-              vatMode: 'exclusive' as const,
+              vatMode: VatMode.Exclusive,
               vatRate: 15,
               totalVatExclude: 0,
             }));

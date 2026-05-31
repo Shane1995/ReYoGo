@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { VatMode } from '@reyogo/types';
 import type { IEntity, IBusinessGroup } from '@reyogo/types';
 import { EntityProvider, useEntities } from '.';
 
@@ -10,7 +11,7 @@ const { mockEntities, mockGroup } = vi.hoisted(() => {
       groupId: 'g1',
       name: 'The Crown Pub',
       defaultVatRate: 15,
-      defaultVatMode: 'exclusive',
+      defaultVatMode: VatMode.Exclusive,
       archivedAt: null,
     },
   ];

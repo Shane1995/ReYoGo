@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { VatMode } from '@reyogo/types';
 import { loadDraft, saveDraft, clearDraft } from './index';
 
 const DRAFT_KEY = 'reyogo:invoice-draft';
@@ -15,7 +16,7 @@ describe('loadDraft', () => {
       lines: [],
       invoiceNumber: 'INV-001',
       invoiceDate: '2026-01-01',
-      vatMode: 'exclusive' as const,
+      vatMode: VatMode.Exclusive,
     };
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
     expect(loadDraft()).toEqual(draft);
@@ -33,7 +34,7 @@ describe('saveDraft', () => {
       lines: [],
       invoiceNumber: '',
       invoiceDate: '',
-      vatMode: 'exclusive' as const,
+      vatMode: VatMode.Exclusive,
     };
     saveDraft(draft);
     expect(JSON.parse(localStorage.getItem(DRAFT_KEY)!)).toEqual(draft);

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { VatMode } from '@reyogo/types';
 import type { IEntity } from '@reyogo/types';
 import AddInventoryPage from '.';
 
@@ -8,7 +9,7 @@ const entity1: IEntity = {
   groupId: 'g1',
   name: 'The Crown Pub',
   defaultVatRate: 15,
-  defaultVatMode: 'exclusive',
+  defaultVatMode: VatMode.Exclusive,
   archivedAt: null,
 };
 const entity2: IEntity = {
@@ -16,7 +17,7 @@ const entity2: IEntity = {
   groupId: 'g1',
   name: 'The Garden Bar',
   defaultVatRate: 15,
-  defaultVatMode: 'exclusive',
+  defaultVatMode: VatMode.Exclusive,
   archivedAt: null,
 };
 

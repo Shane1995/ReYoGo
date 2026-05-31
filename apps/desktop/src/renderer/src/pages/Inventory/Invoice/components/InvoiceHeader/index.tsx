@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { RotateCcwIcon } from 'lucide-react';
 import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
 import type { Supplier } from '@reyogo/types';
-import type { VatMode } from '../../types';
+import { VatMode } from '@reyogo/types';
 import { inputClass } from '../../utils/inputClass';
 import { cn } from '@reyogo/ui';
 import { useEntities } from '@/Context/EntityContext';
@@ -142,7 +142,7 @@ export function InvoiceHeader({
             value={vatMode}
             onChange={(e) => {
               const mode = e.target.value;
-              if (mode === 'exclusive' || mode === 'inclusive') onVatModeChange(mode);
+              if (mode === VatMode.Exclusive || mode === VatMode.Inclusive) onVatModeChange(mode);
             }}
             className={cn(inputClass, 'w-40')}
           >

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
-import type { IBusinessGroup, IEntity, VatMode } from '@reyogo/types';
+import { VatMode } from '@reyogo/types';
+import type { IBusinessGroup, IEntity } from '@reyogo/types';
 import type { DbClient } from '../../client';
 import * as schema from '../../schema';
 
@@ -55,7 +56,7 @@ export function createEntitiesRepo(db: DbClient) {
         groupId: input.groupId,
         name: input.name,
         defaultVatRate: 15,
-        defaultVatMode: 'exclusive',
+        defaultVatMode: VatMode.Exclusive,
         createdAt: new Date(),
       });
     },
@@ -121,7 +122,7 @@ export function createEntitiesRepo(db: DbClient) {
               groupId: groupRows[0].id,
               name,
               defaultVatRate: 15,
-              defaultVatMode: 'exclusive' as const,
+              defaultVatMode: VatMode.Exclusive,
               createdAt: new Date(),
             });
           }

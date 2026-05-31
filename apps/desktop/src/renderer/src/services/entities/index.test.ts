@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { VatMode } from '@reyogo/types';
 import { entitiesService } from '.';
 
 const mockInvoke = vi.fn();
@@ -53,8 +54,13 @@ describe('entitiesService', () => {
 
   it('updateEntityVat calls the correct channel', async () => {
     mockInvoke.mockResolvedValue(undefined);
-    await entitiesService.updateEntityVat('e1', 20, 'inclusive');
-    expect(mockInvoke).toHaveBeenCalledWith('entities:update-entity-vat', 'e1', 20, 'inclusive');
+    await entitiesService.updateEntityVat('e1', 20, VatMode.Inclusive);
+    expect(mockInvoke).toHaveBeenCalledWith(
+      'entities:update-entity-vat',
+      'e1',
+      20,
+      VatMode.Inclusive,
+    );
   });
 
   it('createEntity calls the correct channel', async () => {

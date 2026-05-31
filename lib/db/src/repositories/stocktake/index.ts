@@ -1,4 +1,5 @@
 import { desc, eq } from 'drizzle-orm';
+import { ReferenceType } from '@reyogo/types';
 import type {
   StocktakeSession,
   StocktakeLine,
@@ -130,7 +131,7 @@ export function createStocktakeRepo(db: DbClient) {
             movementType: 'ADJUSTMENT' as MovementType,
             qty: variance,
             stockQtyAfter: newQty,
-            referenceType: 'adjustment',
+            referenceType: ReferenceType.Adjustment,
             referenceId: payload.sessionId,
             notes: line.notes ?? null,
             occurredAt: completedAt,

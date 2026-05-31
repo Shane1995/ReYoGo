@@ -2,6 +2,7 @@ import { migrate } from 'drizzle-orm/libsql/migrator';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
+import { VatMode } from '@reyogo/types';
 import { createDbClient, type DbClient } from '../client';
 import * as schema from '../schema';
 
@@ -44,7 +45,7 @@ export async function createTestDb(): Promise<DbClient> {
       groupId: 'default-group',
       name: 'Test Entity',
       defaultVatRate: 15,
-      defaultVatMode: 'exclusive',
+      defaultVatMode: VatMode.Exclusive,
       createdAt: now,
     })
     .onConflictDoUpdate({ target: schema.entities.id, set: { name: 'Test Entity' } });
