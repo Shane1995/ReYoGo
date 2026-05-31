@@ -150,6 +150,26 @@ async function ensureDefaultAccount(db: DbClient): Promise<void> {
   }
 }
 
+export async function repairUomLinks(sourceDb: DbClient, targetDb: DbClient): Promise<void> {
+  const sourceItems = await sourceDb
+    .select({
+      id: schema.inventoryItems.id,
+      unitOfMeasureId: schema.inventoryItems.unitOfMeasureId,
+    })
+    .from(schema.inventoryItems)
+    .where(isNotNull(schema.inventoryItems.unitOfMeasureId));
+
+  for (const item of sourceItems) {
+    if (!item.unitOfMeasureId) continue;
+    await targetDb
+      .update(schema.inventoryItems)
+      .set({ unitOfMeasureId: item.unitOfMeasureId })
+      .where(
+        and(eq(schema.inventoryItems.id, item.id), isNull(schema.inventoryItems.unitOfMeasureId)),
+      );
+  }
+}
+
 export async function repairUomLinksIfNeeded(): Promise<void> {
   if (!isReplicaMode()) return;
   if (hasUomRepairRun()) return;
@@ -162,29 +182,19 @@ export async function repairUomLinksIfNeeded(): Promise<void> {
 
   const localHandle = createDbClient(`file:${localPath}`);
   try {
-    const db = getDb();
-
-    const sourceItems = await localHandle.db
-      .select({
-        id: schema.inventoryItems.id,
-        unitOfMeasureId: schema.inventoryItems.unitOfMeasureId,
-      })
-      .from(schema.inventoryItems)
-      .where(isNotNull(schema.inventoryItems.unitOfMeasureId));
-
-    for (const item of sourceItems) {
-      if (!item.unitOfMeasureId) continue;
-      await db
-        .update(schema.inventoryItems)
-        .set({ unitOfMeasureId: item.unitOfMeasureId })
-        .where(
-          and(eq(schema.inventoryItems.id, item.id), isNull(schema.inventoryItems.unitOfMeasureId)),
-        );
-    }
+    await repairUomLinks(localHandle.db, getDb());
   } finally {
     localHandle.close();
     markUomRepairDone();
   }
+}
+
+export function _setDbStateForTest(
+  handle: DbHandle | ReplicaHandle | null,
+  db: DbClient | null,
+): void {
+  _handle = handle;
+  _db = db;
 }
 
 export async function initDatabase(): Promise<void> {

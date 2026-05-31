@@ -19,6 +19,7 @@ const { mockExistsSync, mockUnlinkSync, store, makeTable, mockLocalDb, mockRemot
       insert: vi.fn(() => ({
         values: vi.fn(() => ({ onConflictDoNothing: vi.fn(() => Promise.resolve()) })),
       })),
+      delete: vi.fn(() => Promise.resolve()),
     };
 
     const mockLocalDb = {
