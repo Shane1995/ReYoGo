@@ -46,8 +46,7 @@ beforeEach(async () => {
   await db.insert(schema.inventoryItems).values([
     {
       id: 'item-1',
-      accountId: 'default',
-      entityId: 'default',
+      groupId: 'default-group',
       name: 'Flour',
       categoryId: 'cat-1',
       createdAt: new Date(),
@@ -55,8 +54,7 @@ beforeEach(async () => {
     },
     {
       id: 'item-2',
-      accountId: 'default',
-      entityId: 'default',
+      groupId: 'default-group',
       name: 'Sugar',
       categoryId: 'cat-1',
       createdAt: new Date(),

@@ -9,6 +9,7 @@ import type {
 import { InvoiceStatus } from '@reyogo/types';
 import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
+import { useEntities } from '@/Context/EntityContext';
 import { suppliersService } from '@/services/suppliers';
 import { invoiceService } from '@/services/invoice';
 import type { ProcessReceiptLine } from '../../../types';
@@ -32,6 +33,7 @@ export function useInvoiceHistory() {
   const [creditNoteSubmitting, setCreditNoteSubmitting] = useState(false);
 
   const { items } = useInventory();
+  const { entities } = useEntities();
   const navigate = useNavigate();
 
   const loadInvoices = useCallback(async () => {
@@ -58,12 +60,14 @@ export function useInvoiceHistory() {
     };
   }, [loadInvoices]);
 
+  const entityIds = entities.map((e) => e.id).join(',');
   useEffect(() => {
-    suppliersService
-      .getSuppliers()
-      .then((s) => setSuppliers(s ?? []))
+    if (!entities.length) return;
+    Promise.all(entities.map((e) => suppliersService.getSuppliers(e.id)))
+      .then((results) => setSuppliers(results.flat()))
       .catch(() => {});
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entityIds]);
 
   const getDetail = useCallback(
     async (id: string): Promise<ICapturedInvoiceWithLines | null> => {

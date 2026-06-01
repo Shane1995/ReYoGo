@@ -23,8 +23,8 @@ export function registerInvoicesHandlers(): void {
   ipcMain.handle(InvoicesIPC.GET_INVOICE, (_e, id: string) =>
     getRepos().invoices.getInvoiceById(id),
   );
-  ipcMain.handle(InvoicesIPC.GET_LINES_FOR_ANALYSIS, () =>
-    getRepos().invoices.getLinesForAnalysis(),
+  ipcMain.handle(InvoicesIPC.GET_LINES_FOR_ANALYSIS, (_e, entityId?: string) =>
+    getRepos().invoices.getLinesForAnalysis(entityId),
   );
   ipcMain.handle(InvoicesIPC.UPDATE_INVOICE, (_e, payload: IUpdateCapturedInvoicePayload) =>
     getRepos().invoices.updateInvoice(payload),

@@ -56,8 +56,9 @@ export default function InvoicePage() {
   } = useInvoiceForm();
 
   useEffect(() => {
-    suppliersService.getSuppliers().then((s) => setSuppliers(s));
-  }, []);
+    if (!entityId) return;
+    suppliersService.getSuppliers(entityId).then((s) => setSuppliers(s ?? []));
+  }, [entityId]);
 
   const sortedItems = useMemo(
     () => [...itemsWithCategory].sort((a, b) => a.name.localeCompare(b.name)),

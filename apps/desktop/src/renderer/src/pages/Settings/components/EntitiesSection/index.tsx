@@ -136,7 +136,7 @@ export function EntitiesSection({ entities, onSaved }: EntitiesSectionProps) {
               <Input
                 value={addingName}
                 onChange={(ev) => setAddingName(ev.target.value)}
-                placeholder="New venue name"
+                placeholder="New business name"
                 className="h-8 text-sm"
                 autoFocus
                 onKeyDown={(e) => {
@@ -163,7 +163,7 @@ export function EntitiesSection({ entities, onSaved }: EntitiesSectionProps) {
               onClick={() => setShowAdd(true)}
               className="w-full text-center text-sm text-muted-foreground border border-dashed border-border rounded-xl py-2 hover:text-primary hover:border-primary/40 transition-colors"
             >
-              + Add venue
+              + Add business
             </button>
           )}
         </div>

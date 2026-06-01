@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 import { Button } from '@reyogo/ui';
 import type { TypeValue, InventoryCategory, InventoryItem } from '../../types';
 import { cn } from '@reyogo/ui';
-import { useEntities } from '@/Context/EntityContext';
 
 const inputClass = cn(
   'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm',
@@ -18,37 +17,32 @@ type AddItemModalProps = {
 };
 
 export function AddItemModal({ open, onClose, categories, units, onSave }: AddItemModalProps) {
-  const { entities } = useEntities();
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [unitOfMeasure, setUnitOfMeasure] = useState('');
-  const [entityId, setEntityId] = useState('');
 
   const category = categories.find((c) => c.id === categoryId);
   const type: TypeValue = category?.type ?? '';
 
   const handleSave = useCallback(() => {
     const trimmed = name.trim();
-    if (!trimmed || !categoryId || !entityId) return;
+    if (!trimmed || !categoryId) return;
     onSave({
       name: trimmed,
       categoryId,
       type,
       unitOfMeasure: unitOfMeasure || undefined,
-      entityId,
     });
     setName('');
     setCategoryId('');
     setUnitOfMeasure('');
-    setEntityId('');
     onClose();
-  }, [name, categoryId, type, unitOfMeasure, entityId, onSave, onClose]);
+  }, [name, categoryId, type, unitOfMeasure, onSave, onClose]);
 
   const handleClose = useCallback(() => {
     setName('');
     setCategoryId('');
     setUnitOfMeasure('');
-    setEntityId('');
     onClose();
   }, [onClose]);
 
@@ -78,22 +72,6 @@ export function AddItemModal({ open, onClose, categories, units, onSave }: AddIt
               placeholder="Item name"
               autoFocus
             />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Belongs to</label>
-            <select
-              value={entityId}
-              onChange={(e) => setEntityId(e.target.value)}
-              className={cn(inputClass, 'cursor-pointer')}
-              required
-            >
-              <option value="">Select entity…</option>
-              {entities.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name}
-                </option>
-              ))}
-            </select>
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground">Category</label>
@@ -138,7 +116,7 @@ export function AddItemModal({ open, onClose, categories, units, onSave }: AddIt
             type="button"
             variant="success"
             onClick={handleSave}
-            disabled={!name.trim() || !categoryId || !entityId}
+            disabled={!name.trim() || !categoryId}
           >
             Save
           </Button>

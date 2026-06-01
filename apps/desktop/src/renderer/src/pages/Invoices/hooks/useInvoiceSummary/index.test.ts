@@ -24,7 +24,6 @@ const mockCategory: Category = {
 
 const mockItem: InventoryItem = {
   id: 'item-1',
-  entityId: 'entity-1',
   name: 'Chicken',
   categoryId: 'cat-1',
   unitOfMeasureId: null,

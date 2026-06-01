@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, lte } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, lte } from 'drizzle-orm';
 import { MovementType } from '@reyogo/types';
 import type { COGSSummary, ItemCostHistory, StockMovement } from '@reyogo/types';
 import type { DbClient } from '../../client';
@@ -6,42 +6,84 @@ import * as schema from '../../schema';
 
 export function createStockMovementsRepo(db: DbClient) {
   return {
-    async getCurrentStockByItem(): Promise<Record<string, number>> {
+    async getCurrentStockByItem(entityId?: string): Promise<Record<string, number>> {
       const rows = await db
         .select({
           inventoryItemId: schema.stockMovements.inventoryItemId,
+          entityId: schema.stockMovements.entityId,
           stockQtyAfter: schema.stockMovements.stockQtyAfter,
           occurredAt: schema.stockMovements.occurredAt,
         })
         .from(schema.stockMovements)
+        .where(entityId ? eq(schema.stockMovements.entityId, entityId) : undefined)
         .orderBy(asc(schema.stockMovements.occurredAt));
+
+      if (entityId) {
+        const result: Record<string, number> = {};
+        for (const row of rows) result[row.inventoryItemId] = row.stockQtyAfter;
+        return result;
+      }
+
+      const perEntityItem = new Map<string, number>();
+      for (const row of rows) {
+        perEntityItem.set(`${row.inventoryItemId}::${row.entityId}`, row.stockQtyAfter);
+      }
       const result: Record<string, number> = {};
-      for (const row of rows) result[row.inventoryItemId] = row.stockQtyAfter;
+      for (const [key, qty] of perEntityItem) {
+        const itemId = key.split('::')[0]!;
+        result[itemId] = (result[itemId] ?? 0) + qty;
+      }
       return result;
     },
 
-    async getWeightedAvgCosts(): Promise<Record<string, number | null>> {
+    async getWeightedAvgCosts(entityId?: string): Promise<Record<string, number | null>> {
+      const conditions = [eq(schema.stockMovements.movementType, MovementType.In)];
+      if (entityId) conditions.push(eq(schema.stockMovements.entityId, entityId));
+
       const rows = await db
         .select({
           inventoryItemId: schema.stockMovements.inventoryItemId,
+          entityId: schema.stockMovements.entityId,
           weightedAvgCostAfter: schema.stockMovements.weightedAvgCostAfter,
           occurredAt: schema.stockMovements.occurredAt,
         })
         .from(schema.stockMovements)
-        .where(eq(schema.stockMovements.movementType, MovementType.In))
+        .where(and(...conditions))
         .orderBy(asc(schema.stockMovements.occurredAt));
+
+      if (entityId) {
+        const result: Record<string, number | null> = {};
+        for (const row of rows) result[row.inventoryItemId] = row.weightedAvgCostAfter ?? null;
+        return result;
+      }
+
+      const latestWac = new Map<string, number | null>();
+      for (const row of rows) {
+        latestWac.set(`${row.inventoryItemId}::${row.entityId}`, row.weightedAvgCostAfter ?? null);
+      }
+      const itemWacs = new Map<string, (number | null)[]>();
+      for (const [key, wac] of latestWac) {
+        const itemId = key.split('::')[0]!;
+        const arr = itemWacs.get(itemId) ?? [];
+        arr.push(wac);
+        itemWacs.set(itemId, arr);
+      }
       const result: Record<string, number | null> = {};
-      for (const row of rows) result[row.inventoryItemId] = row.weightedAvgCostAfter ?? null;
+      for (const [itemId, wacs] of itemWacs) {
+        const allSame = wacs.every((w) => w === wacs[0]);
+        result[itemId] = allSame ? (wacs[0] ?? null) : null;
+      }
       return result;
     },
 
-    async getMovementsForItem(itemId: string): Promise<StockMovement[]> {
+    async getMovementsForItem(itemId: string, entityId?: string): Promise<StockMovement[]> {
+      const conditions = [eq(schema.stockMovements.inventoryItemId, itemId)];
+      if (entityId) conditions.push(eq(schema.stockMovements.entityId, entityId));
       const rows = await db
         .select()
         .from(schema.stockMovements)
-        .where(eq(schema.stockMovements.inventoryItemId, itemId))
-        .orderBy(schema.stockMovements.occurredAt);
-      rows.sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime());
+        .where(and(...conditions))
+        .orderBy(desc(schema.stockMovements.occurredAt), desc(schema.stockMovements.createdAt));
       return rows.map((r) => ({
         id: r.id,
         inventoryItemId: r.inventoryItemId,
@@ -51,7 +93,7 @@ export function createStockMovementsRepo(db: DbClient) {
         totalCost: r.totalCost ?? null,
         weightedAvgCostAfter: r.weightedAvgCostAfter ?? null,
         stockQtyAfter: r.stockQtyAfter,
-        referenceType: r.referenceType,
+        referenceType: r.referenceType ?? null,
         referenceId: r.referenceId ?? null,
         notes: r.notes ?? null,
         occurredAt: r.occurredAt,
@@ -59,8 +101,8 @@ export function createStockMovementsRepo(db: DbClient) {
       }));
     },
 
-    async getItemCostHistory(itemId: string): Promise<ItemCostHistory> {
-      const movements = await this.getMovementsForItem(itemId);
+    async getItemCostHistory(itemId: string, entityId?: string): Promise<ItemCostHistory> {
+      const movements = await this.getMovementsForItem(itemId, entityId);
       const latestIn = movements.find((m) => m.movementType === 'IN');
       const latest = movements.at(0);
       return {
@@ -87,7 +129,7 @@ export function createStockMovementsRepo(db: DbClient) {
         conditions.push(gte(schema.stockMovements.occurredAt, new Date(fromDate + 'T00:00:00')));
       if (toDate)
         conditions.push(lte(schema.stockMovements.occurredAt, new Date(toDate + 'T23:59:59')));
-      if (entityId) conditions.push(eq(schema.inventoryItems.entityId, entityId));
+      if (entityId) conditions.push(eq(schema.stockMovements.entityId, entityId));
 
       const rows = await db
         .select({

@@ -28,11 +28,11 @@ export function EntitiesStep({
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-[22px] font-bold tracking-[-0.03em] text-[#F8F9FA] mb-2">
-          Add your venues
+          Add your businesses
         </h1>
         <p className="text-[13px] text-white/40 leading-relaxed m-0">
-          Each venue is a separate legal trading entity. Invoices, stock, and costs are tracked per
-          venue. You need at least one.
+          Each business is a separate legal trading entity. Invoices, stock, and costs are tracked
+          per business. You need at least one.
         </p>
       </div>
 
@@ -40,14 +40,14 @@ export function EntitiesStep({
         {entityNames.map((name, i) => (
           <div key={i} className="flex flex-col gap-1">
             <span className="text-[10px] font-semibold tracking-[0.08em] uppercase text-white/25">
-              {`Venue ${i + 1}`}
+              {`Business ${i + 1}`}
             </span>
             <div className="flex gap-2 items-center">
               <input
                 className={inputCls}
                 value={name}
                 onChange={(e) => onNameChange(i, e.target.value)}
-                placeholder={`e.g. Venue ${i + 1}`}
+                placeholder={`e.g. Business ${i + 1}`}
                 autoFocus={i === entityNames.length - 1}
               />
               {entityNames.length > 1 && (
@@ -67,7 +67,7 @@ export function EntitiesStep({
           className="bg-transparent border border-dashed border-white/[0.12] rounded-[10px] px-4 py-[11px] text-white/30 text-[13px] font-sans cursor-pointer text-left transition-[border-color,color] duration-150 w-full hover:border-[rgba(32,201,151,0.4)] hover:text-[#20C997]"
           onClick={onAdd}
         >
-          + Add another venue
+          + Add another business
         </button>
       </div>
 

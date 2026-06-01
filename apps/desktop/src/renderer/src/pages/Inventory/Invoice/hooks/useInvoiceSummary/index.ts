@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { ProcessReceiptLine, VatMode } from '../../types';
 import { getProcessLineComputed } from '../../types';
 
-type ItemLike = { id: string; name: string; categoryId: string; entityId: string };
+type ItemLike = { id: string; name: string; categoryId: string };
 type CategoryLike = { id: string; name: string; type: string };
 
 export function useInvoiceSummary(

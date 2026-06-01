@@ -21,8 +21,7 @@ async function seedCategory(db: DbClient) {
 async function seedItem(db: DbClient, itemId: string, name = 'Item') {
   await db.insert(schema.inventoryItems).values({
     id: itemId,
-    accountId: 'default',
-    entityId: 'default',
+    groupId: 'default-group',
     name,
     categoryId: 'cat-1',
     createdAt: new Date(),
@@ -98,6 +97,64 @@ describe('createStockMovementsRepo', () => {
       const stock = await repo.getCurrentStockByItem();
       expect(stock['item-1']).toBe(4);
       expect(stock['item-2']).toBe(2);
+    });
+
+    it('per-entity: returns stock for that entity only', async () => {
+      await seedItem(db, 'item-1');
+      await db.insert(schema.entities).values({
+        id: 'entity-2',
+        groupId: 'default-group',
+        name: 'Entity 2',
+        createdAt: new Date(),
+      });
+      await seedMovement(db, {
+        id: 'mv-entity-a',
+        itemId: 'item-1',
+        qty: 10,
+        stockAfter: 10,
+        occurredAt: new Date('2024-01-01'),
+      });
+      await db.insert(schema.stockMovements).values({
+        id: 'mv-entity-b',
+        accountId: 'default',
+        entityId: 'entity-2',
+        inventoryItemId: 'item-1',
+        movementType: MovementType.In,
+        qty: 5,
+        stockQtyAfter: 5,
+        occurredAt: new Date('2024-01-02'),
+        createdAt: new Date(),
+      });
+      expect((await repo.getCurrentStockByItem('default'))['item-1']).toBe(10);
+    });
+
+    it('aggregate (no entityId): sums latest stock across entities', async () => {
+      await seedItem(db, 'item-1');
+      await db.insert(schema.entities).values({
+        id: 'entity-2',
+        groupId: 'default-group',
+        name: 'Entity 2',
+        createdAt: new Date(),
+      });
+      await seedMovement(db, {
+        id: 'mv-a',
+        itemId: 'item-1',
+        qty: 10,
+        stockAfter: 10,
+        occurredAt: new Date('2024-01-01'),
+      });
+      await db.insert(schema.stockMovements).values({
+        id: 'mv-b',
+        accountId: 'default',
+        entityId: 'entity-2',
+        inventoryItemId: 'item-1',
+        movementType: MovementType.In,
+        qty: 5,
+        stockQtyAfter: 5,
+        occurredAt: new Date('2024-01-02'),
+        createdAt: new Date(),
+      });
+      expect((await repo.getCurrentStockByItem())['item-1']).toBe(15);
     });
   });
 

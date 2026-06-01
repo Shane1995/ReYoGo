@@ -38,7 +38,9 @@ export function TaxSection({ entities, onSaved }: TaxSectionProps) {
       <SectionHeader label="Tax" />
       <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
         <div className="flex items-center gap-4 px-5 py-4">
-          <span className="text-sm text-muted-foreground w-48 shrink-0">VAT rate (all venues)</span>
+          <span className="text-sm text-muted-foreground w-48 shrink-0">
+            VAT rate (all businesses)
+          </span>
           <div className="flex items-center gap-1.5">
             <input
               value={vatRate}

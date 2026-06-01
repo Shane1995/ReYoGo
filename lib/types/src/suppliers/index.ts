@@ -10,6 +10,7 @@ export interface Supplier extends Timestamped {
 
 export interface UpsertSupplierPayload {
   id: string;
+  entityId: string;
   name: string;
   contactName?: string;
   phone?: string;
