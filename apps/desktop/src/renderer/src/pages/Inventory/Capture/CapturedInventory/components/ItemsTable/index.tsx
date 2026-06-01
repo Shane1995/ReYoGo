@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge, cn } from '@reyogo/ui';
 import { VatMode } from '@reyogo/types';
@@ -63,8 +63,16 @@ export function ItemsTable({
     clearSelection,
   } = useItemSelection({ filteredIds, onDelete });
 
-  const selectedIdsRef = useRef(selectedIds);
-  selectedIdsRef.current = selectedIds;
+  const sortCompareFns = useMemo(
+    () => ({
+      name: sortByName,
+      category: sortByCategory,
+      cost: sortByLastCost,
+      weightedAvgCost: sortByAvgCost,
+      stock: sortByStock,
+    }),
+    [],
+  );
 
   const handleAddToInvoice = useCallback(() => {
     const templateLines = [...selectedIds].map((itemId) => ({
@@ -91,7 +99,7 @@ export function ItemsTable({
         ),
         width: '40px',
         cell: (row) => {
-          const isChecked = selectedIdsRef.current.has(row.id);
+          const isChecked = selectedIds.has(row.id);
           return (
             <span
               className={cn(
@@ -219,6 +227,7 @@ export function ItemsTable({
       },
     ],
     [
+      selectedIds,
       allSelected,
       someSelected,
       toggleAll,
@@ -246,6 +255,7 @@ export function ItemsTable({
       <DataTable
         columns={columns}
         data={filteredItems}
+        compareFns={sortCompareFns}
         hideFilters
         rowKey={(row) => row.id}
         emptyMessage="No items match your filters."

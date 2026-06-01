@@ -12,6 +12,7 @@ export { FilterBar };
 type Props<T> = {
   columns: ColumnDef<T>[];
   data: T[];
+  compareFns?: Record<string, (a: T, b: T) => number>;
   filters?: FilterField[];
   filterValues?: FilterValues;
   onFilterChange?: (key: string, value: string | string[]) => void;
@@ -30,6 +31,7 @@ const alignClass = (align?: 'left' | 'right' | 'center') => {
 export function DataTable<T>({
   columns,
   data,
+  compareFns: compareFnsProp,
   filters = [],
   filterValues = {},
   onFilterChange,
@@ -38,15 +40,16 @@ export function DataTable<T>({
   emptyMessage = 'No items found.',
   rowKey,
 }: Props<T>) {
-  const compareFns = useMemo(() => {
+  const derivedCompareFns = useMemo(() => {
+    if (compareFnsProp) return compareFnsProp;
     const result: Record<string, (a: T, b: T) => number> = {};
     for (const col of columns) {
       if (col.sortFn) result[col.key] = col.sortFn;
     }
     return result;
-  }, [columns]);
+  }, [compareFnsProp, columns]);
 
-  const { sortedData, sortKey, sortDir, toggleSort } = useTableSort(data, compareFns);
+  const { sortedData, sortKey, sortDir, toggleSort } = useTableSort(data, derivedCompareFns);
 
   return (
     <div className="rounded-lg border border-[var(--nav-border)] overflow-hidden">

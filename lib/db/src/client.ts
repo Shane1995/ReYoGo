@@ -17,12 +17,20 @@ export function createDbClient(url: string, authToken?: string): DbHandle {
   return { db: drizzle(client, { schema }), close: () => client.close() };
 }
 
+const BACKGROUND_SYNC_INTERVAL_SECONDS = 5 * 60;
+
 export function createReplicaClient(
   replicaPath: string,
   syncUrl: string,
   authToken: string,
 ): ReplicaHandle {
-  const client = createClient({ url: `file:${replicaPath}`, syncUrl, authToken, offline: true });
+  const client = createClient({
+    url: `file:${replicaPath}`,
+    syncUrl,
+    authToken,
+    offline: true,
+    syncInterval: BACKGROUND_SYNC_INTERVAL_SECONDS,
+  });
   return {
     db: drizzle(client, { schema }),
     sync: () => client.sync().then(() => undefined),
