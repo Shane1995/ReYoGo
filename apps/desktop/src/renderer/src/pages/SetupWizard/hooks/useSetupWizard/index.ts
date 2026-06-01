@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { cloudSyncService } from '@/services/cloudSync';
 import { entitiesService } from '@/services/entities';
 
-export function useSetupWizard() {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+export function useSetupWizard({ initialStep = 1 }: { initialStep?: 1 | 2 } = {}) {
+  const [step, setStep] = useState<1 | 2 | 3>(initialStep);
 
   const [tursoUrl, setTursoUrl] = useState('');
   const [authToken, setAuthToken] = useState('');
@@ -15,18 +15,6 @@ export function useSetupWizard() {
   const [moreBusinesses, setMoreBusinesses] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-
-  useEffect(() => {
-    cloudSyncService.getStatus().then(async (status) => {
-      if (!status.isActive) return;
-      const { setupComplete } = await entitiesService.getSetupState();
-      if (setupComplete) {
-        window.location.reload();
-      } else {
-        setStep(2);
-      }
-    });
-  }, []);
 
   const connect = useCallback(async () => {
     if (!tursoUrl.trim() || !authToken.trim()) return;

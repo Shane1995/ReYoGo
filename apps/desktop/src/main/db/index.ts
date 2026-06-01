@@ -63,7 +63,7 @@ export function getLocalDbPath(): string {
 }
 
 export function getReplicaPath(): string {
-  return join(app.getPath('userData'), 'data', 'replica.db');
+  return join(getDataDir(), 'replica.db');
 }
 
 function getMigrationsFolder(): string {
@@ -91,6 +91,10 @@ function buildRepos(db: DbClient): Repos {
     setup: createSetupRepo(db),
     entities: createEntitiesRepo(db),
   };
+}
+
+export function isDbInitialized(): boolean {
+  return _repos !== null;
 }
 
 export function getRepos(): Repos {
@@ -132,7 +136,11 @@ function isPermanentSyncError(err: unknown): boolean {
 
 function isCorruptedReplicaError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
-  return msg.includes('database disk image is malformed');
+  return (
+    msg.includes('database disk image is malformed') ||
+    msg.includes('local state is incorrect') ||
+    msg.includes('metadata file exists but db file does not')
+  );
 }
 
 export const ACCOUNT_ID = 'default';
@@ -295,13 +303,7 @@ export async function initDatabase(): Promise<void> {
       }
     }
 
-    const dbPath = getDbPath();
-    const handle = createDbClient(`file:${dbPath}`);
-    _handle = handle;
-    _db = handle.db;
-    await migrate(handle.db, { migrationsFolder });
-    await ensureDefaultAccount(handle.db);
-    _repos = buildRepos(handle.db);
+    throw new Error('No cloud credentials found. Connect to Turso first.');
   } finally {
     _initialising = false;
   }
@@ -313,8 +315,8 @@ export async function reinitialise(
   authToken: string,
 ): Promise<void> {
   _reinitialising = true;
+  let handle: ReturnType<typeof createReplicaClient> | undefined;
   try {
-    let handle;
     try {
       handle = createReplicaClient(replicaPath, syncUrl, authToken);
     } catch {
@@ -328,6 +330,9 @@ export async function reinitialise(
     _handle = handle;
     _db = handle.db;
     _repos = buildRepos(handle.db);
+  } catch (err) {
+    handle?.close();
+    throw err;
   } finally {
     _reinitialising = false;
   }

@@ -1,16 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useSetupWizard } from '.';
 
 const mockConnect = vi.hoisted(() => vi.fn());
 const mockCompleteSetup = vi.hoisted(() => vi.fn());
 const mockGetSetupState = vi.hoisted(() => vi.fn());
-const mockGetStatus = vi.hoisted(() => vi.fn());
 
 vi.mock('@/services/cloudSync', () => ({
   cloudSyncService: {
     connect: mockConnect,
-    getStatus: mockGetStatus,
   },
 }));
 
@@ -32,35 +30,23 @@ describe('useSetupWizard', () => {
     mockConnect.mockReset();
     mockCompleteSetup.mockReset();
     mockGetSetupState.mockReset();
-    mockGetStatus.mockReset();
     mockReload.mockReset();
-    mockGetStatus.mockResolvedValue({ isActive: false });
     mockGetSetupState.mockResolvedValue({ setupComplete: false });
   });
 
-  it('starts on step 1 when cloud is not active', async () => {
+  it('starts on step 1 by default', () => {
     const { result } = renderHook(() => useSetupWizard());
-    await waitFor(() => expect(mockGetStatus).toHaveBeenCalled());
     expect(result.current.step).toBe(1);
   });
 
-  it('starts on step 2 when cloud is active and setup is not complete', async () => {
-    mockGetStatus.mockResolvedValue({ isActive: true });
-    const { result } = renderHook(() => useSetupWizard());
-    await waitFor(() => expect(result.current.step).toBe(2));
-  });
-
-  it('reloads immediately when cloud is active and setup is already complete', async () => {
-    mockGetStatus.mockResolvedValue({ isActive: true });
-    mockGetSetupState.mockResolvedValue({ setupComplete: true });
-    renderHook(() => useSetupWizard());
-    await waitFor(() => expect(mockReload).toHaveBeenCalled());
+  it('starts on step 2 when initialStep is 2', () => {
+    const { result } = renderHook(() => useSetupWizard({ initialStep: 2 }));
+    expect(result.current.step).toBe(2);
   });
 
   it('connect advances to step 2 when setup is not complete', async () => {
     mockConnect.mockResolvedValue(undefined);
     const { result } = renderHook(() => useSetupWizard());
-    await waitFor(() => expect(mockGetStatus).toHaveBeenCalled());
     act(() => result.current.setTursoUrl('libsql://my-db.turso.io'));
     act(() => result.current.setAuthToken('tok123'));
     await act(() => result.current.connect());
@@ -72,7 +58,6 @@ describe('useSetupWizard', () => {
     mockConnect.mockResolvedValue(undefined);
     mockGetSetupState.mockResolvedValue({ setupComplete: true });
     const { result } = renderHook(() => useSetupWizard());
-    await waitFor(() => expect(mockGetStatus).toHaveBeenCalled());
     act(() => result.current.setTursoUrl('libsql://my-db.turso.io'));
     act(() => result.current.setAuthToken('tok123'));
     await act(() => result.current.connect());
@@ -83,7 +68,6 @@ describe('useSetupWizard', () => {
   it('connect sets connectError on failure without advancing', async () => {
     mockConnect.mockRejectedValue(new Error('Auth failed'));
     const { result } = renderHook(() => useSetupWizard());
-    await waitFor(() => expect(mockGetStatus).toHaveBeenCalled());
     act(() => result.current.setTursoUrl('libsql://my-db.turso.io'));
     act(() => result.current.setAuthToken('bad-tok'));
     await act(() => result.current.connect());
@@ -91,27 +75,21 @@ describe('useSetupWizard', () => {
     expect(result.current.step).toBe(1);
   });
 
-  it('next advances to step 3 when business name is set', async () => {
-    mockGetStatus.mockResolvedValue({ isActive: true });
-    const { result } = renderHook(() => useSetupWizard());
-    await waitFor(() => expect(result.current.step).toBe(2));
+  it('next advances to step 3 when business name is set', () => {
+    const { result } = renderHook(() => useSetupWizard({ initialStep: 2 }));
     act(() => result.current.setBusinessName('The Crown Pub'));
     act(() => result.current.next());
     expect(result.current.step).toBe(3);
   });
 
-  it('next does not advance when business name is empty', async () => {
-    mockGetStatus.mockResolvedValue({ isActive: true });
-    const { result } = renderHook(() => useSetupWizard());
-    await waitFor(() => expect(result.current.step).toBe(2));
+  it('next does not advance when business name is empty', () => {
+    const { result } = renderHook(() => useSetupWizard({ initialStep: 2 }));
     act(() => result.current.next());
     expect(result.current.step).toBe(2);
   });
 
-  it('back returns from step 3 to step 2', async () => {
-    mockGetStatus.mockResolvedValue({ isActive: true });
-    const { result } = renderHook(() => useSetupWizard());
-    await waitFor(() => expect(result.current.step).toBe(2));
+  it('back returns from step 3 to step 2', () => {
+    const { result } = renderHook(() => useSetupWizard({ initialStep: 2 }));
     act(() => result.current.setBusinessName('The Crown Pub'));
     act(() => result.current.next());
     act(() => result.current.back());

@@ -5,12 +5,14 @@ import {
   DB_REQUEST_READY_CHANNEL,
   DB_INIT_ERROR_CHANNEL,
   DB_AUTH_ERROR_CHANNEL,
+  DB_SETUP_NEEDED_CHANNEL,
   CLOUD_SYNC_EVENT_CHANNEL,
 } from '@shared/ipc-events';
 import { CloudSyncEventType } from '@shared/types/cloudSync';
 import {
   getDbReadyChannel,
   initDatabase,
+  isDbInitialized,
   repairUomLinksIfNeeded,
   syncNow,
   isReplicaMode,
@@ -19,6 +21,7 @@ import {
   wipeReplicaFiles,
 } from './db';
 import {
+  hasCloudCredentials,
   recordSyncSuccess,
   recordSyncError,
   markOffline,
@@ -127,9 +130,30 @@ app.whenReady().then(() => {
   }
 
   let dbReady = false;
+  let dbSetupNeeded = false;
   let dbError: string | null = null;
   let dbAuthError: string | null = null;
+  let bgSyncStarted = false;
   let pendingSender: Electron.WebContents | null = null;
+
+  const startBackgroundSync = () => {
+    if (bgSyncStarted || !isReplicaMode()) return;
+    bgSyncStarted = true;
+    const interval = setInterval(runBackgroundSync, BACKGROUND_SYNC_INTERVAL_MS);
+    app.once('will-quit', () => clearInterval(interval));
+    app.on('browser-window-focus', runBackgroundSync);
+  };
+
+  const onDbReady = () => {
+    if (isReplicaMode() && !net.isOnline()) markOffline();
+    dbReady = true;
+    dbSetupNeeded = false;
+    trySendDbReady();
+    repairUomLinksIfNeeded().catch((err) => {
+      console.error('[ReYoGo] UoM repair failed:', err);
+    });
+    startBackgroundSync();
+  };
 
   const trySendDbReady = () => {
     if (!pendingSender || pendingSender.isDestroyed()) return;
@@ -141,7 +165,9 @@ app.whenReady().then(() => {
           ? [DB_INIT_ERROR_CHANNEL, dbError]
           : dbReady
             ? [getDbReadyChannel()]
-            : null;
+            : dbSetupNeeded
+              ? [DB_SETUP_NEEDED_CHANNEL]
+              : null;
 
     if (!signal) return;
     pendingSender.send(...signal);
@@ -150,35 +176,33 @@ app.whenReady().then(() => {
 
   ipcMain.on(DB_REQUEST_READY_CHANNEL, (event) => {
     pendingSender = event.sender;
+    // Renderer reloaded after wizard connect — reinitialise() already ran, signal ready
+    if (!dbReady && isDbInitialized()) {
+      onDbReady();
+      return;
+    }
     trySendDbReady();
   });
 
-  initDatabase()
-    .then(() => {
-      if (isReplicaMode() && !net.isOnline()) {
-        markOffline();
-      }
-      dbReady = true;
-      trySendDbReady();
-      repairUomLinksIfNeeded().catch((err) => {
-        console.error('[ReYoGo] UoM repair failed:', err);
+  if (!hasCloudCredentials()) {
+    dbSetupNeeded = true;
+    trySendDbReady();
+  } else {
+    initDatabase()
+      .then(onDbReady)
+      .catch((err) => {
+        console.error('[ReYoGo] Failed to initialize database:', err);
+        const isAuthError = (err as { isCloudAuthError?: boolean }).isCloudAuthError === true;
+        if (isAuthError) {
+          // initDatabase already cleared credentials — treat as setup needed so the
+          // wizard appears and the user can reconnect with a fresh token.
+          dbSetupNeeded = true;
+        } else {
+          dbError = err instanceof Error ? err.message : String(err);
+        }
+        trySendDbReady();
       });
-      if (isReplicaMode()) {
-        const interval = setInterval(runBackgroundSync, BACKGROUND_SYNC_INTERVAL_MS);
-        app.once('will-quit', () => clearInterval(interval));
-        app.on('browser-window-focus', runBackgroundSync);
-      }
-    })
-    .catch((err) => {
-      console.error('[ReYoGo] Failed to initialize database:', err);
-      const isAuthError = (err as { isCloudAuthError?: boolean }).isCloudAuthError === true;
-      if (isAuthError) {
-        dbAuthError = err instanceof Error ? err.message : String(err);
-      } else {
-        dbError = err instanceof Error ? err.message : String(err);
-      }
-      trySendDbReady();
-    });
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

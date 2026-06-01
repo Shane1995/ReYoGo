@@ -270,13 +270,14 @@ export function recordSyncError(message: string): void {
 }
 
 const SYNC_TIMEOUT_MS = 15_000;
+const INITIAL_SYNC_TIMEOUT_MS = 3 * 60 * 1000; // 3 min — first sync downloads all data
 
-export function withSyncTimeout<T>(promise: Promise<T>): Promise<T> {
+export { INITIAL_SYNC_TIMEOUT_MS };
+
+export function withSyncTimeout<T>(promise: Promise<T>, ms = SYNC_TIMEOUT_MS): Promise<T> {
   return Promise.race([
     promise,
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Sync timed out')), SYNC_TIMEOUT_MS),
-    ),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Sync timed out')), ms)),
   ]);
 }
 

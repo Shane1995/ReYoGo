@@ -1,8 +1,5 @@
 import { ipcMain } from 'electron';
-import { randomUUID } from 'crypto';
-import { join, dirname } from 'path';
 import { CloudSyncIPC } from '@shared/types/ipc';
-import { createReplicaClient } from '@reyogo/db';
 import { getDb, getLocalDbPath, getReplicaPath, reinitialise, wipeReplicaFiles } from '../../db';
 import {
   activateCloudSync,
@@ -18,6 +15,7 @@ import {
   saveCredentials,
   updateStoredToken,
   withSyncTimeout,
+  INITIAL_SYNC_TIMEOUT_MS,
 } from '../../db/cloudSync';
 
 export function registerSettingsHandlers(): void {
@@ -75,31 +73,40 @@ export function registerSettingsHandlers(): void {
     if (!tursoUrl.startsWith('libsql://')) {
       throw new Error('Invalid URL — must start with libsql://');
     }
-    const probePath = join(dirname(getReplicaPath()), `probe-${randomUUID()}.db`);
-    let handle;
-    try {
-      handle = createReplicaClient(probePath, tursoUrl, authToken);
-      await withSyncTimeout(handle.sync());
-    } catch (err) {
-      handle?.close();
-      wipeReplicaFiles(probePath);
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes('401') || msg.includes('auth')) {
-        throw new Error('Authentication failed — check your auth token.');
-      }
-      if (msg.includes('404')) {
-        throw new Error('Database not found — check your URL.');
-      }
-      throw new Error('Could not connect to the database. Check your URL and token.');
-    }
-    handle.close();
-    wipeReplicaFiles(probePath);
+    const replicaPath = getReplicaPath();
+    wipeReplicaFiles(replicaPath);
     saveCredentials(tursoUrl, authToken);
     try {
-      await reinitialise(getReplicaPath(), tursoUrl, authToken);
-    } catch {
+      await withSyncTimeout(
+        reinitialise(replicaPath, tursoUrl, authToken),
+        INITIAL_SYNC_TIMEOUT_MS,
+      );
+    } catch (err) {
       clearCredentials();
-      throw new Error('Could not initialise the database. Please try again.');
+      wipeReplicaFiles(replicaPath);
+      const raw = err instanceof Error ? err.message : String(err);
+      const code = (err as { code?: string }).code ?? '';
+      console.error(`[ReYoGo] CONNECT failed (code=${code}):`, err);
+      const haystack = (raw + ' ' + code).toLowerCase();
+      if (
+        haystack.includes('401') ||
+        haystack.includes('auth') ||
+        haystack.includes('forbidden') ||
+        haystack.includes('unauthorized')
+      ) {
+        throw new Error('Authentication failed — check your auth token.');
+      }
+      if (haystack.includes('404') || haystack.includes('not found')) {
+        throw new Error('Database not found — check your URL.');
+      }
+      if (
+        haystack.includes('timed out') ||
+        haystack.includes('timeout') ||
+        haystack.includes('deadline')
+      ) {
+        throw new Error('Connection timed out — the database took too long to sync. Try again.');
+      }
+      throw new Error(`Could not connect to the database: ${raw}${code ? ` [${code}]` : ''}`);
     }
   });
 

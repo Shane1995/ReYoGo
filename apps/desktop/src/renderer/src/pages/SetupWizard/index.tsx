@@ -5,8 +5,8 @@ import { MoreBusinessesStep } from './components/MoreBusinessesStep';
 
 const STEP_LABELS = ['Connect', 'Your business', 'More businesses'];
 
-export default function SetupWizard() {
-  const wizard = useSetupWizard();
+export default function SetupWizard({ initialStep = 1 }: { initialStep?: 1 | 2 }) {
+  const wizard = useSetupWizard({ initialStep });
 
   return (
     <div className="fixed inset-0 flex bg-[#0D1117] font-sans antialiased">
