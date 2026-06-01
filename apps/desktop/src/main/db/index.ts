@@ -135,19 +135,50 @@ function isCorruptedReplicaError(err: unknown): boolean {
   return msg.includes('database disk image is malformed');
 }
 
+export const ACCOUNT_ID = 'default';
+
 async function ensureDefaultAccount(db: DbClient): Promise<void> {
   const existing = await db
     .select()
     .from(schema.accounts)
-    .where(eq(schema.accounts.id, 'default'))
+    .where(eq(schema.accounts.id, ACCOUNT_ID))
     .limit(1);
 
   if (!existing[0]) {
     const ts = new Date();
-    await db
-      .insert(schema.accounts)
-      .values({ id: 'default', name: 'Default', isCurrent: true, createdAt: ts, updatedAt: ts });
+    await db.insert(schema.accounts).values({
+      id: ACCOUNT_ID,
+      name: 'Default',
+      isCurrent: true,
+      createdAt: ts,
+      updatedAt: ts,
+    });
   }
+}
+
+export async function resolveCurrentIds(): Promise<{ groupId: string; entityId: string }> {
+  const db = getDb();
+
+  const groupRows = await db
+    .select({ id: schema.businessGroups.id })
+    .from(schema.businessGroups)
+    .where(eq(schema.businessGroups.accountId, ACCOUNT_ID))
+    .limit(1);
+
+  const groupId = groupRows[0]?.id;
+  if (!groupId) throw new Error('No business group found — setup not complete');
+
+  const entityRows = await db
+    .select({ id: schema.entities.id })
+    .from(schema.entities)
+    .where(eq(schema.entities.groupId, groupId))
+    .orderBy(schema.entities.createdAt)
+    .limit(1);
+
+  const entityId = entityRows[0]?.id;
+  if (!entityId) throw new Error('No entity found — setup not complete');
+
+  return { groupId, entityId };
 }
 
 export async function repairUomLinks(sourceDb: DbClient, targetDb: DbClient): Promise<void> {
