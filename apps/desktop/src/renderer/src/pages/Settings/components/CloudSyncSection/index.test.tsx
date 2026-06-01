@@ -9,7 +9,7 @@ vi.mock('@/services/cloudSync', () => ({
     getCredentials: vi.fn().mockResolvedValue(null),
     activate: vi.fn(),
     manualSync: vi.fn(),
-    deleteBackup: vi.fn(),
+    connect: vi.fn(),
     onSyncEvent: vi.fn(() => () => {}),
     isFreshReplica: vi.fn().mockResolvedValue(false),
   },

@@ -44,7 +44,7 @@ export interface IPCInvokeMap {
   'invoices:get-invoices': { args: []; return: IInvoice[] };
   'invoices:get-invoices-with-lines': { args: []; return: IInvoiceWithLines[] };
   'invoices:get-invoice': { args: [id: string]; return: IInvoiceWithLines | null };
-  'invoices:get-lines-for-analysis': { args: []; return: InvoiceLineWithDate[] };
+  'invoices:get-lines-for-analysis': { args: [entityId?: string]; return: InvoiceLineWithDate[] };
   'invoices:update-invoice': { args: [payload: IUpdateCapturedInvoicePayload]; return: void };
   'invoices:update-invoice-metadata': {
     args: [payload: IUpdateCapturedInvoiceMetadataPayload];
@@ -57,9 +57,18 @@ export interface IPCInvokeMap {
     args: [sourceInvoiceId: string];
     return: IInvoiceWithLines[];
   };
-  'stock-movements:get-current-stock': { args: []; return: Record<string, number> };
-  'stock-movements:get-weighted-avg-costs': { args: []; return: Record<string, number | null> };
-  'stock-movements:get-item-cost-history': { args: [itemId: string]; return: ItemCostHistory };
+  'stock-movements:get-current-stock': {
+    args: [entityId?: string];
+    return: Record<string, number>;
+  };
+  'stock-movements:get-weighted-avg-costs': {
+    args: [entityId?: string];
+    return: Record<string, number | null>;
+  };
+  'stock-movements:get-item-cost-history': {
+    args: [itemId: string, entityId?: string];
+    return: ItemCostHistory;
+  };
   'stock-movements:get-cogs': {
     args: [fromDate?: string, toDate?: string, entityId?: string];
     return: COGSSummary;
@@ -72,7 +81,7 @@ export interface IPCInvokeMap {
   'setup:hard-delete-unit': { args: [id: string]; return: void };
   'setup:get-unit-usage-count': { args: [id: string]; return: number };
   'setup:get-archived-units': { args: []; return: UnitOfMeasure[] };
-  'suppliers:get-suppliers': { args: []; return: Supplier[] };
+  'suppliers:get-suppliers': { args: [entityId: string]; return: Supplier[] };
   'suppliers:upsert-supplier': { args: [payload: UpsertSupplierPayload]; return: void };
   'suppliers:delete-supplier': { args: [id: string]; return: void };
   'shell:save-file': { args: [payload: { filename: string; data: number[] }]; return: string };

@@ -56,8 +56,9 @@ export default function InvoicePage() {
   } = useInvoiceForm();
 
   useEffect(() => {
-    suppliersService.getSuppliers().then((s) => setSuppliers(s));
-  }, []);
+    if (!entityId) return;
+    suppliersService.getSuppliers(entityId).then((s) => setSuppliers(s ?? []));
+  }, [entityId]);
 
   const sortedItems = useMemo(
     () => [...itemsWithCategory].sort((a, b) => a.name.localeCompare(b.name)),
@@ -115,6 +116,7 @@ export default function InvoicePage() {
                   <InvoiceLineRow
                     key={line.id}
                     line={line}
+                    index={i}
                     vatMode={vatMode}
                     vatRate={selectedEntity?.defaultVatRate ?? 0}
                     isExpanded={expandedResultLineIds.has(line.id)}

@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, PageHeader, DateRangePicker, cn } from '@reyogo/ui';
 import { InvoiceStatus } from '@reyogo/types';
@@ -20,8 +20,28 @@ import { formatDate } from '../utils/formatDate';
 import { formatMoney } from '../utils/formatMoney';
 import { invoiceTotals } from '../utils/invoiceTotals';
 import type { ICapturedInvoice } from '@reyogo/types';
+import { useTableSort } from '@/hooks/useTableSort';
+import { SortIndicator } from '@/components/DataTable/SortIndicator';
 
 const COLUMN_COUNT = 10;
+
+const sortByInvoiceNumber = (a: ICapturedInvoice, b: ICapturedInvoice) =>
+  a.invoiceNumber.localeCompare(b.invoiceNumber);
+
+const sortByDate = (a: ICapturedInvoice, b: ICapturedInvoice) => {
+  const aDate = (a.invoiceDate ?? a.createdAt).getTime();
+  const bDate = (b.invoiceDate ?? b.createdAt).getTime();
+  return aDate - bDate;
+};
+
+const sortByStatus = (a: ICapturedInvoice, b: ICapturedInvoice) => a.status.localeCompare(b.status);
+
+const sortByLastEdited = (a: ICapturedInvoice, b: ICapturedInvoice) => {
+  if (!a.updatedAt && !b.updatedAt) return 0;
+  if (!a.updatedAt) return 1;
+  if (!b.updatedAt) return -1;
+  return a.updatedAt.getTime() - b.updatedAt.getTime();
+};
 
 const fieldLabel =
   'text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 mb-1 block';
@@ -68,7 +88,62 @@ export default function InvoiceHistoryPage() {
   const drafts = visibleInvoices.filter((inv) => inv.status === InvoiceStatus.Draft);
   const posted = visibleInvoices.filter((inv) => inv.status !== InvoiceStatus.Draft);
 
-  const renderRow = (inv: ICapturedInvoice) => {
+  const compareFns = useMemo(
+    () => ({
+      invoiceNumber: sortByInvoiceNumber,
+      date: sortByDate,
+      status: sortByStatus,
+      lastEdited: sortByLastEdited,
+      lines: (a: ICapturedInvoice, b: ICapturedInvoice) => {
+        const aLines = detailCache[a.id]?.lines.length ?? null;
+        const bLines = detailCache[b.id]?.lines.length ?? null;
+        if (aLines == null && bLines == null) return 0;
+        if (aLines == null) return 1;
+        if (bLines == null) return -1;
+        return aLines - bLines;
+      },
+      excl: (a: ICapturedInvoice, b: ICapturedInvoice) => {
+        const aDetail = detailCache[a.id];
+        const bDetail = detailCache[b.id];
+        if (!aDetail && !bDetail) return 0;
+        if (!aDetail) return 1;
+        if (!bDetail) return -1;
+        return invoiceTotals(aDetail).excl - invoiceTotals(bDetail).excl;
+      },
+    }),
+    [detailCache],
+  );
+
+  const {
+    sortedData: sortedPosted,
+    sortKey,
+    sortDir,
+    toggleSort,
+  } = useTableSort(posted, compareFns);
+
+  const renderSortHead = (key: string, label: string, className?: string) => {
+    const isActive = sortKey === key;
+    return (
+      <TableHead
+        className={cn(
+          'text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70',
+          className,
+        )}
+      >
+        <Button
+          variant="ghost"
+          size="sm"
+          className="-mx-2 h-auto py-0 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 hover:text-foreground hover:bg-transparent gap-0"
+          onClick={() => toggleSort(key)}
+        >
+          {label}
+          <SortIndicator active={isActive} dir={isActive ? sortDir : null} />
+        </Button>
+      </TableHead>
+    );
+  };
+
+  const renderRow = (inv: ICapturedInvoice, rowIndex: number) => {
     const mode = rowMode[inv.id]?.kind ?? RowModeKind.View;
     const detail = detailCache[inv.id];
     const totals = detail ? invoiceTotals(detail) : null;
@@ -92,6 +167,7 @@ export default function InvoiceHistoryPage() {
               ? 'bg-amber-50/60 hover:bg-amber-100/60 dark:bg-amber-950/20 dark:hover:bg-amber-900/20'
               : 'hover:bg-muted/20',
             isExpanded && !isDraft && 'bg-muted/20',
+            !isDraft && !isExpanded && rowIndex % 2 !== 0 && 'bg-black/[0.025]',
           )}
           onClick={() => handleExpandDetail(inv.id)}
         >
@@ -338,30 +414,18 @@ export default function InvoiceHistoryPage() {
               <TableHeader>
                 <TableRow className="bg-muted/30 hover:bg-muted/30">
                   <TableHead className="w-8 p-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70" />
-                  <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70">
-                    Invoice #
-                  </TableHead>
-                  <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70">
-                    Date
-                  </TableHead>
-                  <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 w-14 text-right">
-                    Lines
-                  </TableHead>
-                  <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 w-28 text-right">
-                    Excl.
-                  </TableHead>
+                  {renderSortHead('invoiceNumber', 'Invoice #')}
+                  {renderSortHead('date', 'Date')}
+                  {renderSortHead('lines', 'Lines', 'w-14')}
+                  {renderSortHead('excl', 'Excl.', 'w-28')}
                   <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 w-24 text-right">
                     VAT
                   </TableHead>
                   <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 w-28 text-right">
                     Total
                   </TableHead>
-                  <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 w-24">
-                    Status
-                  </TableHead>
-                  <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 w-36">
-                    Last edited
-                  </TableHead>
+                  {renderSortHead('status', 'Status', 'w-24')}
+                  {renderSortHead('lastEdited', 'Last edited', 'w-36')}
                   <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>
@@ -382,7 +446,7 @@ export default function InvoiceHistoryPage() {
                   </TableRow>
                 )}
 
-                {drafts.map(renderRow)}
+                {drafts.map((inv, i) => renderRow(inv, i))}
 
                 {drafts.length > 0 && posted.length > 0 && (
                   <TableRow className="hover:bg-transparent h-px">
@@ -390,7 +454,7 @@ export default function InvoiceHistoryPage() {
                   </TableRow>
                 )}
 
-                {posted.map(renderRow)}
+                {sortedPosted.map((inv, i) => renderRow(inv, i))}
               </TableBody>
             </Table>
           </div>

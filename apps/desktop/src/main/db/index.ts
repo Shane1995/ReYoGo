@@ -22,7 +22,6 @@ import {
   hasCloudCredentials,
   getStoredCredentials,
   clearCredentials,
-  recordSyncError,
   hasEverSynced,
   hasUomRepairRun,
   markUomRepairDone,
@@ -63,7 +62,7 @@ export function getLocalDbPath(): string {
 }
 
 export function getReplicaPath(): string {
-  return join(app.getPath('userData'), 'data', 'replica.db');
+  return join(getDataDir(), 'replica.db');
 }
 
 function getMigrationsFolder(): string {
@@ -91,6 +90,10 @@ function buildRepos(db: DbClient): Repos {
     setup: createSetupRepo(db),
     entities: createEntitiesRepo(db),
   };
+}
+
+export function isDbInitialized(): boolean {
+  return _repos !== null;
 }
 
 export function getRepos(): Repos {
@@ -132,22 +135,57 @@ function isPermanentSyncError(err: unknown): boolean {
 
 function isCorruptedReplicaError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
-  return msg.includes('database disk image is malformed');
+  return (
+    msg.includes('database disk image is malformed') ||
+    msg.includes('local state is incorrect') ||
+    msg.includes('metadata file exists but db file does not')
+  );
 }
+
+export const ACCOUNT_ID = 'default';
 
 async function ensureDefaultAccount(db: DbClient): Promise<void> {
   const existing = await db
     .select()
     .from(schema.accounts)
-    .where(eq(schema.accounts.id, 'default'))
+    .where(eq(schema.accounts.id, ACCOUNT_ID))
     .limit(1);
 
   if (!existing[0]) {
     const ts = new Date();
-    await db
-      .insert(schema.accounts)
-      .values({ id: 'default', name: 'Default', isCurrent: true, createdAt: ts, updatedAt: ts });
+    await db.insert(schema.accounts).values({
+      id: ACCOUNT_ID,
+      name: 'Default',
+      isCurrent: true,
+      createdAt: ts,
+      updatedAt: ts,
+    });
   }
+}
+
+export async function resolveCurrentIds(): Promise<{ groupId: string; entityId: string }> {
+  const db = getDb();
+
+  const groupRows = await db
+    .select({ id: schema.businessGroups.id })
+    .from(schema.businessGroups)
+    .where(eq(schema.businessGroups.accountId, ACCOUNT_ID))
+    .limit(1);
+
+  const groupId = groupRows[0]?.id;
+  if (!groupId) throw new Error('No business group found — setup not complete');
+
+  const entityRows = await db
+    .select({ id: schema.entities.id })
+    .from(schema.entities)
+    .where(eq(schema.entities.groupId, groupId))
+    .orderBy(schema.entities.createdAt)
+    .limit(1);
+
+  const entityId = entityRows[0]?.id;
+  if (!entityId) throw new Error('No entity found — setup not complete');
+
+  return { groupId, entityId };
 }
 
 export async function repairUomLinks(sourceDb: DbClient, targetDb: DbClient): Promise<void> {
@@ -217,8 +255,7 @@ export async function initDatabase(): Promise<void> {
           handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
         }
 
-        const boot = async (h: typeof handle) => {
-          await withSyncTimeout(h.sync());
+        const activate = async (h: typeof handle) => {
           await migrate(h.db, { migrationsFolder });
           await ensureDefaultAccount(h.db);
           _handle = h;
@@ -226,8 +263,34 @@ export async function initDatabase(): Promise<void> {
           _repos = buildRepos(h.db);
         };
 
+        const bootFresh = async (h: typeof handle) => {
+          await withSyncTimeout(h.sync());
+          await activate(h);
+        };
+
+        if (canBootOffline) {
+          // Existing replica: open immediately from local data, sync in background via syncInterval
+          try {
+            await activate(handle);
+            return;
+          } catch (bootErr) {
+            if (isCorruptedReplicaError(bootErr)) {
+              handle.close();
+              wipeReplicaFiles(replicaPath);
+              handle = createReplicaClient(
+                replicaPath,
+                credentials.tursoUrl,
+                credentials.authToken,
+              );
+              await bootFresh(handle);
+              return;
+            }
+            throw bootErr;
+          }
+        }
+
         try {
-          await boot(handle);
+          await bootFresh(handle);
           return;
         } catch (bootErr) {
           if (isPermanentSyncError(bootErr)) {
@@ -243,34 +306,20 @@ export async function initDatabase(): Promise<void> {
             handle.close();
             wipeReplicaFiles(replicaPath);
             handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
-            await boot(handle);
+            await bootFresh(handle);
             return;
-          } else if (!canBootOffline) {
+          } else {
             handle.close();
             wipeReplicaFiles(replicaPath);
             throw new Error(
               'Could not connect to cloud database. Check your internet connection and relaunch.',
             );
-          } else {
-            recordSyncError(bootErr instanceof Error ? bootErr.message : String(bootErr));
-            await migrate(handle.db, { migrationsFolder });
-            await ensureDefaultAccount(handle.db);
-            _handle = handle;
-            _db = handle.db;
-            _repos = buildRepos(handle.db);
-            return;
           }
         }
       }
     }
 
-    const dbPath = getDbPath();
-    const handle = createDbClient(`file:${dbPath}`);
-    _handle = handle;
-    _db = handle.db;
-    await migrate(handle.db, { migrationsFolder });
-    await ensureDefaultAccount(handle.db);
-    _repos = buildRepos(handle.db);
+    throw new Error('No cloud credentials found. Connect to Turso first.');
   } finally {
     _initialising = false;
   }
@@ -282,8 +331,8 @@ export async function reinitialise(
   authToken: string,
 ): Promise<void> {
   _reinitialising = true;
+  let handle: ReturnType<typeof createReplicaClient> | undefined;
   try {
-    let handle;
     try {
       handle = createReplicaClient(replicaPath, syncUrl, authToken);
     } catch {
@@ -291,10 +340,15 @@ export async function reinitialise(
       handle = createReplicaClient(replicaPath, syncUrl, authToken);
     }
     await handle.sync();
+    await migrate(handle.db, { migrationsFolder: getMigrationsFolder() });
+    await ensureDefaultAccount(handle.db);
     if (_handle) _handle.close();
     _handle = handle;
     _db = handle.db;
     _repos = buildRepos(handle.db);
+  } catch (err) {
+    handle?.close();
+    throw err;
   } finally {
     _reinitialising = false;
   }

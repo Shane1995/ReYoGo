@@ -93,19 +93,27 @@ export function createEntitiesRepo(db: DbClient) {
           .where(eq(schema.businessGroups.accountId, accountId))
           .limit(1);
 
-        if (!groupRows[0]) {
-          throw new Error(`No business group found for account ${accountId}`);
+        let groupId: string;
+        if (groupRows[0]) {
+          groupId = groupRows[0].id;
+          await tx
+            .update(schema.businessGroups)
+            .set({ name: groupName })
+            .where(eq(schema.businessGroups.id, groupId));
+        } else {
+          groupId = randomUUID();
+          await tx.insert(schema.businessGroups).values({
+            id: groupId,
+            accountId,
+            name: groupName,
+            createdAt: new Date(),
+          });
         }
-
-        await tx
-          .update(schema.businessGroups)
-          .set({ name: groupName })
-          .where(eq(schema.businessGroups.id, groupRows[0].id));
 
         const existing = await tx
           .select()
           .from(schema.entities)
-          .where(eq(schema.entities.groupId, groupRows[0].id))
+          .where(eq(schema.entities.groupId, groupId))
           .orderBy(schema.entities.createdAt);
 
         for (let i = 0; i < entityNames.length; i++) {
@@ -119,7 +127,7 @@ export function createEntitiesRepo(db: DbClient) {
           } else if (name) {
             await tx.insert(schema.entities).values({
               id: randomUUID(),
-              groupId: groupRows[0].id,
+              groupId,
               name,
               defaultVatRate: 15,
               defaultVatMode: VatMode.Exclusive,

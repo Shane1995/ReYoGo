@@ -17,6 +17,7 @@ type ItemMeta = {
 
 type Props = {
   line: ProcessReceiptLine;
+  index: number;
   vatMode: VatMode;
   vatRate: number;
   isExpanded: boolean;
@@ -60,6 +61,7 @@ function ItemMetaHint({
 
 export function InvoiceLineRow({
   line,
+  index,
   vatMode,
   vatRate,
   isExpanded,
@@ -81,6 +83,7 @@ export function InvoiceLineRow({
         className={cn(
           'border-[var(--nav-border)] transition-colors group',
           isExpanded ? 'bg-[var(--nav-accent)]/30' : 'hover:bg-muted/20',
+          !isExpanded && index % 2 !== 0 && 'bg-black/[0.025]',
         )}
       >
         <TableCell className="w-8 p-2 align-middle">

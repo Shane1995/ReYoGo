@@ -30,7 +30,10 @@ export interface InventoryItem {
   reorderQty: number | null;
 }
 
-export type InventoryItemInput = Omit<InventoryItem, 'currentStockQty' | 'currentWeightedAvgCost'>;
+export type InventoryItemInput = Omit<
+  InventoryItem,
+  'entityId' | 'currentStockQty' | 'currentWeightedAvgCost'
+>;
 
 export interface InventorySubmitPayload {
   addedCategories: Category[];

@@ -34,7 +34,7 @@ describe('ConnectCloudStep', () => {
     expect(screen.getByRole('button', { name: /connect/i })).not.toBeDisabled();
   });
 
-  it('shows Connecting… and disables inputs when connecting is true', () => {
+  it('shows establishing connection screen when connecting is true', () => {
     render(
       <ConnectCloudStep
         {...baseProps}
@@ -43,9 +43,9 @@ describe('ConnectCloudStep', () => {
         connecting={true}
       />,
     );
-    expect(screen.getByText('Connecting…')).toBeTruthy();
-    expect(screen.getByPlaceholderText('libsql://your-db.turso.io')).toBeDisabled();
-    expect(screen.getByPlaceholderText('eyJhbGci…')).toBeDisabled();
+    expect(screen.getByText('Establishing connection')).toBeTruthy();
+    expect(screen.queryByPlaceholderText('libsql://your-db.turso.io')).toBeNull();
+    expect(screen.queryByPlaceholderText('eyJhbGci…')).toBeNull();
   });
 
   it('shows connectError when provided', () => {

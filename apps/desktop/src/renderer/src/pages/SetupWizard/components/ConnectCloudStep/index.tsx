@@ -24,6 +24,33 @@ export function ConnectCloudStep({
 }: ConnectCloudStepProps) {
   const canConnect = tursoUrl.trim().startsWith('libsql://') && authToken.trim().length > 0;
 
+  if (connecting) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-6 py-8 animate-rg-fade-up">
+        <div className="relative flex items-center justify-center">
+          <div className="size-14 rounded-full border-2 border-white/10" />
+          <div className="absolute size-14 rounded-full border-2 border-transparent border-t-[#20C997] animate-spin" />
+          <div className="absolute size-2 rounded-full bg-[#20C997]" />
+        </div>
+        <div className="flex flex-col items-center gap-2 text-center">
+          <p className="text-[15px] font-semibold text-[#F8F9FA] m-0">Establishing connection</p>
+          <p className="text-[13px] text-white/40 m-0 leading-relaxed max-w-[260px]">
+            Syncing your database — this may take a moment for larger databases.
+          </p>
+        </div>
+        <div className="flex gap-1.5 mt-2">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="size-1.5 rounded-full bg-[#20C997]/40 animate-pulse"
+              style={{ animationDelay: `${i * 200}ms` }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -46,7 +73,6 @@ export function ConnectCloudStep({
             value={tursoUrl}
             onChange={(e) => onTursoUrlChange(e.target.value)}
             placeholder="libsql://your-db.turso.io"
-            disabled={connecting}
             autoFocus
           />
         </div>
@@ -59,8 +85,7 @@ export function ConnectCloudStep({
             value={authToken}
             onChange={(e) => onAuthTokenChange(e.target.value)}
             placeholder="eyJhbGci…"
-            disabled={connecting}
-            onKeyDown={(e) => e.key === 'Enter' && canConnect && !connecting && onConnect()}
+            onKeyDown={(e) => e.key === 'Enter' && canConnect && onConnect()}
           />
         </div>
 
@@ -71,9 +96,9 @@ export function ConnectCloudStep({
         <button
           className="bg-[#20C997] text-[#0D1117] rounded-[10px] px-6 py-[11px] text-sm font-semibold font-sans cursor-pointer transition-[background,transform] duration-150 whitespace-nowrap hover:bg-[#18a87a] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
           onClick={onConnect}
-          disabled={!canConnect || connecting}
+          disabled={!canConnect}
         >
-          {connecting ? 'Connecting…' : 'Connect →'}
+          Connect →
         </button>
       </div>
     </div>

@@ -13,6 +13,7 @@ export interface ElectronAPI {
   onAppReady: (callback: () => void) => () => void;
   onAppInitError: (callback: (message: string) => void) => () => void;
   onDbAuthError: (callback: (message: string) => void) => () => void;
+  onSetupNeeded: (callback: () => void) => () => void;
   requestAppReady: () => void;
   onUpdateDownloaded: (callback: () => void) => () => void;
   onUpdateError: (callback: (message: string) => void) => () => void;

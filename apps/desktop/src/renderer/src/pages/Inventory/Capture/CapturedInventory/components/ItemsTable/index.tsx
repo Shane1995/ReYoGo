@@ -1,10 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge } from '@reyogo/ui';
+import { Badge, cn } from '@reyogo/ui';
 import { VatMode } from '@reyogo/types';
 import { DataTable } from '@/components/DataTable';
 import type { ColumnDef } from '@/components/DataTable';
-import { cn } from '@reyogo/ui';
 import { Checkbox } from '@/components/Checkbox';
 import { getTypeConfig } from '../../utils/typeConfig';
 import { EditItemDialog } from '../EditItemDialog';
@@ -14,15 +13,27 @@ import type { FlatItem, ItemsTableProps } from './types';
 import { useItemSelection } from './hooks/useItemSelection';
 import { SelectionBar } from './SelectionBar';
 import { ItemRowActions } from './ItemRowActions';
-import { useEntities } from '@/Context/EntityContext';
 
-const ENTITY_COLORS = [
-  { bg: 'rgba(32,201,151,0.12)', fg: '#0D6E4F' },
-  { bg: 'rgba(14,165,233,0.12)', fg: '#0369A1' },
-  { bg: 'rgba(253,126,20,0.12)', fg: '#9A3412' },
-  { bg: 'rgba(168,85,247,0.12)', fg: '#6B21A8' },
-  { bg: 'rgba(236,72,153,0.12)', fg: '#9D174D' },
-] as const;
+const sortByName = (a: FlatItem, b: FlatItem) => a.name.localeCompare(b.name);
+const sortByCategory = (a: FlatItem, b: FlatItem) => a.categoryName.localeCompare(b.categoryName);
+const sortByStock = (a: FlatItem, b: FlatItem) => {
+  if (a.currentStock == null && b.currentStock == null) return 0;
+  if (a.currentStock == null) return 1;
+  if (b.currentStock == null) return -1;
+  return a.currentStock - b.currentStock;
+};
+const sortByLastCost = (a: FlatItem, b: FlatItem) => {
+  if (a.lastCostPerUnit == null && b.lastCostPerUnit == null) return 0;
+  if (a.lastCostPerUnit == null) return 1;
+  if (b.lastCostPerUnit == null) return -1;
+  return a.lastCostPerUnit - b.lastCostPerUnit;
+};
+const sortByAvgCost = (a: FlatItem, b: FlatItem) => {
+  if (a.weightedAvgCost == null && b.weightedAvgCost == null) return 0;
+  if (a.weightedAvgCost == null) return 1;
+  if (b.weightedAvgCost == null) return -1;
+  return a.weightedAvgCost - b.weightedAvgCost;
+};
 
 export function ItemsTable({
   items,
@@ -30,18 +41,15 @@ export function ItemsTable({
   allTypes,
   categories,
   units,
-  entityFilter,
   onUpdate,
   onDelete,
   onViewInsights,
 }: ItemsTableProps) {
   const navigate = useNavigate();
-  const { entities } = useEntities();
   const [editingItem, setEditingItem] = useState<InventoryItem | null | undefined>(undefined);
 
-  const entityIndexMap = useMemo(() => new Map(entities.map((e, i) => [e.id, i])), [entities]);
-
   const filteredIds = useMemo(() => filteredItems.map((i) => i.id), [filteredItems]);
+  const itemsById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
 
   const {
     selectedIds,
@@ -55,141 +63,181 @@ export function ItemsTable({
     clearSelection,
   } = useItemSelection({ filteredIds, onDelete });
 
-  const columns: ColumnDef<FlatItem>[] = [
-    {
-      key: 'select',
-      header: (
-        <Checkbox
-          checked={allSelected}
-          indeterminate={someSelected && !allSelected}
-          onChange={toggleAll}
-        />
-      ),
-      width: '40px',
-      cell: (row) => (
-        <Checkbox checked={selectedIds.has(row.id)} onChange={() => toggleOne(row.id)} />
-      ),
-    },
-    {
-      key: 'name',
-      header: 'Item',
-      cell: (row) => <span className="font-medium text-foreground">{row.name}</span>,
-    },
-    ...(entityFilter === null
-      ? [
-          {
-            key: 'entity' as const,
-            header: 'Venue',
-            width: '140px',
-            cell: (row: FlatItem) => {
-              const idx = entityIndexMap.get(row.entityId) ?? 0;
-              const color = ENTITY_COLORS[idx % ENTITY_COLORS.length]!;
-              const name = entities.find((e) => e.id === row.entityId)?.name ?? '—';
-              return (
-                <span
-                  className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium whitespace-nowrap"
-                  style={{ background: color.bg, color: color.fg }}
-                >
-                  {name}
-                </span>
-              );
-            },
-          },
-        ]
-      : []),
-    {
-      key: 'type',
-      header: 'Type',
-      cell: (row) => {
-        const cfg = getTypeConfig(row.type, allTypes);
-        return (
-          <Badge className={cn('text-[11px] font-medium capitalize', cfg.badgeClass)}>
-            {row.type}
-          </Badge>
-        );
+  const sortCompareFns = useMemo(
+    () => ({
+      name: sortByName,
+      category: sortByCategory,
+      cost: sortByLastCost,
+      weightedAvgCost: sortByAvgCost,
+      stock: sortByStock,
+    }),
+    [],
+  );
+
+  const handleAddToInvoice = useCallback(() => {
+    const templateLines = [...selectedIds].map((itemId) => ({
+      id: crypto.randomUUID(),
+      itemId,
+      quantity: 0,
+      vatMode: VatMode.Exclusive,
+      vatRate: 15,
+      totalVatExclude: 0,
+    }));
+    navigate(InvoiceRoutes.Base, { state: { templateLines } });
+  }, [selectedIds, navigate]);
+
+  const columns = useMemo<ColumnDef<FlatItem>[]>(
+    () => [
+      {
+        key: 'select',
+        header: (
+          <Checkbox
+            checked={allSelected}
+            indeterminate={someSelected && !allSelected}
+            onChange={toggleAll}
+          />
+        ),
+        width: '40px',
+        cell: (row) => {
+          const isChecked = selectedIds.has(row.id);
+          return (
+            <span
+              className={cn(
+                'transition-opacity',
+                isChecked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+              )}
+            >
+              <Checkbox checked={isChecked} onChange={() => toggleOne(row.id)} />
+            </span>
+          );
+        },
       },
-    },
-    {
-      key: 'category',
-      header: 'Category',
-      cell: (row) => <span className="text-muted-foreground text-sm">{row.categoryName}</span>,
-    },
-    {
-      key: 'unit',
-      header: 'Unit',
-      cell: (row) =>
-        row.unitOfMeasure ? (
-          <Badge variant="secondary" className="text-[11px] font-normal">
-            {row.unitOfMeasure}
-          </Badge>
-        ) : (
-          <span className="text-muted-foreground/30">—</span>
-        ),
-    },
-    {
-      key: 'cost',
-      header: 'Last cost / unit',
-      align: 'right',
-      cell: (row) =>
-        row.lastCostPerUnit !== undefined ? (
-          <span className="font-mono text-xs tabular-nums text-foreground">
-            {row.lastCostPerUnit.toFixed(2)}
-            {row.lastCostUom ? (
-              <span className="text-muted-foreground/60"> / {row.lastCostUom}</span>
-            ) : null}
-          </span>
-        ) : (
-          <span className="text-muted-foreground/30 text-xs">—</span>
-        ),
-    },
-    {
-      key: 'weightedAvgCost',
-      header: 'Avg cost',
-      align: 'right',
-      cell: (row) =>
-        row.weightedAvgCost != null ? (
-          <span className="font-mono text-xs tabular-nums text-foreground">
-            {row.weightedAvgCost.toFixed(2)}
-            {row.unitOfMeasure ? (
-              <span className="text-muted-foreground/60"> / {row.unitOfMeasure}</span>
-            ) : null}
-          </span>
-        ) : (
-          <span className="text-muted-foreground/30 text-xs">—</span>
-        ),
-    },
-    {
-      key: 'stock',
-      header: 'Stock',
-      align: 'right',
-      cell: (row) =>
-        row.currentStock !== undefined ? (
-          <span className="font-mono text-xs tabular-nums text-foreground">
-            {row.currentStock % 1 === 0 ? row.currentStock.toFixed(0) : row.currentStock.toFixed(2)}
-            {row.unitOfMeasure ? (
-              <span className="text-muted-foreground/60"> {row.unitOfMeasure}</span>
-            ) : null}
-          </span>
-        ) : (
-          <span className="text-muted-foreground/30 text-xs">—</span>
-        ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      align: 'right',
-      width: '48px',
-      cell: (row) => (
-        <ItemRowActions
-          row={row}
-          originalItem={items.find((i) => i.id === row.id)!}
-          onEdit={setEditingItem}
-          onViewInsights={onViewInsights}
-          onDelete={onDelete}
-        />
-      ),
-    },
-  ];
+      {
+        key: 'name',
+        header: 'Item',
+        sortable: true,
+        sortFn: sortByName,
+        cell: (row) => <span className="font-medium text-foreground">{row.name}</span>,
+      },
+      {
+        key: 'type',
+        header: 'Type',
+        cell: (row) => {
+          const cfg = getTypeConfig(row.type, allTypes);
+          return (
+            <Badge className={cn('text-[11px] font-medium capitalize', cfg.badgeClass)}>
+              {row.type}
+            </Badge>
+          );
+        },
+      },
+      {
+        key: 'category',
+        header: 'Category',
+        sortable: true,
+        sortFn: sortByCategory,
+        cell: (row) => <span className="text-muted-foreground text-sm">{row.categoryName}</span>,
+      },
+      {
+        key: 'unit',
+        header: 'Unit',
+        cell: (row) =>
+          row.unitOfMeasure ? (
+            <Badge variant="secondary" className="text-[11px] font-normal">
+              {row.unitOfMeasure}
+            </Badge>
+          ) : (
+            <span className="text-muted-foreground/30">—</span>
+          ),
+      },
+      {
+        key: 'cost',
+        header: 'Last cost / unit',
+        align: 'right',
+        sortable: true,
+        sortFn: sortByLastCost,
+        cell: (row) =>
+          row.lastCostPerUnit != null ? (
+            <span className="font-mono text-xs tabular-nums text-foreground">
+              {row.lastCostPerUnit.toFixed(2)}
+              {row.lastCostUom ? (
+                <span className="text-muted-foreground/60"> / {row.lastCostUom}</span>
+              ) : null}
+            </span>
+          ) : (
+            <span className="text-muted-foreground/30 text-xs">—</span>
+          ),
+      },
+      {
+        key: 'weightedAvgCost',
+        header: 'Avg cost',
+        align: 'right',
+        sortable: true,
+        sortFn: sortByAvgCost,
+        cell: (row) =>
+          row.weightedAvgCost != null ? (
+            <span className="font-mono text-xs tabular-nums text-foreground">
+              {row.weightedAvgCost.toFixed(2)}
+              {row.unitOfMeasure ? (
+                <span className="text-muted-foreground/60"> / {row.unitOfMeasure}</span>
+              ) : null}
+            </span>
+          ) : (
+            <span className="text-muted-foreground/30 text-xs">—</span>
+          ),
+      },
+      {
+        key: 'stock',
+        header: 'Stock',
+        align: 'right',
+        sortable: true,
+        sortFn: sortByStock,
+        cell: (row) =>
+          row.currentStock !== undefined ? (
+            <span className="font-mono text-xs tabular-nums text-foreground">
+              {row.currentStock % 1 === 0
+                ? row.currentStock.toFixed(0)
+                : row.currentStock.toFixed(2)}
+              {row.unitOfMeasure ? (
+                <span className="text-muted-foreground/60"> {row.unitOfMeasure}</span>
+              ) : null}
+            </span>
+          ) : (
+            <span className="text-muted-foreground/30 text-xs">—</span>
+          ),
+      },
+      {
+        key: 'actions',
+        header: '',
+        align: 'right',
+        width: '48px',
+        cell: (row) => {
+          const original = itemsById.get(row.id);
+          if (!original) return null;
+          return (
+            <ItemRowActions
+              row={row}
+              originalItem={original}
+              onEdit={setEditingItem}
+              onViewInsights={onViewInsights}
+              onDelete={onDelete}
+            />
+          );
+        },
+      },
+    ],
+    [
+      selectedIds,
+      allSelected,
+      someSelected,
+      toggleAll,
+      toggleOne,
+      itemsById,
+      allTypes,
+      onViewInsights,
+      onDelete,
+    ],
+  );
 
   return (
     <>
@@ -197,17 +245,7 @@ export function ItemsTable({
         <SelectionBar
           selectedCount={selectedIds.size}
           confirmBulkDelete={confirmBulkDelete}
-          onAddToInvoice={() => {
-            const templateLines = [...selectedIds].map((itemId) => ({
-              id: crypto.randomUUID(),
-              itemId,
-              quantity: 0,
-              vatMode: VatMode.Exclusive,
-              vatRate: 15,
-              totalVatExclude: 0,
-            }));
-            navigate(InvoiceRoutes.Base, { state: { templateLines } });
-          }}
+          onAddToInvoice={handleAddToInvoice}
           onRequestDelete={() => setConfirmBulkDelete(true)}
           onConfirmDelete={handleBulkDelete}
           onCancelDelete={() => setConfirmBulkDelete(false)}
@@ -217,6 +255,7 @@ export function ItemsTable({
       <DataTable
         columns={columns}
         data={filteredItems}
+        compareFns={sortCompareFns}
         hideFilters
         rowKey={(row) => row.id}
         emptyMessage="No items match your filters."

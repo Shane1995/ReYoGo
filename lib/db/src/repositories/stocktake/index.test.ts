@@ -19,7 +19,6 @@ async function seedItem(db: DbClient, itemId: string) {
   });
   await db.insert(schema.inventoryItems).values({
     id: itemId,
-    accountId: 'default',
     entityId: 'default',
     name: 'Flour',
     categoryId: 'cat-1',

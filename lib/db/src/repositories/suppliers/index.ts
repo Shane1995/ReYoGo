@@ -19,18 +19,22 @@ function toSupplier(row: SupplierRow): Supplier {
 
 export function createSuppliersRepo(db: DbClient) {
   return {
-    async getSuppliers(): Promise<Supplier[]> {
-      const rows = await db.select().from(schema.suppliers).orderBy(asc(schema.suppliers.name));
+    async getSuppliers(entityId: string): Promise<Supplier[]> {
+      const rows = await db
+        .select()
+        .from(schema.suppliers)
+        .where(eq(schema.suppliers.entityId, entityId))
+        .orderBy(asc(schema.suppliers.name));
       return rows.map(toSupplier);
     },
 
-    async upsertSupplier(payload: UpsertSupplierPayload): Promise<void> {
+    async upsertSupplier(payload: UpsertSupplierPayload, entityId: string): Promise<void> {
       const ts = now();
       await db
         .insert(schema.suppliers)
         .values({
           id: payload.id,
-          accountId: 'default',
+          entityId,
           name: payload.name,
           contactName: payload.contactName ?? null,
           phone: payload.phone ?? null,

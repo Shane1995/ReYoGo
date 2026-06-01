@@ -343,7 +343,7 @@ export function createInvoicesRepo(db: DbClient) {
       };
     },
 
-    async getLinesForAnalysis(): Promise<InvoiceLineWithDate[]> {
+    async getLinesForAnalysis(entityId?: string): Promise<InvoiceLineWithDate[]> {
       const effectiveDate = sql<Date>`COALESCE(${schema.invoices.invoiceDate}, ${schema.invoices.createdAt})`;
       const rows = await db
         .select({
@@ -367,6 +367,7 @@ export function createInvoicesRepo(db: DbClient) {
           schema.inventoryCategories,
           eq(schema.inventoryItems.categoryId, schema.inventoryCategories.id),
         )
+        .where(entityId ? eq(schema.invoices.entityId, entityId) : undefined)
         .orderBy(asc(effectiveDate));
       return rows.map((r) => ({
         id: r.id,

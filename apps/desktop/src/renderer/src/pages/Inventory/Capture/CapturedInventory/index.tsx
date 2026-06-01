@@ -25,9 +25,7 @@ export default function InventoryIndex() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [entityFilter, setEntityFilter] = useState<string | null>(null);
 
-  const entityFilteredItems = entityFilter
-    ? items.filter((item) => item.entityId === entityFilter)
-    : items;
+  const entityFilteredItems = items;
 
   const { filterValues, filteredItems, filters, allTypes, handleFilterChange, clearFilters } =
     useItemFilters({ items: entityFilteredItems, categories, costMap, stockMap });
@@ -72,7 +70,6 @@ export default function InventoryIndex() {
             allTypes={allTypes}
             categories={categories}
             units={units}
-            entityFilter={entityFilter}
             onUpdate={handleUpdate}
             onDelete={archiveItemInBackend}
             onViewInsights={handleViewInsights}

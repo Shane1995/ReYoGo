@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Input } from '@reyogo/ui';
+import {
+  Button,
+  Input,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@reyogo/ui';
 import { toast } from 'sonner';
 import { SectionHeader } from '../SectionHeader';
 import { cloudSyncService } from '@/services/cloudSync';
@@ -16,9 +24,10 @@ export function CloudSyncSection() {
   const [progressLabel, setProgressLabel] = useState('');
   const [progressDetail, setProgressDetail] = useState('');
   const [credentials, setCredentials] = useState<{ tursoUrl: string } | null>(null);
-  const [showRotateForm, setShowRotateForm] = useState(false);
-  const [rotateToken, setRotateToken] = useState('');
-  const [rotating, setRotating] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editUrl, setEditUrl] = useState('');
+  const [editToken, setEditToken] = useState('');
+  const [connecting, setConnecting] = useState(false);
 
   const refreshStatus = useCallback(async () => {
     const [s, c] = await Promise.all([
@@ -87,29 +96,26 @@ export function CloudSyncSection() {
     }
   }
 
-  async function handleRotateToken() {
-    if (!rotateToken.trim()) {
-      toast.error('Auth token is required.');
-      return;
-    }
-    setRotating(true);
-    try {
-      await cloudSyncService.rotateToken(rotateToken.trim());
-      toast.success('Auth token updated — reloading…');
-      window.location.reload();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update token');
-    } finally {
-      setRotating(false);
-    }
+  function openEditModal() {
+    setEditUrl(credentials?.tursoUrl ?? '');
+    setEditToken('');
+    setShowEditModal(true);
   }
 
-  async function handleDeleteBackup() {
+  async function handleSaveConnection() {
+    if (!editUrl.trim() || !editToken.trim()) {
+      toast.error('Both URL and auth token are required.');
+      return;
+    }
+    setConnecting(true);
     try {
-      await cloudSyncService.deleteBackup();
-      toast.success('Local backup deleted');
+      await cloudSyncService.connect(editUrl.trim(), editToken.trim());
+      toast.success('Connection updated — reloading…');
+      window.location.reload();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete backup');
+      toast.error(err instanceof Error ? err.message : 'Failed to update connection');
+    } finally {
+      setConnecting(false);
     }
   }
 
@@ -165,54 +171,49 @@ export function CloudSyncSection() {
             <Button variant="outline" onClick={handleManualSync} className="self-start">
               Sync now
             </Button>
-            <Button
-              variant="ghost"
-              onClick={() => setShowRotateForm((v) => !v)}
-              className="self-start"
-            >
-              Update auth token
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={handleDeleteBackup}
-              className="self-start text-destructive hover:text-destructive"
-            >
-              Delete local backup
+            <Button variant="ghost" onClick={openEditModal} className="self-start">
+              Edit connection
             </Button>
           </div>
-
-          {showRotateForm && (
-            <div className="flex flex-col gap-2 rounded-md border border-input p-3">
-              <p className="text-xs text-muted-foreground">
-                Paste your new Turso auth token below. The connection will be tested before saving.
-              </p>
-              <Input
-                type="password"
-                placeholder="New auth token"
-                value={rotateToken}
-                onChange={(e) => setRotateToken(e.target.value)}
-                disabled={rotating}
-              />
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleRotateToken} disabled={rotating}>
-                  {rotating ? 'Updating…' : 'Update'}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setShowRotateForm(false);
-                    setRotateToken('');
-                  }}
-                  disabled={rotating}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       )}
+
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit connection</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-2">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-muted-foreground">Database URL</label>
+              <Input
+                placeholder="libsql://your-db.turso.io"
+                value={editUrl}
+                onChange={(e) => setEditUrl(e.target.value)}
+                disabled={connecting}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-muted-foreground">Auth token</label>
+              <Input
+                type="password"
+                placeholder="Paste your auth token"
+                value={editToken}
+                onChange={(e) => setEditToken(e.target.value)}
+                disabled={connecting}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowEditModal(false)} disabled={connecting}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveConnection} disabled={connecting}>
+              {connecting ? 'Saving…' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

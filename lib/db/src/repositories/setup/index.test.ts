@@ -94,7 +94,6 @@ describe('createSetupRepo', () => {
       });
       await db.insert(schema.inventoryItems).values({
         id: 'item-1',
-        accountId: 'default',
         entityId: 'default',
         name: 'Milk',
         categoryId: 'cat-1',

@@ -16,7 +16,7 @@ export function Checkbox({ checked, indeterminate, onChange, disabled, label }: 
     disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer',
     checked || indeterminate
       ? 'bg-[#20C997] border-[#20C997]'
-      : 'bg-transparent border-white/20 hover:border-[#20C997]/50',
+      : 'bg-transparent border-input hover:border-[#20C997]/70',
   ].join(' ');
 
   return (

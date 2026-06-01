@@ -107,7 +107,6 @@ export default function ImportPage() {
             type: (cat?.type as 'food' | 'beverage' | 'non-food') ?? 'food',
             unitOfMeasureId,
             unitOfMeasure: item.unit,
-            entityId: item.entityId ?? '',
           });
         }
 
@@ -135,8 +134,8 @@ export default function ImportPage() {
               <h1 className="text-lg font-semibold text-foreground">Import inventory</h1>
               <p className="mt-0.5 text-sm text-muted-foreground">
                 {state.phase === 'review'
-                  ? `Review what will be added to ${selectedEntity?.name ?? 'your venue'}, then click commit.`
-                  : 'Select a venue, then upload an Excel or CSV file to bulk-add units, categories and items.'}
+                  ? `Review what will be added to ${selectedEntity?.name ?? 'your business'}, then click commit.`
+                  : 'Select a business, then upload an Excel or CSV file to bulk-add units, categories and items.'}
               </p>
             </div>
           </div>
@@ -172,16 +171,16 @@ export default function ImportPage() {
           {state.phase === 'idle' && (
             <div className="space-y-4">
               <div className="rounded-lg border border-[var(--nav-border)] bg-muted/20 p-4 space-y-2">
-                <p className="text-sm font-semibold text-foreground">Select venue</p>
+                <p className="text-sm font-semibold text-foreground">Select business</p>
                 <p className="text-xs text-muted-foreground">
-                  All items in the file will be imported for this venue.
+                  All items in the file will be imported for this business.
                 </p>
                 <select
                   value={selectedEntityId}
                   onChange={(e) => setSelectedEntityId(e.target.value)}
                   className="h-8 w-full max-w-xs rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50"
                 >
-                  <option value="">Choose a venue…</option>
+                  <option value="">Choose a business…</option>
                   {entities.map((e) => (
                     <option key={e.id} value={e.id}>
                       {e.name}

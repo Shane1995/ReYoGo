@@ -1,24 +1,12 @@
 import { useSetupWizard } from './hooks/useSetupWizard';
-import type { WizardPath } from './hooks/useSetupWizard';
-import { ChoosePathStep } from './components/ChoosePathStep';
 import { ConnectCloudStep } from './components/ConnectCloudStep';
-import { GroupStep } from './components/GroupStep';
-import { EntitiesStep } from './components/EntitiesStep';
+import { YourBusinessStep } from './components/YourBusinessStep';
+import { MoreBusinessesStep } from './components/MoreBusinessesStep';
 
-export enum SetupPath {
-  Cloud = 'cloud',
-  Local = 'local',
-}
+const STEP_LABELS = ['Connect', 'Your business', 'More businesses'];
 
-function getStepLabels(path: WizardPath): string[] {
-  if (path === SetupPath.Cloud) return ['Get started', 'Connect database'];
-  if (path === SetupPath.Local) return ['Get started', 'Business group', 'Venues'];
-  return ['Get started'];
-}
-
-export default function SetupWizard() {
-  const wizard = useSetupWizard();
-  const stepLabels = getStepLabels(wizard.path);
+export default function SetupWizard({ initialStep = 1 }: { initialStep?: 1 | 2 }) {
+  const wizard = useSetupWizard({ initialStep });
 
   return (
     <div className="fixed inset-0 flex bg-[#0D1117] font-sans antialiased">
@@ -72,10 +60,11 @@ export default function SetupWizard() {
 
         <div className="relative">
           <div className="flex flex-col gap-2">
-            {stepLabels.map((label, i) => {
-              const stepNum = i + 1;
+            {STEP_LABELS.map((label, i) => {
+              const stepNum = (i + 1) as 1 | 2 | 3;
               const isDone = wizard.step > stepNum;
               const isActive = wizard.step === stepNum;
+              const isOptional = stepNum === 3;
               return (
                 <div
                   key={label}
@@ -102,11 +91,16 @@ export default function SetupWizard() {
                       </span>
                     )}
                   </div>
-                  <span
-                    className={`text-[13px] text-[#F8F9FA] ${isActive ? 'font-medium' : 'font-normal'}`}
-                  >
-                    {label}
-                  </span>
+                  <div className="flex items-baseline gap-1.5">
+                    <span
+                      className={`text-[13px] text-[#F8F9FA] ${isActive ? 'font-medium' : 'font-normal'}`}
+                    >
+                      {label}
+                    </span>
+                    {isOptional && (
+                      <span className="text-[10px] text-white/25 font-normal">optional</span>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -118,11 +112,6 @@ export default function SetupWizard() {
         <div className="w-full max-w-[380px]">
           {wizard.step === 1 && (
             <div className="animate-rg-step-in" key="step-1">
-              <ChoosePathStep onChoose={wizard.choosePath} />
-            </div>
-          )}
-          {wizard.step === 2 && wizard.path === SetupPath.Cloud && (
-            <div className="animate-rg-step-in" key="step-2-cloud">
               <ConnectCloudStep
                 tursoUrl={wizard.tursoUrl}
                 authToken={wizard.authToken}
@@ -134,25 +123,25 @@ export default function SetupWizard() {
               />
             </div>
           )}
-          {wizard.step === 2 && wizard.path === SetupPath.Local && (
-            <div className="animate-rg-step-in" key="step-2-local">
-              <GroupStep
-                groupName={wizard.groupName}
-                onGroupNameChange={wizard.setGroupName}
+          {wizard.step === 2 && (
+            <div className="animate-rg-step-in" key="step-2">
+              <YourBusinessStep
+                businessName={wizard.businessName}
+                onBusinessNameChange={wizard.setBusinessName}
                 onNext={wizard.next}
               />
             </div>
           )}
-          {wizard.step === 3 && wizard.path === SetupPath.Local && (
-            <div className="animate-rg-step-in" key="step-3-local">
-              <EntitiesStep
-                entityNames={wizard.entityNames}
-                onAdd={wizard.addEntity}
-                onRemove={wizard.removeEntity}
-                onNameChange={wizard.setEntityName}
+          {wizard.step === 3 && (
+            <div className="animate-rg-step-in" key="step-3">
+              <MoreBusinessesStep
+                names={wizard.moreBusinesses}
+                onAdd={wizard.addMore}
+                onRemove={wizard.removeMore}
+                onNameChange={wizard.setMoreName}
                 onBack={wizard.back}
+                onSkip={wizard.skip}
                 onSubmit={wizard.submit}
-                canSubmit={wizard.canSubmit}
                 isSubmitting={wizard.isSubmitting}
                 submitError={wizard.submitError}
               />

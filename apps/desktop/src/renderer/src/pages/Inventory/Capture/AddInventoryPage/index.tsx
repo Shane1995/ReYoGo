@@ -1,12 +1,11 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { PlusIcon, ChevronDownIcon } from 'lucide-react';
+import { PlusIcon } from 'lucide-react';
 import { Button, PageHeader } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { INVENTORY_TYPES, InventoryType } from '@reyogo/types';
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
 import type { TypeValue } from '../CapturedInventory/types';
 import { cn } from '@reyogo/ui';
-import { useEntities } from '@/Context/EntityContext';
 
 const inputClass = cn(
   'h-8 w-full rounded-md border border-input bg-muted px-2.5 text-sm',
@@ -34,21 +33,15 @@ function emptyCategoryRow(): CategoryRow {
 }
 
 export default function AddInventoryPage() {
-  const { entities } = useEntities();
   const { categories, items, units, addItem, addCategory } = useInventory();
 
   const [mode, setMode] = useState<Mode>('items');
-  const [venueId, setVenueId] = useState(() => (entities.length === 1 ? entities[0]!.id : ''));
   const [itemRows, setItemRows] = useState<ItemRow[]>([emptyItemRow()]);
   const [catRows, setCatRows] = useState<CategoryRow[]>([emptyCategoryRow()]);
   const [lastFocusId, setLastFocusId] = useState<string | null>(null);
 
   const namedCategories = categories.filter((c) => c.name.trim());
   const categoryTypes = Array.from(new Set(namedCategories.map((c) => c.type)));
-
-  useEffect(() => {
-    if (entities.length === 1 && !venueId) setVenueId(entities[0]!.id);
-  }, [entities, venueId]);
 
   // Focus newly added row's name input
   useEffect(() => {
@@ -79,11 +72,7 @@ export default function AddInventoryPage() {
   );
 
   const itemDupes = useMemo(() => {
-    const existing = new Set(
-      items
-        .filter((i) => !venueId || i.entityId === venueId)
-        .map((i) => i.name.trim().toLowerCase()),
-    );
+    const existing = new Set(items.map((i) => i.name.trim().toLowerCase()));
     const seen = new Map<string, string>();
     const dupes = new Set<string>();
     for (const row of itemRows) {
@@ -97,28 +86,28 @@ export default function AddInventoryPage() {
       } else seen.set(key, row.id);
     }
     return dupes;
-  }, [itemRows, items, venueId]);
+  }, [itemRows, items]);
 
   const submitItems = useCallback(() => {
     const valid = itemRows.filter(
       (r) => r.name.trim() && r.categoryId && r.unitOfMeasure && !itemDupes.has(r.id),
     );
-    if (!valid.length || !venueId) return;
+    if (!valid.length) return;
     valid.forEach((r) =>
       addItem({
         name: r.name.trim(),
         categoryId: r.categoryId,
         type: r.type,
         unitOfMeasure: r.unitOfMeasure || undefined,
-        entityId: venueId,
       }),
     );
     setItemRows([emptyItemRow()]);
-  }, [itemRows, itemDupes, addItem, venueId]);
+  }, [itemRows, itemDupes, addItem]);
 
   const namedItemRows = itemRows.filter((r) => r.name.trim());
-  const canSubmitItems =
-    namedItemRows.some((r) => r.categoryId && r.unitOfMeasure && !itemDupes.has(r.id)) && !!venueId;
+  const canSubmitItems = namedItemRows.some(
+    (r) => r.categoryId && r.unitOfMeasure && !itemDupes.has(r.id),
+  );
   const hasIncompleteItemRows = namedItemRows.some((r) => !r.categoryId || !r.unitOfMeasure);
 
   // --- Category logic ---
@@ -165,9 +154,6 @@ export default function AddInventoryPage() {
 
   const canSubmitCats = catRows.some((r) => r.name.trim() && !catDupes.has(r.id));
 
-  const venueName = entities.find((e) => e.id === venueId)?.name;
-  const noVenue = mode === 'items' && entities.length > 1 && !venueId;
-
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <PageHeader title="Add inventory" description="Add items and categories in bulk." />
@@ -193,45 +179,8 @@ export default function AddInventoryPage() {
             ))}
           </div>
 
-          {/* Venue context bar — items mode only, multi-entity only */}
-          {mode === 'items' && entities.length > 1 && (
-            <div className="flex items-center gap-3 rounded-lg border border-[var(--nav-active-border)]/30 bg-[var(--nav-active-border)]/5 px-4 py-2.5">
-              <span className="text-xs text-muted-foreground shrink-0">Adding items to</span>
-              <div className="relative">
-                <select
-                  value={venueId}
-                  onChange={(e) => setVenueId(e.target.value)}
-                  className={cn(
-                    'appearance-none h-7 rounded-md border border-[var(--nav-active-border)]/40 bg-transparent',
-                    'pl-3 pr-7 text-sm font-medium text-foreground cursor-pointer',
-                    'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50',
-                    !venueId && 'text-muted-foreground',
-                  )}
-                >
-                  <option value="">Choose a venue…</option>
-                  {entities.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDownIcon className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-              </div>
-              {venueName && (
-                <span className="text-xs text-[var(--nav-active-border)] font-medium">
-                  ✓ {venueName}
-                </span>
-              )}
-            </div>
-          )}
-
           {/* Table */}
-          <div
-            className={cn(
-              'rounded-lg border border-[var(--nav-border)] bg-background',
-              noVenue && 'opacity-40 pointer-events-none',
-            )}
-          >
+          <div className="rounded-lg border border-[var(--nav-border)] bg-background">
             {mode === 'items' ? (
               <Table>
                 <TableHeader>

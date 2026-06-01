@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { InventoryType, MovementType } from '@reyogo/types';
-import { createTestDb, type DbClient } from '../../__tests__/helpers';
+import {
+  createTestDb,
+  TEST_ACCOUNT_ID,
+  TEST_ENTITY_ID,
+  TEST_GROUP_ID,
+  type DbClient,
+} from '../../__tests__/helpers';
 import { createInventoryRepo } from '.';
 import * as schema from '../../schema';
 
@@ -15,15 +21,24 @@ beforeEach(async () => {
 describe('createInventoryRepo', () => {
   describe('upsertCategory', () => {
     it('creates a new category', async () => {
-      await repo.upsertCategory({ id: 'cat-1', name: 'Beverages', type: InventoryType.Beverage });
+      await repo.upsertCategory(
+        { id: 'cat-1', name: 'Beverages', type: InventoryType.Beverage },
+        TEST_ACCOUNT_ID,
+      );
       const rows = await db.select().from(schema.inventoryCategories);
       expect(rows).toHaveLength(1);
       expect(rows[0]!.name).toBe('Beverages');
     });
 
     it('updates an existing category', async () => {
-      await repo.upsertCategory({ id: 'cat-1', name: 'Beverages', type: InventoryType.Beverage });
-      await repo.upsertCategory({ id: 'cat-1', name: 'Drinks', type: InventoryType.Beverage });
+      await repo.upsertCategory(
+        { id: 'cat-1', name: 'Beverages', type: InventoryType.Beverage },
+        TEST_ACCOUNT_ID,
+      );
+      await repo.upsertCategory(
+        { id: 'cat-1', name: 'Drinks', type: InventoryType.Beverage },
+        TEST_ACCOUNT_ID,
+      );
       const rows = await db.select().from(schema.inventoryCategories);
       expect(rows).toHaveLength(1);
       expect(rows[0]!.name).toBe('Drinks');
@@ -32,8 +47,14 @@ describe('createInventoryRepo', () => {
 
   describe('getCategories', () => {
     it('returns categories sorted by name', async () => {
-      await repo.upsertCategory({ id: 'cat-2', name: 'Produce', type: InventoryType.Food });
-      await repo.upsertCategory({ id: 'cat-1', name: 'Beverages', type: InventoryType.Beverage });
+      await repo.upsertCategory(
+        { id: 'cat-2', name: 'Produce', type: InventoryType.Food },
+        TEST_ACCOUNT_ID,
+      );
+      await repo.upsertCategory(
+        { id: 'cat-1', name: 'Beverages', type: InventoryType.Beverage },
+        TEST_ACCOUNT_ID,
+      );
       const cats = await repo.getCategories();
       expect(cats.map((c) => c.name)).toEqual(['Beverages', 'Produce']);
     });
@@ -44,45 +65,53 @@ describe('createInventoryRepo', () => {
   });
 
   describe('upsertItem', () => {
-    beforeEach(() => repo.upsertCategory({ id: 'cat-1', name: 'Food', type: InventoryType.Food }));
+    beforeEach(() =>
+      repo.upsertCategory({ id: 'cat-1', name: 'Food', type: InventoryType.Food }, TEST_ACCOUNT_ID),
+    );
 
     it('creates a new item', async () => {
-      await repo.upsertItem({
-        id: 'item-1',
-        entityId: 'default',
-        name: 'Chips',
-        categoryId: 'cat-1',
-        unitOfMeasureId: null,
-        sku: null,
-        reorderPoint: null,
-        reorderQty: null,
-      });
+      await repo.upsertItem(
+        {
+          id: 'item-1',
+          name: 'Chips',
+          categoryId: 'cat-1',
+          unitOfMeasureId: null,
+          sku: null,
+          reorderPoint: null,
+          reorderQty: null,
+        },
+        TEST_ENTITY_ID,
+      );
       const rows = await db.select().from(schema.inventoryItems);
       expect(rows).toHaveLength(1);
       expect(rows[0]!.name).toBe('Chips');
     });
 
     it('updates an existing item', async () => {
-      await repo.upsertItem({
-        id: 'item-1',
-        entityId: 'default',
-        name: 'OJ',
-        categoryId: 'cat-1',
-        unitOfMeasureId: null,
-        sku: null,
-        reorderPoint: null,
-        reorderQty: null,
-      });
-      await repo.upsertItem({
-        id: 'item-1',
-        entityId: 'default',
-        name: 'Apple Juice',
-        categoryId: 'cat-1',
-        unitOfMeasureId: null,
-        sku: null,
-        reorderPoint: null,
-        reorderQty: null,
-      });
+      await repo.upsertItem(
+        {
+          id: 'item-1',
+          name: 'OJ',
+          categoryId: 'cat-1',
+          unitOfMeasureId: null,
+          sku: null,
+          reorderPoint: null,
+          reorderQty: null,
+        },
+        TEST_ENTITY_ID,
+      );
+      await repo.upsertItem(
+        {
+          id: 'item-1',
+          name: 'Apple Juice',
+          categoryId: 'cat-1',
+          unitOfMeasureId: null,
+          sku: null,
+          reorderPoint: null,
+          reorderQty: null,
+        },
+        TEST_ENTITY_ID,
+      );
       const rows = await db.select().from(schema.inventoryItems);
       expect(rows).toHaveLength(1);
       expect(rows[0]!.name).toBe('Apple Juice');
@@ -90,32 +119,114 @@ describe('createInventoryRepo', () => {
   });
 
   describe('getItems', () => {
-    it('returns items sorted by name with stock quantities', async () => {
-      await repo.upsertCategory({ id: 'cat-1', name: 'Beverages', type: InventoryType.Beverage });
-      await repo.upsertItem({
-        id: 'item-1',
-        entityId: 'default',
-        name: 'OJ',
-        categoryId: 'cat-1',
-        unitOfMeasureId: null,
-        sku: null,
-        reorderPoint: null,
-        reorderQty: null,
-      });
-      const items = await repo.getItems();
+    beforeEach(async () => {
+      await repo.upsertCategory(
+        { id: 'cat-1', name: 'Beverages', type: InventoryType.Beverage },
+        TEST_ACCOUNT_ID,
+      );
+      await repo.upsertItem(
+        {
+          id: 'item-1',
+          name: 'OJ',
+          categoryId: 'cat-1',
+          unitOfMeasureId: null,
+          sku: null,
+          reorderPoint: null,
+          reorderQty: null,
+        },
+        TEST_ENTITY_ID,
+      );
+    });
+
+    it('returns entity items with zero stock when no movements exist', async () => {
+      const items = await repo.getItems(TEST_ENTITY_ID);
       expect(items).toHaveLength(1);
       expect(items[0]!.currentStockQty).toBe(0);
-      expect(items[0]!.currentWeightedAvgCost).toBeNull();
+      expect(items[0]!.entityId).toBe(TEST_ENTITY_ID);
+    });
+
+    it('per-entity: returns only items belonging to that entity', async () => {
+      await db.insert(schema.entities).values({
+        id: 'entity-2',
+        groupId: TEST_GROUP_ID,
+        name: 'Entity 2',
+        createdAt: new Date(),
+      });
+      await repo.upsertCategory(
+        { id: 'cat-2', name: 'Spirits', type: InventoryType.Beverage },
+        TEST_ACCOUNT_ID,
+      );
+      await repo.upsertItem(
+        {
+          id: 'item-2',
+          name: 'Gin',
+          categoryId: 'cat-2',
+          unitOfMeasureId: null,
+          sku: null,
+          reorderPoint: null,
+          reorderQty: null,
+        },
+        'entity-2',
+      );
+      const items = await repo.getItems(TEST_ENTITY_ID);
+      expect(items.map((i) => i.id)).toEqual(['item-1']);
+    });
+
+    it('per-entity: reflects stock movements for that entity', async () => {
+      await db.insert(schema.stockMovements).values({
+        id: 'mv-1',
+        accountId: 'default',
+        entityId: TEST_ENTITY_ID,
+        inventoryItemId: 'item-1',
+        movementType: MovementType.In,
+        qty: 10,
+        stockQtyAfter: 10,
+        occurredAt: new Date('2024-01-01'),
+        createdAt: new Date(),
+      });
+      const items = await repo.getItems(TEST_ENTITY_ID);
+      expect(items[0]!.currentStockQty).toBe(10);
+    });
+
+    it('no entityId: returns items from all entities', async () => {
+      await db.insert(schema.entities).values({
+        id: 'entity-2',
+        groupId: TEST_GROUP_ID,
+        name: 'Entity 2',
+        createdAt: new Date(),
+      });
+      await repo.upsertCategory(
+        { id: 'cat-2', name: 'Spirits', type: InventoryType.Beverage },
+        TEST_ACCOUNT_ID,
+      );
+      await repo.upsertItem(
+        {
+          id: 'item-2',
+          name: 'Gin',
+          categoryId: 'cat-2',
+          unitOfMeasureId: null,
+          sku: null,
+          reorderPoint: null,
+          reorderQty: null,
+        },
+        'entity-2',
+      );
+      const items = await repo.getItems();
+      expect(items.map((i) => i.id).sort()).toEqual(['item-1', 'item-2']);
     });
 
     it('returns empty array when no items exist', async () => {
-      expect(await repo.getItems()).toEqual([]);
+      await db.delete(schema.inventoryItems);
+      expect(await repo.getItems(TEST_ENTITY_ID)).toEqual([]);
     });
   });
 
   describe('deleteCategory', () => {
     it('removes the category', async () => {
-      await repo.upsertCategory({ id: 'cat-1', name: 'Food', type: InventoryType.Food });
+      await repo.upsertCategory(
+        { id: 'cat-1', name: 'Food', type: InventoryType.Food },
+        TEST_ACCOUNT_ID,
+      );
       await repo.deleteCategory('cat-1');
       expect(await db.select().from(schema.inventoryCategories)).toHaveLength(0);
     });
@@ -123,17 +234,22 @@ describe('createInventoryRepo', () => {
 
   describe('deleteItem', () => {
     it('removes the item', async () => {
-      await repo.upsertCategory({ id: 'cat-1', name: 'Food', type: InventoryType.Food });
-      await repo.upsertItem({
-        id: 'item-1',
-        entityId: 'default',
-        name: 'Chips',
-        categoryId: 'cat-1',
-        unitOfMeasureId: null,
-        sku: null,
-        reorderPoint: null,
-        reorderQty: null,
-      });
+      await repo.upsertCategory(
+        { id: 'cat-1', name: 'Food', type: InventoryType.Food },
+        TEST_ACCOUNT_ID,
+      );
+      await repo.upsertItem(
+        {
+          id: 'item-1',
+          name: 'Chips',
+          categoryId: 'cat-1',
+          unitOfMeasureId: null,
+          sku: null,
+          reorderPoint: null,
+          reorderQty: null,
+        },
+        TEST_ENTITY_ID,
+      );
       await repo.deleteItem('item-1');
       expect(await db.select().from(schema.inventoryItems)).toHaveLength(0);
     });
@@ -141,15 +257,22 @@ describe('createInventoryRepo', () => {
 
   describe('submitInventory', () => {
     it('adds and deletes categories and items atomically', async () => {
-      await repo.upsertCategory({ id: 'cat-old', name: 'Old', type: InventoryType.Food });
-      await repo.submitInventory({
-        addedCategories: [{ id: 'cat-new', name: 'New', type: InventoryType.Beverage }],
-        updatedCategories: [],
-        addedItems: [],
-        updatedItems: [],
-        deletedCategoryIds: ['cat-old'],
-        deletedItemIds: [],
-      });
+      await repo.upsertCategory(
+        { id: 'cat-old', name: 'Old', type: InventoryType.Food },
+        TEST_ACCOUNT_ID,
+      );
+      await repo.submitInventory(
+        {
+          addedCategories: [{ id: 'cat-new', name: 'New', type: InventoryType.Beverage }],
+          updatedCategories: [],
+          addedItems: [],
+          updatedItems: [],
+          deletedCategoryIds: ['cat-old'],
+          deletedItemIds: [],
+        },
+        TEST_ACCOUNT_ID,
+        TEST_ENTITY_ID,
+      );
       const cats = await repo.getCategories();
       expect(cats.map((c) => c.id)).toEqual(['cat-new']);
     });
@@ -158,29 +281,34 @@ describe('createInventoryRepo', () => {
 
 describe('archiveItem / restoreItem / hardDeleteItem', () => {
   beforeEach(async () => {
-    await repo.upsertCategory({ id: 'cat-1', name: 'Food', type: InventoryType.Food });
-    await repo.upsertItem({
-      id: 'item-1',
-      entityId: 'default',
-      name: 'Chips',
-      categoryId: 'cat-1',
-      unitOfMeasureId: null,
-      sku: null,
-      reorderPoint: null,
-      reorderQty: null,
-    });
+    await repo.upsertCategory(
+      { id: 'cat-1', name: 'Food', type: InventoryType.Food },
+      TEST_ACCOUNT_ID,
+    );
+    await repo.upsertItem(
+      {
+        id: 'item-1',
+        name: 'Chips',
+        categoryId: 'cat-1',
+        unitOfMeasureId: null,
+        sku: null,
+        reorderPoint: null,
+        reorderQty: null,
+      },
+      TEST_ENTITY_ID,
+    );
   });
 
   it('archiveItem sets archived_at and item disappears from getItems', async () => {
     await repo.archiveItem('item-1');
-    const items = await repo.getItems();
+    const items = await repo.getItems(TEST_ENTITY_ID);
     expect(items.find((i) => i.id === 'item-1')).toBeUndefined();
   });
 
   it('restoreItem clears archived_at and item reappears in getItems', async () => {
     await repo.archiveItem('item-1');
     await repo.restoreItem('item-1');
-    const items = await repo.getItems();
+    const items = await repo.getItems(TEST_ENTITY_ID);
     expect(items.find((i) => i.id === 'item-1')).toBeDefined();
   });
 
@@ -199,9 +327,9 @@ describe('archiveItem / restoreItem / hardDeleteItem', () => {
   it('hardDeleteItem throws when item has usage', async () => {
     await db.insert(schema.stockMovements).values({
       id: 'mv-1',
-      inventoryItemId: 'item-1',
       accountId: 'default',
-      entityId: 'default',
+      inventoryItemId: 'item-1',
+      entityId: TEST_ENTITY_ID,
       movementType: MovementType.In,
       qty: 5,
       stockQtyAfter: 5,
@@ -218,7 +346,10 @@ describe('archiveItem / restoreItem / hardDeleteItem', () => {
 
 describe('archiveCategory / restoreCategory / hardDeleteCategory', () => {
   beforeEach(async () => {
-    await repo.upsertCategory({ id: 'cat-1', name: 'Food', type: InventoryType.Food });
+    await repo.upsertCategory(
+      { id: 'cat-1', name: 'Food', type: InventoryType.Food },
+      TEST_ACCOUNT_ID,
+    );
   });
 
   it('archiveCategory sets archived_at and category disappears from getCategories', async () => {
@@ -235,35 +366,39 @@ describe('archiveCategory / restoreCategory / hardDeleteCategory', () => {
   });
 
   it('archiveCategory cascades to archive items in that category', async () => {
-    await repo.upsertItem({
-      id: 'item-1',
-      entityId: 'default',
-      name: 'Chips',
-      categoryId: 'cat-1',
-      unitOfMeasureId: null,
-      sku: null,
-      reorderPoint: null,
-      reorderQty: null,
-    });
+    await repo.upsertItem(
+      {
+        id: 'item-1',
+        name: 'Chips',
+        categoryId: 'cat-1',
+        unitOfMeasureId: null,
+        sku: null,
+        reorderPoint: null,
+        reorderQty: null,
+      },
+      TEST_ENTITY_ID,
+    );
     await repo.archiveCategory('cat-1');
-    const items = await repo.getItems();
+    const items = await repo.getItems(TEST_ENTITY_ID);
     expect(items.find((i) => i.id === 'item-1')).toBeUndefined();
   });
 
   it('restoreCategory cascades to restore items in that category', async () => {
-    await repo.upsertItem({
-      id: 'item-1',
-      entityId: 'default',
-      name: 'Chips',
-      categoryId: 'cat-1',
-      unitOfMeasureId: null,
-      sku: null,
-      reorderPoint: null,
-      reorderQty: null,
-    });
+    await repo.upsertItem(
+      {
+        id: 'item-1',
+        name: 'Chips',
+        categoryId: 'cat-1',
+        unitOfMeasureId: null,
+        sku: null,
+        reorderPoint: null,
+        reorderQty: null,
+      },
+      TEST_ENTITY_ID,
+    );
     await repo.archiveCategory('cat-1');
     await repo.restoreCategory('cat-1');
-    const items = await repo.getItems();
+    const items = await repo.getItems(TEST_ENTITY_ID);
     expect(items.find((i) => i.id === 'item-1')).toBeDefined();
   });
 
@@ -279,16 +414,18 @@ describe('archiveCategory / restoreCategory / hardDeleteCategory', () => {
   });
 
   it('hardDeleteCategory throws when category has assigned items', async () => {
-    await repo.upsertItem({
-      id: 'item-1',
-      entityId: 'default',
-      name: 'Chips',
-      categoryId: 'cat-1',
-      unitOfMeasureId: null,
-      sku: null,
-      reorderPoint: null,
-      reorderQty: null,
-    });
+    await repo.upsertItem(
+      {
+        id: 'item-1',
+        name: 'Chips',
+        categoryId: 'cat-1',
+        unitOfMeasureId: null,
+        sku: null,
+        reorderPoint: null,
+        reorderQty: null,
+      },
+      TEST_ENTITY_ID,
+    );
     await expect(repo.hardDeleteCategory('cat-1')).rejects.toThrow();
   });
 
@@ -297,16 +434,18 @@ describe('archiveCategory / restoreCategory / hardDeleteCategory', () => {
   });
 
   it('getCategoryUsageCount counts assigned items', async () => {
-    await repo.upsertItem({
-      id: 'item-1',
-      entityId: 'default',
-      name: 'Chips',
-      categoryId: 'cat-1',
-      unitOfMeasureId: null,
-      sku: null,
-      reorderPoint: null,
-      reorderQty: null,
-    });
+    await repo.upsertItem(
+      {
+        id: 'item-1',
+        name: 'Chips',
+        categoryId: 'cat-1',
+        unitOfMeasureId: null,
+        sku: null,
+        reorderPoint: null,
+        reorderQty: null,
+      },
+      TEST_ENTITY_ID,
+    );
     expect(await repo.getCategoryUsageCount('cat-1')).toBe(1);
   });
 });

@@ -1,24 +1,26 @@
 import { ipcMain } from 'electron';
 import type { Category, InventoryItem, InventorySubmitPayload } from '@reyogo/types';
 import { InventoryIPC } from '@shared/types/ipc';
-import { getRepos } from '../../db';
+import { ACCOUNT_ID, getRepos, resolveCurrentIds } from '../../db';
 
 export function registerInventoryHandlers(): void {
   ipcMain.handle(InventoryIPC.GET_CATEGORIES, () => getRepos().inventory.getCategories());
   ipcMain.handle(InventoryIPC.GET_ITEMS, () => getRepos().inventory.getItems());
   ipcMain.handle(InventoryIPC.UPSERT_CATEGORY, (_e, category: Category) =>
-    getRepos().inventory.upsertCategory(category),
+    getRepos().inventory.upsertCategory(category, ACCOUNT_ID),
   );
-  ipcMain.handle(InventoryIPC.UPSERT_ITEM, (_e, item: InventoryItem) =>
-    getRepos().inventory.upsertItem(item),
-  );
+  ipcMain.handle(InventoryIPC.UPSERT_ITEM, async (_e, item: InventoryItem) => {
+    const { entityId } = await resolveCurrentIds();
+    return getRepos().inventory.upsertItem(item, entityId);
+  });
   ipcMain.handle(InventoryIPC.DELETE_CATEGORY, (_e, id: string) =>
     getRepos().inventory.deleteCategory(id),
   );
   ipcMain.handle(InventoryIPC.DELETE_ITEM, (_e, id: string) => getRepos().inventory.deleteItem(id));
-  ipcMain.handle(InventoryIPC.SUBMIT, (_e, payload: InventorySubmitPayload) =>
-    getRepos().inventory.submitInventory(payload),
-  );
+  ipcMain.handle(InventoryIPC.SUBMIT, async (_e, payload: InventorySubmitPayload) => {
+    const { entityId } = await resolveCurrentIds();
+    return getRepos().inventory.submitInventory(payload, ACCOUNT_ID, entityId);
+  });
   ipcMain.handle(InventoryIPC.ARCHIVE_ITEM, (_e, id: string) =>
     getRepos().inventory.archiveItem(id),
   );

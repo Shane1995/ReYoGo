@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { PageHeader, DatePicker } from '@reyogo/ui';
+import { PageHeader, DatePicker, cn } from '@reyogo/ui';
 import { stockMovementsService } from '@/services/stockMovements';
 import { useEntities } from '@/Context/EntityContext';
 import { EntityFilter } from '@/components/EntityFilter';
@@ -93,7 +93,7 @@ export default function CostingDashboard() {
                     {cogs.byCategory.map((row, i) => (
                       <tr
                         key={row.categoryId ?? i}
-                        className={i % 2 === 1 ? 'bg-white/[0.03]' : ''}
+                        className={cn(i % 2 !== 0 && 'bg-black/[0.025]')}
                       >
                         <td className="px-4 py-2.5 text-muted-foreground">
                           {row.categoryName ?? 'Uncategorised'}

@@ -8,6 +8,10 @@ import * as schema from '../schema';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
+export const TEST_ACCOUNT_ID = 'default';
+export const TEST_GROUP_ID = 'default-group';
+export const TEST_ENTITY_ID = 'default';
+
 export async function createTestDb(): Promise<DbClient> {
   const tmpPath = join(
     tmpdir(),
@@ -21,7 +25,7 @@ export async function createTestDb(): Promise<DbClient> {
   await db
     .insert(schema.accounts)
     .values({
-      id: 'default',
+      id: TEST_ACCOUNT_ID,
       name: 'Default',
       isCurrent: true,
       setupComplete: false,
@@ -32,8 +36,8 @@ export async function createTestDb(): Promise<DbClient> {
   await db
     .insert(schema.businessGroups)
     .values({
-      id: 'default-group',
-      accountId: 'default',
+      id: TEST_GROUP_ID,
+      accountId: TEST_ACCOUNT_ID,
       name: 'Test Group',
       createdAt: now,
     })
@@ -41,8 +45,8 @@ export async function createTestDb(): Promise<DbClient> {
   await db
     .insert(schema.entities)
     .values({
-      id: 'default',
-      groupId: 'default-group',
+      id: TEST_ENTITY_ID,
+      groupId: TEST_GROUP_ID,
       name: 'Test Entity',
       defaultVatRate: 15,
       defaultVatMode: VatMode.Exclusive,

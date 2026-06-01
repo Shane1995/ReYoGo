@@ -11,9 +11,13 @@ vi.mock('@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext', 
   useInventory: () => ({ items: [] }),
 }));
 
+vi.mock('@/Context/EntityContext', () => ({
+  useEntities: () => ({ entities: [{ id: 'entity-1' }], group: null, refetchEntities: vi.fn() }),
+}));
+
 vi.mock('@/services/suppliers', () => ({
   suppliersService: {
-    getSuppliers: vi.fn().mockResolvedValue([]),
+    getSuppliers: vi.fn((_entityId: string) => Promise.resolve([])),
   },
 }));
 

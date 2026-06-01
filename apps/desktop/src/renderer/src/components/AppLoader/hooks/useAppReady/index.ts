@@ -10,6 +10,7 @@ export function useAppReady() {
   const [phase, setPhase] = useState<AppPhase>('loading');
   const [initError, setInitError] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [cloudConnected, setCloudConnected] = useState(false);
 
   const checkSetup = useCallback(async () => {
     const isFresh = await cloudSyncService.isFreshReplica().catch(() => false);
@@ -18,6 +19,7 @@ export function useAppReady() {
       return;
     }
     const state = await entitiesService.getSetupState();
+    setCloudConnected(true);
     setPhase(state.setupComplete ? 'ready' : 'setup');
   }, []);
 
@@ -27,6 +29,10 @@ export function useAppReady() {
     const offAuthError = appService.onDbAuthError((message) => {
       setAuthError(message);
       setPhase('auth-error');
+    });
+    const offSetupNeeded = appService.onSetupNeeded(() => {
+      setCloudConnected(false);
+      setPhase('setup');
     });
     const offSyncEvent = cloudSyncService.onSyncEvent((event) => {
       if (event.type === CloudSyncEventType.Error && !event.retryable) {
@@ -39,6 +45,7 @@ export function useAppReady() {
       offReady();
       offError();
       offAuthError();
+      offSetupNeeded();
       offSyncEvent();
     };
   }, [checkSetup]);
@@ -46,5 +53,5 @@ export function useAppReady() {
   const isReady = phase !== 'loading';
   const setupComplete = phase === 'ready' ? true : phase === 'setup' ? false : null;
 
-  return { isReady, setupComplete, initError, authError, phase };
+  return { isReady, setupComplete, initError, authError, phase, cloudConnected };
 }

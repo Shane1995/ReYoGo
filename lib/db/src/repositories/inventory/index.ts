@@ -25,14 +25,13 @@ export function createInventoryRepo(db: DbClient) {
         .select()
         .from(schema.inventoryItems)
         .where(
-          entityId
-            ? and(
-                eq(schema.inventoryItems.entityId, entityId),
-                isNull(schema.inventoryItems.archivedAt),
-              )
-            : isNull(schema.inventoryItems.archivedAt),
+          and(
+            isNull(schema.inventoryItems.archivedAt),
+            entityId ? eq(schema.inventoryItems.entityId, entityId) : undefined,
+          ),
         )
         .orderBy(asc(schema.inventoryItems.name));
+
       const movementRows = await db
         .select({
           inventoryItemId: schema.stockMovements.inventoryItemId,
@@ -41,20 +40,22 @@ export function createInventoryRepo(db: DbClient) {
         })
         .from(schema.stockMovements)
         .orderBy(desc(schema.stockMovements.occurredAt), desc(schema.stockMovements.createdAt));
-      const latestMovement = new Map<
+
+      const stockMap = new Map<
         string,
         { stockQtyAfter: number; weightedAvgCostAfter: number | null }
       >();
       for (const m of movementRows) {
-        if (!latestMovement.has(m.inventoryItemId)) {
-          latestMovement.set(m.inventoryItemId, {
+        if (!stockMap.has(m.inventoryItemId)) {
+          stockMap.set(m.inventoryItemId, {
             stockQtyAfter: m.stockQtyAfter,
-            weightedAvgCostAfter: m.weightedAvgCostAfter,
+            weightedAvgCostAfter: m.weightedAvgCostAfter ?? null,
           });
         }
       }
+
       return itemRows.map((row) => {
-        const movement = latestMovement.get(row.id);
+        const stock = stockMap.get(row.id);
         return {
           id: row.id,
           entityId: row.entityId,
@@ -62,21 +63,21 @@ export function createInventoryRepo(db: DbClient) {
           categoryId: row.categoryId,
           unitOfMeasureId: row.unitOfMeasureId ?? null,
           sku: row.sku ?? null,
-          currentStockQty: movement?.stockQtyAfter ?? 0,
-          currentWeightedAvgCost: movement?.weightedAvgCostAfter ?? null,
+          currentStockQty: stock?.stockQtyAfter ?? 0,
+          currentWeightedAvgCost: stock?.weightedAvgCostAfter ?? null,
           reorderPoint: row.reorderPoint ?? null,
           reorderQty: row.reorderQty ?? null,
         };
       });
     },
 
-    async upsertCategory(category: Category): Promise<void> {
+    async upsertCategory(category: Category, accountId: string): Promise<void> {
       const ts = now();
       await db
         .insert(schema.inventoryCategories)
         .values({
           id: category.id,
-          accountId: 'default',
+          accountId,
           name: category.name,
           type: category.type,
           createdAt: ts,
@@ -88,14 +89,13 @@ export function createInventoryRepo(db: DbClient) {
         });
     },
 
-    async upsertItem(item: InventoryItemInput): Promise<void> {
+    async upsertItem(item: InventoryItemInput, entityId: string): Promise<void> {
       const ts = now();
       await db
         .insert(schema.inventoryItems)
         .values({
           id: item.id,
-          accountId: 'default',
-          entityId: item.entityId,
+          entityId,
           name: item.name,
           categoryId: item.categoryId,
           unitOfMeasureId: item.unitOfMeasureId ?? null,
@@ -108,7 +108,6 @@ export function createInventoryRepo(db: DbClient) {
         .onConflictDoUpdate({
           target: schema.inventoryItems.id,
           set: {
-            entityId: item.entityId,
             name: item.name,
             categoryId: item.categoryId,
             unitOfMeasureId: item.unitOfMeasureId ?? null,
@@ -120,11 +119,15 @@ export function createInventoryRepo(db: DbClient) {
         });
     },
 
-    async submitInventory(payload: InventorySubmitPayload): Promise<void> {
-      for (const cat of payload.addedCategories) await this.upsertCategory(cat);
-      for (const cat of payload.updatedCategories) await this.upsertCategory(cat);
-      for (const item of payload.addedItems) await this.upsertItem(item);
-      for (const item of payload.updatedItems) await this.upsertItem(item);
+    async submitInventory(
+      payload: InventorySubmitPayload,
+      accountId: string,
+      entityId: string,
+    ): Promise<void> {
+      for (const cat of payload.addedCategories) await this.upsertCategory(cat, accountId);
+      for (const cat of payload.updatedCategories) await this.upsertCategory(cat, accountId);
+      for (const item of payload.addedItems) await this.upsertItem(item, entityId);
+      for (const item of payload.updatedItems) await this.upsertItem(item, entityId);
       for (const id of payload.deletedCategoryIds)
         await db.delete(schema.inventoryCategories).where(eq(schema.inventoryCategories.id, id));
       for (const id of payload.deletedItemIds)

@@ -23,7 +23,6 @@ export function useItemFilters({ items, categories, costMap, stockMap }: Props) 
       const cost = costMap.get(item.id);
       return {
         id: item.id,
-        entityId: item.entityId,
         name: item.name,
         type: item.type,
         categoryId: item.categoryId,

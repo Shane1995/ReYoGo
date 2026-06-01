@@ -1,5 +1,4 @@
 import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
-import { accounts } from '../accounts';
 import { entities } from '../entities';
 import { inventoryCategories } from '../inventoryCategories';
 import { unitsOfMeasure } from '../unitsOfMeasure';
@@ -8,12 +7,9 @@ export const inventoryItems = sqliteTable(
   'inventory_items',
   {
     id: text('id').primaryKey(),
-    accountId: text('account_id')
-      .notNull()
-      .references(() => accounts.id, { onDelete: 'cascade' }),
     entityId: text('entity_id')
       .notNull()
-      .references(() => entities.id, { onDelete: 'restrict' }),
+      .references(() => entities.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     categoryId: text('category_id')
       .notNull()
