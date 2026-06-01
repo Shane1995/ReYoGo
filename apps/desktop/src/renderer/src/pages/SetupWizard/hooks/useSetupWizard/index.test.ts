@@ -4,6 +4,7 @@ import { useSetupWizard } from '.';
 
 const mockConnect = vi.hoisted(() => vi.fn());
 const mockCompleteSetup = vi.hoisted(() => vi.fn());
+const mockGetSetupState = vi.hoisted(() => vi.fn());
 const mockGetStatus = vi.hoisted(() => vi.fn());
 
 vi.mock('@/services/cloudSync', () => ({
@@ -14,7 +15,10 @@ vi.mock('@/services/cloudSync', () => ({
 }));
 
 vi.mock('@/services/entities', () => ({
-  entitiesService: { completeSetup: mockCompleteSetup },
+  entitiesService: {
+    completeSetup: mockCompleteSetup,
+    getSetupState: mockGetSetupState,
+  },
 }));
 
 const mockReload = vi.fn();
@@ -27,9 +31,11 @@ describe('useSetupWizard', () => {
   beforeEach(() => {
     mockConnect.mockReset();
     mockCompleteSetup.mockReset();
+    mockGetSetupState.mockReset();
     mockGetStatus.mockReset();
     mockReload.mockReset();
     mockGetStatus.mockResolvedValue({ isActive: false });
+    mockGetSetupState.mockResolvedValue({ setupComplete: false });
   });
 
   it('starts on step 1 when cloud is not active', async () => {
@@ -38,13 +44,20 @@ describe('useSetupWizard', () => {
     expect(result.current.step).toBe(1);
   });
 
-  it('starts on step 2 when cloud is already active', async () => {
+  it('starts on step 2 when cloud is active and setup is not complete', async () => {
     mockGetStatus.mockResolvedValue({ isActive: true });
     const { result } = renderHook(() => useSetupWizard());
     await waitFor(() => expect(result.current.step).toBe(2));
   });
 
-  it('connect advances to step 2 on success', async () => {
+  it('reloads immediately when cloud is active and setup is already complete', async () => {
+    mockGetStatus.mockResolvedValue({ isActive: true });
+    mockGetSetupState.mockResolvedValue({ setupComplete: true });
+    renderHook(() => useSetupWizard());
+    await waitFor(() => expect(mockReload).toHaveBeenCalled());
+  });
+
+  it('connect advances to step 2 when setup is not complete', async () => {
     mockConnect.mockResolvedValue(undefined);
     const { result } = renderHook(() => useSetupWizard());
     await waitFor(() => expect(mockGetStatus).toHaveBeenCalled());
@@ -52,6 +65,19 @@ describe('useSetupWizard', () => {
     act(() => result.current.setAuthToken('tok123'));
     await act(() => result.current.connect());
     expect(result.current.step).toBe(2);
+    expect(mockReload).not.toHaveBeenCalled();
+  });
+
+  it('connect reloads immediately when remote db is already set up', async () => {
+    mockConnect.mockResolvedValue(undefined);
+    mockGetSetupState.mockResolvedValue({ setupComplete: true });
+    const { result } = renderHook(() => useSetupWizard());
+    await waitFor(() => expect(mockGetStatus).toHaveBeenCalled());
+    act(() => result.current.setTursoUrl('libsql://my-db.turso.io'));
+    act(() => result.current.setAuthToken('tok123'));
+    await act(() => result.current.connect());
+    expect(mockReload).toHaveBeenCalled();
+    expect(result.current.step).toBe(1);
   });
 
   it('connect sets connectError on failure without advancing', async () => {

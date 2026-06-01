@@ -17,8 +17,14 @@ export function useSetupWizard() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
-    cloudSyncService.getStatus().then((status) => {
-      if (status.isActive) setStep(2);
+    cloudSyncService.getStatus().then(async (status) => {
+      if (!status.isActive) return;
+      const { setupComplete } = await entitiesService.getSetupState();
+      if (setupComplete) {
+        window.location.reload();
+      } else {
+        setStep(2);
+      }
     });
   }, []);
 
@@ -28,7 +34,12 @@ export function useSetupWizard() {
     setConnectError(null);
     try {
       await cloudSyncService.connect(tursoUrl, authToken);
-      setStep(2);
+      const { setupComplete } = await entitiesService.getSetupState();
+      if (setupComplete) {
+        window.location.reload();
+      } else {
+        setStep(2);
+      }
     } catch (err) {
       setConnectError(err instanceof Error ? err.message : 'Connection failed. Please try again.');
     } finally {
