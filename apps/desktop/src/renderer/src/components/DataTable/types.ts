@@ -3,9 +3,11 @@ import type { ReactNode } from 'react';
 export interface ColumnDef<T> {
   key: string;
   header: ReactNode;
-  cell: (row: T) => React.ReactNode;
+  cell: (row: T) => ReactNode;
   align?: 'left' | 'right' | 'center';
   width?: string;
+  sortable?: boolean;
+  sortFn?: (a: T, b: T) => number;
 }
 
 export type FilterOption = { value: string; label: string };
