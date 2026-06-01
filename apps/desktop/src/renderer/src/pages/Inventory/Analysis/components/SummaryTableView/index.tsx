@@ -130,7 +130,7 @@ export function SummaryTableView({ groups }: { groups: ItemGroup[] }) {
                       </TableRow>
 
                       {isExpanded &&
-                        catGroups.map((group) => {
+                        catGroups.map((group, gi) => {
                           const last = group.entries[group.entries.length - 1]!;
                           const change = overallChangePct(group);
                           const minPrice = Math.min(...group.entries.map((e) => e.unitPrice));
@@ -140,7 +140,10 @@ export function SummaryTableView({ groups }: { groups: ItemGroup[] }) {
                           return (
                             <TableRow
                               key={group.itemId}
-                              className="cursor-pointer border-[var(--nav-border)] hover:bg-muted/20 transition-colors"
+                              className={cn(
+                                'cursor-pointer border-[var(--nav-border)] hover:bg-muted/20 transition-colors',
+                                gi % 2 !== 0 && 'bg-black/[0.025]',
+                              )}
                               onClick={() => navigate(itemTrendPath(group.itemId))}
                             >
                               <TableCell className="py-2.5 pl-10 font-medium text-foreground hover:text-primary transition-colors">
