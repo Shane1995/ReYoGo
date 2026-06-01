@@ -1,11 +1,17 @@
 import { ipcMain } from 'electron';
 import { CloudSyncIPC } from '@shared/types/ipc';
-import { getDb, getLocalDbPath, getReplicaPath, reinitialise, wipeReplicaFiles } from '../../db';
+import {
+  getDb,
+  getLocalDbPath,
+  getReplicaPath,
+  reinitialise,
+  syncNow,
+  wipeReplicaFiles,
+} from '../../db';
 import {
   activateCloudSync,
   clearCredentials,
   getSyncStatus,
-  getStoredCredentials,
   getTursoUrl,
   hasCloudCredentials,
   hasLocalReplica,
@@ -41,12 +47,9 @@ export function registerSettingsHandlers(): void {
   });
 
   ipcMain.handle(CloudSyncIPC.MANUAL_SYNC, async () => {
-    const credentials = getStoredCredentials();
-    if (!credentials) throw new Error('Cloud sync is not active.');
+    if (!hasCloudCredentials()) throw new Error('Cloud sync is not active.');
     try {
-      await withSyncTimeout(
-        reinitialise(getReplicaPath(), credentials.tursoUrl, credentials.authToken),
-      );
+      await withSyncTimeout(syncNow());
       recordSyncSuccess();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
