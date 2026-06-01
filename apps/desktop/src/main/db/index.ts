@@ -292,6 +292,7 @@ export async function reinitialise(
     }
     await handle.sync();
     await migrate(handle.db, { migrationsFolder: getMigrationsFolder() });
+    await ensureDefaultAccount(handle.db);
     if (_handle) _handle.close();
     _handle = handle;
     _db = handle.db;
