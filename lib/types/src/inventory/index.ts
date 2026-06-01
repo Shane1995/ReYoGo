@@ -19,6 +19,7 @@ export interface UnitOfMeasure {
 
 export interface InventoryItem {
   id: string;
+  entityId: string;
   name: string;
   categoryId: string;
   unitOfMeasureId: string | null;
@@ -29,7 +30,10 @@ export interface InventoryItem {
   reorderQty: number | null;
 }
 
-export type InventoryItemInput = Omit<InventoryItem, 'currentStockQty' | 'currentWeightedAvgCost'>;
+export type InventoryItemInput = Omit<
+  InventoryItem,
+  'entityId' | 'currentStockQty' | 'currentWeightedAvgCost'
+>;
 
 export interface InventorySubmitPayload {
   addedCategories: Category[];
@@ -43,6 +47,7 @@ export interface InventorySubmitPayload {
 export type IInventoryCategory = Category;
 export interface IInventoryItem {
   id: string;
+  entityId: string;
   name: string;
   categoryId: string;
   type: InventoryType;

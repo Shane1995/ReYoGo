@@ -12,6 +12,7 @@ describe('health handler', () => {
   it('@reyogo/types workspace types resolve', () => {
     const item: IInventoryItem = {
       id: 'a',
+      entityId: 'e',
       name: 'b',
       categoryId: 'c',
       type: InventoryType.Food,

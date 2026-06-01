@@ -291,6 +291,7 @@ export async function reinitialise(
       handle = createReplicaClient(replicaPath, syncUrl, authToken);
     }
     await handle.sync();
+    await migrate(handle.db, { migrationsFolder: getMigrationsFolder() });
     if (_handle) _handle.close();
     _handle = handle;
     _db = handle.db;

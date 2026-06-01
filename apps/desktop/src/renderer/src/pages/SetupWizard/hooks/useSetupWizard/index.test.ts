@@ -1,17 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useSetupWizard } from '.';
-import { SetupPath } from '../..';
 
-const mockCompleteSetup = vi.hoisted(() => vi.fn());
 const mockConnect = vi.hoisted(() => vi.fn());
+const mockCompleteSetup = vi.hoisted(() => vi.fn());
+const mockGetStatus = vi.hoisted(() => vi.fn());
+
+vi.mock('@/services/cloudSync', () => ({
+  cloudSyncService: {
+    connect: mockConnect,
+    getStatus: mockGetStatus,
+  },
+}));
 
 vi.mock('@/services/entities', () => ({
   entitiesService: { completeSetup: mockCompleteSetup },
-}));
-
-vi.mock('@/services/cloudSync', () => ({
-  cloudSyncService: { connect: mockConnect },
 }));
 
 const mockReload = vi.fn();
@@ -22,132 +25,119 @@ Object.defineProperty(window, 'location', {
 
 describe('useSetupWizard', () => {
   beforeEach(() => {
-    mockCompleteSetup.mockReset();
     mockConnect.mockReset();
+    mockCompleteSetup.mockReset();
+    mockGetStatus.mockReset();
     mockReload.mockReset();
+    mockGetStatus.mockResolvedValue({ isActive: false });
   });
 
-  it('starts on step 1 with no path chosen', () => {
+  it('starts on step 1 when cloud is not active', async () => {
     const { result } = renderHook(() => useSetupWizard());
-    expect(result.current.step).toBe(1);
-    expect(result.current.path).toBeNull();
-  });
-
-  it('choosePath cloud advances to step 2', () => {
-    const { result } = renderHook(() => useSetupWizard());
-    act(() => result.current.choosePath(SetupPath.Cloud));
-    expect(result.current.step).toBe(2);
-    expect(result.current.path).toBe(SetupPath.Cloud);
-  });
-
-  it('choosePath local advances to step 2', () => {
-    const { result } = renderHook(() => useSetupWizard());
-    act(() => result.current.choosePath(SetupPath.Local));
-    expect(result.current.step).toBe(2);
-    expect(result.current.path).toBe(SetupPath.Local);
-  });
-
-  it('local path: advances from step 2 to step 3 when group name is set', () => {
-    const { result } = renderHook(() => useSetupWizard());
-    act(() => result.current.choosePath(SetupPath.Local));
-    act(() => result.current.setGroupName('The Crown Group'));
-    act(() => result.current.next());
-    expect(result.current.step).toBe(3);
-  });
-
-  it('local path: does not advance from step 2 when group name is empty', () => {
-    const { result } = renderHook(() => useSetupWizard());
-    act(() => result.current.choosePath(SetupPath.Local));
-    act(() => result.current.next());
-    expect(result.current.step).toBe(2);
-  });
-
-  it('local path: back from step 3 returns to step 2', () => {
-    const { result } = renderHook(() => useSetupWizard());
-    act(() => result.current.choosePath(SetupPath.Local));
-    act(() => result.current.setGroupName('G'));
-    act(() => result.current.next());
-    act(() => result.current.back());
-    expect(result.current.step).toBe(2);
-  });
-
-  it('back from step 2 returns to step 1', () => {
-    const { result } = renderHook(() => useSetupWizard());
-    act(() => result.current.choosePath(SetupPath.Local));
-    expect(result.current.step).toBe(2);
-    act(() => result.current.back());
+    await waitFor(() => expect(mockGetStatus).toHaveBeenCalled());
     expect(result.current.step).toBe(1);
   });
 
-  it('cloud path: next is a no-op at step 2', () => {
+  it('starts on step 2 when cloud is already active', async () => {
+    mockGetStatus.mockResolvedValue({ isActive: true });
     const { result } = renderHook(() => useSetupWizard());
-    act(() => result.current.choosePath(SetupPath.Cloud));
-    act(() => result.current.next());
-    expect(result.current.step).toBe(2);
+    await waitFor(() => expect(result.current.step).toBe(2));
   });
 
-  it('cannot remove last entity', () => {
-    const { result } = renderHook(() => useSetupWizard());
-    act(() => result.current.choosePath(SetupPath.Local));
-    expect(result.current.entityNames).toHaveLength(1);
-    act(() => result.current.removeEntity(0));
-    expect(result.current.entityNames).toHaveLength(1);
-  });
-
-  it('local path: sets submitError when completeSetup throws', async () => {
-    mockCompleteSetup.mockRejectedValue(new Error('Network error'));
-    const { result } = renderHook(() => useSetupWizard());
-    act(() => result.current.choosePath(SetupPath.Local));
-    act(() => result.current.setGroupName('G'));
-    act(() => result.current.setEntityName(0, 'E1'));
-    await act(() => result.current.submit());
-    expect(result.current.submitError).toBe('Network error');
-    expect(result.current.isSubmitting).toBe(false);
-  });
-
-  it('local path: calls completeSetup with valid data', async () => {
-    mockCompleteSetup.mockResolvedValue(undefined);
-    const { result } = renderHook(() => useSetupWizard());
-    act(() => result.current.choosePath(SetupPath.Local));
-    act(() => result.current.setGroupName('G'));
-    act(() => result.current.setEntityName(0, 'E1'));
-    await act(() => result.current.submit());
-    expect(mockCompleteSetup).toHaveBeenCalledWith({ groupName: 'G', entityNames: ['E1'] });
-  });
-
-  it('cloud path: connect calls service and reloads on success', async () => {
+  it('connect advances to step 2 on success', async () => {
     mockConnect.mockResolvedValue(undefined);
     const { result } = renderHook(() => useSetupWizard());
-    act(() => result.current.choosePath(SetupPath.Cloud));
+    await waitFor(() => expect(mockGetStatus).toHaveBeenCalled());
     act(() => result.current.setTursoUrl('libsql://my-db.turso.io'));
     act(() => result.current.setAuthToken('tok123'));
     await act(() => result.current.connect());
-    expect(mockConnect).toHaveBeenCalledWith('libsql://my-db.turso.io', 'tok123');
-    expect(mockReload).toHaveBeenCalled();
+    expect(result.current.step).toBe(2);
   });
 
-  it('cloud path: sets connectError when connect throws', async () => {
+  it('connect sets connectError on failure without advancing', async () => {
     mockConnect.mockRejectedValue(new Error('Auth failed'));
     const { result } = renderHook(() => useSetupWizard());
-    act(() => result.current.choosePath(SetupPath.Cloud));
+    await waitFor(() => expect(mockGetStatus).toHaveBeenCalled());
     act(() => result.current.setTursoUrl('libsql://my-db.turso.io'));
     act(() => result.current.setAuthToken('bad-tok'));
     await act(() => result.current.connect());
     expect(result.current.connectError).toBe('Auth failed');
-    expect(result.current.connecting).toBe(false);
-    expect(mockReload).not.toHaveBeenCalled();
+    expect(result.current.step).toBe(1);
   });
 
-  it('cloud path: clears connectError on retry', async () => {
-    mockConnect.mockRejectedValueOnce(new Error('first failure')).mockResolvedValueOnce(undefined);
+  it('next advances to step 3 when business name is set', async () => {
+    mockGetStatus.mockResolvedValue({ isActive: true });
     const { result } = renderHook(() => useSetupWizard());
-    act(() => result.current.choosePath(SetupPath.Cloud));
-    act(() => result.current.setTursoUrl('libsql://my-db.turso.io'));
-    act(() => result.current.setAuthToken('tok'));
-    await act(() => result.current.connect());
-    expect(result.current.connectError).toBe('first failure');
-    await act(() => result.current.connect());
-    expect(result.current.connectError).toBeNull();
+    await waitFor(() => expect(result.current.step).toBe(2));
+    act(() => result.current.setBusinessName('The Crown Pub'));
+    act(() => result.current.next());
+    expect(result.current.step).toBe(3);
+  });
+
+  it('next does not advance when business name is empty', async () => {
+    mockGetStatus.mockResolvedValue({ isActive: true });
+    const { result } = renderHook(() => useSetupWizard());
+    await waitFor(() => expect(result.current.step).toBe(2));
+    act(() => result.current.next());
+    expect(result.current.step).toBe(2);
+  });
+
+  it('back returns from step 3 to step 2', async () => {
+    mockGetStatus.mockResolvedValue({ isActive: true });
+    const { result } = renderHook(() => useSetupWizard());
+    await waitFor(() => expect(result.current.step).toBe(2));
+    act(() => result.current.setBusinessName('The Crown Pub'));
+    act(() => result.current.next());
+    act(() => result.current.back());
+    expect(result.current.step).toBe(2);
+  });
+
+  it('skip submits with just the one business and reloads', async () => {
+    mockCompleteSetup.mockResolvedValue(undefined);
+    const { result } = renderHook(() => useSetupWizard());
+    act(() => result.current.setBusinessName('The Crown Pub'));
+    await act(() => result.current.skip());
+    expect(mockCompleteSetup).toHaveBeenCalledWith({
+      groupName: 'The Crown Pub Group',
+      entityNames: ['The Crown Pub'],
+    });
     expect(mockReload).toHaveBeenCalled();
+  });
+
+  it('submit includes additional businesses and reloads', async () => {
+    mockCompleteSetup.mockResolvedValue(undefined);
+    const { result } = renderHook(() => useSetupWizard());
+    act(() => result.current.setBusinessName('The Crown Pub'));
+    act(() => result.current.addMore());
+    act(() => result.current.setMoreName(0, 'The Garden Bar'));
+    await act(() => result.current.submit());
+    expect(mockCompleteSetup).toHaveBeenCalledWith({
+      groupName: 'The Crown Pub Group',
+      entityNames: ['The Crown Pub', 'The Garden Bar'],
+    });
+    expect(mockReload).toHaveBeenCalled();
+  });
+
+  it('submit filters out blank additional businesses', async () => {
+    mockCompleteSetup.mockResolvedValue(undefined);
+    const { result } = renderHook(() => useSetupWizard());
+    act(() => result.current.setBusinessName('The Crown Pub'));
+    act(() => result.current.addMore());
+    act(() => result.current.addMore());
+    act(() => result.current.setMoreName(0, 'The Garden Bar'));
+    await act(() => result.current.submit());
+    expect(mockCompleteSetup).toHaveBeenCalledWith({
+      groupName: 'The Crown Pub Group',
+      entityNames: ['The Crown Pub', 'The Garden Bar'],
+    });
+  });
+
+  it('sets submitError on failure', async () => {
+    mockCompleteSetup.mockRejectedValue(new Error('Network error'));
+    const { result } = renderHook(() => useSetupWizard());
+    act(() => result.current.setBusinessName('The Crown Pub'));
+    await act(() => result.current.skip());
+    expect(result.current.submitError).toBe('Network error');
+    expect(result.current.isSubmitting).toBe(false);
   });
 });

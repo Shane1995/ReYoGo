@@ -8,6 +8,13 @@
       "when": 1780302523296,
       "tag": "0000_smiling_thaddeus_ross",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1780313301720,
+      "tag": "0001_typical_squadron_supreme",
+      "breakpoints": true
     }
   ]
 }

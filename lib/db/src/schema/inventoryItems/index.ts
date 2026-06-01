@@ -1,5 +1,5 @@
 import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
-import { businessGroups } from '../businessGroups';
+import { entities } from '../entities';
 import { inventoryCategories } from '../inventoryCategories';
 import { unitsOfMeasure } from '../unitsOfMeasure';
 
@@ -7,9 +7,9 @@ export const inventoryItems = sqliteTable(
   'inventory_items',
   {
     id: text('id').primaryKey(),
-    groupId: text('group_id')
+    entityId: text('entity_id')
       .notNull()
-      .references(() => businessGroups.id, { onDelete: 'cascade' }),
+      .references(() => entities.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     categoryId: text('category_id')
       .notNull()
@@ -25,7 +25,7 @@ export const inventoryItems = sqliteTable(
     archivedAt: integer('archived_at', { mode: 'timestamp' }),
   },
   (t) => ({
-    nameGroupUnique: uniqueIndex('inventory_items_name_group_idx').on(t.groupId, t.name),
+    nameEntityUnique: uniqueIndex('inventory_items_name_entity_idx').on(t.entityId, t.name),
   }),
 );
 export type InventoryItemRow = typeof inventoryItems.$inferSelect;

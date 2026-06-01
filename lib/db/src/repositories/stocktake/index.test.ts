@@ -19,7 +19,7 @@ async function seedItem(db: DbClient, itemId: string) {
   });
   await db.insert(schema.inventoryItems).values({
     id: itemId,
-    groupId: 'default-group',
+    entityId: 'default',
     name: 'Flour',
     categoryId: 'cat-1',
     createdAt: new Date(),

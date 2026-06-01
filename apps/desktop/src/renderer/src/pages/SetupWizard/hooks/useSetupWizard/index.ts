@@ -1,70 +1,26 @@
-import { useCallback, useState } from 'react';
-import { entitiesService } from '@/services/entities';
+import { useCallback, useEffect, useState } from 'react';
 import { cloudSyncService } from '@/services/cloudSync';
-import { SetupPath } from '../..';
-
-export type WizardPath = SetupPath | null;
+import { entitiesService } from '@/services/entities';
 
 export function useSetupWizard() {
-  const [step, setStep] = useState(1);
-  const [path, setPath] = useState<WizardPath>(null);
-
-  const [groupName, setGroupName] = useState('');
-  const [entityNames, setEntityNames] = useState(['']);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const [tursoUrl, setTursoUrl] = useState('');
   const [authToken, setAuthToken] = useState('');
   const [connecting, setConnecting] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
 
-  const choosePath = useCallback((p: SetupPath) => {
-    setPath(p);
-    setStep(2);
-  }, []);
+  const [businessName, setBusinessName] = useState('');
 
-  const next = useCallback(() => {
-    setStep((s) => (s === 2 && path === SetupPath.Local && groupName.trim() ? s + 1 : s));
-  }, [path, groupName]);
+  const [moreBusinesses, setMoreBusinesses] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const back = useCallback(() => {
-    setStep((s) => (s > 1 ? s - 1 : s));
-  }, []);
-
-  const addEntity = useCallback(() => {
-    setEntityNames((prev) => [...prev, '']);
-  }, []);
-
-  const removeEntity = useCallback((index: number) => {
-    setEntityNames((prev) => {
-      if (prev.length <= 1) return prev;
-      return prev.filter((_, i) => i !== index);
+  useEffect(() => {
+    cloudSyncService.getStatus().then((status) => {
+      if (status.isActive) setStep(2);
     });
   }, []);
-
-  const setEntityName = useCallback((index: number, name: string) => {
-    setEntityNames((prev) => prev.map((n, i) => (i === index ? name : n)));
-  }, []);
-
-  const canSubmit = entityNames.some((n) => n.trim().length > 0);
-
-  const submit = useCallback(async () => {
-    if (!canSubmit) return;
-    setIsSubmitting(true);
-    setSubmitError(null);
-    try {
-      await entitiesService.completeSetup({
-        groupName: groupName.trim(),
-        entityNames: entityNames.filter((n) => n.trim()).map((n) => n.trim()),
-      });
-      window.location.reload();
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Setup failed. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [canSubmit, groupName, entityNames]);
 
   const connect = useCallback(async () => {
     if (!tursoUrl.trim() || !authToken.trim()) return;
@@ -72,7 +28,7 @@ export function useSetupWizard() {
     setConnectError(null);
     try {
       await cloudSyncService.connect(tursoUrl, authToken);
-      window.location.reload();
+      setStep(2);
     } catch (err) {
       setConnectError(err instanceof Error ? err.message : 'Connection failed. Please try again.');
     } finally {
@@ -80,22 +36,50 @@ export function useSetupWizard() {
     }
   }, [tursoUrl, authToken]);
 
+  const next = useCallback(() => {
+    if (businessName.trim()) setStep(3);
+  }, [businessName]);
+
+  const back = useCallback(() => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s)), []);
+
+  const addMore = useCallback(() => setMoreBusinesses((prev) => [...prev, '']), []);
+
+  const removeMore = useCallback((index: number) => {
+    setMoreBusinesses((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const setMoreName = useCallback((index: number, name: string) => {
+    setMoreBusinesses((prev) => prev.map((n, i) => (i === index ? name : n)));
+  }, []);
+
+  const doSubmit = useCallback(
+    async (extras: string[]) => {
+      setIsSubmitting(true);
+      setSubmitError(null);
+      try {
+        const entityNames = [
+          businessName.trim(),
+          ...extras.filter((n) => n.trim()).map((n) => n.trim()),
+        ];
+        await entitiesService.completeSetup({
+          groupName: `${businessName.trim()} Group`,
+          entityNames,
+        });
+        window.location.reload();
+      } catch (err) {
+        setSubmitError(err instanceof Error ? err.message : 'Setup failed. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [businessName],
+  );
+
+  const skip = useCallback(() => doSubmit([]), [doSubmit]);
+  const submit = useCallback(() => doSubmit(moreBusinesses), [doSubmit, moreBusinesses]);
+
   return {
     step,
-    path,
-    choosePath,
-    groupName,
-    setGroupName,
-    entityNames,
-    addEntity,
-    removeEntity,
-    setEntityName,
-    canSubmit,
-    isSubmitting,
-    submitError,
-    next,
-    back,
-    submit,
     tursoUrl,
     setTursoUrl,
     authToken,
@@ -103,5 +87,17 @@ export function useSetupWizard() {
     connecting,
     connectError,
     connect,
+    businessName,
+    setBusinessName,
+    next,
+    back,
+    moreBusinesses,
+    addMore,
+    removeMore,
+    setMoreName,
+    isSubmitting,
+    submitError,
+    skip,
+    submit,
   };
 }

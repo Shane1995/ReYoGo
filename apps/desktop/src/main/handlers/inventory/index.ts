@@ -10,14 +10,14 @@ export function registerInventoryHandlers(): void {
     getRepos().inventory.upsertCategory(category, 'default'),
   );
   ipcMain.handle(InventoryIPC.UPSERT_ITEM, (_e, item: InventoryItem) =>
-    getRepos().inventory.upsertItem(item, 'default-group'),
+    getRepos().inventory.upsertItem(item, 'default'),
   );
   ipcMain.handle(InventoryIPC.DELETE_CATEGORY, (_e, id: string) =>
     getRepos().inventory.deleteCategory(id),
   );
   ipcMain.handle(InventoryIPC.DELETE_ITEM, (_e, id: string) => getRepos().inventory.deleteItem(id));
   ipcMain.handle(InventoryIPC.SUBMIT, (_e, payload: InventorySubmitPayload) =>
-    getRepos().inventory.submitInventory(payload, 'default', 'default-group'),
+    getRepos().inventory.submitInventory(payload, 'default', 'default'),
   );
   ipcMain.handle(InventoryIPC.ARCHIVE_ITEM, (_e, id: string) =>
     getRepos().inventory.archiveItem(id),

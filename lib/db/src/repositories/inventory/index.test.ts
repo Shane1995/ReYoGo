@@ -80,7 +80,7 @@ describe('createInventoryRepo', () => {
           reorderPoint: null,
           reorderQty: null,
         },
-        TEST_GROUP_ID,
+        TEST_ENTITY_ID,
       );
       const rows = await db.select().from(schema.inventoryItems);
       expect(rows).toHaveLength(1);
@@ -98,7 +98,7 @@ describe('createInventoryRepo', () => {
           reorderPoint: null,
           reorderQty: null,
         },
-        TEST_GROUP_ID,
+        TEST_ENTITY_ID,
       );
       await repo.upsertItem(
         {
@@ -110,7 +110,7 @@ describe('createInventoryRepo', () => {
           reorderPoint: null,
           reorderQty: null,
         },
-        TEST_GROUP_ID,
+        TEST_ENTITY_ID,
       );
       const rows = await db.select().from(schema.inventoryItems);
       expect(rows).toHaveLength(1);
@@ -134,17 +134,45 @@ describe('createInventoryRepo', () => {
           reorderPoint: null,
           reorderQty: null,
         },
-        TEST_GROUP_ID,
+        TEST_ENTITY_ID,
       );
     });
 
-    it('returns all group items with zero stock when no movements exist', async () => {
+    it('returns entity items with zero stock when no movements exist', async () => {
       const items = await repo.getItems(TEST_ENTITY_ID);
       expect(items).toHaveLength(1);
       expect(items[0]!.currentStockQty).toBe(0);
+      expect(items[0]!.entityId).toBe(TEST_ENTITY_ID);
     });
 
-    it('per-entity: returns stock qty from that entity only', async () => {
+    it('per-entity: returns only items belonging to that entity', async () => {
+      await db.insert(schema.entities).values({
+        id: 'entity-2',
+        groupId: TEST_GROUP_ID,
+        name: 'Entity 2',
+        createdAt: new Date(),
+      });
+      await repo.upsertCategory(
+        { id: 'cat-2', name: 'Spirits', type: InventoryType.Beverage },
+        TEST_ACCOUNT_ID,
+      );
+      await repo.upsertItem(
+        {
+          id: 'item-2',
+          name: 'Gin',
+          categoryId: 'cat-2',
+          unitOfMeasureId: null,
+          sku: null,
+          reorderPoint: null,
+          reorderQty: null,
+        },
+        'entity-2',
+      );
+      const items = await repo.getItems(TEST_ENTITY_ID);
+      expect(items.map((i) => i.id)).toEqual(['item-1']);
+    });
+
+    it('per-entity: reflects stock movements for that entity', async () => {
       await db.insert(schema.stockMovements).values({
         id: 'mv-1',
         accountId: 'default',
@@ -160,39 +188,31 @@ describe('createInventoryRepo', () => {
       expect(items[0]!.currentStockQty).toBe(10);
     });
 
-    it('aggregate (no entityId): sums latest stock across all entities', async () => {
+    it('no entityId: returns items from all entities', async () => {
       await db.insert(schema.entities).values({
         id: 'entity-2',
         groupId: TEST_GROUP_ID,
         name: 'Entity 2',
         createdAt: new Date(),
       });
-      await db.insert(schema.stockMovements).values([
+      await repo.upsertCategory(
+        { id: 'cat-2', name: 'Spirits', type: InventoryType.Beverage },
+        TEST_ACCOUNT_ID,
+      );
+      await repo.upsertItem(
         {
-          id: 'mv-1',
-          accountId: 'default',
-          entityId: TEST_ENTITY_ID,
-          inventoryItemId: 'item-1',
-          movementType: MovementType.In,
-          qty: 10,
-          stockQtyAfter: 10,
-          occurredAt: new Date('2024-01-01'),
-          createdAt: new Date(),
+          id: 'item-2',
+          name: 'Gin',
+          categoryId: 'cat-2',
+          unitOfMeasureId: null,
+          sku: null,
+          reorderPoint: null,
+          reorderQty: null,
         },
-        {
-          id: 'mv-2',
-          accountId: 'default',
-          entityId: 'entity-2',
-          inventoryItemId: 'item-1',
-          movementType: MovementType.In,
-          qty: 5,
-          stockQtyAfter: 5,
-          occurredAt: new Date('2024-01-02'),
-          createdAt: new Date(),
-        },
-      ]);
+        'entity-2',
+      );
       const items = await repo.getItems();
-      expect(items[0]!.currentStockQty).toBe(15);
+      expect(items.map((i) => i.id).sort()).toEqual(['item-1', 'item-2']);
     });
 
     it('returns empty array when no items exist', async () => {
@@ -228,7 +248,7 @@ describe('createInventoryRepo', () => {
           reorderPoint: null,
           reorderQty: null,
         },
-        TEST_GROUP_ID,
+        TEST_ENTITY_ID,
       );
       await repo.deleteItem('item-1');
       expect(await db.select().from(schema.inventoryItems)).toHaveLength(0);
@@ -251,7 +271,7 @@ describe('createInventoryRepo', () => {
           deletedItemIds: [],
         },
         TEST_ACCOUNT_ID,
-        TEST_GROUP_ID,
+        TEST_ENTITY_ID,
       );
       const cats = await repo.getCategories();
       expect(cats.map((c) => c.id)).toEqual(['cat-new']);
@@ -275,7 +295,7 @@ describe('archiveItem / restoreItem / hardDeleteItem', () => {
         reorderPoint: null,
         reorderQty: null,
       },
-      TEST_GROUP_ID,
+      TEST_ENTITY_ID,
     );
   });
 
@@ -356,7 +376,7 @@ describe('archiveCategory / restoreCategory / hardDeleteCategory', () => {
         reorderPoint: null,
         reorderQty: null,
       },
-      TEST_GROUP_ID,
+      TEST_ENTITY_ID,
     );
     await repo.archiveCategory('cat-1');
     const items = await repo.getItems(TEST_ENTITY_ID);
@@ -374,7 +394,7 @@ describe('archiveCategory / restoreCategory / hardDeleteCategory', () => {
         reorderPoint: null,
         reorderQty: null,
       },
-      TEST_GROUP_ID,
+      TEST_ENTITY_ID,
     );
     await repo.archiveCategory('cat-1');
     await repo.restoreCategory('cat-1');
@@ -404,7 +424,7 @@ describe('archiveCategory / restoreCategory / hardDeleteCategory', () => {
         reorderPoint: null,
         reorderQty: null,
       },
-      TEST_GROUP_ID,
+      TEST_ENTITY_ID,
     );
     await expect(repo.hardDeleteCategory('cat-1')).rejects.toThrow();
   });
@@ -424,7 +444,7 @@ describe('archiveCategory / restoreCategory / hardDeleteCategory', () => {
         reorderPoint: null,
         reorderQty: null,
       },
-      TEST_GROUP_ID,
+      TEST_ENTITY_ID,
     );
     expect(await repo.getCategoryUsageCount('cat-1')).toBe(1);
   });
