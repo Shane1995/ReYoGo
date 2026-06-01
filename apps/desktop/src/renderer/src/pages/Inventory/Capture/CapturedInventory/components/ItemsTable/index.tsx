@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge, cn } from '@reyogo/ui';
 import { VatMode } from '@reyogo/types';
@@ -63,143 +63,170 @@ export function ItemsTable({
     clearSelection,
   } = useItemSelection({ filteredIds, onDelete });
 
-  const columns: ColumnDef<FlatItem>[] = [
-    {
-      key: 'select',
-      header: (
-        <Checkbox
-          checked={allSelected}
-          indeterminate={someSelected && !allSelected}
-          onChange={toggleAll}
-        />
-      ),
-      width: '40px',
-      cell: (row) => {
-        const isChecked = selectedIds.has(row.id);
-        return (
-          <span
-            className={cn(
-              'transition-opacity',
-              isChecked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
-            )}
-          >
-            <Checkbox checked={isChecked} onChange={() => toggleOne(row.id)} />
-          </span>
-        );
-      },
-    },
-    {
-      key: 'name',
-      header: 'Item',
-      sortable: true,
-      sortFn: sortByName,
-      cell: (row) => <span className="font-medium text-foreground">{row.name}</span>,
-    },
-    {
-      key: 'type',
-      header: 'Type',
-      cell: (row) => {
-        const cfg = getTypeConfig(row.type, allTypes);
-        return (
-          <Badge className={cn('text-[11px] font-medium capitalize', cfg.badgeClass)}>
-            {row.type}
-          </Badge>
-        );
-      },
-    },
-    {
-      key: 'category',
-      header: 'Category',
-      sortable: true,
-      sortFn: sortByCategory,
-      cell: (row) => <span className="text-muted-foreground text-sm">{row.categoryName}</span>,
-    },
-    {
-      key: 'unit',
-      header: 'Unit',
-      cell: (row) =>
-        row.unitOfMeasure ? (
-          <Badge variant="secondary" className="text-[11px] font-normal">
-            {row.unitOfMeasure}
-          </Badge>
-        ) : (
-          <span className="text-muted-foreground/30">—</span>
-        ),
-    },
-    {
-      key: 'cost',
-      header: 'Last cost / unit',
-      align: 'right',
-      sortable: true,
-      sortFn: sortByLastCost,
-      cell: (row) =>
-        row.lastCostPerUnit !== undefined ? (
-          <span className="font-mono text-xs tabular-nums text-foreground">
-            {row.lastCostPerUnit.toFixed(2)}
-            {row.lastCostUom ? (
-              <span className="text-muted-foreground/60"> / {row.lastCostUom}</span>
-            ) : null}
-          </span>
-        ) : (
-          <span className="text-muted-foreground/30 text-xs">—</span>
-        ),
-    },
-    {
-      key: 'weightedAvgCost',
-      header: 'Avg cost',
-      align: 'right',
-      sortable: true,
-      sortFn: sortByAvgCost,
-      cell: (row) =>
-        row.weightedAvgCost != null ? (
-          <span className="font-mono text-xs tabular-nums text-foreground">
-            {row.weightedAvgCost.toFixed(2)}
-            {row.unitOfMeasure ? (
-              <span className="text-muted-foreground/60"> / {row.unitOfMeasure}</span>
-            ) : null}
-          </span>
-        ) : (
-          <span className="text-muted-foreground/30 text-xs">—</span>
-        ),
-    },
-    {
-      key: 'stock',
-      header: 'Stock',
-      align: 'right',
-      sortable: true,
-      sortFn: sortByStock,
-      cell: (row) =>
-        row.currentStock !== undefined ? (
-          <span className="font-mono text-xs tabular-nums text-foreground">
-            {row.currentStock % 1 === 0 ? row.currentStock.toFixed(0) : row.currentStock.toFixed(2)}
-            {row.unitOfMeasure ? (
-              <span className="text-muted-foreground/60"> {row.unitOfMeasure}</span>
-            ) : null}
-          </span>
-        ) : (
-          <span className="text-muted-foreground/30 text-xs">—</span>
-        ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      align: 'right',
-      width: '48px',
-      cell: (row) => {
-        const original = itemsById.get(row.id);
-        if (!original) return null;
-        return (
-          <ItemRowActions
-            row={row}
-            originalItem={original}
-            onEdit={setEditingItem}
-            onViewInsights={onViewInsights}
-            onDelete={onDelete}
+  const handleAddToInvoice = useCallback(() => {
+    const templateLines = [...selectedIds].map((itemId) => ({
+      id: crypto.randomUUID(),
+      itemId,
+      quantity: 0,
+      vatMode: VatMode.Exclusive,
+      vatRate: 15,
+      totalVatExclude: 0,
+    }));
+    navigate(InvoiceRoutes.Base, { state: { templateLines } });
+  }, [selectedIds, navigate]);
+
+  const columns = useMemo<ColumnDef<FlatItem>[]>(
+    () => [
+      {
+        key: 'select',
+        header: (
+          <Checkbox
+            checked={allSelected}
+            indeterminate={someSelected && !allSelected}
+            onChange={toggleAll}
           />
-        );
+        ),
+        width: '40px',
+        cell: (row) => {
+          const isChecked = selectedIds.has(row.id);
+          return (
+            <span
+              className={cn(
+                'transition-opacity',
+                isChecked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+              )}
+            >
+              <Checkbox checked={isChecked} onChange={() => toggleOne(row.id)} />
+            </span>
+          );
+        },
       },
-    },
-  ];
+      {
+        key: 'name',
+        header: 'Item',
+        sortable: true,
+        sortFn: sortByName,
+        cell: (row) => <span className="font-medium text-foreground">{row.name}</span>,
+      },
+      {
+        key: 'type',
+        header: 'Type',
+        cell: (row) => {
+          const cfg = getTypeConfig(row.type, allTypes);
+          return (
+            <Badge className={cn('text-[11px] font-medium capitalize', cfg.badgeClass)}>
+              {row.type}
+            </Badge>
+          );
+        },
+      },
+      {
+        key: 'category',
+        header: 'Category',
+        sortable: true,
+        sortFn: sortByCategory,
+        cell: (row) => <span className="text-muted-foreground text-sm">{row.categoryName}</span>,
+      },
+      {
+        key: 'unit',
+        header: 'Unit',
+        cell: (row) =>
+          row.unitOfMeasure ? (
+            <Badge variant="secondary" className="text-[11px] font-normal">
+              {row.unitOfMeasure}
+            </Badge>
+          ) : (
+            <span className="text-muted-foreground/30">—</span>
+          ),
+      },
+      {
+        key: 'cost',
+        header: 'Last cost / unit',
+        align: 'right',
+        sortable: true,
+        sortFn: sortByLastCost,
+        cell: (row) =>
+          row.lastCostPerUnit != null ? (
+            <span className="font-mono text-xs tabular-nums text-foreground">
+              {row.lastCostPerUnit.toFixed(2)}
+              {row.lastCostUom ? (
+                <span className="text-muted-foreground/60"> / {row.lastCostUom}</span>
+              ) : null}
+            </span>
+          ) : (
+            <span className="text-muted-foreground/30 text-xs">—</span>
+          ),
+      },
+      {
+        key: 'weightedAvgCost',
+        header: 'Avg cost',
+        align: 'right',
+        sortable: true,
+        sortFn: sortByAvgCost,
+        cell: (row) =>
+          row.weightedAvgCost != null ? (
+            <span className="font-mono text-xs tabular-nums text-foreground">
+              {row.weightedAvgCost.toFixed(2)}
+              {row.unitOfMeasure ? (
+                <span className="text-muted-foreground/60"> / {row.unitOfMeasure}</span>
+              ) : null}
+            </span>
+          ) : (
+            <span className="text-muted-foreground/30 text-xs">—</span>
+          ),
+      },
+      {
+        key: 'stock',
+        header: 'Stock',
+        align: 'right',
+        sortable: true,
+        sortFn: sortByStock,
+        cell: (row) =>
+          row.currentStock !== undefined ? (
+            <span className="font-mono text-xs tabular-nums text-foreground">
+              {row.currentStock % 1 === 0
+                ? row.currentStock.toFixed(0)
+                : row.currentStock.toFixed(2)}
+              {row.unitOfMeasure ? (
+                <span className="text-muted-foreground/60"> {row.unitOfMeasure}</span>
+              ) : null}
+            </span>
+          ) : (
+            <span className="text-muted-foreground/30 text-xs">—</span>
+          ),
+      },
+      {
+        key: 'actions',
+        header: '',
+        align: 'right',
+        width: '48px',
+        cell: (row) => {
+          const original = itemsById.get(row.id);
+          if (!original) return null;
+          return (
+            <ItemRowActions
+              row={row}
+              originalItem={original}
+              onEdit={setEditingItem}
+              onViewInsights={onViewInsights}
+              onDelete={onDelete}
+            />
+          );
+        },
+      },
+    ],
+    [
+      selectedIds,
+      allSelected,
+      someSelected,
+      toggleAll,
+      toggleOne,
+      itemsById,
+      allTypes,
+      onViewInsights,
+      onDelete,
+    ],
+  );
 
   return (
     <>
@@ -207,17 +234,7 @@ export function ItemsTable({
         <SelectionBar
           selectedCount={selectedIds.size}
           confirmBulkDelete={confirmBulkDelete}
-          onAddToInvoice={() => {
-            const templateLines = [...selectedIds].map((itemId) => ({
-              id: crypto.randomUUID(),
-              itemId,
-              quantity: 0,
-              vatMode: VatMode.Exclusive,
-              vatRate: 15,
-              totalVatExclude: 0,
-            }));
-            navigate(InvoiceRoutes.Base, { state: { templateLines } });
-          }}
+          onAddToInvoice={handleAddToInvoice}
           onRequestDelete={() => setConfirmBulkDelete(true)}
           onConfirmDelete={handleBulkDelete}
           onCancelDelete={() => setConfirmBulkDelete(false)}
