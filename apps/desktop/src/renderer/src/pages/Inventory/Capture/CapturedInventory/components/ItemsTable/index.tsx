@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge, cn } from '@reyogo/ui';
 import { VatMode } from '@reyogo/types';
@@ -63,6 +63,9 @@ export function ItemsTable({
     clearSelection,
   } = useItemSelection({ filteredIds, onDelete });
 
+  const selectedIdsRef = useRef(selectedIds);
+  selectedIdsRef.current = selectedIds;
+
   const handleAddToInvoice = useCallback(() => {
     const templateLines = [...selectedIds].map((itemId) => ({
       id: crypto.randomUUID(),
@@ -88,7 +91,7 @@ export function ItemsTable({
         ),
         width: '40px',
         cell: (row) => {
-          const isChecked = selectedIds.has(row.id);
+          const isChecked = selectedIdsRef.current.has(row.id);
           return (
             <span
               className={cn(
@@ -216,7 +219,6 @@ export function ItemsTable({
       },
     ],
     [
-      selectedIds,
       allSelected,
       someSelected,
       toggleAll,
