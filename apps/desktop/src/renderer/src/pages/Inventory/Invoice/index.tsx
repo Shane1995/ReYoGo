@@ -116,6 +116,7 @@ export default function InvoicePage() {
                   <InvoiceLineRow
                     key={line.id}
                     line={line}
+                    index={i}
                     vatMode={vatMode}
                     vatRate={selectedEntity?.defaultVatRate ?? 0}
                     isExpanded={expandedResultLineIds.has(line.id)}
