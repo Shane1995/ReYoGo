@@ -13,6 +13,10 @@ type ArchivedItem = {
   unitOfMeasure?: string;
 };
 
+const sortByName = (a: ArchivedItem, b: ArchivedItem) => a.name.localeCompare(b.name);
+const sortByCategory = (a: ArchivedItem, b: ArchivedItem) =>
+  a.categoryName.localeCompare(b.categoryName);
+
 export default function ManagePage() {
   const [itemRows, setItemRows] = useState<ArchivedItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +60,8 @@ export default function ManagePage() {
     {
       key: 'name',
       header: 'Item',
+      sortable: true,
+      sortFn: sortByName,
       cell: (row) => (
         <span className="font-medium text-foreground/60 line-through">{row.name}</span>
       ),
@@ -63,6 +69,8 @@ export default function ManagePage() {
     {
       key: 'category',
       header: 'Category',
+      sortable: true,
+      sortFn: sortByCategory,
       cell: (row) => <span className="text-muted-foreground/60 text-sm">{row.categoryName}</span>,
     },
     {
