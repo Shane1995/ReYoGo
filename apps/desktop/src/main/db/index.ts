@@ -22,7 +22,6 @@ import {
   hasCloudCredentials,
   getStoredCredentials,
   clearCredentials,
-  recordSyncError,
   hasEverSynced,
   hasUomRepairRun,
   markUomRepairDone,
@@ -256,8 +255,7 @@ export async function initDatabase(): Promise<void> {
           handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
         }
 
-        const boot = async (h: typeof handle) => {
-          await withSyncTimeout(h.sync());
+        const activate = async (h: typeof handle) => {
           await migrate(h.db, { migrationsFolder });
           await ensureDefaultAccount(h.db);
           _handle = h;
@@ -265,8 +263,34 @@ export async function initDatabase(): Promise<void> {
           _repos = buildRepos(h.db);
         };
 
+        const bootFresh = async (h: typeof handle) => {
+          await withSyncTimeout(h.sync());
+          await activate(h);
+        };
+
+        if (canBootOffline) {
+          // Existing replica: open immediately from local data, sync in background via syncInterval
+          try {
+            await activate(handle);
+            return;
+          } catch (bootErr) {
+            if (isCorruptedReplicaError(bootErr)) {
+              handle.close();
+              wipeReplicaFiles(replicaPath);
+              handle = createReplicaClient(
+                replicaPath,
+                credentials.tursoUrl,
+                credentials.authToken,
+              );
+              await bootFresh(handle);
+              return;
+            }
+            throw bootErr;
+          }
+        }
+
         try {
-          await boot(handle);
+          await bootFresh(handle);
           return;
         } catch (bootErr) {
           if (isPermanentSyncError(bootErr)) {
@@ -282,22 +306,14 @@ export async function initDatabase(): Promise<void> {
             handle.close();
             wipeReplicaFiles(replicaPath);
             handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
-            await boot(handle);
+            await bootFresh(handle);
             return;
-          } else if (!canBootOffline) {
+          } else {
             handle.close();
             wipeReplicaFiles(replicaPath);
             throw new Error(
               'Could not connect to cloud database. Check your internet connection and relaunch.',
             );
-          } else {
-            recordSyncError(bootErr instanceof Error ? bootErr.message : String(bootErr));
-            await migrate(handle.db, { migrationsFolder });
-            await ensureDefaultAccount(handle.db);
-            _handle = handle;
-            _db = handle.db;
-            _repos = buildRepos(handle.db);
-            return;
           }
         }
       }
