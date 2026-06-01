@@ -59,8 +59,10 @@ describe('useTableSort', () => {
   });
 
   it('does not mutate the original data array', () => {
+    const originalOrder = data.map((d) => d.id);
     const { result } = renderHook(() => useTableSort(data, compareFns));
     act(() => result.current.toggleSort('name'));
-    expect(data[0]?.name).toBe('Banana');
+    act(() => result.current.toggleSort('name'));
+    expect(data.map((d) => d.id)).toEqual(originalOrder);
   });
 });

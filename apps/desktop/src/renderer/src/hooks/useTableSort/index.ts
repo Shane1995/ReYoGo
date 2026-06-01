@@ -21,7 +21,7 @@ export function useTableSort<T>(data: T[], compareFns: Record<string, (a: T, b: 
     const fn = compareFns[state.key];
     if (!fn) return data;
     const sorted = [...data].sort(fn);
-    return state.dir === 'desc' ? sorted.reverse() : sorted;
+    return state.dir === 'desc' ? [...sorted].reverse() : sorted;
   }, [data, state, compareFns]);
 
   return { sortedData, sortKey: state.key, sortDir: state.dir, toggleSort };
