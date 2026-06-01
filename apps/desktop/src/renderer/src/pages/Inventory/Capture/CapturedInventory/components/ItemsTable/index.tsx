@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge } from '@reyogo/ui';
+import { Badge, cn } from '@reyogo/ui';
 import { VatMode } from '@reyogo/types';
 import { DataTable } from '@/components/DataTable';
 import type { ColumnDef } from '@/components/DataTable';
-import { cn } from '@reyogo/ui';
 import { Checkbox } from '@/components/Checkbox';
 import { getTypeConfig } from '../../utils/typeConfig';
 import { EditItemDialog } from '../EditItemDialog';
@@ -14,6 +13,27 @@ import type { FlatItem, ItemsTableProps } from './types';
 import { useItemSelection } from './hooks/useItemSelection';
 import { SelectionBar } from './SelectionBar';
 import { ItemRowActions } from './ItemRowActions';
+
+const sortByName = (a: FlatItem, b: FlatItem) => a.name.localeCompare(b.name);
+const sortByCategory = (a: FlatItem, b: FlatItem) => a.categoryName.localeCompare(b.categoryName);
+const sortByStock = (a: FlatItem, b: FlatItem) => {
+  if (a.currentStock == null && b.currentStock == null) return 0;
+  if (a.currentStock == null) return 1;
+  if (b.currentStock == null) return -1;
+  return a.currentStock - b.currentStock;
+};
+const sortByLastCost = (a: FlatItem, b: FlatItem) => {
+  if (a.lastCostPerUnit == null && b.lastCostPerUnit == null) return 0;
+  if (a.lastCostPerUnit == null) return 1;
+  if (b.lastCostPerUnit == null) return -1;
+  return a.lastCostPerUnit - b.lastCostPerUnit;
+};
+const sortByAvgCost = (a: FlatItem, b: FlatItem) => {
+  if (a.weightedAvgCost == null && b.weightedAvgCost == null) return 0;
+  if (a.weightedAvgCost == null) return 1;
+  if (b.weightedAvgCost == null) return -1;
+  return a.weightedAvgCost - b.weightedAvgCost;
+};
 
 export function ItemsTable({
   items,
@@ -29,6 +49,7 @@ export function ItemsTable({
   const [editingItem, setEditingItem] = useState<InventoryItem | null | undefined>(undefined);
 
   const filteredIds = useMemo(() => filteredItems.map((i) => i.id), [filteredItems]);
+  const itemsById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
 
   const {
     selectedIds,
@@ -53,13 +74,25 @@ export function ItemsTable({
         />
       ),
       width: '40px',
-      cell: (row) => (
-        <Checkbox checked={selectedIds.has(row.id)} onChange={() => toggleOne(row.id)} />
-      ),
+      cell: (row) => {
+        const isChecked = selectedIds.has(row.id);
+        return (
+          <span
+            className={cn(
+              'transition-opacity',
+              isChecked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+            )}
+          >
+            <Checkbox checked={isChecked} onChange={() => toggleOne(row.id)} />
+          </span>
+        );
+      },
     },
     {
       key: 'name',
       header: 'Item',
+      sortable: true,
+      sortFn: sortByName,
       cell: (row) => <span className="font-medium text-foreground">{row.name}</span>,
     },
     {
@@ -77,6 +110,8 @@ export function ItemsTable({
     {
       key: 'category',
       header: 'Category',
+      sortable: true,
+      sortFn: sortByCategory,
       cell: (row) => <span className="text-muted-foreground text-sm">{row.categoryName}</span>,
     },
     {
@@ -95,6 +130,8 @@ export function ItemsTable({
       key: 'cost',
       header: 'Last cost / unit',
       align: 'right',
+      sortable: true,
+      sortFn: sortByLastCost,
       cell: (row) =>
         row.lastCostPerUnit !== undefined ? (
           <span className="font-mono text-xs tabular-nums text-foreground">
@@ -111,6 +148,8 @@ export function ItemsTable({
       key: 'weightedAvgCost',
       header: 'Avg cost',
       align: 'right',
+      sortable: true,
+      sortFn: sortByAvgCost,
       cell: (row) =>
         row.weightedAvgCost != null ? (
           <span className="font-mono text-xs tabular-nums text-foreground">
@@ -127,6 +166,8 @@ export function ItemsTable({
       key: 'stock',
       header: 'Stock',
       align: 'right',
+      sortable: true,
+      sortFn: sortByStock,
       cell: (row) =>
         row.currentStock !== undefined ? (
           <span className="font-mono text-xs tabular-nums text-foreground">
@@ -144,15 +185,19 @@ export function ItemsTable({
       header: '',
       align: 'right',
       width: '48px',
-      cell: (row) => (
-        <ItemRowActions
-          row={row}
-          originalItem={items.find((i) => i.id === row.id)!}
-          onEdit={setEditingItem}
-          onViewInsights={onViewInsights}
-          onDelete={onDelete}
-        />
-      ),
+      cell: (row) => {
+        const original = itemsById.get(row.id);
+        if (!original) return null;
+        return (
+          <ItemRowActions
+            row={row}
+            originalItem={original}
+            onEdit={setEditingItem}
+            onViewInsights={onViewInsights}
+            onDelete={onDelete}
+          />
+        );
+      },
     },
   ];
 
