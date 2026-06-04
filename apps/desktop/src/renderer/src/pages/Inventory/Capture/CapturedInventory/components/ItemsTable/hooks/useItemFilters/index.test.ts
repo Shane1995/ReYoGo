@@ -50,7 +50,15 @@ describe('useItemFilters', () => {
 
     it('attaches cost and stock from maps', () => {
       const costMap = new Map<string, ItemCostEntry>([
-        ['item-1', { lastUnitCost: 12.5, lastCostDate: null, weightedAvgCost: 11 }],
+        [
+          'item-1',
+          {
+            lastUnitCost: 12.5,
+            lastCostDate: null,
+            weightedAvgCost: 11,
+            lastUnitCostInclVat: null,
+          },
+        ],
       ]);
       const stockMap = new Map([['item-1', 50]]);
       const { result } = renderHook(() =>
