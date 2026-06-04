@@ -144,12 +144,15 @@ export function TableView({ groups }: { groups: ItemGroup[] }) {
                     {fmtDate(last.date)}
                   </TableCell>
                   <TableCell className="py-2.5 text-right font-mono text-sm tabular-nums text-foreground">
-                    {fmt(last.unitPrice)}
-                    {last.uom ? (
-                      <span className="text-muted-foreground/60"> / {last.uom}</span>
-                    ) : (
-                      ''
-                    )}
+                    <div>
+                      {fmt(last.unitPriceInclVat)}
+                      {last.uom ? (
+                        <span className="text-muted-foreground/60"> / {last.uom}</span>
+                      ) : null}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground/50 font-normal">
+                      excl. {fmt(last.unitPrice)}
+                    </div>
                   </TableCell>
                   <TableCell
                     className={cn(
@@ -210,7 +213,10 @@ export function TableView({ groups }: { groups: ItemGroup[] }) {
                                   {entry.uom ?? '—'}
                                 </td>
                                 <td className="py-1.5 text-right font-mono font-medium tabular-nums">
-                                  {fmt(entry.unitPrice)}
+                                  <div>{fmt(entry.unitPriceInclVat)}</div>
+                                  <div className="text-[11px] text-muted-foreground/50 font-normal">
+                                    excl. {fmt(entry.unitPrice)}
+                                  </div>
                                 </td>
                                 <td
                                   className={cn(
