@@ -162,11 +162,12 @@ export function ItemsTable({
               <div className="font-mono text-xs tabular-nums text-foreground">
                 {row.lastCostPerUnitInclVat.toFixed(2)}
               </div>
-              {row.lastCostPerUnit != null && (
-                <div className="font-mono text-[11px] tabular-nums text-muted-foreground/50">
-                  excl. {row.lastCostPerUnit.toFixed(2)}
-                </div>
-              )}
+              {row.lastCostPerUnit != null &&
+                row.lastCostPerUnit !== row.lastCostPerUnitInclVat && (
+                  <div className="font-mono text-[11px] tabular-nums text-muted-foreground/50">
+                    excl. {row.lastCostPerUnit.toFixed(2)}
+                  </div>
+                )}
             </div>
           ) : (
             <span className="text-muted-foreground/30 text-xs">—</span>
