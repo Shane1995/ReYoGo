@@ -48,11 +48,16 @@ export function useInvoiceForm() {
   const { lines, setLines, addLine, removeLine, updateLine } = useLineManager(initialLines);
 
   useEffect(() => {
-    invoiceService.getLastUnitPrices().then((prices) => {
-      setLastUnitCosts(
-        Object.fromEntries(Object.entries(prices).map(([id, p]) => [id, p.inclVat])),
-      );
-    });
+    invoiceService
+      .getLastUnitPrices()
+      .then((prices) => {
+        setLastUnitCosts(
+          Object.fromEntries(Object.entries(prices).map(([id, p]) => [id, p.inclVat])),
+        );
+      })
+      .catch((err: unknown) => {
+        console.error('Failed to load last unit prices', err);
+      });
   }, []);
 
   const setVatMode = useCallback((mode: VatMode) => {
