@@ -369,7 +369,14 @@ export function createInvoicesRepo(db: DbClient) {
           schema.inventoryCategories,
           eq(schema.inventoryItems.categoryId, schema.inventoryCategories.id),
         )
-        .where(entityId ? eq(schema.invoices.entityId, entityId) : undefined)
+        .where(
+          entityId
+            ? and(
+                eq(schema.invoices.entityId, entityId),
+                eq(schema.invoices.status, InvoiceStatus.Posted),
+              )
+            : eq(schema.invoices.status, InvoiceStatus.Posted),
+        )
         .orderBy(asc(effectiveDate));
       return rows.map((r) => ({
         id: r.id,

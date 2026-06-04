@@ -645,7 +645,7 @@ describe('createInvoicesRepo', () => {
 
   describe('getLinesForAnalysis', () => {
     it('returns vatRate and isVatable from the parent invoice and line', async () => {
-      await repo.saveInvoice({
+      await repo.saveAndPostInvoice({
         id: 'inv-1',
         entityId: 'default',
         supplierId: null,
@@ -662,7 +662,7 @@ describe('createInvoicesRepo', () => {
     });
 
     it('reflects isVatable: false when the line is not vatable', async () => {
-      await repo.saveInvoice({
+      await repo.saveAndPostInvoice({
         id: 'inv-2',
         entityId: 'default',
         supplierId: null,
@@ -674,6 +674,21 @@ describe('createInvoicesRepo', () => {
       });
       const result = await repo.getLinesForAnalysis();
       expect(result[0]!.isVatable).toBe(false);
+    });
+
+    it('excludes lines from draft invoices', async () => {
+      await repo.saveInvoice({
+        id: 'inv-draft',
+        entityId: 'default',
+        supplierId: null,
+        invoiceNumber: 'INV-DRAFT',
+        invoiceDate: new Date('2025-01-15'),
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l-draft', quantity: 1, totalVatExclude: 10, isVatable: true })],
+      });
+      const result = await repo.getLinesForAnalysis();
+      expect(result).toHaveLength(0);
     });
   });
 
