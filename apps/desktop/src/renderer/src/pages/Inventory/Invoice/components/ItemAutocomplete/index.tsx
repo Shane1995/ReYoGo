@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@reyogo/ui';
+import { formatMoney } from '../../utils/formatMoney';
 
 export type ItemOption = {
   id: string;
@@ -8,6 +9,7 @@ export type ItemOption = {
   entityId?: string;
   categoryName?: string;
   typeLabel?: string;
+  lastUnitCostInclVat?: number;
 };
 
 type Props = {
@@ -33,7 +35,7 @@ export function ItemAutocomplete({
   inputId,
   onSelectComplete,
 }: Props) {
-  const entityFilteredItems = items.filter((item) => item.entityId === entityId);
+  const entityFilteredItems = entityId ? items.filter((item) => item.entityId === entityId) : items;
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
@@ -200,7 +202,7 @@ export function ItemAutocomplete({
                   role="option"
                   aria-selected={index === highlightIndex}
                   className={cn(
-                    'cursor-pointer px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground',
+                    'cursor-pointer px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground flex items-center justify-between gap-2',
                     index === highlightIndex && 'bg-accent text-accent-foreground',
                   )}
                   onMouseDown={(e) => {
@@ -208,7 +210,12 @@ export function ItemAutocomplete({
                     handleSelect(item);
                   }}
                 >
-                  {item.name}
+                  <span className="truncate">{item.name}</span>
+                  {item.lastUnitCostInclVat != null && (
+                    <span className="shrink-0 font-mono text-xs tabular-nums opacity-60">
+                      {formatMoney(item.lastUnitCostInclVat)}
+                    </span>
+                  )}
                 </li>
               ))
             )}

@@ -50,7 +50,15 @@ describe('useItemFilters', () => {
 
     it('attaches cost and stock from maps', () => {
       const costMap = new Map<string, ItemCostEntry>([
-        ['item-1', { lastUnitCost: 12.5, lastCostDate: null, weightedAvgCost: 11 }],
+        [
+          'item-1',
+          {
+            lastUnitCost: 12.5,
+            lastCostDate: null,
+            weightedAvgCost: 11,
+            lastUnitCostInclVat: 14.375,
+          },
+        ],
       ]);
       const stockMap = new Map([['item-1', 50]]);
       const { result } = renderHook(() =>
@@ -62,6 +70,7 @@ describe('useItemFilters', () => {
         }),
       );
       expect(result.current.filteredItems[0]!.lastCostPerUnit).toBe(12.5);
+      expect(result.current.filteredItems[0]!.lastCostPerUnitInclVat).toBe(14.375);
       expect(result.current.filteredItems[0]!.currentStock).toBe(50);
       expect(result.current.filteredItems[0]!.weightedAvgCost).toBe(11);
     });

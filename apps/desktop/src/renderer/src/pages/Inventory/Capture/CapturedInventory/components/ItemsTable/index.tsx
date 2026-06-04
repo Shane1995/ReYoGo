@@ -23,10 +23,10 @@ const sortByStock = (a: FlatItem, b: FlatItem) => {
   return a.currentStock - b.currentStock;
 };
 const sortByLastCost = (a: FlatItem, b: FlatItem) => {
-  if (a.lastCostPerUnit == null && b.lastCostPerUnit == null) return 0;
-  if (a.lastCostPerUnit == null) return 1;
-  if (b.lastCostPerUnit == null) return -1;
-  return a.lastCostPerUnit - b.lastCostPerUnit;
+  if (a.lastCostPerUnitInclVat == null && b.lastCostPerUnitInclVat == null) return 0;
+  if (a.lastCostPerUnitInclVat == null) return 1;
+  if (b.lastCostPerUnitInclVat == null) return -1;
+  return a.lastCostPerUnitInclVat - b.lastCostPerUnitInclVat;
 };
 const sortByAvgCost = (a: FlatItem, b: FlatItem) => {
   if (a.weightedAvgCost == null && b.weightedAvgCost == null) return 0;
@@ -157,13 +157,18 @@ export function ItemsTable({
         sortable: true,
         sortFn: sortByLastCost,
         cell: (row) =>
-          row.lastCostPerUnit != null ? (
-            <span className="font-mono text-xs tabular-nums text-foreground">
-              {row.lastCostPerUnit.toFixed(2)}
-              {row.lastCostUom ? (
-                <span className="text-muted-foreground/60"> / {row.lastCostUom}</span>
-              ) : null}
-            </span>
+          row.lastCostPerUnitInclVat != null ? (
+            <div className="text-right">
+              <div className="font-mono text-xs tabular-nums text-foreground">
+                {row.lastCostPerUnitInclVat.toFixed(2)}
+              </div>
+              {row.lastCostPerUnit != null &&
+                row.lastCostPerUnit !== row.lastCostPerUnitInclVat && (
+                  <div className="font-mono text-[11px] tabular-nums text-muted-foreground/50">
+                    excl. {row.lastCostPerUnit.toFixed(2)}
+                  </div>
+                )}
+            </div>
           ) : (
             <span className="text-muted-foreground/30 text-xs">—</span>
           ),

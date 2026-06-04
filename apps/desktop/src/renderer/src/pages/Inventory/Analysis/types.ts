@@ -3,6 +3,7 @@ export type ItemEntry = {
   date: Date;
   quantity: number;
   unitPrice: number;
+  unitPriceInclVat: number;
   uom?: string;
 };
 

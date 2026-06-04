@@ -1,0 +1,1 @@
+ALTER TABLE `invoice_line_items` ADD `unit_cost_incl_vat` real;

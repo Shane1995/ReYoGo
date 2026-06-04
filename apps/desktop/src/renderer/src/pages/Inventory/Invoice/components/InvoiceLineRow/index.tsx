@@ -13,6 +13,7 @@ type ItemMeta = {
   categoryName?: string;
   typeLabel?: string;
   unitOfMeasure?: string | null;
+  lastUnitCostInclVat?: number;
 };
 
 type Props = {
@@ -45,11 +46,16 @@ function ItemMetaHint({
     computed.netUnitPrice > 0
       ? `${formatMoney(vatMode === VatMode.Inclusive ? computed.grossUnitPrice : computed.netUnitPrice)} / unit`
       : null;
+  const lastCost =
+    itemMeta.lastUnitCostInclVat != null
+      ? `Last ${formatMoney(itemMeta.lastUnitCostInclVat)} incl. VAT`
+      : null;
   const parts = [
     itemMeta.categoryName,
     itemMeta.typeLabel,
     itemMeta.unitOfMeasure,
     unitPrice,
+    lastCost,
   ].filter(Boolean);
   if (parts.length === 0) return null;
   return (

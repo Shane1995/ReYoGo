@@ -323,8 +323,8 @@ describe('createInvoicesRepo', () => {
   });
 
   describe('getLastUnitPrices', () => {
-    it('returns the most recent unit price per item', async () => {
-      await repo.saveInvoice({
+    it('returns exclVat as the raw unit cost', async () => {
+      await repo.saveAndPostInvoice({
         id: 'inv-1',
         entityId: 'default',
         supplierId: null,
@@ -332,12 +332,57 @@ describe('createInvoicesRepo', () => {
         invoiceDate: null,
         vatMode: VatMode.Exclusive,
         vatRate: 15,
-        lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
+        lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100, isVatable: true })],
       });
-      expect((await repo.getLastUnitPrices())['item-1']).toBe(10);
+      const result = await repo.getLastUnitPrices();
+      expect(result['item-1']!.exclVat).toBe(10);
+    });
+
+    it('computes inclVat as unitCost * (1 + vatRate/100) for vatable lines', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-2',
+        entityId: 'default',
+        supplierId: null,
+        invoiceNumber: 'INV-TEST2',
+        invoiceDate: null,
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l-2', quantity: 10, totalVatExclude: 100, isVatable: true })],
+      });
+      const result = await repo.getLastUnitPrices();
+      expect(result['item-1']!.inclVat).toBeCloseTo(11.5);
+    });
+
+    it('inclVat equals exclVat when isVatable is false', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-3',
+        entityId: 'default',
+        supplierId: null,
+        invoiceNumber: 'INV-TEST3',
+        invoiceDate: null,
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l-3', quantity: 10, totalVatExclude: 100, isVatable: false })],
+      });
+      const result = await repo.getLastUnitPrices();
+      expect(result['item-1']!.inclVat).toBeCloseTo(10);
     });
 
     it('returns empty object when no lines exist', async () => {
+      expect(await repo.getLastUnitPrices()).toEqual({});
+    });
+
+    it('excludes lines from draft invoices', async () => {
+      await repo.saveInvoice({
+        id: 'inv-draft',
+        entityId: 'default',
+        supplierId: null,
+        invoiceNumber: 'INV-DRAFT',
+        invoiceDate: null,
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l-draft', quantity: 5, totalVatExclude: 50, isVatable: true })],
+      });
       expect(await repo.getLastUnitPrices()).toEqual({});
     });
   });
@@ -595,6 +640,55 @@ describe('createInvoicesRepo', () => {
           lines: [line({ id: 'cn-line-8b', itemId: 'item-1', quantity: 1, totalVatExclude: 10 })],
         }),
       ).rejects.toThrow('posted');
+    });
+  });
+
+  describe('getLinesForAnalysis', () => {
+    it('returns vatRate and isVatable from the parent invoice and line', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-1',
+        entityId: 'default',
+        supplierId: null,
+        invoiceNumber: 'INV-001',
+        invoiceDate: new Date('2025-01-15'),
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l-1', quantity: 2, totalVatExclude: 20, isVatable: true })],
+      });
+      const result = await repo.getLinesForAnalysis();
+      expect(result).toHaveLength(1);
+      expect(result[0]!.vatRate).toBe(15);
+      expect(result[0]!.isVatable).toBe(true);
+    });
+
+    it('reflects isVatable: false when the line is not vatable', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-2',
+        entityId: 'default',
+        supplierId: null,
+        invoiceNumber: 'INV-002',
+        invoiceDate: new Date('2025-01-16'),
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l-2', quantity: 1, totalVatExclude: 10, isVatable: false })],
+      });
+      const result = await repo.getLinesForAnalysis();
+      expect(result[0]!.isVatable).toBe(false);
+    });
+
+    it('excludes lines from draft invoices', async () => {
+      await repo.saveInvoice({
+        id: 'inv-draft',
+        entityId: 'default',
+        supplierId: null,
+        invoiceNumber: 'INV-DRAFT',
+        invoiceDate: new Date('2025-01-15'),
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l-draft', quantity: 1, totalVatExclude: 10, isVatable: true })],
+      });
+      const result = await repo.getLinesForAnalysis();
+      expect(result).toHaveLength(0);
     });
   });
 

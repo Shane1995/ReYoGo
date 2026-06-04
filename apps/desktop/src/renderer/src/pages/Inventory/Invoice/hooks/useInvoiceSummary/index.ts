@@ -11,14 +11,20 @@ export function useInvoiceSummary(
   categories: CategoryLike[],
   vatMode: VatMode,
   vatRate: number,
+  lastUnitCosts: Record<string, number> = {},
 ) {
   const itemsWithCategory = useMemo(
     () =>
       items.map((item) => {
         const cat = categories.find((c) => c.id === item.categoryId);
-        return { ...item, categoryName: cat?.name ?? '', typeLabel: cat?.type ?? '' };
+        return {
+          ...item,
+          categoryName: cat?.name ?? '',
+          typeLabel: cat?.type ?? '',
+          lastUnitCostInclVat: lastUnitCosts[item.id],
+        };
       }),
-    [items, categories],
+    [items, categories, lastUnitCosts],
   );
 
   const itemMetaMap = useMemo(

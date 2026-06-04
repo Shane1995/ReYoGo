@@ -40,6 +40,9 @@ describe('useInventoryCosts', () => {
         invoiceDate: new Date('2025-01-01'),
         categoryType: null,
         categoryName: null,
+        vatRate: 15,
+        isVatable: true,
+        unitCostInclVat: null,
       },
     ]);
     const { result } = renderHook(() => useInventoryCosts());
@@ -61,6 +64,9 @@ describe('useInventoryCosts', () => {
         invoiceDate: new Date('2025-05-13'),
         categoryType: null,
         categoryName: null,
+        vatRate: 15,
+        isVatable: true,
+        unitCostInclVat: null,
       },
       {
         id: 'l2',
@@ -72,6 +78,9 @@ describe('useInventoryCosts', () => {
         invoiceDate: new Date('2025-05-14'),
         categoryType: null,
         categoryName: null,
+        vatRate: 15,
+        isVatable: true,
+        unitCostInclVat: null,
       },
     ]);
     const { result } = renderHook(() => useInventoryCosts());
@@ -89,7 +98,59 @@ describe('useInventoryCosts', () => {
       lastUnitCost: null,
       lastCostDate: null,
       weightedAvgCost: 7.5,
+      lastUnitCostInclVat: null,
     });
+  });
+
+  it('computes lastUnitCostInclVat as unitCost * (1 + vatRate/100) when isVatable', async () => {
+    vi.mocked(invoiceService.getLinesForAnalysis).mockResolvedValue([
+      {
+        id: 'l1',
+        invoiceId: 'inv1',
+        inventoryItemId: 'item-1',
+        qty: 2,
+        unitCost: 10,
+        totalCost: 20,
+        invoiceDate: new Date('2025-01-01'),
+        categoryType: null,
+        categoryName: null,
+        vatRate: 15,
+        isVatable: true,
+        unitCostInclVat: null,
+      },
+    ]);
+    const { result } = renderHook(() => useInventoryCosts());
+    await waitFor(() => expect(result.current.size).toBe(1));
+    expect(result.current.get('item-1')?.lastUnitCostInclVat).toBeCloseTo(11.5);
+  });
+
+  it('sets lastUnitCostInclVat equal to unitCost when isVatable is false', async () => {
+    vi.mocked(invoiceService.getLinesForAnalysis).mockResolvedValue([
+      {
+        id: 'l1',
+        invoiceId: 'inv1',
+        inventoryItemId: 'item-1',
+        qty: 2,
+        unitCost: 10,
+        totalCost: 20,
+        invoiceDate: new Date('2025-01-01'),
+        categoryType: null,
+        categoryName: null,
+        vatRate: 15,
+        isVatable: false,
+        unitCostInclVat: null,
+      },
+    ]);
+    const { result } = renderHook(() => useInventoryCosts());
+    await waitFor(() => expect(result.current.size).toBe(1));
+    expect(result.current.get('item-1')?.lastUnitCostInclVat).toBeCloseTo(10);
+  });
+
+  it('sets lastUnitCostInclVat to null for items with no invoice lines', async () => {
+    vi.mocked(stockMovementsService.getWeightedAvgCosts).mockResolvedValue({ 'item-2': 7.5 });
+    const { result } = renderHook(() => useInventoryCosts());
+    await waitFor(() => expect(result.current.size).toBe(1));
+    expect(result.current.get('item-2')?.lastUnitCostInclVat).toBeNull();
   });
 
   it('skips lines with qty <= 0', async () => {
@@ -104,6 +165,9 @@ describe('useInventoryCosts', () => {
         invoiceDate: new Date('2025-01-01'),
         categoryType: null,
         categoryName: null,
+        vatRate: 15,
+        isVatable: true,
+        unitCostInclVat: null,
       },
     ]);
     const { result } = renderHook(() => useInventoryCosts());

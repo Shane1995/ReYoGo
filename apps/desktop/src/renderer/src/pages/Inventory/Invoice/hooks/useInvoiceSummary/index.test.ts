@@ -53,6 +53,22 @@ describe('useInvoiceSummary', () => {
       expect(result.current.itemsWithCategory[0]!.categoryName).toBe('');
       expect(result.current.itemsWithCategory[0]!.typeLabel).toBe('');
     });
+
+    it('attaches lastUnitCostInclVat from the lastUnitCosts map', () => {
+      const { result } = renderHook(() =>
+        useInvoiceSummary([makeLine()], [mockItem], [mockCategory], VatMode.Exclusive, 15, {
+          'item-1': 11.5,
+        }),
+      );
+      expect(result.current.itemsWithCategory[0]!.lastUnitCostInclVat).toBeCloseTo(11.5);
+    });
+
+    it('leaves lastUnitCostInclVat undefined when item has no entry in lastUnitCosts', () => {
+      const { result } = renderHook(() =>
+        useInvoiceSummary([makeLine()], [mockItem], [mockCategory], VatMode.Exclusive, 15, {}),
+      );
+      expect(result.current.itemsWithCategory[0]!.lastUnitCostInclVat).toBeUndefined();
+    });
   });
 
   describe('itemMetaMap', () => {

@@ -105,6 +105,10 @@ async function insertMovementsForLines(
   }
 }
 
+function inclVat(unitCost: number, isVatable: boolean, vatRate: number): number {
+  return isVatable ? unitCost * (1 + vatRate / 100) : unitCost;
+}
+
 function computeTax(
   lines: ISaveCapturedInvoicePayload['lines'],
   vatRate: number,
@@ -169,16 +173,20 @@ export function createInvoicesRepo(db: DbClient) {
           const unitCostOf = (l: (typeof validLines)[number]) =>
             l.quantity > 0 ? l.totalVatExclude / l.quantity : 0;
           await tx.insert(schema.invoiceLineItems).values(
-            validLines.map((l) => ({
-              id: l.id,
-              invoiceId: payload.id,
-              inventoryItemId: l.itemId,
-              itemNameSnapshot: l.itemNameSnapshot ?? '',
-              qty: l.quantity,
-              unitCost: unitCostOf(l),
-              totalCost: l.totalVatExclude,
-              isVatable: l.isVatable,
-            })),
+            validLines.map((l) => {
+              const uc = unitCostOf(l);
+              return {
+                id: l.id,
+                invoiceId: payload.id,
+                inventoryItemId: l.itemId,
+                itemNameSnapshot: l.itemNameSnapshot ?? '',
+                qty: l.quantity,
+                unitCost: uc,
+                unitCostInclVat: inclVat(uc, l.isVatable, payload.vatRate),
+                totalCost: l.totalVatExclude,
+                isVatable: l.isVatable,
+              };
+            }),
           );
         }
       });
@@ -213,16 +221,20 @@ export function createInvoicesRepo(db: DbClient) {
           const unitCostOf = (l: (typeof validLines)[number]) =>
             l.quantity > 0 ? l.totalVatExclude / l.quantity : 0;
           await tx.insert(schema.invoiceLineItems).values(
-            validLines.map((l) => ({
-              id: l.id,
-              invoiceId: payload.id,
-              inventoryItemId: l.itemId,
-              itemNameSnapshot: l.itemNameSnapshot ?? '',
-              qty: l.quantity,
-              unitCost: unitCostOf(l),
-              totalCost: l.totalVatExclude,
-              isVatable: l.isVatable,
-            })),
+            validLines.map((l) => {
+              const uc = unitCostOf(l);
+              return {
+                id: l.id,
+                invoiceId: payload.id,
+                inventoryItemId: l.itemId,
+                itemNameSnapshot: l.itemNameSnapshot ?? '',
+                qty: l.quantity,
+                unitCost: uc,
+                unitCostInclVat: inclVat(uc, l.isVatable, vatRate),
+                totalCost: l.totalVatExclude,
+                isVatable: l.isVatable,
+              };
+            }),
           );
         }
         await tx
@@ -352,10 +364,13 @@ export function createInvoicesRepo(db: DbClient) {
           inventoryItemId: schema.invoiceLineItems.inventoryItemId,
           qty: schema.invoiceLineItems.qty,
           unitCost: schema.invoiceLineItems.unitCost,
+          unitCostInclVat: schema.invoiceLineItems.unitCostInclVat,
           totalCost: schema.invoiceLineItems.totalCost,
           invoiceDate: effectiveDate,
           categoryType: schema.inventoryCategories.type,
           categoryName: schema.inventoryCategories.name,
+          vatRate: schema.invoices.vatRate,
+          isVatable: schema.invoiceLineItems.isVatable,
         })
         .from(schema.invoiceLineItems)
         .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
@@ -367,7 +382,14 @@ export function createInvoicesRepo(db: DbClient) {
           schema.inventoryCategories,
           eq(schema.inventoryItems.categoryId, schema.inventoryCategories.id),
         )
-        .where(entityId ? eq(schema.invoices.entityId, entityId) : undefined)
+        .where(
+          entityId
+            ? and(
+                eq(schema.invoices.entityId, entityId),
+                eq(schema.invoices.status, InvoiceStatus.Posted),
+              )
+            : eq(schema.invoices.status, InvoiceStatus.Posted),
+        )
         .orderBy(asc(effectiveDate));
       return rows.map((r) => ({
         id: r.id,
@@ -379,22 +401,37 @@ export function createInvoicesRepo(db: DbClient) {
         invoiceDate: new Date(Number(r.invoiceDate) * 1000),
         categoryType: r.categoryType ?? null,
         categoryName: r.categoryName ?? null,
+        vatRate: r.vatRate!,
+        isVatable: r.isVatable ?? true,
+        unitCostInclVat: r.unitCostInclVat ?? inclVat(r.unitCost, r.isVatable ?? true, r.vatRate!),
       }));
     },
 
-    async getLastUnitPrices(): Promise<Record<string, number>> {
+    async getLastUnitPrices(): Promise<Record<string, { exclVat: number; inclVat: number }>> {
       const rows = await db
         .select({
           inventoryItemId: schema.invoiceLineItems.inventoryItemId,
           unitCost: schema.invoiceLineItems.unitCost,
+          unitCostInclVat: schema.invoiceLineItems.unitCostInclVat,
+          vatRate: schema.invoices.vatRate,
+          isVatable: schema.invoiceLineItems.isVatable,
         })
         .from(schema.invoiceLineItems)
         .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
-        .where(gt(schema.invoiceLineItems.qty, 0))
+        .where(
+          and(gt(schema.invoiceLineItems.qty, 0), eq(schema.invoices.status, InvoiceStatus.Posted)),
+        )
         .orderBy(desc(sql`COALESCE(${schema.invoices.invoiceDate}, ${schema.invoices.createdAt})`));
-      const result: Record<string, number> = {};
+      const result: Record<string, { exclVat: number; inclVat: number }> = {};
       for (const row of rows) {
-        if (!(row.inventoryItemId in result)) result[row.inventoryItemId] = row.unitCost;
+        if (!(row.inventoryItemId in result)) {
+          const exclVat = row.unitCost;
+          const stored = row.unitCostInclVat;
+          result[row.inventoryItemId] = {
+            exclVat,
+            inclVat: stored ?? inclVat(exclVat, row.isVatable ?? true, row.vatRate!),
+          };
+        }
       }
       return result;
     },
@@ -444,16 +481,20 @@ export function createInvoicesRepo(db: DbClient) {
           const unitCostOf = (l: (typeof validLines)[number]) =>
             l.quantity > 0 ? l.totalVatExclude / l.quantity : 0;
           await tx.insert(schema.invoiceLineItems).values(
-            validLines.map((l) => ({
-              id: l.id,
-              invoiceId: payload.id,
-              inventoryItemId: l.itemId,
-              itemNameSnapshot: l.itemNameSnapshot ?? '',
-              qty: l.quantity,
-              unitCost: unitCostOf(l),
-              totalCost: l.totalVatExclude,
-              isVatable: l.isVatable,
-            })),
+            validLines.map((l) => {
+              const uc = unitCostOf(l);
+              return {
+                id: l.id,
+                invoiceId: payload.id,
+                inventoryItemId: l.itemId,
+                itemNameSnapshot: l.itemNameSnapshot ?? '',
+                qty: l.quantity,
+                unitCost: uc,
+                unitCostInclVat: inclVat(uc, l.isVatable, payload.vatRate),
+                totalCost: l.totalVatExclude,
+                isVatable: l.isVatable,
+              };
+            }),
           );
         }
 
@@ -557,6 +598,7 @@ export function createInvoicesRepo(db: DbClient) {
               itemNameSnapshot: l.itemNameSnapshot ?? '',
               qty: l.quantity,
               unitCost: l.unitPrice,
+              unitCostInclVat: inclVat(l.unitPrice, l.isVatable, payload.vatRate),
               totalCost: l.totalVatExclude,
               isVatable: l.isVatable,
             })),

@@ -20,8 +20,8 @@ const sortByLastCaptured = (a: ItemGroup, b: ItemGroup) => {
 };
 
 const sortByLastUnitPrice = (a: ItemGroup, b: ItemGroup) => {
-  const aPrice = a.entries[a.entries.length - 1]?.unitPrice ?? 0;
-  const bPrice = b.entries[b.entries.length - 1]?.unitPrice ?? 0;
+  const aPrice = a.entries[a.entries.length - 1]?.unitPriceInclVat ?? 0;
+  const bPrice = b.entries[b.entries.length - 1]?.unitPriceInclVat ?? 0;
   return aPrice - bPrice;
 };
 
@@ -144,11 +144,16 @@ export function TableView({ groups }: { groups: ItemGroup[] }) {
                     {fmtDate(last.date)}
                   </TableCell>
                   <TableCell className="py-2.5 text-right font-mono text-sm tabular-nums text-foreground">
-                    {fmt(last.unitPrice)}
-                    {last.uom ? (
-                      <span className="text-muted-foreground/60"> / {last.uom}</span>
-                    ) : (
-                      ''
+                    <div>
+                      {fmt(last.unitPriceInclVat)}
+                      {last.uom ? (
+                        <span className="text-muted-foreground/60"> / {last.uom}</span>
+                      ) : null}
+                    </div>
+                    {last.unitPrice !== last.unitPriceInclVat && (
+                      <div className="text-[11px] text-muted-foreground/50 font-normal">
+                        excl. {fmt(last.unitPrice)}
+                      </div>
                     )}
                   </TableCell>
                   <TableCell
@@ -192,8 +197,10 @@ export function TableView({ groups }: { groups: ItemGroup[] }) {
                           {group.entries.map((entry, ei) => {
                             const prev = ei > 0 ? group.entries[ei - 1] : null;
                             const pct =
-                              prev && prev.unitPrice > 0
-                                ? ((entry.unitPrice - prev.unitPrice) / prev.unitPrice) * 100
+                              prev && prev.unitPriceInclVat > 0
+                                ? ((entry.unitPriceInclVat - prev.unitPriceInclVat) /
+                                    prev.unitPriceInclVat) *
+                                  100
                                 : null;
                             return (
                               <tr
@@ -210,7 +217,12 @@ export function TableView({ groups }: { groups: ItemGroup[] }) {
                                   {entry.uom ?? '—'}
                                 </td>
                                 <td className="py-1.5 text-right font-mono font-medium tabular-nums">
-                                  {fmt(entry.unitPrice)}
+                                  <div>{fmt(entry.unitPriceInclVat)}</div>
+                                  {entry.unitPrice !== entry.unitPriceInclVat && (
+                                    <div className="text-[11px] text-muted-foreground/50 font-normal">
+                                      excl. {fmt(entry.unitPrice)}
+                                    </div>
+                                  )}
                                 </td>
                                 <td
                                   className={cn(
