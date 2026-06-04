@@ -356,6 +356,8 @@ export function createInvoicesRepo(db: DbClient) {
           invoiceDate: effectiveDate,
           categoryType: schema.inventoryCategories.type,
           categoryName: schema.inventoryCategories.name,
+          vatRate: schema.invoices.vatRate,
+          isVatable: schema.invoiceLineItems.isVatable,
         })
         .from(schema.invoiceLineItems)
         .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
@@ -379,6 +381,8 @@ export function createInvoicesRepo(db: DbClient) {
         invoiceDate: new Date(Number(r.invoiceDate) * 1000),
         categoryType: r.categoryType ?? null,
         categoryName: r.categoryName ?? null,
+        vatRate: r.vatRate ?? 15,
+        isVatable: r.isVatable ?? true,
       }));
     },
 

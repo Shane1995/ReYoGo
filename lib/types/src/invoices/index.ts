@@ -39,6 +39,8 @@ export interface InvoiceLineWithDate extends InvoiceLine {
   invoiceDate: Date;
   categoryType: string | null;
   categoryName: string | null;
+  vatRate: number;
+  isVatable: boolean;
 }
 
 export interface InvoiceAuditEntry {

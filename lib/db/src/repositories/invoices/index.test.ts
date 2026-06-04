@@ -598,6 +598,40 @@ describe('createInvoicesRepo', () => {
     });
   });
 
+  describe('getLinesForAnalysis', () => {
+    it('returns vatRate and isVatable from the parent invoice and line', async () => {
+      await repo.saveInvoice({
+        id: 'inv-1',
+        entityId: 'default',
+        supplierId: null,
+        invoiceNumber: 'INV-001',
+        invoiceDate: new Date('2025-01-15'),
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l-1', quantity: 2, totalVatExclude: 20, isVatable: true })],
+      });
+      const result = await repo.getLinesForAnalysis();
+      expect(result).toHaveLength(1);
+      expect(result[0]!.vatRate).toBe(15);
+      expect(result[0]!.isVatable).toBe(true);
+    });
+
+    it('reflects isVatable: false when the line is not vatable', async () => {
+      await repo.saveInvoice({
+        id: 'inv-2',
+        entityId: 'default',
+        supplierId: null,
+        invoiceNumber: 'INV-002',
+        invoiceDate: new Date('2025-01-16'),
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l-2', quantity: 1, totalVatExclude: 10, isVatable: false })],
+      });
+      const result = await repo.getLinesForAnalysis();
+      expect(result[0]!.isVatable).toBe(false);
+    });
+  });
+
   describe('getCreditNotesForInvoice', () => {
     it('returns credit notes linked to the given invoice', async () => {
       await repo.saveAndPostInvoice({

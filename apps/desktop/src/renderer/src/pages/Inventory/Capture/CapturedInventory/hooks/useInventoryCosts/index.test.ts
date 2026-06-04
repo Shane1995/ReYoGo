@@ -40,6 +40,8 @@ describe('useInventoryCosts', () => {
         invoiceDate: new Date('2025-01-01'),
         categoryType: null,
         categoryName: null,
+        vatRate: 15,
+        isVatable: true,
       },
     ]);
     const { result } = renderHook(() => useInventoryCosts());
@@ -61,6 +63,8 @@ describe('useInventoryCosts', () => {
         invoiceDate: new Date('2025-05-13'),
         categoryType: null,
         categoryName: null,
+        vatRate: 15,
+        isVatable: true,
       },
       {
         id: 'l2',
@@ -72,6 +76,8 @@ describe('useInventoryCosts', () => {
         invoiceDate: new Date('2025-05-14'),
         categoryType: null,
         categoryName: null,
+        vatRate: 15,
+        isVatable: true,
       },
     ]);
     const { result } = renderHook(() => useInventoryCosts());
@@ -104,6 +110,8 @@ describe('useInventoryCosts', () => {
         invoiceDate: new Date('2025-01-01'),
         categoryType: null,
         categoryName: null,
+        vatRate: 15,
+        isVatable: true,
       },
     ]);
     const { result } = renderHook(() => useInventoryCosts());
