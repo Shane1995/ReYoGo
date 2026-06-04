@@ -41,6 +41,7 @@ export interface InvoiceLineWithDate extends InvoiceLine {
   categoryName: string | null;
   vatRate: number;
   isVatable: boolean;
+  unitCostInclVat: number | null;
 }
 
 export interface InvoiceAuditEntry {

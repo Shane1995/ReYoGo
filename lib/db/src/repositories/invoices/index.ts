@@ -105,6 +105,10 @@ async function insertMovementsForLines(
   }
 }
 
+function inclVat(unitCost: number, isVatable: boolean, vatRate: number): number {
+  return isVatable ? unitCost * (1 + vatRate / 100) : unitCost;
+}
+
 function computeTax(
   lines: ISaveCapturedInvoicePayload['lines'],
   vatRate: number,
@@ -169,16 +173,20 @@ export function createInvoicesRepo(db: DbClient) {
           const unitCostOf = (l: (typeof validLines)[number]) =>
             l.quantity > 0 ? l.totalVatExclude / l.quantity : 0;
           await tx.insert(schema.invoiceLineItems).values(
-            validLines.map((l) => ({
-              id: l.id,
-              invoiceId: payload.id,
-              inventoryItemId: l.itemId,
-              itemNameSnapshot: l.itemNameSnapshot ?? '',
-              qty: l.quantity,
-              unitCost: unitCostOf(l),
-              totalCost: l.totalVatExclude,
-              isVatable: l.isVatable,
-            })),
+            validLines.map((l) => {
+              const uc = unitCostOf(l);
+              return {
+                id: l.id,
+                invoiceId: payload.id,
+                inventoryItemId: l.itemId,
+                itemNameSnapshot: l.itemNameSnapshot ?? '',
+                qty: l.quantity,
+                unitCost: uc,
+                unitCostInclVat: inclVat(uc, l.isVatable, payload.vatRate),
+                totalCost: l.totalVatExclude,
+                isVatable: l.isVatable,
+              };
+            }),
           );
         }
       });
@@ -213,16 +221,20 @@ export function createInvoicesRepo(db: DbClient) {
           const unitCostOf = (l: (typeof validLines)[number]) =>
             l.quantity > 0 ? l.totalVatExclude / l.quantity : 0;
           await tx.insert(schema.invoiceLineItems).values(
-            validLines.map((l) => ({
-              id: l.id,
-              invoiceId: payload.id,
-              inventoryItemId: l.itemId,
-              itemNameSnapshot: l.itemNameSnapshot ?? '',
-              qty: l.quantity,
-              unitCost: unitCostOf(l),
-              totalCost: l.totalVatExclude,
-              isVatable: l.isVatable,
-            })),
+            validLines.map((l) => {
+              const uc = unitCostOf(l);
+              return {
+                id: l.id,
+                invoiceId: payload.id,
+                inventoryItemId: l.itemId,
+                itemNameSnapshot: l.itemNameSnapshot ?? '',
+                qty: l.quantity,
+                unitCost: uc,
+                unitCostInclVat: inclVat(uc, l.isVatable, vatRate),
+                totalCost: l.totalVatExclude,
+                isVatable: l.isVatable,
+              };
+            }),
           );
         }
         await tx
@@ -352,6 +364,7 @@ export function createInvoicesRepo(db: DbClient) {
           inventoryItemId: schema.invoiceLineItems.inventoryItemId,
           qty: schema.invoiceLineItems.qty,
           unitCost: schema.invoiceLineItems.unitCost,
+          unitCostInclVat: schema.invoiceLineItems.unitCostInclVat,
           totalCost: schema.invoiceLineItems.totalCost,
           invoiceDate: effectiveDate,
           categoryType: schema.inventoryCategories.type,
@@ -390,6 +403,7 @@ export function createInvoicesRepo(db: DbClient) {
         categoryName: r.categoryName ?? null,
         vatRate: r.vatRate!,
         isVatable: r.isVatable ?? true,
+        unitCostInclVat: r.unitCostInclVat ?? inclVat(r.unitCost, r.isVatable ?? true, r.vatRate!),
       }));
     },
 
@@ -398,6 +412,7 @@ export function createInvoicesRepo(db: DbClient) {
         .select({
           inventoryItemId: schema.invoiceLineItems.inventoryItemId,
           unitCost: schema.invoiceLineItems.unitCost,
+          unitCostInclVat: schema.invoiceLineItems.unitCostInclVat,
           vatRate: schema.invoices.vatRate,
           isVatable: schema.invoiceLineItems.isVatable,
         })
@@ -411,9 +426,11 @@ export function createInvoicesRepo(db: DbClient) {
       for (const row of rows) {
         if (!(row.inventoryItemId in result)) {
           const exclVat = row.unitCost;
-          const vat = row.vatRate!;
-          const inclVat = (row.isVatable ?? true) ? exclVat * (1 + vat / 100) : exclVat;
-          result[row.inventoryItemId] = { exclVat, inclVat };
+          const stored = row.unitCostInclVat;
+          result[row.inventoryItemId] = {
+            exclVat,
+            inclVat: stored ?? inclVat(exclVat, row.isVatable ?? true, row.vatRate!),
+          };
         }
       }
       return result;
@@ -464,16 +481,20 @@ export function createInvoicesRepo(db: DbClient) {
           const unitCostOf = (l: (typeof validLines)[number]) =>
             l.quantity > 0 ? l.totalVatExclude / l.quantity : 0;
           await tx.insert(schema.invoiceLineItems).values(
-            validLines.map((l) => ({
-              id: l.id,
-              invoiceId: payload.id,
-              inventoryItemId: l.itemId,
-              itemNameSnapshot: l.itemNameSnapshot ?? '',
-              qty: l.quantity,
-              unitCost: unitCostOf(l),
-              totalCost: l.totalVatExclude,
-              isVatable: l.isVatable,
-            })),
+            validLines.map((l) => {
+              const uc = unitCostOf(l);
+              return {
+                id: l.id,
+                invoiceId: payload.id,
+                inventoryItemId: l.itemId,
+                itemNameSnapshot: l.itemNameSnapshot ?? '',
+                qty: l.quantity,
+                unitCost: uc,
+                unitCostInclVat: inclVat(uc, l.isVatable, payload.vatRate),
+                totalCost: l.totalVatExclude,
+                isVatable: l.isVatable,
+              };
+            }),
           );
         }
 
@@ -577,6 +598,7 @@ export function createInvoicesRepo(db: DbClient) {
               itemNameSnapshot: l.itemNameSnapshot ?? '',
               qty: l.quantity,
               unitCost: l.unitPrice,
+              unitCostInclVat: inclVat(l.unitPrice, l.isVatable, payload.vatRate),
               totalCost: l.totalVatExclude,
               isVatable: l.isVatable,
             })),

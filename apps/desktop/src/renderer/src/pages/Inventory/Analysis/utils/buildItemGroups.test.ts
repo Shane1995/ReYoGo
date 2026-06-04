@@ -15,6 +15,7 @@ function makeLine(overrides: Partial<InvoiceLineWithDate> = {}): InvoiceLineWith
     categoryName: 'Food',
     vatRate: 15,
     isVatable: true,
+    unitCostInclVat: null,
     ...overrides,
   };
 }

@@ -23,9 +23,9 @@ export function useInventoryCosts(): Map<string, ItemCostEntry> {
       const date = new Date(line.invoiceDate);
       const existing = map.get(line.inventoryItemId);
       if (!existing || date > (existing.lastCostDate ?? new Date(0))) {
-        const lastUnitCostInclVat = line.isVatable
-          ? line.unitCost * (1 + line.vatRate / 100)
-          : line.unitCost;
+        const lastUnitCostInclVat =
+          line.unitCostInclVat ??
+          (line.isVatable ? line.unitCost * (1 + line.vatRate / 100) : line.unitCost);
         map.set(line.inventoryItemId, {
           lastUnitCost: line.unitCost,
           lastCostDate: date,

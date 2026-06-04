@@ -40,7 +40,9 @@ export function buildItemGroups(
       date,
       quantity: line.qty,
       unitPrice: line.unitCost,
-      unitPriceInclVat: line.isVatable ? line.unitCost * (1 + line.vatRate / 100) : line.unitCost,
+      unitPriceInclVat:
+        line.unitCostInclVat ??
+        (line.isVatable ? line.unitCost * (1 + line.vatRate / 100) : line.unitCost),
       uom: item?.unitOfMeasure,
     });
   }

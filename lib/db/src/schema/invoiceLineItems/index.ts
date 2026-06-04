@@ -15,6 +15,7 @@ export const invoiceLineItems = sqliteTable(
     itemNameSnapshot: text('item_name_snapshot').notNull().default(''),
     qty: real('qty').notNull(),
     unitCost: real('unit_cost').notNull().default(0),
+    unitCostInclVat: real('unit_cost_incl_vat'),
     totalCost: real('total_cost').notNull().default(0),
     isVatable: integer('is_vatable', { mode: 'boolean' }).notNull().default(true),
   },

@@ -42,6 +42,7 @@ describe('useInventoryCosts', () => {
         categoryName: null,
         vatRate: 15,
         isVatable: true,
+        unitCostInclVat: null,
       },
     ]);
     const { result } = renderHook(() => useInventoryCosts());
@@ -65,6 +66,7 @@ describe('useInventoryCosts', () => {
         categoryName: null,
         vatRate: 15,
         isVatable: true,
+        unitCostInclVat: null,
       },
       {
         id: 'l2',
@@ -78,6 +80,7 @@ describe('useInventoryCosts', () => {
         categoryName: null,
         vatRate: 15,
         isVatable: true,
+        unitCostInclVat: null,
       },
     ]);
     const { result } = renderHook(() => useInventoryCosts());
@@ -113,6 +116,7 @@ describe('useInventoryCosts', () => {
         categoryName: null,
         vatRate: 15,
         isVatable: true,
+        unitCostInclVat: null,
       },
     ]);
     const { result } = renderHook(() => useInventoryCosts());
@@ -134,6 +138,7 @@ describe('useInventoryCosts', () => {
         categoryName: null,
         vatRate: 15,
         isVatable: false,
+        unitCostInclVat: null,
       },
     ]);
     const { result } = renderHook(() => useInventoryCosts());
@@ -162,6 +167,7 @@ describe('useInventoryCosts', () => {
         categoryName: null,
         vatRate: 15,
         isVatable: true,
+        unitCostInclVat: null,
       },
     ]);
     const { result } = renderHook(() => useInventoryCosts());
