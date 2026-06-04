@@ -8,6 +8,7 @@ export type FlatItem = {
   categoryName: string;
   unitOfMeasure?: string;
   lastCostPerUnit?: number;
+  lastCostPerUnitInclVat?: number;
   lastCostUom?: string;
   currentStock?: number;
   weightedAvgCost?: number | null;

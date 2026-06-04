@@ -29,6 +29,7 @@ export function useItemFilters({ items, categories, costMap, stockMap }: Props) 
         categoryName: category?.name ?? '—',
         unitOfMeasure: item.unitOfMeasure,
         lastCostPerUnit: cost?.lastUnitCost ?? undefined,
+        lastCostPerUnitInclVat: cost?.lastUnitCostInclVat ?? undefined,
         lastCostUom: item.unitOfMeasure,
         currentStock: stockMap.get(item.id),
         weightedAvgCost: cost?.weightedAvgCost ?? null,

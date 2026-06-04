@@ -56,7 +56,7 @@ describe('useItemFilters', () => {
             lastUnitCost: 12.5,
             lastCostDate: null,
             weightedAvgCost: 11,
-            lastUnitCostInclVat: null,
+            lastUnitCostInclVat: 14.375,
           },
         ],
       ]);
@@ -70,6 +70,7 @@ describe('useItemFilters', () => {
         }),
       );
       expect(result.current.filteredItems[0]!.lastCostPerUnit).toBe(12.5);
+      expect(result.current.filteredItems[0]!.lastCostPerUnitInclVat).toBe(14.375);
       expect(result.current.filteredItems[0]!.currentStock).toBe(50);
       expect(result.current.filteredItems[0]!.weightedAvgCost).toBe(11);
     });
