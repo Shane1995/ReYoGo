@@ -381,7 +381,7 @@ export function createInvoicesRepo(db: DbClient) {
         invoiceDate: new Date(Number(r.invoiceDate) * 1000),
         categoryType: r.categoryType ?? null,
         categoryName: r.categoryName ?? null,
-        vatRate: r.vatRate ?? 15,
+        vatRate: r.vatRate!,
         isVatable: r.isVatable ?? true,
       }));
     },
