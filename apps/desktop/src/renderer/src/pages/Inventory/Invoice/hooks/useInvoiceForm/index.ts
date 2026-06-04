@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
@@ -43,8 +43,17 @@ export function useInvoiceForm() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [expandedResultLineIds, setExpandedResultLineIds] = useState<Set<string>>(new Set());
   const [reuseNoticeDismissed, setReuseNoticeDismissed] = useState(false);
+  const [lastUnitCosts, setLastUnitCosts] = useState<Record<string, number>>({});
 
   const { lines, setLines, addLine, removeLine, updateLine } = useLineManager(initialLines);
+
+  useEffect(() => {
+    invoiceService.getLastUnitPrices().then((prices) => {
+      setLastUnitCosts(
+        Object.fromEntries(Object.entries(prices).map(([id, p]) => [id, p.inclVat])),
+      );
+    });
+  }, []);
 
   const setVatMode = useCallback((mode: VatMode) => {
     setVatModeState(mode);
@@ -60,6 +69,7 @@ export function useInvoiceForm() {
     categories,
     vatMode,
     selectedEntity?.defaultVatRate ?? 0,
+    lastUnitCosts,
   );
 
   const canSave =
