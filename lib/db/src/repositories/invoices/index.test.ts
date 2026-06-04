@@ -324,7 +324,7 @@ describe('createInvoicesRepo', () => {
 
   describe('getLastUnitPrices', () => {
     it('returns exclVat as the raw unit cost', async () => {
-      await repo.saveInvoice({
+      await repo.saveAndPostInvoice({
         id: 'inv-1',
         entityId: 'default',
         supplierId: null,
@@ -339,7 +339,7 @@ describe('createInvoicesRepo', () => {
     });
 
     it('computes inclVat as unitCost * (1 + vatRate/100) for vatable lines', async () => {
-      await repo.saveInvoice({
+      await repo.saveAndPostInvoice({
         id: 'inv-2',
         entityId: 'default',
         supplierId: null,
@@ -354,7 +354,7 @@ describe('createInvoicesRepo', () => {
     });
 
     it('inclVat equals exclVat when isVatable is false', async () => {
-      await repo.saveInvoice({
+      await repo.saveAndPostInvoice({
         id: 'inv-3',
         entityId: 'default',
         supplierId: null,
@@ -369,6 +369,20 @@ describe('createInvoicesRepo', () => {
     });
 
     it('returns empty object when no lines exist', async () => {
+      expect(await repo.getLastUnitPrices()).toEqual({});
+    });
+
+    it('excludes lines from draft invoices', async () => {
+      await repo.saveInvoice({
+        id: 'inv-draft',
+        entityId: 'default',
+        supplierId: null,
+        invoiceNumber: 'INV-DRAFT',
+        invoiceDate: null,
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l-draft', quantity: 5, totalVatExclude: 50, isVatable: true })],
+      });
       expect(await repo.getLastUnitPrices()).toEqual({});
     });
   });

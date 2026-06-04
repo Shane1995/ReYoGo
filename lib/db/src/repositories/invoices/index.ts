@@ -396,7 +396,9 @@ export function createInvoicesRepo(db: DbClient) {
         })
         .from(schema.invoiceLineItems)
         .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
-        .where(gt(schema.invoiceLineItems.qty, 0))
+        .where(
+          and(gt(schema.invoiceLineItems.qty, 0), eq(schema.invoices.status, InvoiceStatus.Posted)),
+        )
         .orderBy(desc(sql`COALESCE(${schema.invoices.invoiceDate}, ${schema.invoices.createdAt})`));
       const result: Record<string, { exclVat: number; inclVat: number }> = {};
       for (const row of rows) {
