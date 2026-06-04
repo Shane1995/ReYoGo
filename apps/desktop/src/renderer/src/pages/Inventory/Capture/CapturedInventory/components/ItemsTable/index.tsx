@@ -161,9 +161,6 @@ export function ItemsTable({
             <div className="text-right">
               <div className="font-mono text-xs tabular-nums text-foreground">
                 {row.lastCostPerUnitInclVat.toFixed(2)}
-                {row.lastCostUom ? (
-                  <span className="text-muted-foreground/60"> / {row.lastCostUom}</span>
-                ) : null}
               </div>
               {row.lastCostPerUnit != null && (
                 <div className="font-mono text-[11px] tabular-nums text-muted-foreground/50">
