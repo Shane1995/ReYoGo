@@ -20,8 +20,8 @@ const sortByLastCaptured = (a: ItemGroup, b: ItemGroup) => {
 };
 
 const sortByLastUnitPrice = (a: ItemGroup, b: ItemGroup) => {
-  const aPrice = a.entries[a.entries.length - 1]?.unitPrice ?? 0;
-  const bPrice = b.entries[b.entries.length - 1]?.unitPrice ?? 0;
+  const aPrice = a.entries[a.entries.length - 1]?.unitPriceInclVat ?? 0;
+  const bPrice = b.entries[b.entries.length - 1]?.unitPriceInclVat ?? 0;
   return aPrice - bPrice;
 };
 
@@ -195,8 +195,10 @@ export function TableView({ groups }: { groups: ItemGroup[] }) {
                           {group.entries.map((entry, ei) => {
                             const prev = ei > 0 ? group.entries[ei - 1] : null;
                             const pct =
-                              prev && prev.unitPrice > 0
-                                ? ((entry.unitPrice - prev.unitPrice) / prev.unitPrice) * 100
+                              prev && prev.unitPriceInclVat > 0
+                                ? ((entry.unitPriceInclVat - prev.unitPriceInclVat) /
+                                    prev.unitPriceInclVat) *
+                                  100
                                 : null;
                             return (
                               <tr
