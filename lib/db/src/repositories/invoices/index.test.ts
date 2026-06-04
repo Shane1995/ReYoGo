@@ -323,7 +323,7 @@ describe('createInvoicesRepo', () => {
   });
 
   describe('getLastUnitPrices', () => {
-    it('returns the most recent unit price per item', async () => {
+    it('returns exclVat as the raw unit cost', async () => {
       await repo.saveInvoice({
         id: 'inv-1',
         entityId: 'default',
@@ -332,9 +332,40 @@ describe('createInvoicesRepo', () => {
         invoiceDate: null,
         vatMode: VatMode.Exclusive,
         vatRate: 15,
-        lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100 })],
+        lines: [line({ id: 'l-1', quantity: 10, totalVatExclude: 100, isVatable: true })],
       });
-      expect((await repo.getLastUnitPrices())['item-1']).toBe(10);
+      const result = await repo.getLastUnitPrices();
+      expect(result['item-1']!.exclVat).toBe(10);
+    });
+
+    it('computes inclVat as unitCost * (1 + vatRate/100) for vatable lines', async () => {
+      await repo.saveInvoice({
+        id: 'inv-2',
+        entityId: 'default',
+        supplierId: null,
+        invoiceNumber: 'INV-TEST2',
+        invoiceDate: null,
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l-2', quantity: 10, totalVatExclude: 100, isVatable: true })],
+      });
+      const result = await repo.getLastUnitPrices();
+      expect(result['item-1']!.inclVat).toBeCloseTo(11.5);
+    });
+
+    it('inclVat equals exclVat when isVatable is false', async () => {
+      await repo.saveInvoice({
+        id: 'inv-3',
+        entityId: 'default',
+        supplierId: null,
+        invoiceNumber: 'INV-TEST3',
+        invoiceDate: null,
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l-3', quantity: 10, totalVatExclude: 100, isVatable: false })],
+      });
+      const result = await repo.getLastUnitPrices();
+      expect(result['item-1']!.inclVat).toBeCloseTo(10);
     });
 
     it('returns empty object when no lines exist', async () => {

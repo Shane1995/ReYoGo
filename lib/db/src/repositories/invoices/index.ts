@@ -386,19 +386,26 @@ export function createInvoicesRepo(db: DbClient) {
       }));
     },
 
-    async getLastUnitPrices(): Promise<Record<string, number>> {
+    async getLastUnitPrices(): Promise<Record<string, { exclVat: number; inclVat: number }>> {
       const rows = await db
         .select({
           inventoryItemId: schema.invoiceLineItems.inventoryItemId,
           unitCost: schema.invoiceLineItems.unitCost,
+          vatRate: schema.invoices.vatRate,
+          isVatable: schema.invoiceLineItems.isVatable,
         })
         .from(schema.invoiceLineItems)
         .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
         .where(gt(schema.invoiceLineItems.qty, 0))
         .orderBy(desc(sql`COALESCE(${schema.invoices.invoiceDate}, ${schema.invoices.createdAt})`));
-      const result: Record<string, number> = {};
+      const result: Record<string, { exclVat: number; inclVat: number }> = {};
       for (const row of rows) {
-        if (!(row.inventoryItemId in result)) result[row.inventoryItemId] = row.unitCost;
+        if (!(row.inventoryItemId in result)) {
+          const exclVat = row.unitCost;
+          const vat = row.vatRate!;
+          const inclVat = (row.isVatable ?? true) ? exclVat * (1 + vat / 100) : exclVat;
+          result[row.inventoryItemId] = { exclVat, inclVat };
+        }
       }
       return result;
     },
