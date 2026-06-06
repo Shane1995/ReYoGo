@@ -4,6 +4,7 @@ import { Button, PageHeader } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { INVENTORY_TYPES, InventoryType } from '@reyogo/types';
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
+import { useEntities } from '@/Context/EntityContext';
 import type { TypeValue } from '../CapturedInventory/types';
 import { cn } from '@reyogo/ui';
 
@@ -34,7 +35,9 @@ function emptyCategoryRow(): CategoryRow {
 
 export default function AddInventoryPage() {
   const { categories, items, unitOptions, addItem, addCategory } = useInventory();
+  const { entities } = useEntities();
 
+  const [entityId, setEntityId] = useState('');
   const [mode, setMode] = useState<Mode>('items');
   const [itemRows, setItemRows] = useState<ItemRow[]>([emptyItemRow()]);
   const [catRows, setCatRows] = useState<CategoryRow[]>([emptyCategoryRow()]);
@@ -89,6 +92,7 @@ export default function AddInventoryPage() {
   }, [itemRows, items]);
 
   const submitItems = useCallback(() => {
+    if (!entityId) return;
     const valid = itemRows.filter(
       (r) => r.name.trim() && r.categoryId && r.unitOfMeasureId && !itemDupes.has(r.id),
     );
@@ -99,15 +103,16 @@ export default function AddInventoryPage() {
         categoryId: r.categoryId,
         type: r.type,
         unitOfMeasureId: r.unitOfMeasureId || null,
+        entityId,
       }),
     );
     setItemRows([emptyItemRow()]);
-  }, [itemRows, itemDupes, addItem]);
+  }, [itemRows, itemDupes, addItem, entityId]);
 
   const namedItemRows = itemRows.filter((r) => r.name.trim());
-  const canSubmitItems = namedItemRows.some(
-    (r) => r.categoryId && r.unitOfMeasureId && !itemDupes.has(r.id),
-  );
+  const canSubmitItems =
+    !!entityId &&
+    namedItemRows.some((r) => r.categoryId && r.unitOfMeasureId && !itemDupes.has(r.id));
   const hasIncompleteItemRows = namedItemRows.some((r) => !r.categoryId || !r.unitOfMeasureId);
 
   // --- Category logic ---
@@ -160,6 +165,21 @@ export default function AddInventoryPage() {
 
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-6 my-5 space-y-3">
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium text-foreground shrink-0">Entity</label>
+            <select
+              value={entityId}
+              onChange={(e) => setEntityId(e.target.value)}
+              className={cn(inputClass, 'max-w-xs cursor-pointer')}
+            >
+              <option value="">Select entity…</option>
+              {entities.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name}
+                </option>
+              ))}
+            </select>
+          </div>
           {/* Mode toggle */}
           <div className="inline-flex items-center rounded-lg border border-[var(--nav-border)] bg-muted/20 p-0.5 gap-0.5">
             {(['items', 'categories'] as Mode[]).map((m) => (

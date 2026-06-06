@@ -10,7 +10,7 @@ export function registerInventoryHandlers(): void {
     getRepos().inventory.upsertCategory(category, ACCOUNT_ID),
   );
   ipcMain.handle(InventoryIPC.UPSERT_ITEM, async (_e, item: InventoryItem) => {
-    const { entityId } = await resolveCurrentIds();
+    const entityId = item.entityId ?? (await resolveCurrentIds()).entityId;
     return getRepos().inventory.upsertItem(item, entityId);
   });
   ipcMain.handle(InventoryIPC.DELETE_CATEGORY, (_e, id: string) =>

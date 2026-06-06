@@ -3,6 +3,7 @@ import { PlusIcon } from 'lucide-react';
 import { Button, PageHeader } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
+import { useEntities } from '@/Context/EntityContext';
 import type { TypeValue } from '../CapturedInventory/types';
 import { cn } from '@reyogo/ui';
 
@@ -25,9 +26,11 @@ function createEmptyRow(): PendingRow {
 
 export default function AddItemsPage() {
   const { categories, items, unitOptions, addItem } = useInventory();
+  const { entities } = useEntities();
   const namedCategories = categories.filter((c) => c.name.trim());
   const categoryTypes = Array.from(new Set(namedCategories.map((c) => c.type)));
 
+  const [entityId, setEntityId] = useState('');
   const [rows, setRows] = useState<PendingRow[]>([createEmptyRow()]);
   const [lastAddedRowId, setLastAddedRowId] = useState<string | null>(null);
 
@@ -75,6 +78,7 @@ export default function AddItemsPage() {
   }, [rows, items]);
 
   const submit = useCallback(() => {
+    if (!entityId) return;
     const valid = rows.filter((r) => r.name.trim() && r.categoryId && !duplicateIds.has(r.id));
     if (!valid.length) return;
     valid.forEach((r) => {
@@ -83,15 +87,16 @@ export default function AddItemsPage() {
         categoryId: r.categoryId,
         type: r.type,
         unitOfMeasureId: r.unitOfMeasureId || null,
+        entityId,
       });
     });
     setRows([createEmptyRow()]);
-  }, [rows, duplicateIds, addItem]);
+  }, [rows, duplicateIds, addItem, entityId]);
 
   const namedRows = rows.filter((r) => r.name.trim());
   const hasValidRows = namedRows.some((r) => r.categoryId && !duplicateIds.has(r.id));
   const hasIncompleteRows = namedRows.some((r) => !r.categoryId);
-  const canSubmit = hasValidRows && !hasIncompleteRows;
+  const canSubmit = !!entityId && hasValidRows && !hasIncompleteRows;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -102,6 +107,21 @@ export default function AddItemsPage() {
 
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-6 my-5 space-y-3">
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium text-foreground shrink-0">Entity</label>
+            <select
+              value={entityId}
+              onChange={(e) => setEntityId(e.target.value)}
+              className={cn(inputClass, 'max-w-xs cursor-pointer')}
+            >
+              <option value="">Select entity…</option>
+              {entities.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="rounded-lg border border-[var(--nav-border)] bg-background">
             <Table>
               <TableHeader>
