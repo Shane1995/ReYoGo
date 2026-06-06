@@ -107,8 +107,7 @@ export default function AddItemsPage() {
 
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-6 my-5 space-y-3">
-          <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-foreground shrink-0">Entity</label>
+          <div>
             <select
               value={entityId}
               onChange={(e) => setEntityId(e.target.value)}

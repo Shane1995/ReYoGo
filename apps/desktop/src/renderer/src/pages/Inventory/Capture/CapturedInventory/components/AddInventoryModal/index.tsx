@@ -99,7 +99,6 @@ function ItemForm({ onDone }: { onDone: () => void }) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-foreground">Entity</label>
         <select
           value={entityId}
           onChange={(e) => setEntityId(e.target.value)}
