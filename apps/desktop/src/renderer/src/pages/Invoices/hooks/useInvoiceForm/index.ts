@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
+import type { InventoryItem } from '@/pages/Inventory/Capture/CapturedInventory/types';
 import { useEntities } from '@/Context/EntityContext';
 import { invoiceService } from '@/services/invoice';
 import { VatMode } from '@reyogo/types';
@@ -17,8 +18,9 @@ export function useInvoiceForm() {
   const { entities } = useEntities();
   const location = useLocation();
 
-  const templateLines = (location.state as { templateLines?: ProcessReceiptLine[] } | null)
-    ?.templateLines;
+  const locationState =
+    (location.state as { templateLines?: ProcessReceiptLine[]; entityId?: string } | null) ?? null;
+  const templateLines = locationState?.templateLines;
   const isReused = !!templateLines;
 
   const initialLines = (() => {
@@ -37,7 +39,7 @@ export function useInvoiceForm() {
   const [vatMode, setVatModeState] = useState<VatMode>(() =>
     isReused ? VatMode.Exclusive : (loadDraft()?.vatMode ?? VatMode.Exclusive),
   );
-  const [entityId, setEntityId] = useState<string>('');
+  const [entityId, setEntityId] = useState<string>(locationState?.entityId ?? '');
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -63,6 +65,11 @@ export function useInvoiceForm() {
   const setVatMode = useCallback((mode: VatMode) => {
     setVatModeState(mode);
   }, []);
+
+  const addItemForEntity = useCallback(
+    (item: Omit<InventoryItem, 'id'>) => addItem({ ...item, entityId }),
+    [addItem, entityId],
+  );
 
   const selectedEntity = entities.find((e) => e.id === entityId) ?? null;
 
@@ -248,7 +255,7 @@ export function useInvoiceForm() {
     unitOptions,
     categories,
     addCategory,
-    addItem,
+    addItem: addItemForEntity,
     lines,
     invoiceNumber,
     setInvoiceNumber,
