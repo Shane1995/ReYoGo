@@ -22,6 +22,7 @@ type Props = {
   disabled?: boolean;
   inputId?: string;
   onSelectComplete?: () => void;
+  onNavigateRight?: () => void;
 };
 
 export function ItemAutocomplete({
@@ -34,6 +35,7 @@ export function ItemAutocomplete({
   disabled,
   inputId,
   onSelectComplete,
+  onNavigateRight,
 }: Props) {
   const entityFilteredItems = entityId ? items.filter((item) => item.entityId === entityId) : items;
   const [query, setQuery] = useState('');
@@ -110,6 +112,10 @@ export function ItemAutocomplete({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen) {
+      if (e.key === 'ArrowRight') {
+        onNavigateRight?.();
+        return;
+      }
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
         setIsOpen(true);
         setQuery('');

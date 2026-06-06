@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import { ChevronDownIcon, ChevronRightIcon, XIcon } from 'lucide-react';
 import { TableCell, TableRow } from '@reyogo/ui';
 import { ItemAutocomplete, type ItemOption } from '../ItemAutocomplete';
@@ -31,6 +31,8 @@ type Props = {
   onRemove: () => void;
   onAddLine: (focusField?: string) => void;
   onNavigateNext: (field: string) => void;
+  onNavigatePrev: (field: string) => void;
+  onNavigateToNextRowItem: () => void;
 };
 
 function ItemMetaHint({
@@ -80,16 +82,145 @@ export function InvoiceLineRow({
   onRemove,
   onAddLine,
   onNavigateNext,
+  onNavigatePrev,
+  onNavigateToNextRowItem,
 }: Props) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const rowRef = useRef<HTMLTableRowElement>(null);
   const computed = getProcessLineComputed(line, vatMode, vatRate);
+  const isRowEmpty = !line.itemId && !line.quantity && !line.totalVatExclude;
+  const isOnlyRow = index === 0 && isLast;
+
+  function handleBlurRow(e: React.FocusEvent) {
+    if (!confirmingDelete) return;
+    if (!rowRef.current?.contains(e.relatedTarget as Node)) {
+      setConfirmingDelete(false);
+    }
+  }
+
+  function buildQtyKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    const val = e.currentTarget.value;
+    const pos = e.currentTarget.selectionStart;
+
+    if (confirmingDelete) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setConfirmingDelete(false);
+        return;
+      }
+      if (e.key === 'Enter' || (e.key === 'Backspace' && val === '')) {
+        e.preventDefault();
+        onRemove();
+        return;
+      }
+    }
+
+    if (e.key === 'Backspace' && val === '') {
+      e.preventDefault();
+      if (isOnlyRow) return;
+      if (isRowEmpty) {
+        onRemove();
+      } else {
+        setConfirmingDelete(true);
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowLeft' && (pos === 0 || pos === null)) {
+      e.preventDefault();
+      document.getElementById(`invoice-item-${line.id}`)?.focus();
+      return;
+    }
+    if (e.key === 'ArrowRight' && (pos === val.length || pos === null)) {
+      e.preventDefault();
+      document.getElementById(`invoice-total-${line.id}`)?.focus();
+      return;
+    }
+
+    if (e.key === 'Enter' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      onNavigateNext('qty');
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      onNavigatePrev('qty');
+      return;
+    }
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      document.getElementById(`invoice-total-${line.id}`)?.focus();
+    }
+  }
+
+  function buildTotalKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    const val = e.currentTarget.value;
+    const pos = e.currentTarget.selectionStart;
+
+    if (confirmingDelete) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setConfirmingDelete(false);
+        return;
+      }
+      if (e.key === 'Enter' || (e.key === 'Backspace' && val === '')) {
+        e.preventDefault();
+        onRemove();
+        return;
+      }
+    }
+
+    if (e.key === 'Backspace' && val === '') {
+      e.preventDefault();
+      if (isOnlyRow) return;
+      if (isRowEmpty) {
+        onRemove();
+      } else {
+        setConfirmingDelete(true);
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowLeft' && (pos === 0 || pos === null)) {
+      e.preventDefault();
+      document.getElementById(`invoice-qty-${line.id}`)?.focus();
+      return;
+    }
+    if (e.key === 'ArrowRight' && (pos === val.length || pos === null)) {
+      e.preventDefault();
+      onNavigateToNextRowItem();
+      return;
+    }
+
+    if (e.key === 'Enter' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      onNavigateNext('total');
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      onNavigatePrev('total');
+      return;
+    }
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      onAddLine();
+    }
+  }
 
   return (
     <Fragment>
       <TableRow
+        ref={rowRef}
         className={cn(
+          'animate-in fade-in slide-in-from-bottom-1 duration-150',
           'border-[var(--nav-border)] transition-colors group',
-          isExpanded ? 'bg-[var(--nav-accent)]/30' : 'hover:bg-muted/20',
-          !isExpanded && index % 2 !== 0 && 'bg-black/[0.025]',
+          confirmingDelete
+            ? 'bg-destructive/5'
+            : isExpanded
+              ? 'bg-[var(--nav-accent)]/30'
+              : 'hover:bg-muted/20',
+          !isExpanded && !confirmingDelete && index % 2 !== 0 && 'bg-black/[0.025]',
         )}
       >
         <TableCell className="w-8 p-2 align-middle">
@@ -123,6 +254,7 @@ export function InvoiceLineRow({
               document.getElementById(`invoice-qty-${line.id}`)?.focus();
               if (isLast) onAddLine();
             }}
+            onNavigateRight={() => document.getElementById(`invoice-qty-${line.id}`)?.focus()}
           />
           {line.itemId && itemMeta && (
             <ItemMetaHint itemMeta={itemMeta} vatMode={vatMode} computed={computed} />
@@ -136,19 +268,16 @@ export function InvoiceLineRow({
             min={0}
             step={1}
             value={line.quantity || ''}
-            onChange={(e) =>
-              onUpdate({ quantity: e.target.value === '' ? 0 : Number(e.target.value) })
-            }
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                onNavigateNext('qty');
-              } else if (e.key === 'Tab') {
-                e.preventDefault();
-                document.getElementById(`invoice-total-${line.id}`)?.focus();
-              }
+            onChange={(e) => {
+              setConfirmingDelete(false);
+              onUpdate({ quantity: e.target.value === '' ? 0 : Number(e.target.value) });
             }}
-            className={cn(inputClass, 'w-20 font-mono')}
+            onKeyDown={buildQtyKeyDown}
+            onBlur={handleBlurRow}
+            className={cn(
+              inputClass,
+              'w-20 font-mono [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+            )}
             placeholder="0"
           />
         </TableCell>
@@ -188,32 +317,44 @@ export function InvoiceLineRow({
             min={0}
             step={1}
             value={line.totalVatExclude || ''}
-            onChange={(e) =>
-              onUpdate({ totalVatExclude: e.target.value === '' ? 0 : Number(e.target.value) })
-            }
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                onNavigateNext('total');
-              } else if (e.key === 'Tab') {
-                e.preventDefault();
-                onAddLine();
-              }
+            onChange={(e) => {
+              setConfirmingDelete(false);
+              onUpdate({ totalVatExclude: e.target.value === '' ? 0 : Number(e.target.value) });
             }}
-            className={cn(inputClass, 'w-28 font-mono')}
+            onKeyDown={buildTotalKeyDown}
+            onBlur={handleBlurRow}
+            className={cn(
+              inputClass,
+              'w-28 font-mono [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+            )}
             placeholder="0.00"
           />
         </TableCell>
 
         <TableCell className="py-2 px-2 text-right">
-          <button
-            type="button"
-            onClick={onRemove}
-            title="Remove line"
-            className="opacity-0 group-hover:opacity-100 rounded p-1 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-all"
-          >
-            <XIcon className="size-3.5" aria-hidden />
-          </button>
+          {confirmingDelete ? (
+            <div className="flex items-center justify-end gap-1.5">
+              <span className="text-[11px] text-destructive/70 whitespace-nowrap">
+                Enter ↵ · Esc to cancel
+              </span>
+              <button
+                type="button"
+                onClick={onRemove}
+                className="rounded p-1 text-destructive bg-destructive/10 hover:bg-destructive/20 transition-all"
+              >
+                <XIcon className="size-3.5" aria-hidden />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onRemove}
+              title="Remove line"
+              className="opacity-0 group-hover:opacity-100 rounded p-1 text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-all"
+            >
+              <XIcon className="size-3.5" aria-hidden />
+            </button>
+          )}
         </TableCell>
       </TableRow>
 

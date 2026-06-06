@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 
 vi.mock('@/services/app', () => ({
   appService: {
@@ -14,8 +14,10 @@ vi.mock('@/services/app', () => ({
 import { AboutSection } from './index';
 
 describe('AboutSection', () => {
-  it('renders the section heading', () => {
-    render(<AboutSection />);
+  it('renders the section heading', async () => {
+    await act(async () => {
+      render(<AboutSection />);
+    });
     expect(screen.getByText('About')).toBeInTheDocument();
   });
 

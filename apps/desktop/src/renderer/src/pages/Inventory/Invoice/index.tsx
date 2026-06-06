@@ -136,6 +136,18 @@ export default function InvoicePage() {
                         addLine(field);
                       }
                     }}
+                    onNavigatePrev={(field) => {
+                      const prevLine = lines[i - 1];
+                      if (prevLine) {
+                        document.getElementById(`invoice-${field}-${prevLine.id}`)?.focus();
+                      }
+                    }}
+                    onNavigateToNextRowItem={() => {
+                      const nextLine = lines[i + 1];
+                      if (nextLine) {
+                        document.getElementById(`invoice-item-${nextLine.id}`)?.focus();
+                      }
+                    }}
                   />
                 ))}
               </TableBody>

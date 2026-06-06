@@ -29,9 +29,10 @@ beforeEach(() => {
 });
 
 describe('useDashboardStats', () => {
-  it('starts in loading state', () => {
+  it('starts in loading state', async () => {
     const { result } = renderHook(() => useDashboardStats());
     expect(result.current.loading).toBe(true);
+    await waitFor(() => expect(result.current.loading).toBe(false));
   });
 
   it('calculates total stock value as sum of qty * wac per item', async () => {
@@ -61,8 +62,9 @@ describe('useDashboardStats', () => {
     expect(result.current.stats).toEqual({ totalStockValue: 0, monthlySpend: 0 });
   });
 
-  it('exposes a refetch function', () => {
+  it('exposes a refetch function', async () => {
     const { result } = renderHook(() => useDashboardStats());
     expect(typeof result.current.refetch).toBe('function');
+    await waitFor(() => expect(result.current.loading).toBe(false));
   });
 });

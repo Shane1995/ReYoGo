@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 
 vi.mock('@/services/cloudSync', () => ({
   cloudSyncService: {
@@ -21,7 +21,9 @@ describe('CloudSyncSection', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('renders the section heading', async () => {
-    render(<CloudSyncSection />);
+    await act(async () => {
+      render(<CloudSyncSection />);
+    });
     expect(screen.getByText('Cloud Sync')).toBeInTheDocument();
   });
 
