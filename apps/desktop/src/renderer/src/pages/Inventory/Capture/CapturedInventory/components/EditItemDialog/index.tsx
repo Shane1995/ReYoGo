@@ -34,7 +34,7 @@ export function EditItemDialog({ item, categories, unitOptions, onSave, onClose 
       name: name.trim(),
       categoryId,
       type: selectedCategory?.type ?? '',
-      unitOfMeasureId: unitOfMeasureId || undefined,
+      unitOfMeasureId: unitOfMeasureId || null,
     });
   };
 

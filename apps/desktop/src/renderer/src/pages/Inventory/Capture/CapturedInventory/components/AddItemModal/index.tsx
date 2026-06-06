@@ -38,7 +38,7 @@ export function AddItemModal({
       name: trimmed,
       categoryId,
       type,
-      unitOfMeasureId: unitOfMeasureId || undefined,
+      unitOfMeasureId: unitOfMeasureId || null,
     });
     setName('');
     setCategoryId('');

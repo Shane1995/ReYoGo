@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, useMemo } 
 import type { IPCChannel } from '@shared/types/ipc';
 import { InventoryIPC } from '@shared/types/ipc';
 import type { InventoryCategory, InventoryItem } from '../../types';
+import type { UnitOption } from '../../components/ItemsTable/types';
 
 function invokeInventory(channel: IPCChannel, ...args: unknown[]): Promise<unknown> {
   if (typeof window === 'undefined' || !window.electronAPI?.ipcRenderer?.invoke) {
@@ -13,8 +14,6 @@ function invokeInventory(channel: IPCChannel, ...args: unknown[]): Promise<unkno
   ) => Promise<unknown>;
   return invoke(channel, ...args);
 }
-
-type UnitOption = { id: string; name: string };
 
 type InventoryContextValue = {
   categories: InventoryCategory[];

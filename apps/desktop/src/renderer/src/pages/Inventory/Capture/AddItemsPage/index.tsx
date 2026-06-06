@@ -82,7 +82,7 @@ export default function AddItemsPage() {
         name: r.name.trim(),
         categoryId: r.categoryId,
         type: r.type,
-        unitOfMeasureId: r.unitOfMeasureId || undefined,
+        unitOfMeasureId: r.unitOfMeasureId || null,
       });
     });
     setRows([createEmptyRow()]);

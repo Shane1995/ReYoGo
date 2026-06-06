@@ -83,7 +83,7 @@ function ItemForm({ onDone }: { onDone: () => void }) {
       name: trimmed,
       categoryId,
       type: category.type,
-      unitOfMeasureId: unitOfMeasureId || undefined,
+      unitOfMeasureId: unitOfMeasureId || null,
     });
     setName('');
     setCategoryId('');
