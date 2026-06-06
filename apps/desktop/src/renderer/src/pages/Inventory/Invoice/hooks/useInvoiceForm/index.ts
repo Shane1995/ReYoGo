@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
@@ -68,9 +68,14 @@ export function useInvoiceForm() {
 
   const { clearDraft } = useDraftPersistence(lines, invoiceNumber, invoiceDate, vatMode, isReused);
 
+  const entityItems = useMemo(
+    () => (entityId ? items.filter((item) => item.entityId === entityId) : []),
+    [items, entityId],
+  );
+
   const { invoiceSummary, validLines, itemsWithCategory, itemMetaMap } = useInvoiceSummary(
     lines,
-    items,
+    entityItems,
     categories,
     vatMode,
     selectedEntity?.defaultVatRate ?? 0,

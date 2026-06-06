@@ -12,7 +12,7 @@ const navItems = [
 
 function renderLayout(storageKey?: string) {
   return render(
-    <MemoryRouter>
+    <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <SectionLayout navItems={navItems} storageKey={storageKey} />
     </MemoryRouter>,
   );
@@ -67,7 +67,7 @@ describe('SectionLayout', () => {
 
   it('renders children instead of Outlet when provided', () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <SectionLayout navItems={navItems}>
           <div>Custom content</div>
         </SectionLayout>
