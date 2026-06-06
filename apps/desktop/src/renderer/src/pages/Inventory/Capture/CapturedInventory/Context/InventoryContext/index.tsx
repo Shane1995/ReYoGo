@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, useMemo } 
 import type { IPCChannel } from '@shared/types/ipc';
 import { InventoryIPC } from '@shared/types/ipc';
 import type { InventoryCategory, InventoryItem } from '../../types';
+import type { UnitOption } from '../../components/ItemsTable/types';
 
 function invokeInventory(channel: IPCChannel, ...args: unknown[]): Promise<unknown> {
   if (typeof window === 'undefined' || !window.electronAPI?.ipcRenderer?.invoke) {
@@ -17,7 +18,7 @@ function invokeInventory(channel: IPCChannel, ...args: unknown[]): Promise<unkno
 type InventoryContextValue = {
   categories: InventoryCategory[];
   items: InventoryItem[];
-  units: string[];
+  unitOptions: UnitOption[];
   addCategory: (category: Omit<InventoryCategory, 'id'>) => string;
   updateCategory: (id: string, updates: Partial<InventoryCategory>) => void;
   addItem: (item: Omit<InventoryItem, 'id'>) => string;
@@ -33,14 +34,14 @@ const InventoryContext = createContext<InventoryContextValue | null>(null);
 export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
-  const [units, setUnits] = useState<string[]>([]);
+  const [unitOptions, setUnitOptions] = useState<UnitOption[]>([]);
   const [unitMap, setUnitMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
-    (invokeInventory('setup:get-units') as Promise<{ id: string; name: string }[]>)
+    (invokeInventory('setup:get-units') as Promise<UnitOption[]>)
       .then((data) => {
         if (!Array.isArray(data)) return;
-        setUnits(data.map((u) => u.name));
+        setUnitOptions(data);
         setUnitMap(new Map(data.map((u) => [u.id, u.name])));
       })
       .catch(console.error);
@@ -152,7 +153,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const value: InventoryContextValue = {
     categories,
     items: enrichedItems,
-    units,
+    unitOptions,
     addCategory,
     updateCategory,
     addItem,

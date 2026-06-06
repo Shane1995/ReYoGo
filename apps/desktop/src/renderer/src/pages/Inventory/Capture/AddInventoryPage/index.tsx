@@ -4,6 +4,7 @@ import { Button, PageHeader } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { INVENTORY_TYPES, InventoryType } from '@reyogo/types';
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
+import { useEntities } from '@/Context/EntityContext';
 import type { TypeValue } from '../CapturedInventory/types';
 import { cn } from '@reyogo/ui';
 
@@ -20,10 +21,10 @@ type ItemRow = {
   name: string;
   categoryId: string;
   type: TypeValue;
-  unitOfMeasure: string;
+  unitOfMeasureId: string;
 };
 function emptyItemRow(): ItemRow {
-  return { id: crypto.randomUUID(), name: '', categoryId: '', type: '', unitOfMeasure: '' };
+  return { id: crypto.randomUUID(), name: '', categoryId: '', type: '', unitOfMeasureId: '' };
 }
 
 // --- Categories ---
@@ -33,8 +34,10 @@ function emptyCategoryRow(): CategoryRow {
 }
 
 export default function AddInventoryPage() {
-  const { categories, items, units, addItem, addCategory } = useInventory();
+  const { categories, items, unitOptions, addItem, addCategory } = useInventory();
+  const { entities } = useEntities();
 
+  const [entityId, setEntityId] = useState('');
   const [mode, setMode] = useState<Mode>('items');
   const [itemRows, setItemRows] = useState<ItemRow[]>([emptyItemRow()]);
   const [catRows, setCatRows] = useState<CategoryRow[]>([emptyCategoryRow()]);
@@ -89,8 +92,9 @@ export default function AddInventoryPage() {
   }, [itemRows, items]);
 
   const submitItems = useCallback(() => {
+    if (!entityId) return;
     const valid = itemRows.filter(
-      (r) => r.name.trim() && r.categoryId && r.unitOfMeasure && !itemDupes.has(r.id),
+      (r) => r.name.trim() && r.categoryId && r.unitOfMeasureId && !itemDupes.has(r.id),
     );
     if (!valid.length) return;
     valid.forEach((r) =>
@@ -98,17 +102,18 @@ export default function AddInventoryPage() {
         name: r.name.trim(),
         categoryId: r.categoryId,
         type: r.type,
-        unitOfMeasure: r.unitOfMeasure || undefined,
+        unitOfMeasureId: r.unitOfMeasureId || null,
+        entityId,
       }),
     );
     setItemRows([emptyItemRow()]);
-  }, [itemRows, itemDupes, addItem]);
+  }, [itemRows, itemDupes, addItem, entityId]);
 
   const namedItemRows = itemRows.filter((r) => r.name.trim());
-  const canSubmitItems = namedItemRows.some(
-    (r) => r.categoryId && r.unitOfMeasure && !itemDupes.has(r.id),
-  );
-  const hasIncompleteItemRows = namedItemRows.some((r) => !r.categoryId || !r.unitOfMeasure);
+  const canSubmitItems =
+    !!entityId &&
+    namedItemRows.some((r) => r.categoryId && r.unitOfMeasureId && !itemDupes.has(r.id));
+  const hasIncompleteItemRows = namedItemRows.some((r) => !r.categoryId || !r.unitOfMeasureId);
 
   // --- Category logic ---
   const addCatRow = useCallback(() => {
@@ -160,6 +165,20 @@ export default function AddInventoryPage() {
 
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-6 my-5 space-y-3">
+          <div>
+            <select
+              value={entityId}
+              onChange={(e) => setEntityId(e.target.value)}
+              className={cn(inputClass, 'max-w-xs cursor-pointer')}
+            >
+              <option value="">Select entity…</option>
+              {entities.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name}
+                </option>
+              ))}
+            </select>
+          </div>
           {/* Mode toggle */}
           <div className="inline-flex items-center rounded-lg border border-[var(--nav-border)] bg-muted/20 p-0.5 gap-0.5">
             {(['items', 'categories'] as Mode[]).map((m) => (
@@ -251,9 +270,9 @@ export default function AddInventoryPage() {
                         </TableCell>
                         <TableCell className="py-2 px-3">
                           <select
-                            value={row.unitOfMeasure}
+                            value={row.unitOfMeasureId}
                             onChange={(e) =>
-                              updateItemRow(row.id, { unitOfMeasure: e.target.value })
+                              updateItemRow(row.id, { unitOfMeasureId: e.target.value })
                             }
                             onKeyDown={(e) => {
                               if (e.key === 'Tab') {
@@ -264,9 +283,9 @@ export default function AddInventoryPage() {
                             className={cn(inputClass, 'min-w-[6rem] cursor-pointer')}
                           >
                             <option value="">Select a unit…</option>
-                            {units.map((u) => (
-                              <option key={u} value={u}>
-                                {u}
+                            {unitOptions.map((u) => (
+                              <option key={u.id} value={u.id}>
+                                {u.name}
                               </option>
                             ))}
                           </select>

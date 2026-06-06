@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Cloud, CloudOff } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Cloud, CloudOff, Loader2 } from 'lucide-react';
 import { cloudSyncService } from '@/services/cloudSync';
 import { appService, type AppVersionInfo } from '@/services/app';
 import { CloudSyncEventType } from '@shared/types/cloudSync';
@@ -19,6 +20,13 @@ function syncLabel(sync: SyncStatus | null, syncing: boolean, isOnline: boolean)
   if (sync.state === 'error') return 'Sync failed';
   return 'Connected';
 }
+
+const iconTransition = { duration: 0.15 };
+const spinTransition = {
+  rotate: { repeat: Infinity, duration: 1, ease: 'linear' as const },
+  opacity: iconTransition,
+  scale: iconTransition,
+};
 
 export function AppStatusBar() {
   const [version, setVersion] = useState<AppVersionInfo | null>(null);
@@ -91,11 +99,39 @@ export function AppStatusBar() {
       }}
     >
       <div className="ml-auto flex items-center gap-2">
-        {connected ? (
-          <Cloud className="size-3.5 shrink-0 text-green-500" aria-hidden />
-        ) : (
-          <CloudOff className="size-3.5 shrink-0" aria-hidden />
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          {syncing ? (
+            <motion.div
+              key="syncing"
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1, rotate: 360 }}
+              exit={{ opacity: 0, scale: 0.7 }}
+              transition={spinTransition}
+            >
+              <Loader2 className="size-3.5 shrink-0 text-[#20C997]" aria-hidden />
+            </motion.div>
+          ) : connected ? (
+            <motion.div
+              key="connected"
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.7 }}
+              transition={iconTransition}
+            >
+              <Cloud className="size-3.5 shrink-0 text-[#20C997]" aria-hidden />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="disconnected"
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.7 }}
+              transition={iconTransition}
+            >
+              <CloudOff className="size-3.5 shrink-0" aria-hidden />
+            </motion.div>
+          )}
+        </AnimatePresence>
         <span>
           {label}
           {!syncing && version && ` · v${version.version}`}

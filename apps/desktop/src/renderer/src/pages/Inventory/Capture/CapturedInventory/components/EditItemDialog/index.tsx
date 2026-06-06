@@ -3,19 +3,20 @@ import { XIcon } from 'lucide-react';
 import { Button } from '@reyogo/ui';
 import { cn } from '@reyogo/ui';
 import type { InventoryCategory, InventoryItem } from '../../types';
+import type { UnitOption } from '../ItemsTable/types';
 
 type Props = {
   item: InventoryItem | null;
   categories: InventoryCategory[];
-  units: string[];
+  unitOptions: UnitOption[];
   onSave: (id: string | null, values: Omit<InventoryItem, 'id'>) => void;
   onClose: () => void;
 };
 
-export function EditItemDialog({ item, categories, units, onSave, onClose }: Props) {
+export function EditItemDialog({ item, categories, unitOptions, onSave, onClose }: Props) {
   const [name, setName] = useState(item?.name ?? '');
   const [categoryId, setCategoryId] = useState(item?.categoryId ?? '');
-  const [unitOfMeasure, setUnitOfMeasure] = useState(item?.unitOfMeasure ?? '');
+  const [unitOfMeasureId, setUnitOfMeasureId] = useState(item?.unitOfMeasureId ?? '');
   const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export function EditItemDialog({ item, categories, units, onSave, onClose }: Pro
       name: name.trim(),
       categoryId,
       type: selectedCategory?.type ?? '',
-      unitOfMeasure: unitOfMeasure || undefined,
+      unitOfMeasureId: unitOfMeasureId || null,
     });
   };
 
@@ -113,14 +114,14 @@ export function EditItemDialog({ item, categories, units, onSave, onClose }: Pro
               Unit of measure
             </label>
             <select
-              value={unitOfMeasure}
-              onChange={(e) => setUnitOfMeasure(e.target.value)}
+              value={unitOfMeasureId}
+              onChange={(e) => setUnitOfMeasureId(e.target.value)}
               className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40 text-muted-foreground"
             >
               <option value="">None</option>
-              {units.map((u) => (
-                <option key={u} value={u}>
-                  {u}
+              {unitOptions.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
                 </option>
               ))}
             </select>

@@ -6,12 +6,16 @@ vi.mock('../CapturedInventory/Context/InventoryContext', () => ({
   useInventory: vi.fn(),
 }));
 
+vi.mock('@/Context/EntityContext', () => ({
+  useEntities: () => ({ entities: [], group: null, refetchEntities: vi.fn() }),
+}));
+
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
 
 const mockUseInventory = {
   categories: [],
   items: [],
-  units: [],
+  unitOptions: [],
   addItem: vi.fn(),
   addCategory: vi.fn(),
 };

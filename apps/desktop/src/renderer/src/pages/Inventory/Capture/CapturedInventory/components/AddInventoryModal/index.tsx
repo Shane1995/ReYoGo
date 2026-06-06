@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Button } from '@reyogo/ui';
 import { INVENTORY_TYPES, InventoryType } from '@reyogo/types';
 import { useInventory } from '../../Context/InventoryContext';
+import { useEntities } from '@/Context/EntityContext';
 import { cn } from '@reyogo/ui';
 
 const inputClass = cn(
@@ -69,30 +70,48 @@ function CategoryForm({ onDone }: { onDone: () => void }) {
 }
 
 function ItemForm({ onDone }: { onDone: () => void }) {
-  const { categories, units, addItem } = useInventory();
+  const { categories, unitOptions, addItem } = useInventory();
+  const { entities } = useEntities();
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
-  const [unitOfMeasure, setUnitOfMeasure] = useState('');
+  const [unitOfMeasureId, setUnitOfMeasureId] = useState('');
+  const [entityId, setEntityId] = useState('');
 
   const category = categories.find((c) => c.id === categoryId);
 
   function handleSave() {
     const trimmed = name.trim();
-    if (!trimmed || !categoryId || !category) return;
+    if (!trimmed || !categoryId || !category || !entityId) return;
     addItem({
       name: trimmed,
       categoryId,
       type: category.type,
-      unitOfMeasure: unitOfMeasure || undefined,
+      unitOfMeasureId: unitOfMeasureId || null,
+      entityId,
     });
     setName('');
     setCategoryId('');
-    setUnitOfMeasure('');
+    setUnitOfMeasureId('');
+    setEntityId('');
     onDone();
   }
 
   return (
     <div className="space-y-4">
+      <div>
+        <select
+          value={entityId}
+          onChange={(e) => setEntityId(e.target.value)}
+          className={cn(inputClass, 'cursor-pointer')}
+        >
+          <option value="">Select entity</option>
+          {entities.map((e) => (
+            <option key={e.id} value={e.id}>
+              {e.name}
+            </option>
+          ))}
+        </select>
+      </div>
       <div>
         <label className="mb-1.5 block text-sm font-medium text-foreground">Name</label>
         <input
@@ -125,20 +144,24 @@ function ItemForm({ onDone }: { onDone: () => void }) {
       <div>
         <label className="mb-1.5 block text-sm font-medium text-foreground">Unit of measure</label>
         <select
-          value={unitOfMeasure}
-          onChange={(e) => setUnitOfMeasure(e.target.value)}
+          value={unitOfMeasureId}
+          onChange={(e) => setUnitOfMeasureId(e.target.value)}
           className={cn(inputClass, 'cursor-pointer')}
         >
           <option value="">— none —</option>
-          {units.map((u) => (
-            <option key={u} value={u}>
-              {u}
+          {unitOptions.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name}
             </option>
           ))}
         </select>
       </div>
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" onClick={handleSave} disabled={!name.trim() || !categoryId}>
+        <Button
+          type="button"
+          onClick={handleSave}
+          disabled={!name.trim() || !categoryId || !entityId}
+        >
           Add item
         </Button>
       </div>

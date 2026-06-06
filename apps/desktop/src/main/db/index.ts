@@ -1,4 +1,4 @@
-import { app } from 'electron';
+import { app, utilityProcess } from 'electron';
 import { existsSync, mkdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { migrate } from 'drizzle-orm/libsql/migrator';
@@ -117,9 +117,72 @@ export function isReplicaMode(): boolean {
   return _handle !== null && 'sync' in _handle;
 }
 
-export async function syncNow(): Promise<void> {
-  if (_handle && 'sync' in _handle) {
-    await (_handle as { sync(): Promise<void> }).sync();
+type SyncWorkerResult = { success: true } | { success: false; error: string };
+
+export function syncViaUtilityProcess(
+  replicaPath: string,
+  syncUrl: string,
+  authToken: string,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = utilityProcess.fork(join(__dirname, 'syncWorker', 'index.js'), [], {
+      serviceName: 'sync-worker',
+    });
+
+    let settled = false;
+
+    const settle = (fn: () => void) => {
+      if (!settled) {
+        settled = true;
+        fn();
+      }
+    };
+
+    child.postMessage({ replicaPath, syncUrl, authToken });
+
+    child.once('message', (msg: SyncWorkerResult) => {
+      settle(() => {
+        if (msg.success) {
+          resolve();
+        } else {
+          reject(new Error(msg.error));
+        }
+      });
+    });
+
+    child.once('exit', (code) => {
+      if (code !== 0) {
+        settle(() => reject(new Error(`Sync worker exited with code ${code}`)));
+      }
+    });
+  });
+}
+
+export async function reinitialiseNoSync(
+  replicaPath: string,
+  syncUrl: string,
+  authToken: string,
+): Promise<void> {
+  _reinitialising = true;
+  let handle: ReturnType<typeof createReplicaClient> | undefined;
+  try {
+    try {
+      handle = createReplicaClient(replicaPath, syncUrl, authToken);
+    } catch {
+      wipeReplicaFiles(replicaPath);
+      handle = createReplicaClient(replicaPath, syncUrl, authToken);
+    }
+    await migrate(handle.db, { migrationsFolder: getMigrationsFolder() });
+    await ensureDefaultAccount(handle.db);
+    if (_handle) _handle.close();
+    _handle = handle;
+    _db = handle.db;
+    _repos = buildRepos(handle.db);
+  } catch (err) {
+    handle?.close();
+    throw err;
+  } finally {
+    _reinitialising = false;
   }
 }
 

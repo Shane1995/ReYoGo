@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { PlusIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,7 +16,7 @@ import { useItemFilters } from './components/ItemsTable/hooks/useItemFilters';
 import type { InventoryItem } from './types';
 
 export default function InventoryIndex() {
-  const { categories, items, units, updateItem, archiveItemInBackend } = useInventory();
+  const { categories, items, unitOptions, updateItem, archiveItemInBackend } = useInventory();
   const { entities } = useEntities();
 
   const navigate = useNavigate();
@@ -25,7 +25,10 @@ export default function InventoryIndex() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [entityFilter, setEntityFilter] = useState<string | null>(null);
 
-  const entityFilteredItems = items;
+  const entityFilteredItems = useMemo(
+    () => (entityFilter ? items.filter((item) => item.entityId === entityFilter) : items),
+    [items, entityFilter],
+  );
 
   const { filterValues, filteredItems, filters, allTypes, handleFilterChange, clearFilters } =
     useItemFilters({ items: entityFilteredItems, categories, costMap, stockMap });
@@ -69,7 +72,8 @@ export default function InventoryIndex() {
             filteredItems={filteredItems}
             allTypes={allTypes}
             categories={categories}
-            units={units}
+            unitOptions={unitOptions}
+            currentEntityId={entityFilter}
             onUpdate={handleUpdate}
             onDelete={archiveItemInBackend}
             onViewInsights={handleViewInsights}

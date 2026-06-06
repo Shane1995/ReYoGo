@@ -3,6 +3,7 @@ import { PlusIcon } from 'lucide-react';
 import { Button, PageHeader } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
+import { useEntities } from '@/Context/EntityContext';
 import type { TypeValue } from '../CapturedInventory/types';
 import { cn } from '@reyogo/ui';
 
@@ -16,18 +17,20 @@ type PendingRow = {
   name: string;
   categoryId: string;
   type: TypeValue;
-  unitOfMeasure: string;
+  unitOfMeasureId: string;
 };
 
 function createEmptyRow(): PendingRow {
-  return { id: crypto.randomUUID(), name: '', categoryId: '', type: '', unitOfMeasure: '' };
+  return { id: crypto.randomUUID(), name: '', categoryId: '', type: '', unitOfMeasureId: '' };
 }
 
 export default function AddItemsPage() {
-  const { categories, items, units, addItem } = useInventory();
+  const { categories, items, unitOptions, addItem } = useInventory();
+  const { entities } = useEntities();
   const namedCategories = categories.filter((c) => c.name.trim());
   const categoryTypes = Array.from(new Set(namedCategories.map((c) => c.type)));
 
+  const [entityId, setEntityId] = useState('');
   const [rows, setRows] = useState<PendingRow[]>([createEmptyRow()]);
   const [lastAddedRowId, setLastAddedRowId] = useState<string | null>(null);
 
@@ -75,6 +78,7 @@ export default function AddItemsPage() {
   }, [rows, items]);
 
   const submit = useCallback(() => {
+    if (!entityId) return;
     const valid = rows.filter((r) => r.name.trim() && r.categoryId && !duplicateIds.has(r.id));
     if (!valid.length) return;
     valid.forEach((r) => {
@@ -82,16 +86,17 @@ export default function AddItemsPage() {
         name: r.name.trim(),
         categoryId: r.categoryId,
         type: r.type,
-        unitOfMeasure: r.unitOfMeasure || undefined,
+        unitOfMeasureId: r.unitOfMeasureId || null,
+        entityId,
       });
     });
     setRows([createEmptyRow()]);
-  }, [rows, duplicateIds, addItem]);
+  }, [rows, duplicateIds, addItem, entityId]);
 
   const namedRows = rows.filter((r) => r.name.trim());
   const hasValidRows = namedRows.some((r) => r.categoryId && !duplicateIds.has(r.id));
   const hasIncompleteRows = namedRows.some((r) => !r.categoryId);
-  const canSubmit = hasValidRows && !hasIncompleteRows;
+  const canSubmit = !!entityId && hasValidRows && !hasIncompleteRows;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -102,6 +107,20 @@ export default function AddItemsPage() {
 
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-6 my-5 space-y-3">
+          <div>
+            <select
+              value={entityId}
+              onChange={(e) => setEntityId(e.target.value)}
+              className={cn(inputClass, 'max-w-xs cursor-pointer')}
+            >
+              <option value="">Select entity…</option>
+              {entities.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="rounded-lg border border-[var(--nav-border)] bg-background">
             <Table>
               <TableHeader>
@@ -177,8 +196,8 @@ export default function AddItemsPage() {
                       </TableCell>
                       <TableCell className="py-2 px-3">
                         <select
-                          value={row.unitOfMeasure}
-                          onChange={(e) => updateRow(row.id, { unitOfMeasure: e.target.value })}
+                          value={row.unitOfMeasureId}
+                          onChange={(e) => updateRow(row.id, { unitOfMeasureId: e.target.value })}
                           onKeyDown={(e) => {
                             if (e.key === 'Tab') {
                               e.preventDefault();
@@ -188,9 +207,9 @@ export default function AddItemsPage() {
                           className={cn(inputClass, 'min-w-[6rem] cursor-pointer')}
                         >
                           <option value="">— none —</option>
-                          {units.map((u) => (
-                            <option key={u} value={u}>
-                              {u}
+                          {unitOptions.map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.name}
                             </option>
                           ))}
                         </select>

@@ -87,6 +87,16 @@ describe('FilterBar', () => {
       await userEvent.click(screen.getByText('Food'));
       expect(onChange).toHaveBeenCalledWith('type', 'food');
     });
+
+    it('popover content has scroll classes', async () => {
+      render(
+        <FilterBar filters={[selectField]} values={{}} onChange={() => {}} onClearAll={() => {}} />,
+      );
+      await userEvent.click(screen.getByRole('button', { name: /type/i }));
+      const popover = document.querySelector('[data-slot="popover-content"]');
+      expect(popover?.className).toContain('max-h-60');
+      expect(popover?.className).toContain('overflow-y-auto');
+    });
   });
 
   describe('multi-select field', () => {
@@ -100,6 +110,16 @@ describe('FilterBar', () => {
         />,
       );
       expect(screen.getByText('2')).toBeInTheDocument();
+    });
+
+    it('popover content has scroll classes', async () => {
+      render(
+        <FilterBar filters={[multiField]} values={{}} onChange={() => {}} onClearAll={() => {}} />,
+      );
+      await userEvent.click(screen.getByRole('button', { name: /categories/i }));
+      const popover = document.querySelector('[data-slot="popover-content"]');
+      expect(popover?.className).toContain('max-h-60');
+      expect(popover?.className).toContain('overflow-y-auto');
     });
   });
 

@@ -1,5 +1,7 @@
 import type { InventoryCategory, InventoryItem } from '../../types';
 
+export type UnitOption = { id: string; name: string };
+
 export type FlatItem = {
   id: string;
   name: string;
@@ -19,7 +21,8 @@ export type ItemsTableProps = {
   filteredItems: FlatItem[];
   allTypes: string[];
   categories: InventoryCategory[];
-  units: string[];
+  unitOptions: UnitOption[];
+  currentEntityId?: string | null;
   onUpdate: (id: string, values: Omit<InventoryItem, 'id'>) => void;
   onDelete: (id: string) => void;
   onViewInsights: (id: string) => void;
