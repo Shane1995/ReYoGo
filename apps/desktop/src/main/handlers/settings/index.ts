@@ -6,7 +6,6 @@ import {
   getDb,
   getLocalDbPath,
   getReplicaPath,
-  reinitialise,
   reinitialiseNoSync,
   syncViaUtilityProcess,
   wipeReplicaFiles,
@@ -33,7 +32,8 @@ export function registerSettingsHandlers(): void {
     const replicaPath = getReplicaPath();
     await activateCloudSync(event.sender, getDb(), tursoUrl, authToken);
     wipeReplicaFiles(replicaPath);
-    reinitialise(replicaPath, tursoUrl, authToken)
+    syncViaUtilityProcess(replicaPath, tursoUrl, authToken)
+      .then(() => reinitialiseNoSync(replicaPath, tursoUrl, authToken))
       .then(() => deleteLocalBackup(getLocalDbPath()))
       .catch((err: unknown) => {
         console.error('[ReYoGo] Failed to hot-swap to replica after activation:', err);
@@ -97,9 +97,10 @@ export function registerSettingsHandlers(): void {
     saveCredentials(tursoUrl, authToken);
     try {
       await withSyncTimeout(
-        reinitialise(replicaPath, tursoUrl, authToken),
+        syncViaUtilityProcess(replicaPath, tursoUrl, authToken),
         INITIAL_SYNC_TIMEOUT_MS,
       );
+      await reinitialiseNoSync(replicaPath, tursoUrl, authToken);
     } catch (err) {
       clearCredentials();
       wipeReplicaFiles(replicaPath);
