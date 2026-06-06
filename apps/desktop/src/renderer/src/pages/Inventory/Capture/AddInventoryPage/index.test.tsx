@@ -11,7 +11,7 @@ import { useInventory } from '../CapturedInventory/Context/InventoryContext';
 const mockUseInventory = {
   categories: [],
   items: [],
-  units: [],
+  unitOptions: [],
   addItem: vi.fn(),
   addCategory: vi.fn(),
 };
