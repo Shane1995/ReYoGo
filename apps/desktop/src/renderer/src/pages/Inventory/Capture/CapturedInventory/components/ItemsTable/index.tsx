@@ -146,7 +146,7 @@ export function ItemsTable({
         header: 'Unit',
         cell: (row) =>
           row.unitOfMeasure ? (
-            <Badge variant="secondary" className="text-[11px] font-normal">
+            <Badge variant="secondary" className="text-[11px] font-medium text-foreground">
               {row.unitOfMeasure}
             </Badge>
           ) : (
