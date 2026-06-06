@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { PlusIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,7 +25,10 @@ export default function InventoryIndex() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [entityFilter, setEntityFilter] = useState<string | null>(null);
 
-  const entityFilteredItems = items;
+  const entityFilteredItems = useMemo(
+    () => (entityFilter ? items.filter((item) => item.entityId === entityFilter) : items),
+    [items, entityFilter],
+  );
 
   const { filterValues, filteredItems, filters, allTypes, handleFilterChange, clearFilters } =
     useItemFilters({ items: entityFilteredItems, categories, costMap, stockMap });
