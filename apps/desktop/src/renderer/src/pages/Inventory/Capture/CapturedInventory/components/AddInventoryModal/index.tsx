@@ -69,10 +69,10 @@ function CategoryForm({ onDone }: { onDone: () => void }) {
 }
 
 function ItemForm({ onDone }: { onDone: () => void }) {
-  const { categories, units, addItem } = useInventory();
+  const { categories, unitOptions, addItem } = useInventory();
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
-  const [unitOfMeasure, setUnitOfMeasure] = useState('');
+  const [unitOfMeasureId, setUnitOfMeasureId] = useState('');
 
   const category = categories.find((c) => c.id === categoryId);
 
@@ -83,11 +83,11 @@ function ItemForm({ onDone }: { onDone: () => void }) {
       name: trimmed,
       categoryId,
       type: category.type,
-      unitOfMeasure: unitOfMeasure || undefined,
+      unitOfMeasureId: unitOfMeasureId || undefined,
     });
     setName('');
     setCategoryId('');
-    setUnitOfMeasure('');
+    setUnitOfMeasureId('');
     onDone();
   }
 
@@ -125,14 +125,14 @@ function ItemForm({ onDone }: { onDone: () => void }) {
       <div>
         <label className="mb-1.5 block text-sm font-medium text-foreground">Unit of measure</label>
         <select
-          value={unitOfMeasure}
-          onChange={(e) => setUnitOfMeasure(e.target.value)}
+          value={unitOfMeasureId}
+          onChange={(e) => setUnitOfMeasureId(e.target.value)}
           className={cn(inputClass, 'cursor-pointer')}
         >
           <option value="">— none —</option>
-          {units.map((u) => (
-            <option key={u} value={u}>
-              {u}
+          {unitOptions.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name}
             </option>
           ))}
         </select>

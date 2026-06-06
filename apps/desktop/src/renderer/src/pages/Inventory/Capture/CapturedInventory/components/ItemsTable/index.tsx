@@ -40,7 +40,8 @@ export function ItemsTable({
   filteredItems,
   allTypes,
   categories,
-  units,
+  unitOptions,
+  currentEntityId,
   onUpdate,
   onDelete,
   onViewInsights,
@@ -83,8 +84,10 @@ export function ItemsTable({
       vatRate: 15,
       totalVatExclude: 0,
     }));
-    navigate(InvoiceRoutes.Base, { state: { templateLines } });
-  }, [selectedIds, navigate]);
+    navigate(InvoiceRoutes.Base, {
+      state: { templateLines, entityId: currentEntityId ?? '' },
+    });
+  }, [selectedIds, navigate, currentEntityId]);
 
   const columns = useMemo<ColumnDef<FlatItem>[]>(
     () => [
@@ -269,7 +272,7 @@ export function ItemsTable({
         <EditItemDialog
           item={editingItem}
           categories={categories}
-          units={units}
+          unitOptions={unitOptions}
           onSave={(id, values) => {
             if (id) onUpdate(id, values);
             setEditingItem(undefined);

@@ -18,7 +18,7 @@ export default function InvoicePage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
   const {
-    units,
+    unitOptions,
     categories,
     addCategory,
     addItem,
@@ -193,7 +193,7 @@ export default function InvoicePage() {
         open={itemModalOpen}
         onClose={() => setItemModalOpen(false)}
         categories={categories}
-        units={units}
+        unitOptions={unitOptions}
         onSave={(item) => addItem(item)}
       />
     </div>

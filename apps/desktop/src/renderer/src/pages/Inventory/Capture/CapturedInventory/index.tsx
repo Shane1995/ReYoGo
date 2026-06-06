@@ -16,7 +16,7 @@ import { useItemFilters } from './components/ItemsTable/hooks/useItemFilters';
 import type { InventoryItem } from './types';
 
 export default function InventoryIndex() {
-  const { categories, items, units, updateItem, archiveItemInBackend } = useInventory();
+  const { categories, items, unitOptions, updateItem, archiveItemInBackend } = useInventory();
   const { entities } = useEntities();
 
   const navigate = useNavigate();
@@ -72,7 +72,8 @@ export default function InventoryIndex() {
             filteredItems={filteredItems}
             allTypes={allTypes}
             categories={categories}
-            units={units}
+            unitOptions={unitOptions}
+            currentEntityId={entityFilter}
             onUpdate={handleUpdate}
             onDelete={archiveItemInBackend}
             onViewInsights={handleViewInsights}

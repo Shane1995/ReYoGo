@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Button } from '@reyogo/ui';
 import type { TypeValue, InventoryCategory, InventoryItem } from '../../types';
+import type { UnitOption } from '../ItemsTable/types';
 import { cn } from '@reyogo/ui';
 
 const inputClass = cn(
@@ -12,14 +13,20 @@ type AddItemModalProps = {
   open: boolean;
   onClose: () => void;
   categories: InventoryCategory[];
-  units: string[];
+  unitOptions: UnitOption[];
   onSave: (item: Omit<InventoryItem, 'id'>) => void;
 };
 
-export function AddItemModal({ open, onClose, categories, units, onSave }: AddItemModalProps) {
+export function AddItemModal({
+  open,
+  onClose,
+  categories,
+  unitOptions,
+  onSave,
+}: AddItemModalProps) {
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
-  const [unitOfMeasure, setUnitOfMeasure] = useState('');
+  const [unitOfMeasureId, setUnitOfMeasureId] = useState('');
 
   const category = categories.find((c) => c.id === categoryId);
   const type: TypeValue = category?.type ?? '';
@@ -31,18 +38,18 @@ export function AddItemModal({ open, onClose, categories, units, onSave }: AddIt
       name: trimmed,
       categoryId,
       type,
-      unitOfMeasure: unitOfMeasure || undefined,
+      unitOfMeasureId: unitOfMeasureId || undefined,
     });
     setName('');
     setCategoryId('');
-    setUnitOfMeasure('');
+    setUnitOfMeasureId('');
     onClose();
-  }, [name, categoryId, type, unitOfMeasure, onSave, onClose]);
+  }, [name, categoryId, type, unitOfMeasureId, onSave, onClose]);
 
   const handleClose = useCallback(() => {
     setName('');
     setCategoryId('');
-    setUnitOfMeasure('');
+    setUnitOfMeasureId('');
     onClose();
   }, [onClose]);
 
@@ -95,14 +102,14 @@ export function AddItemModal({ open, onClose, categories, units, onSave }: AddIt
               Unit of measure
             </label>
             <select
-              value={unitOfMeasure}
-              onChange={(e) => setUnitOfMeasure(e.target.value)}
+              value={unitOfMeasureId}
+              onChange={(e) => setUnitOfMeasureId(e.target.value)}
               className={cn(inputClass, 'cursor-pointer')}
             >
               <option value="">— none —</option>
-              {units.map((u) => (
-                <option key={u} value={u}>
-                  {u}
+              {unitOptions.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
                 </option>
               ))}
             </select>

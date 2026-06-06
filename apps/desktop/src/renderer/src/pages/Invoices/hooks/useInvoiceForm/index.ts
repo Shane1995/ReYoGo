@@ -13,7 +13,7 @@ import { useLineManager } from '../useLineManager';
 import { useInvoiceSummary } from '../useInvoiceSummary';
 
 export function useInvoiceForm() {
-  const { items, categories, units, addCategory, addItem } = useInventory();
+  const { items, categories, unitOptions, addCategory, addItem } = useInventory();
   const { entities } = useEntities();
   const location = useLocation();
 
@@ -245,7 +245,7 @@ export function useInvoiceForm() {
   ]);
 
   return {
-    units,
+    unitOptions,
     categories,
     addCategory,
     addItem,

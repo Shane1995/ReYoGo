@@ -16,15 +16,15 @@ type PendingRow = {
   name: string;
   categoryId: string;
   type: TypeValue;
-  unitOfMeasure: string;
+  unitOfMeasureId: string;
 };
 
 function createEmptyRow(): PendingRow {
-  return { id: crypto.randomUUID(), name: '', categoryId: '', type: '', unitOfMeasure: '' };
+  return { id: crypto.randomUUID(), name: '', categoryId: '', type: '', unitOfMeasureId: '' };
 }
 
 export default function AddItemsPage() {
-  const { categories, items, units, addItem } = useInventory();
+  const { categories, items, unitOptions, addItem } = useInventory();
   const namedCategories = categories.filter((c) => c.name.trim());
   const categoryTypes = Array.from(new Set(namedCategories.map((c) => c.type)));
 
@@ -82,7 +82,7 @@ export default function AddItemsPage() {
         name: r.name.trim(),
         categoryId: r.categoryId,
         type: r.type,
-        unitOfMeasure: r.unitOfMeasure || undefined,
+        unitOfMeasureId: r.unitOfMeasureId || undefined,
       });
     });
     setRows([createEmptyRow()]);
@@ -177,8 +177,8 @@ export default function AddItemsPage() {
                       </TableCell>
                       <TableCell className="py-2 px-3">
                         <select
-                          value={row.unitOfMeasure}
-                          onChange={(e) => updateRow(row.id, { unitOfMeasure: e.target.value })}
+                          value={row.unitOfMeasureId}
+                          onChange={(e) => updateRow(row.id, { unitOfMeasureId: e.target.value })}
                           onKeyDown={(e) => {
                             if (e.key === 'Tab') {
                               e.preventDefault();
@@ -188,9 +188,9 @@ export default function AddItemsPage() {
                           className={cn(inputClass, 'min-w-[6rem] cursor-pointer')}
                         >
                           <option value="">— none —</option>
-                          {units.map((u) => (
-                            <option key={u} value={u}>
-                              {u}
+                          {unitOptions.map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.name}
                             </option>
                           ))}
                         </select>
