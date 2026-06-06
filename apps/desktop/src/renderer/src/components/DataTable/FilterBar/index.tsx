@@ -58,7 +58,7 @@ function MultiSelect({
           <ChevronDownIcon className="size-3 opacity-60" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-48 p-1" align="start">
+      <PopoverContent className="w-48 p-1 max-h-60 overflow-y-auto" align="start">
         {options.length === 0 ? (
           <p className="px-2 py-1.5 text-xs text-[var(--muted-foreground)]">No options</p>
         ) : (
@@ -118,7 +118,7 @@ function SingleSelect({
           <ChevronDownIcon className="size-3 opacity-60" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-48 p-1" align="start">
+      <PopoverContent className="w-48 p-1 max-h-60 overflow-y-auto" align="start">
         {selected && (
           <button
             type="button"
