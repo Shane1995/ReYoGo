@@ -45,6 +45,7 @@ export default defineConfig({
         external: [/^@libsql\/.*/, 'better-sqlite3'],
         input: {
           index: resolve(__dirname, 'src/main/main.ts'),
+          'db/syncWorker/index': resolve(__dirname, 'src/main/db/syncWorker/index.ts'),
         },
       },
     },
