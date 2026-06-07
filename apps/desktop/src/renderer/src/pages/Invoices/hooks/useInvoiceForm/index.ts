@@ -13,6 +13,26 @@ import { loadDraft, useDraftPersistence } from '../useDraftPersistence';
 import { useLineManager } from '../useLineManager';
 import { useInvoiceSummary } from '../useInvoiceSummary';
 
+function buildSaveLines(
+  validLines: ProcessReceiptLine[],
+  itemMetaMap: Map<string, { name: string }>,
+  vatMode: VatMode,
+  vatRate: number,
+) {
+  return validLines.map((line) => {
+    const computed = getProcessLineComputed(line, vatMode, vatRate);
+    return {
+      id: line.id,
+      itemId: line.itemId,
+      itemNameSnapshot: itemMetaMap.get(line.itemId)?.name ?? '',
+      quantity: Number(line.quantity),
+      unitPrice: computed.netUnitPrice,
+      isVatable: line.isVatable,
+      totalVatExclude: computed.netTotal,
+    };
+  });
+}
+
 export function useInvoiceForm() {
   const { items, categories, unitOptions, addCategory, addItem } = useInventory();
   const { entities, selectedEntityId: entityId } = useEntities();
@@ -163,18 +183,7 @@ export function useInvoiceForm() {
         invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
         vatMode,
         vatRate,
-        lines: validLines.map((line) => {
-          const computed = getProcessLineComputed(line, vatMode, vatRate);
-          return {
-            id: line.id,
-            itemId: line.itemId,
-            itemNameSnapshot: itemMetaMap.get(line.itemId)?.name ?? '',
-            quantity: Number(line.quantity),
-            unitPrice: computed.netUnitPrice,
-            isVatable: line.isVatable,
-            totalVatExclude: computed.netTotal,
-          };
-        }),
+        lines: buildSaveLines(validLines, itemMetaMap, vatMode, vatRate),
       });
       clearForm();
       toast.success('Invoice posted');
@@ -221,18 +230,7 @@ export function useInvoiceForm() {
         invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
         vatMode,
         vatRate,
-        lines: validLines.map((line) => {
-          const computed = getProcessLineComputed(line, vatMode, vatRate);
-          return {
-            id: line.id,
-            itemId: line.itemId,
-            itemNameSnapshot: itemMetaMap.get(line.itemId)?.name ?? '',
-            quantity: Number(line.quantity),
-            unitPrice: computed.netUnitPrice,
-            isVatable: line.isVatable,
-            totalVatExclude: computed.netTotal,
-          };
-        }),
+        lines: buildSaveLines(validLines, itemMetaMap, vatMode, vatRate),
       });
       clearForm();
       toast.success('Draft saved');
