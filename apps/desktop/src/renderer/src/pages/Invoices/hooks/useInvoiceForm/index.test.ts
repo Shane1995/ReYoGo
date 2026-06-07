@@ -23,7 +23,8 @@ vi.mock('@/services/invoice', () => ({
 }));
 
 vi.mock('react-router-dom', () => ({
-  useLocation: () => ({ state: null }),
+  useLocation: () => ({ state: null, pathname: '/invoices', key: 'default' }),
+  useNavigate: () => vi.fn(),
 }));
 
 vi.mock('../useDraftPersistence', () => ({
@@ -79,7 +80,8 @@ describe('useInvoiceForm', () => {
       invoiceService: { getLastUnitPrices: vi.fn().mockResolvedValue({}) },
     }));
     vi.doMock('react-router-dom', () => ({
-      useLocation: () => ({ state: null }),
+      useLocation: () => ({ state: null, pathname: '/invoices', key: 'default' }),
+      useNavigate: () => vi.fn(),
     }));
     vi.doMock('../useDraftPersistence', () => ({
       loadDraft: () => null,
