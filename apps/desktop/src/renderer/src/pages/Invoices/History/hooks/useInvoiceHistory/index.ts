@@ -14,21 +14,31 @@ import { invoiceService } from '@/services/invoice';
 import type { ProcessReceiptLine } from '../../../types';
 import { getProcessLineComputed } from '../../../types';
 import { lineToEditLine } from '../../../utils/lineToEditLine';
-import { toDateStr } from '../../utils/toDateStr';
 import { RowModeKind, type RowMode } from '../../types';
+import { useInvoiceFilters } from '../useInvoiceFilters';
 
 export function useInvoiceHistory() {
   const [invoices, setInvoices] = useState<ICapturedInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [detailCache, setDetailCache] = useState<Record<string, ICapturedInvoiceWithLines>>({});
   const [rowMode, setRowModeState] = useState<Record<string, RowMode>>({});
-  const [search, setSearch] = useState('');
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
-  const [supplierFilter, setSupplierFilter] = useState('');
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [postingId, setPostingId] = useState<string | null>(null);
   const [creditNoteSubmitting, setCreditNoteSubmitting] = useState(false);
+
+  const {
+    search,
+    setSearch,
+    fromDate,
+    setFromDate,
+    toDate,
+    setToDate,
+    supplierFilter,
+    setSupplierFilter,
+    hasFilters,
+    clearFilters,
+    filterInvoices,
+  } = useInvoiceFilters();
 
   const { items } = useInventory();
   const { entities } = useEntities();
@@ -236,43 +246,10 @@ export function useInvoiceHistory() {
     [loadInvoices, setMode],
   );
 
-  const hasFilters = !!(search || fromDate || toDate || supplierFilter);
-
-  const clearFilters = useCallback(() => {
-    setSearch('');
-    setFromDate('');
-    setToDate('');
-    setSupplierFilter('');
-  }, []);
-
-  const filteredInvoices = useMemo(() => {
-    let result = invoices;
-
-    const q = search.trim().toLowerCase();
-    if (q) {
-      result = result.filter((inv) => {
-        const detail = detailCache[inv.id];
-        const matchesItem = detail?.lines.some((l) => l.itemNameSnapshot.toLowerCase().includes(q));
-        const matchesNumber = inv.invoiceNumber?.toLowerCase().includes(q);
-        return matchesItem || matchesNumber;
-      });
-    }
-
-    if (fromDate || toDate) {
-      result = result.filter((inv) => {
-        const d = toDateStr(inv.invoiceDate ?? inv.createdAt);
-        if (fromDate && d < fromDate) return false;
-        if (toDate && d > toDate) return false;
-        return true;
-      });
-    }
-
-    if (supplierFilter) {
-      result = result.filter((inv) => inv.supplierId === supplierFilter);
-    }
-
-    return result;
-  }, [invoices, detailCache, search, fromDate, toDate, supplierFilter]);
+  const filteredInvoices = useMemo(
+    () => filterInvoices(invoices, detailCache),
+    [filterInvoices, invoices, detailCache],
+  );
 
   return {
     invoices: filteredInvoices,
