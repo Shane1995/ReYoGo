@@ -109,6 +109,39 @@ function inclVat(unitCost: number, isVatable: boolean, vatRate: number): number 
   return isVatable ? unitCost * (1 + vatRate / 100) : unitCost;
 }
 
+type LineValues = {
+  id: string;
+  invoiceId: string;
+  inventoryItemId: string;
+  itemNameSnapshot: string;
+  qty: number;
+  unitCost: number;
+  unitCostInclVat: number;
+  totalCost: number;
+  isVatable: boolean;
+};
+
+function buildLineValues(
+  lines: ISaveCapturedInvoicePayload['lines'],
+  invoiceId: string,
+  vatRate: number,
+): LineValues[] {
+  return lines.map((l) => {
+    const uc = l.quantity > 0 ? l.totalVatExclude / l.quantity : 0;
+    return {
+      id: l.id,
+      invoiceId,
+      inventoryItemId: l.itemId,
+      itemNameSnapshot: l.itemNameSnapshot ?? '',
+      qty: l.quantity,
+      unitCost: uc,
+      unitCostInclVat: inclVat(uc, l.isVatable, vatRate),
+      totalCost: l.totalVatExclude,
+      isVatable: l.isVatable,
+    };
+  });
+}
+
 function computeTax(
   lines: ISaveCapturedInvoicePayload['lines'],
   vatRate: number,
@@ -168,24 +201,9 @@ async function saveInvoice(db: DbClient, payload: ISaveCapturedInvoicePayload): 
 
     const validLines = payload.lines.filter((l) => l.itemId && l.quantity >= 0);
     if (validLines.length > 0) {
-      const unitCostOf = (l: (typeof validLines)[number]) =>
-        l.quantity > 0 ? l.totalVatExclude / l.quantity : 0;
-      await tx.insert(schema.invoiceLineItems).values(
-        validLines.map((l) => {
-          const uc = unitCostOf(l);
-          return {
-            id: l.id,
-            invoiceId: payload.id,
-            inventoryItemId: l.itemId,
-            itemNameSnapshot: l.itemNameSnapshot ?? '',
-            qty: l.quantity,
-            unitCost: uc,
-            unitCostInclVat: inclVat(uc, l.isVatable, payload.vatRate),
-            totalCost: l.totalVatExclude,
-            isVatable: l.isVatable,
-          };
-        }),
-      );
+      await tx
+        .insert(schema.invoiceLineItems)
+        .values(buildLineValues(validLines, payload.id, payload.vatRate));
     }
   });
 }
@@ -216,24 +234,9 @@ async function updateInvoice(db: DbClient, payload: IUpdateCapturedInvoicePayloa
       .where(eq(schema.invoiceLineItems.invoiceId, payload.id));
 
     if (validLines.length > 0) {
-      const unitCostOf = (l: (typeof validLines)[number]) =>
-        l.quantity > 0 ? l.totalVatExclude / l.quantity : 0;
-      await tx.insert(schema.invoiceLineItems).values(
-        validLines.map((l) => {
-          const uc = unitCostOf(l);
-          return {
-            id: l.id,
-            invoiceId: payload.id,
-            inventoryItemId: l.itemId,
-            itemNameSnapshot: l.itemNameSnapshot ?? '',
-            qty: l.quantity,
-            unitCost: uc,
-            unitCostInclVat: inclVat(uc, l.isVatable, vatRate),
-            totalCost: l.totalVatExclude,
-            isVatable: l.isVatable,
-          };
-        }),
-      );
+      await tx
+        .insert(schema.invoiceLineItems)
+        .values(buildLineValues(validLines, payload.id, vatRate));
     }
     await tx
       .update(schema.invoices)
@@ -486,24 +489,9 @@ async function saveAndPostInvoice(
     });
 
     if (validLines.length > 0) {
-      const unitCostOf = (l: (typeof validLines)[number]) =>
-        l.quantity > 0 ? l.totalVatExclude / l.quantity : 0;
-      await tx.insert(schema.invoiceLineItems).values(
-        validLines.map((l) => {
-          const uc = unitCostOf(l);
-          return {
-            id: l.id,
-            invoiceId: payload.id,
-            inventoryItemId: l.itemId,
-            itemNameSnapshot: l.itemNameSnapshot ?? '',
-            qty: l.quantity,
-            unitCost: uc,
-            unitCostInclVat: inclVat(uc, l.isVatable, payload.vatRate),
-            totalCost: l.totalVatExclude,
-            isVatable: l.isVatable,
-          };
-        }),
-      );
+      await tx
+        .insert(schema.invoiceLineItems)
+        .values(buildLineValues(validLines, payload.id, payload.vatRate));
     }
 
     await insertMovementsForLines(
