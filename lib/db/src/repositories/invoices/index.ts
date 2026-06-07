@@ -522,6 +522,52 @@ async function postInvoice(db: DbClient, id: string): Promise<void> {
   });
 }
 
+async function validateCreditNoteLines(
+  validLines: ISaveCreditNotePayload['lines'],
+  sourceLines: schema.InvoiceLineItemRow[],
+  alreadyCredited: Record<string, number>,
+): Promise<void> {
+  for (const line of validLines) {
+    const sourceQty = sourceLines.find((l) => l.inventoryItemId === line.itemId)?.qty ?? 0;
+    const credited = alreadyCredited[line.itemId] ?? 0;
+    if (credited + line.quantity > sourceQty) {
+      throw new Error(
+        `Credited quantity exceeds original invoice quantity for item ${line.itemId}`,
+      );
+    }
+  }
+}
+
+type CreditLine = ISaveCreditNotePayload['lines'][number] & { totalVatExclude: number };
+
+async function insertCreditNoteMovements(
+  tx: TxClient,
+  payload: ISaveCreditNotePayload,
+  creditLines: CreditLine[],
+  createdAt: ReturnType<typeof now>,
+): Promise<void> {
+  for (const line of creditLines) {
+    const prev = await getLatestMovement(tx, line.itemId);
+    const newQty = (prev?.stockQtyAfter ?? 0) - line.quantity;
+    await tx.insert(schema.stockMovements).values({
+      id: generateId(),
+      inventoryItemId: line.itemId,
+      accountId: 'default',
+      entityId: payload.entityId,
+      movementType: MovementType.Return,
+      qty: -line.quantity,
+      unitCostAtTime: line.unitPrice,
+      totalCost: -line.totalVatExclude,
+      weightedAvgCostAfter: prev?.weightedAvgCostAfter ?? null,
+      stockQtyAfter: newQty,
+      referenceType: ReferenceType.CreditNote,
+      referenceId: payload.id,
+      occurredAt: createdAt,
+      createdAt,
+    });
+  }
+}
+
 async function saveCreditNote(db: DbClient, payload: ISaveCreditNotePayload): Promise<void> {
   const createdAt = now();
   const validLines = payload.lines.filter((l) => l.itemId && l.quantity > 0);
@@ -548,15 +594,7 @@ async function saveCreditNote(db: DbClient, payload: ISaveCreditNotePayload): Pr
       .where(eq(schema.invoiceLineItems.invoiceId, payload.sourceInvoiceId));
 
     const alreadyCredited = await getCreditNotedQtyByItem(tx, payload.sourceInvoiceId);
-    for (const line of validLines) {
-      const sourceQty = sourceLines.find((l) => l.inventoryItemId === line.itemId)?.qty ?? 0;
-      const credited = alreadyCredited[line.itemId] ?? 0;
-      if (credited + line.quantity > sourceQty) {
-        throw new Error(
-          `Credited quantity exceeds original invoice quantity for item ${line.itemId}`,
-        );
-      }
-    }
+    await validateCreditNoteLines(validLines, sourceLines, alreadyCredited);
 
     const { totalExclTax, taxAmount } = computeTax(creditLines, payload.vatRate);
 
@@ -593,26 +631,7 @@ async function saveCreditNote(db: DbClient, payload: ISaveCreditNotePayload): Pr
       );
     }
 
-    for (const line of creditLines) {
-      const prev = await getLatestMovement(tx, line.itemId);
-      const newQty = (prev?.stockQtyAfter ?? 0) - line.quantity;
-      await tx.insert(schema.stockMovements).values({
-        id: generateId(),
-        inventoryItemId: line.itemId,
-        accountId: 'default',
-        entityId: payload.entityId,
-        movementType: MovementType.Return,
-        qty: -line.quantity,
-        unitCostAtTime: line.unitPrice,
-        totalCost: -line.totalVatExclude,
-        weightedAvgCostAfter: prev?.weightedAvgCostAfter ?? null,
-        stockQtyAfter: newQty,
-        referenceType: ReferenceType.CreditNote,
-        referenceId: payload.id,
-        occurredAt: createdAt,
-        createdAt,
-      });
-    }
+    await insertCreditNoteMovements(tx, payload, creditLines, createdAt);
 
     await tx.insert(schema.invoiceAuditLog).values({
       id: generateId(),
