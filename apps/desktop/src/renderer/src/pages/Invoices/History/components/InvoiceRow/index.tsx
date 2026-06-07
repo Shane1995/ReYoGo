@@ -12,11 +12,17 @@ import type {
 import { RowModeKind, type RowMode } from '../../types';
 import { StatusBadge } from '../StatusBadge';
 import { RowActions } from '../RowActions';
-import { InvoiceRowExpansion } from '../InvoiceRowExpansion';
+import { EditPanel } from '../EditPanel';
+import { MetadataEditPanel } from '../MetadataEditPanel';
+import { AuditPanel } from '../AuditPanel';
+import { RaiseCreditNotePanel } from '../RaiseCreditNotePanel';
+import { InvoiceDetailLines } from '../InvoiceDetailLines';
 import { formatDate } from '../../../utils/formatDate';
 import { formatMoney } from '../../../utils/formatMoney';
 import { invoiceTotals } from '../../../utils/invoiceTotals';
 import type { ProcessReceiptLine } from '../../../types';
+
+const COLUMN_COUNT = 10;
 
 type Props = {
   inv: ICapturedInvoice;
@@ -72,6 +78,7 @@ export function InvoiceRow({
   const isCreditNote = inv.status === InvoiceStatus.CreditNote;
   const isPosting = postingId === inv.id;
   const isExpanded = modeKind !== RowModeKind.View;
+  const cancelView = () => onSetMode(inv.id, { kind: RowModeKind.View });
 
   return (
     <Fragment>
@@ -157,16 +164,60 @@ export function InvoiceRow({
         </TableCell>
       </TableRow>
 
-      <InvoiceRowExpansion
-        inv={inv}
-        modeKind={modeKind}
-        detail={detail}
-        suppliers={suppliers}
-        onSaveEdit={onSaveEdit}
-        onMetadataSave={onMetadataSave}
-        onSaveCreditNote={onSaveCreditNote}
-        onSetMode={onSetMode}
-      />
+      {modeKind === RowModeKind.Detail && detail && (
+        <TableRow className="hover:bg-transparent">
+          <TableCell colSpan={COLUMN_COUNT} className="p-0">
+            <div className="border-t border-[var(--nav-border)] bg-[var(--nav-accent)]/30 px-6 py-4">
+              <InvoiceDetailLines invoice={detail} />
+            </div>
+          </TableCell>
+        </TableRow>
+      )}
+
+      {modeKind === RowModeKind.Edit && detail && (
+        <TableRow className="hover:bg-transparent">
+          <TableCell colSpan={COLUMN_COUNT} className="p-0">
+            <EditPanel
+              invoice={detail}
+              onSave={(lines, note) => onSaveEdit(inv, lines, note)}
+              onCancel={cancelView}
+            />
+          </TableCell>
+        </TableRow>
+      )}
+
+      {modeKind === RowModeKind.MetadataEdit && detail && (
+        <TableRow className="hover:bg-transparent">
+          <TableCell colSpan={COLUMN_COUNT} className="p-0">
+            <MetadataEditPanel
+              invoice={detail}
+              suppliers={suppliers}
+              onSave={(fields) => onMetadataSave(inv.id, fields)}
+              onCancel={cancelView}
+            />
+          </TableCell>
+        </TableRow>
+      )}
+
+      {modeKind === RowModeKind.Audit && (
+        <TableRow className="hover:bg-transparent">
+          <TableCell colSpan={COLUMN_COUNT} className="p-0">
+            <AuditPanel invoiceId={inv.id} suppliers={suppliers} onClose={cancelView} />
+          </TableCell>
+        </TableRow>
+      )}
+
+      {modeKind === RowModeKind.CreditNote && detail && (
+        <TableRow className="hover:bg-transparent">
+          <TableCell colSpan={COLUMN_COUNT} className="p-0">
+            <RaiseCreditNotePanel
+              invoice={detail}
+              onConfirm={onSaveCreditNote}
+              onCancel={cancelView}
+            />
+          </TableCell>
+        </TableRow>
+      )}
     </Fragment>
   );
 }
