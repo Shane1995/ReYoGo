@@ -15,14 +15,9 @@
     "format:check": "oxfmt --check src/",
     "clean": "rm -rf dist"
   },
-  "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.1045.0",
-    "@aws-sdk/lib-dynamodb": "^3.1045.0",
-    "@reyogo/types": "workspace:*"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/aws-lambda": "^8.10.161",
-    "aws-sdk-client-mock": "^4.1.0",
     "tsup": "^8.5.1",
     "oxlint": "^1.63.0",
     "typescript": "^5.3.3",
