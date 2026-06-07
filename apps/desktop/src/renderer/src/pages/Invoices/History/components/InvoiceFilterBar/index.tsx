@@ -21,6 +21,64 @@ const fieldLabel =
 const selectBase =
   'h-8 rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 pr-7';
 
+function SearchInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="relative">
+      <SearchIcon className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/40 pointer-events-none" />
+      <input
+        type="search"
+        placeholder="Search by item name or invoice number…"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          'h-9 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm',
+          'font-[family-name:var(--font-mono,_DM_Mono,_monospace)] placeholder:font-sans placeholder:text-muted-foreground/40',
+          'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 transition-shadow',
+          value && 'border-[var(--primary)]/40',
+        )}
+      />
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange('')}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-foreground transition-colors"
+        >
+          <XIcon className="size-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function SupplierSelect({
+  value,
+  suppliers,
+  onChange,
+}: {
+  value: string;
+  suppliers: Supplier[];
+  onChange: (v: string) => void;
+}) {
+  if (suppliers.length === 0) return null;
+  return (
+    <div className="flex flex-col">
+      <label className={fieldLabel}>Supplier</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(selectBase, 'w-44', !value && 'text-muted-foreground/60')}
+      >
+        <option value="">All suppliers</option>
+        {suppliers.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 export function InvoiceFilterBar({
   search,
   setSearch,
@@ -36,52 +94,10 @@ export function InvoiceFilterBar({
 }: Props) {
   return (
     <div className="space-y-3">
-      <div className="relative">
-        <SearchIcon className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/40 pointer-events-none" />
-        <input
-          type="search"
-          placeholder="Search by item name or invoice number…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className={cn(
-            'h-9 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm',
-            'font-[family-name:var(--font-mono,_DM_Mono,_monospace)] placeholder:font-sans placeholder:text-muted-foreground/40',
-            'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 transition-shadow',
-            search && 'border-[var(--primary)]/40',
-          )}
-        />
-        {search && (
-          <button
-            type="button"
-            onClick={() => setSearch('')}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-foreground transition-colors"
-          >
-            <XIcon className="size-3.5" />
-          </button>
-        )}
-      </div>
-
+      <SearchInput value={search} onChange={setSearch} />
       <div className="flex flex-wrap items-end gap-x-4 gap-y-2.5">
-        {suppliers.length > 0 && (
-          <div className="flex flex-col">
-            <label className={fieldLabel}>Supplier</label>
-            <select
-              value={supplierFilter}
-              onChange={(e) => setSupplierFilter(e.target.value)}
-              className={cn(selectBase, 'w-44', !supplierFilter && 'text-muted-foreground/60')}
-            >
-              <option value="">All suppliers</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
+        <SupplierSelect value={supplierFilter} suppliers={suppliers} onChange={setSupplierFilter} />
         <div className="h-6 w-px bg-border/60 self-end mb-1 hidden sm:block" />
-
         <div className="flex flex-col">
           <label className={fieldLabel}>Date range</label>
           <DateRangePicker
@@ -93,7 +109,6 @@ export function InvoiceFilterBar({
             }}
           />
         </div>
-
         {hasFilters && (
           <button
             type="button"

@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRightIcon } from 'lucide-react';
 import { Button, cn } from '@reyogo/ui';
@@ -37,6 +37,42 @@ const sortByOverallChange = (a: ItemGroup, b: ItemGroup) => {
 
 type ToggleFn = (id: string) => void;
 type NavigateFn = ReturnType<typeof useNavigate>;
+
+function SortHead({
+  sortKey,
+  activeKey,
+  dir,
+  label,
+  className,
+  onToggle,
+}: {
+  sortKey: string;
+  activeKey: string | null;
+  dir: 'asc' | 'desc' | null;
+  label: string;
+  className?: string;
+  onToggle: (key: string) => void;
+}) {
+  const isActive = activeKey === sortKey;
+  return (
+    <TableHead
+      className={cn(
+        'text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5',
+        className,
+      )}
+    >
+      <Button
+        variant="ghost"
+        size="sm"
+        className="-mx-2 h-auto py-0 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 hover:text-foreground hover:bg-transparent gap-0"
+        onClick={() => onToggle(sortKey)}
+      >
+        {label}
+        <SortIndicator active={isActive} dir={isActive ? dir : null} />
+      </Button>
+    </TableHead>
+  );
+}
 
 function renderGroupRow(
   group: ItemGroup,
@@ -105,19 +141,26 @@ function renderGroupRow(
   );
 }
 
+const compareFns = {
+  name: sortByName,
+  lastCaptured: sortByLastCaptured,
+  lastUnitPrice: sortByLastUnitPrice,
+  overallChange: sortByOverallChange,
+};
+
+function toggleExpanded(prev: Set<string>, id: string): Set<string> {
+  const next = new Set(prev);
+  if (next.has(id)) {
+    next.delete(id);
+  } else {
+    next.add(id);
+  }
+  return next;
+}
+
 export function TableView({ groups }: { groups: ItemGroup[] }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
-
-  const compareFns = useMemo(
-    () => ({
-      name: sortByName,
-      lastCaptured: sortByLastCaptured,
-      lastUnitPrice: sortByLastUnitPrice,
-      overallChange: sortByOverallChange,
-    }),
-    [],
-  );
 
   const {
     sortedData: sortedGroups,
@@ -126,38 +169,7 @@ export function TableView({ groups }: { groups: ItemGroup[] }) {
     toggleSort,
   } = useTableSort(groups, compareFns);
 
-  const renderSortHead = (key: string, label: string, className?: string) => {
-    const isActive = sortKey === key;
-    return (
-      <TableHead
-        className={cn(
-          'text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5',
-          className,
-        )}
-      >
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-mx-2 h-auto py-0 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 hover:text-foreground hover:bg-transparent gap-0"
-          onClick={() => toggleSort(key)}
-        >
-          {label}
-          <SortIndicator active={isActive} dir={isActive ? sortDir : null} />
-        </Button>
-      </TableHead>
-    );
-  };
-
-  const toggle = (id: string) =>
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+  const toggle = (id: string) => setExpanded((prev) => toggleExpanded(prev, id));
 
   if (groups.length === 0) {
     return (
@@ -173,10 +185,36 @@ export function TableView({ groups }: { groups: ItemGroup[] }) {
         <TableHeader>
           <TableRow className="bg-muted/30 hover:bg-muted/30 border-[var(--nav-border)]">
             <TableHead className="w-10 py-2.5" />
-            {renderSortHead('name', 'Item')}
-            {renderSortHead('lastCaptured', 'Last captured')}
-            {renderSortHead('lastUnitPrice', 'Last unit price', 'text-right')}
-            {renderSortHead('overallChange', 'Overall change', 'text-right')}
+            <SortHead
+              sortKey="name"
+              activeKey={sortKey}
+              dir={sortDir}
+              label="Item"
+              onToggle={toggleSort}
+            />
+            <SortHead
+              sortKey="lastCaptured"
+              activeKey={sortKey}
+              dir={sortDir}
+              label="Last captured"
+              onToggle={toggleSort}
+            />
+            <SortHead
+              sortKey="lastUnitPrice"
+              activeKey={sortKey}
+              dir={sortDir}
+              label="Last unit price"
+              className="text-right"
+              onToggle={toggleSort}
+            />
+            <SortHead
+              sortKey="overallChange"
+              activeKey={sortKey}
+              dir={sortDir}
+              label="Overall change"
+              className="text-right"
+              onToggle={toggleSort}
+            />
           </TableRow>
         </TableHeader>
         <TableBody>

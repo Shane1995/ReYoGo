@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { ipcMain, type IpcMainInvokeEvent } from 'electron';
 import { CloudSyncIPC } from '@shared/types/ipc';
 import { CloudSyncEventType } from '@shared/types/cloudSync';
 import { CLOUD_SYNC_EVENT_CHANNEL } from '@shared/ipc-events';
@@ -70,6 +70,49 @@ async function handleConnect(tursoUrl: string, authToken: string): Promise<void>
   }
 }
 
+function handleManualSync(event: IpcMainInvokeEvent): void {
+  if (!hasCloudCredentials()) throw new Error('Cloud sync is not active.');
+  const credentials = getStoredCredentials();
+  if (!credentials) throw new Error('Cloud sync credentials not found.');
+  event.sender.send(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.Syncing });
+  syncViaUtilityProcess(getReplicaPath(), credentials.tursoUrl, credentials.authToken)
+    .then(() => {
+      recordSyncSuccess();
+      event.sender.send(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.Success });
+    })
+    .catch((err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      recordSyncError(msg);
+      event.sender.send(CLOUD_SYNC_EVENT_CHANNEL, {
+        type: CloudSyncEventType.Error,
+        message: msg,
+        retryable: true,
+      });
+    });
+}
+
+function handleRotateToken(event: IpcMainInvokeEvent, authToken: string): void {
+  const tursoUrl = getTursoUrl();
+  if (!tursoUrl) throw new Error('Cloud sync is not active.');
+  event.sender.send(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.Syncing });
+  syncViaUtilityProcess(getReplicaPath(), tursoUrl, authToken)
+    .then(async () => {
+      await reinitialiseNoSync(getReplicaPath(), tursoUrl, authToken);
+      updateStoredToken(authToken);
+      recordSyncSuccess();
+      event.sender.send(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.Success });
+    })
+    .catch((err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      recordSyncError(msg);
+      event.sender.send(CLOUD_SYNC_EVENT_CHANNEL, {
+        type: CloudSyncEventType.Error,
+        message: msg,
+        retryable: true,
+      });
+    });
+}
+
 export function registerSettingsHandlers(): void {
   ipcMain.handle(CloudSyncIPC.ACTIVATE, async (event, tursoUrl: string, authToken: string) => {
     const replicaPath = getReplicaPath();
@@ -93,28 +136,7 @@ export function registerSettingsHandlers(): void {
     };
   });
 
-  ipcMain.handle(CloudSyncIPC.MANUAL_SYNC, (event) => {
-    if (!hasCloudCredentials()) throw new Error('Cloud sync is not active.');
-    const credentials = getStoredCredentials();
-    if (!credentials) throw new Error('Cloud sync credentials not found.');
-
-    event.sender.send(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.Syncing });
-
-    syncViaUtilityProcess(getReplicaPath(), credentials.tursoUrl, credentials.authToken)
-      .then(() => {
-        recordSyncSuccess();
-        event.sender.send(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.Success });
-      })
-      .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : String(err);
-        recordSyncError(msg);
-        event.sender.send(CLOUD_SYNC_EVENT_CHANNEL, {
-          type: CloudSyncEventType.Error,
-          message: msg,
-          retryable: true,
-        });
-      });
-  });
+  ipcMain.handle(CloudSyncIPC.MANUAL_SYNC, (event) => handleManualSync(event));
 
   ipcMain.handle(CloudSyncIPC.DELETE_BACKUP, () => {
     deleteLocalBackup(getLocalDbPath());
@@ -135,27 +157,7 @@ export function registerSettingsHandlers(): void {
     handleConnect(tursoUrl, authToken),
   );
 
-  ipcMain.handle(CloudSyncIPC.ROTATE_TOKEN, (event, authToken: string) => {
-    const tursoUrl = getTursoUrl();
-    if (!tursoUrl) throw new Error('Cloud sync is not active.');
-
-    event.sender.send(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.Syncing });
-
-    syncViaUtilityProcess(getReplicaPath(), tursoUrl, authToken)
-      .then(async () => {
-        await reinitialiseNoSync(getReplicaPath(), tursoUrl, authToken);
-        updateStoredToken(authToken);
-        recordSyncSuccess();
-        event.sender.send(CLOUD_SYNC_EVENT_CHANNEL, { type: CloudSyncEventType.Success });
-      })
-      .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : String(err);
-        recordSyncError(msg);
-        event.sender.send(CLOUD_SYNC_EVENT_CHANNEL, {
-          type: CloudSyncEventType.Error,
-          message: msg,
-          retryable: true,
-        });
-      });
-  });
+  ipcMain.handle(CloudSyncIPC.ROTATE_TOKEN, (event, authToken: string) =>
+    handleRotateToken(event, authToken),
+  );
 }

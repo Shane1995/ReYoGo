@@ -6,16 +6,55 @@ function emptyItemRow(): ItemRow {
   return { id: crypto.randomUUID(), name: '', categoryId: '', type: '', unitOfMeasureId: '' };
 }
 
+type AddItemFn = (item: {
+  name: string;
+  categoryId: string;
+  type: string;
+  unitOfMeasureId: string | null;
+  entityId: string;
+}) => void;
+
+function submitValidRows(
+  itemRows: ItemRow[],
+  itemDupes: Set<string>,
+  entityId: string,
+  addItem: AddItemFn,
+): void {
+  const valid = itemRows.filter(
+    (r) => r.name.trim() && r.categoryId && r.unitOfMeasureId && !itemDupes.has(r.id),
+  );
+  valid.forEach((r) =>
+    addItem({
+      name: r.name.trim(),
+      categoryId: r.categoryId,
+      type: r.type,
+      unitOfMeasureId: r.unitOfMeasureId || null,
+      entityId,
+    }),
+  );
+}
+
+function buildItemDupes(itemRows: ItemRow[], items: InventoryItem[]): Set<string> {
+  const existing = new Set(items.map((i) => i.name.trim().toLowerCase()));
+  const seen = new Map<string, string>();
+  const dupes = new Set<string>();
+  for (const row of itemRows) {
+    const key = row.name.trim().toLowerCase();
+    if (!key) continue;
+    if (existing.has(key)) {
+      dupes.add(row.id);
+    } else if (seen.has(key)) {
+      dupes.add(row.id);
+      dupes.add(seen.get(key)!);
+    } else seen.set(key, row.id);
+  }
+  return dupes;
+}
+
 type Params = {
   items: InventoryItem[];
   entityId: string | null;
-  addItem: (item: {
-    name: string;
-    categoryId: string;
-    type: string;
-    unitOfMeasureId: string | null;
-    entityId: string;
-  }) => void;
+  addItem: AddItemFn;
 };
 
 export function useItemRows({ items, entityId, addItem }: Params) {
@@ -48,38 +87,11 @@ export function useItemRows({ items, entityId, addItem }: Params) {
     [],
   );
 
-  const itemDupes = useMemo(() => {
-    const existing = new Set(items.map((i) => i.name.trim().toLowerCase()));
-    const seen = new Map<string, string>();
-    const dupes = new Set<string>();
-    for (const row of itemRows) {
-      const key = row.name.trim().toLowerCase();
-      if (!key) continue;
-      if (existing.has(key)) {
-        dupes.add(row.id);
-      } else if (seen.has(key)) {
-        dupes.add(row.id);
-        dupes.add(seen.get(key)!);
-      } else seen.set(key, row.id);
-    }
-    return dupes;
-  }, [itemRows, items]);
+  const itemDupes = useMemo(() => buildItemDupes(itemRows, items), [itemRows, items]);
 
   const submitItems = useCallback(() => {
     if (!entityId) return;
-    const valid = itemRows.filter(
-      (r) => r.name.trim() && r.categoryId && r.unitOfMeasureId && !itemDupes.has(r.id),
-    );
-    if (!valid.length) return;
-    valid.forEach((r) =>
-      addItem({
-        name: r.name.trim(),
-        categoryId: r.categoryId,
-        type: r.type,
-        unitOfMeasureId: r.unitOfMeasureId || null,
-        entityId,
-      }),
-    );
+    submitValidRows(itemRows, itemDupes, entityId, addItem);
     setItemRows([emptyItemRow()]);
   }, [itemRows, itemDupes, addItem, entityId]);
 

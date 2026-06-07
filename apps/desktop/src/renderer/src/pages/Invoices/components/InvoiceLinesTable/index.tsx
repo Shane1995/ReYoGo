@@ -6,6 +6,33 @@ import { VatMode } from '@reyogo/types';
 import type { ProcessReceiptLine } from '../../types';
 import type { ItemOption } from '../ItemAutocomplete';
 
+function focusLineField(lines: ProcessReceiptLine[], index: number, field: string): void {
+  const line = lines[index];
+  if (line) document.getElementById(`invoice-${field}-${line.id}`)?.focus();
+}
+
+function focusLineItem(lines: ProcessReceiptLine[], index: number): void {
+  const line = lines[index];
+  if (line) document.getElementById(`invoice-item-${line.id}`)?.focus();
+}
+
+const thCls = 'text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5';
+
+function LinesTableHeader() {
+  return (
+    <TableHeader>
+      <TableRow className="border-[var(--nav-border)] hover:bg-transparent bg-muted/30">
+        <TableHead className="w-8 p-2" />
+        <TableHead className={thCls}>Item</TableHead>
+        <TableHead className={`${thCls} w-24`}>Qty</TableHead>
+        <TableHead className={`${thCls} w-20 text-center`}>Tax</TableHead>
+        <TableHead className={`${thCls} w-32`}>Total (excl.)</TableHead>
+        <TableHead className="w-12" />
+      </TableRow>
+    </TableHeader>
+  );
+}
+
 type ItemMeta = {
   categoryName?: string;
   typeLabel?: string;
@@ -43,24 +70,7 @@ export function InvoiceLinesTable({
   return (
     <div className="rounded-lg border border-[var(--nav-border)] bg-background overflow-hidden">
       <Table>
-        <TableHeader>
-          <TableRow className="border-[var(--nav-border)] hover:bg-transparent bg-muted/30">
-            <TableHead className="w-8 p-2" />
-            <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5">
-              Item
-            </TableHead>
-            <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5 w-24">
-              Qty
-            </TableHead>
-            <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5 w-20 text-center">
-              Tax
-            </TableHead>
-            <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5 w-32">
-              Total (excl.)
-            </TableHead>
-            <TableHead className="w-12" />
-          </TableRow>
-        </TableHeader>
+        <LinesTableHeader />
         <TableBody>
           {lines.map((line, i) => (
             <InvoiceLineRow
@@ -79,25 +89,11 @@ export function InvoiceLinesTable({
               onRemove={() => onRemoveLine(line.id)}
               onAddLine={onAddLine}
               onNavigateNext={(field) => {
-                const nextLine = lines[i + 1];
-                if (nextLine) {
-                  document.getElementById(`invoice-${field}-${nextLine.id}`)?.focus();
-                } else {
-                  onAddLine(field);
-                }
+                if (lines[i + 1]) focusLineField(lines, i + 1, field);
+                else onAddLine(field);
               }}
-              onNavigatePrev={(field) => {
-                const prevLine = lines[i - 1];
-                if (prevLine) {
-                  document.getElementById(`invoice-${field}-${prevLine.id}`)?.focus();
-                }
-              }}
-              onNavigateToNextRowItem={() => {
-                const nextLine = lines[i + 1];
-                if (nextLine) {
-                  document.getElementById(`invoice-item-${nextLine.id}`)?.focus();
-                }
-              }}
+              onNavigatePrev={(field) => focusLineField(lines, i - 1, field)}
+              onNavigateToNextRowItem={() => focusLineItem(lines, i + 1)}
             />
           ))}
         </TableBody>

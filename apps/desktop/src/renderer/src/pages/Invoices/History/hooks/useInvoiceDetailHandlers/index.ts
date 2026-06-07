@@ -5,6 +5,27 @@ import { invoiceService } from '@/services/invoice';
 import { useNavigateToInvoice } from '../../../hooks/useNavigateToInvoice';
 import { RowModeKind, type RowMode } from '../../types';
 
+function templateLinesFromDetail(detail: ICapturedInvoiceWithLines) {
+  return detail.lines.map((l) => ({
+    id: window.crypto.randomUUID(),
+    itemId: l.itemId,
+    quantity: 0,
+    isVatable: l.isVatable,
+    totalVatExclude: 0,
+  }));
+}
+
+async function fetchOrCacheDetail(
+  id: string,
+  detailCache: Record<string, ICapturedInvoiceWithLines>,
+  setDetailCache: React.Dispatch<React.SetStateAction<Record<string, ICapturedInvoiceWithLines>>>,
+): Promise<ICapturedInvoiceWithLines | null> {
+  if (detailCache[id]) return detailCache[id];
+  const inv = await invoiceService.getInvoice(id);
+  if (inv) setDetailCache((prev) => ({ ...prev, [id]: inv }));
+  return inv ?? null;
+}
+
 type DetailHandlerDeps = {
   detailCache: Record<string, ICapturedInvoiceWithLines>;
   setDetailCache: React.Dispatch<React.SetStateAction<Record<string, ICapturedInvoiceWithLines>>>;
@@ -21,12 +42,7 @@ export function useInvoiceDetailHandlers({
   const { navigateToInvoice, conflictModal } = useNavigateToInvoice();
 
   const getDetail = useCallback(
-    async (id: string): Promise<ICapturedInvoiceWithLines | null> => {
-      if (detailCache[id]) return detailCache[id];
-      const inv = await invoiceService.getInvoice(id);
-      if (inv) setDetailCache((prev) => ({ ...prev, [id]: inv }));
-      return inv ?? null;
-    },
+    (id: string) => fetchOrCacheDetail(id, detailCache, setDetailCache),
     [detailCache, setDetailCache],
   );
 
@@ -53,39 +69,21 @@ export function useInvoiceDetailHandlers({
   );
 
   const handleAuditClick = useCallback(
-    (id: string) => {
-      setMode(id, { kind: RowModeKind.Audit });
-    },
+    (id: string) => setMode(id, { kind: RowModeKind.Audit }),
     [setMode],
   );
 
   const handleReuse = useCallback(
     async (id: string) => {
-      let detail = detailCache[id];
-      if (!detail) {
-        const inv = await invoiceService.getInvoice(id);
-        if (inv) {
-          setDetailCache((prev) => ({ ...prev, [id]: inv }));
-          detail = inv;
-        }
-      }
+      const detail = await fetchOrCacheDetail(id, detailCache, setDetailCache);
       if (!detail) return;
-      const templateLines = detail.lines.map((l) => ({
-        id: window.crypto.randomUUID(),
-        itemId: l.itemId,
-        quantity: 0,
-        isVatable: l.isVatable,
-        totalVatExclude: 0,
-      }));
-      navigateToInvoice(templateLines, { reuse: true });
+      navigateToInvoice(templateLinesFromDetail(detail), { reuse: true });
     },
     [detailCache, setDetailCache, navigateToInvoice],
   );
 
   const handleRaiseCreditNoteClick = useCallback(
-    (id: string) => {
-      setMode(id, { kind: RowModeKind.CreditNote });
-    },
+    (id: string) => setMode(id, { kind: RowModeKind.CreditNote }),
     [setMode],
   );
 
