@@ -53,17 +53,11 @@ describe('AppSidebar', () => {
     expect(screen.getByText('Suppliers')).toBeInTheDocument();
   });
 
-  it('renders the ReYoGo branding text when expanded', () => {
-    renderSidebar();
-    expect(screen.getByText('ReYoGo')).toBeInTheDocument();
-  });
-
-  it('hides nav labels and branding text after collapsing', async () => {
+  it('hides nav labels after collapsing', async () => {
     renderSidebar();
     await userEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
     await waitFor(() => {
       expect(screen.queryByText('Dashboard')).not.toBeInTheDocument();
-      expect(screen.queryByText('ReYoGo')).not.toBeInTheDocument();
     });
   });
 

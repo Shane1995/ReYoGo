@@ -26,11 +26,10 @@ function createEmptyRow(): PendingRow {
 
 export default function AddItemsPage() {
   const { categories, items, unitOptions, addItem } = useInventory();
-  const { entities } = useEntities();
+  const { selectedEntityId: entityId } = useEntities();
   const namedCategories = categories.filter((c) => c.name.trim());
   const categoryTypes = Array.from(new Set(namedCategories.map((c) => c.type)));
 
-  const [entityId, setEntityId] = useState('');
   const [rows, setRows] = useState<PendingRow[]>([createEmptyRow()]);
   const [lastAddedRowId, setLastAddedRowId] = useState<string | null>(null);
 
@@ -107,20 +106,6 @@ export default function AddItemsPage() {
 
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-6 my-5 space-y-3">
-          <div>
-            <select
-              value={entityId}
-              onChange={(e) => setEntityId(e.target.value)}
-              className={cn(inputClass, 'max-w-xs cursor-pointer')}
-            >
-              <option value="">Select entity…</option>
-              {entities.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name}
-                </option>
-              ))}
-            </select>
-          </div>
           <div className="rounded-lg border border-[var(--nav-border)] bg-background">
             <Table>
               <TableHeader>

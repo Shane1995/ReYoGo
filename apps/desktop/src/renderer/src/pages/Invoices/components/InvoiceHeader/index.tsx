@@ -6,7 +6,6 @@ import type { Supplier } from '@reyogo/types';
 import { VatMode } from '@reyogo/types';
 import { inputClass } from '../../utils/inputClass';
 import { cn } from '@reyogo/ui';
-import { useEntities } from '@/Context/EntityContext';
 
 type Props = {
   invoiceNumber: string;
@@ -18,8 +17,6 @@ type Props = {
   suppliers: Supplier[];
   vatMode: VatMode;
   onVatModeChange: (mode: VatMode) => void;
-  entityId: string;
-  onEntityChange: (id: string) => void;
   onAddCategory: () => void;
   onAddItem: () => void;
   isDirty: boolean;
@@ -40,15 +37,11 @@ export function InvoiceHeader({
   suppliers,
   vatMode,
   onVatModeChange,
-  entityId,
-  onEntityChange,
   onAddCategory,
   onAddItem,
   isDirty,
   onClear,
 }: Props) {
-  const { entities } = useEntities();
-
   return (
     <PageHeader
       title="Capture Invoice"
@@ -81,24 +74,6 @@ export function InvoiceHeader({
       }
     >
       <div className="flex flex-wrap items-end gap-x-5 gap-y-3 pb-1">
-        <div className={fieldGroup}>
-          <label className={fieldLabel}>Entity</label>
-          <select
-            value={entityId}
-            onChange={(e) => onEntityChange(e.target.value)}
-            className={cn(inputClass, 'w-44', !entityId && 'text-muted-foreground')}
-          >
-            <option value="" disabled>
-              Select venue…
-            </option>
-            {entities.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
         <div className={fieldGroup}>
           <label className={fieldLabel}>Invoice #</label>
           <input

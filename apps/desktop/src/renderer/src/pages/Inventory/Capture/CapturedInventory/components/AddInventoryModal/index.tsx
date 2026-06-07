@@ -3,6 +3,7 @@ import { Button } from '@reyogo/ui';
 import { INVENTORY_TYPES, InventoryType } from '@reyogo/types';
 import { useInventory } from '../../Context/InventoryContext';
 import { useEntities } from '@/Context/EntityContext';
+
 import { cn } from '@reyogo/ui';
 
 const inputClass = cn(
@@ -71,11 +72,10 @@ function CategoryForm({ onDone }: { onDone: () => void }) {
 
 function ItemForm({ onDone }: { onDone: () => void }) {
   const { categories, unitOptions, addItem } = useInventory();
-  const { entities } = useEntities();
+  const { selectedEntityId: entityId } = useEntities();
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [unitOfMeasureId, setUnitOfMeasureId] = useState('');
-  const [entityId, setEntityId] = useState('');
 
   const category = categories.find((c) => c.id === categoryId);
 
@@ -92,26 +92,11 @@ function ItemForm({ onDone }: { onDone: () => void }) {
     setName('');
     setCategoryId('');
     setUnitOfMeasureId('');
-    setEntityId('');
     onDone();
   }
 
   return (
     <div className="space-y-4">
-      <div>
-        <select
-          value={entityId}
-          onChange={(e) => setEntityId(e.target.value)}
-          className={cn(inputClass, 'cursor-pointer')}
-        >
-          <option value="">Select entity</option>
-          {entities.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.name}
-            </option>
-          ))}
-        </select>
-      </div>
       <div>
         <label className="mb-1.5 block text-sm font-medium text-foreground">Name</label>
         <input
@@ -157,11 +142,7 @@ function ItemForm({ onDone }: { onDone: () => void }) {
         </select>
       </div>
       <div className="flex justify-end gap-2 pt-2">
-        <Button
-          type="button"
-          onClick={handleSave}
-          disabled={!name.trim() || !categoryId || !entityId}
-        >
+        <Button type="button" onClick={handleSave} disabled={!name.trim() || !categoryId}>
           Add item
         </Button>
       </div>

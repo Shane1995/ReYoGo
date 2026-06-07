@@ -35,9 +35,8 @@ function emptyCategoryRow(): CategoryRow {
 
 export default function AddInventoryPage() {
   const { categories, items, unitOptions, addItem, addCategory } = useInventory();
-  const { entities } = useEntities();
+  const { selectedEntityId: entityId } = useEntities();
 
-  const [entityId, setEntityId] = useState('');
   const [mode, setMode] = useState<Mode>('items');
   const [itemRows, setItemRows] = useState<ItemRow[]>([emptyItemRow()]);
   const [catRows, setCatRows] = useState<CategoryRow[]>([emptyCategoryRow()]);
@@ -165,20 +164,6 @@ export default function AddInventoryPage() {
 
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-6 my-5 space-y-3">
-          <div>
-            <select
-              value={entityId}
-              onChange={(e) => setEntityId(e.target.value)}
-              className={cn(inputClass, 'max-w-xs cursor-pointer')}
-            >
-              <option value="">Select entity…</option>
-              {entities.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name}
-                </option>
-              ))}
-            </select>
-          </div>
           {/* Mode toggle */}
           <div className="inline-flex items-center rounded-lg border border-[var(--nav-border)] bg-muted/20 p-0.5 gap-0.5">
             {(['items', 'categories'] as Mode[]).map((m) => (

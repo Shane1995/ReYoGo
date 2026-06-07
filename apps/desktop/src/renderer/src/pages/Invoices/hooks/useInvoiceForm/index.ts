@@ -15,11 +15,10 @@ import { useInvoiceSummary } from '../useInvoiceSummary';
 
 export function useInvoiceForm() {
   const { items, categories, unitOptions, addCategory, addItem } = useInventory();
-  const { entities } = useEntities();
+  const { entities, selectedEntityId: entityId } = useEntities();
   const location = useLocation();
 
-  const locationState =
-    (location.state as { templateLines?: ProcessReceiptLine[]; entityId?: string } | null) ?? null;
+  const locationState = (location.state as { templateLines?: ProcessReceiptLine[] } | null) ?? null;
   const templateLines = locationState?.templateLines;
   const isReused = !!templateLines;
 
@@ -39,7 +38,6 @@ export function useInvoiceForm() {
   const [vatMode, setVatModeState] = useState<VatMode>(() =>
     isReused ? VatMode.Exclusive : (loadDraft()?.vatMode ?? VatMode.Exclusive),
   );
-  const [entityId, setEntityId] = useState<string>(locationState?.entityId ?? '');
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -110,34 +108,17 @@ export function useInvoiceForm() {
     setInvoiceNumber('');
     setInvoiceDate('');
     setSupplierId('');
-    setEntityId('');
     setVatModeState(VatMode.Exclusive);
     setExpandedResultLineIds(new Set());
     clearDraft();
   }, [clearDraft, setLines]);
 
   const isDirty =
-    !!entityId ||
-    lines.some((l) => l.itemId) ||
-    !!invoiceNumber.trim() ||
-    !!invoiceDate ||
-    !!supplierId;
-
-  const handleEntityChange = useCallback(
-    (newEntityId: string) => {
-      const isDirtyLines = lines.some((l) => l.itemId);
-      if (isDirtyLines) {
-        if (!window.confirm('Changing entity will clear your current lines. Continue?')) return;
-        setLines([createEmptyLine()]);
-      }
-      setEntityId(newEntityId);
-    },
-    [lines, setLines],
-  );
+    lines.some((l) => l.itemId) || !!invoiceNumber.trim() || !!invoiceDate || !!supplierId;
 
   const handleSave = useCallback(async () => {
     if (!selectedEntity) {
-      setSaveError('Select an entity before saving.');
+      setSaveError('No entity selected. Please select a business in the top bar.');
       return;
     }
     if (!canSave) {
@@ -195,7 +176,7 @@ export function useInvoiceForm() {
 
   const handleSaveDraft = useCallback(async () => {
     if (!selectedEntity) {
-      setSaveError('Select an entity before saving.');
+      setSaveError('No entity selected. Please select a business in the top bar.');
       return;
     }
     if (!canSave) {
@@ -267,7 +248,6 @@ export function useInvoiceForm() {
     setVatMode,
     selectedEntity,
     entityId,
-    handleEntityChange,
     expandedResultLineIds,
     isReused,
     reuseNoticeDismissed,

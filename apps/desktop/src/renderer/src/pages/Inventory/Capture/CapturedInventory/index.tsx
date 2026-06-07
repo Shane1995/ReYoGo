@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { PlusIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6,7 +6,6 @@ import { Button, PageHeader } from '@reyogo/ui';
 import { itemTrendPath } from '@/components/AppRoutes/routePaths';
 import { FilterBar } from '@/components/DataTable';
 import { useEntities } from '@/Context/EntityContext';
-import { EntityFilter } from '@/components/EntityFilter';
 import { useInventory } from './Context/InventoryContext';
 import { ItemsTable } from './components/ItemsTable';
 import { AddInventoryModal } from './components/AddInventoryModal';
@@ -14,20 +13,20 @@ import { useInventoryCosts } from './hooks/useInventoryCosts';
 import { useItemStock } from './hooks/useItemStock/index';
 import { useItemFilters } from './components/ItemsTable/hooks/useItemFilters';
 import type { InventoryItem } from './types';
+import { useState } from 'react';
 
 export default function InventoryIndex() {
   const { categories, items, unitOptions, updateItem, archiveItemInBackend } = useInventory();
-  const { entities } = useEntities();
+  const { selectedEntityId } = useEntities();
 
   const navigate = useNavigate();
   const costMap = useInventoryCosts();
   const stockMap = useItemStock();
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [entityFilter, setEntityFilter] = useState<string | null>(null);
 
   const entityFilteredItems = useMemo(
-    () => (entityFilter ? items.filter((item) => item.entityId === entityFilter) : items),
-    [items, entityFilter],
+    () => (selectedEntityId ? items.filter((item) => item.entityId === selectedEntityId) : items),
+    [items, selectedEntityId],
   );
 
   const { filterValues, filteredItems, filters, allTypes, handleFilterChange, clearFilters } =
@@ -54,15 +53,12 @@ export default function InventoryIndex() {
           </Button>
         }
       >
-        <div className="space-y-2">
-          <EntityFilter entities={entities} selected={entityFilter} onChange={setEntityFilter} />
-          <FilterBar
-            filters={filters}
-            values={filterValues}
-            onChange={handleFilterChange}
-            onClearAll={clearFilters}
-          />
-        </div>
+        <FilterBar
+          filters={filters}
+          values={filterValues}
+          onChange={handleFilterChange}
+          onClearAll={clearFilters}
+        />
       </PageHeader>
 
       <div className="min-h-0 flex-1 overflow-auto">
@@ -73,7 +69,6 @@ export default function InventoryIndex() {
             allTypes={allTypes}
             categories={categories}
             unitOptions={unitOptions}
-            currentEntityId={entityFilter}
             onUpdate={handleUpdate}
             onDelete={archiveItemInBackend}
             onViewInsights={handleViewInsights}
