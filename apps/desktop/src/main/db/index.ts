@@ -298,90 +298,88 @@ export function _setDbStateForTest(
   _db = db;
 }
 
+async function bootWithReplica(
+  credentials: { tursoUrl: string; authToken: string },
+  migrationsFolder: string,
+): Promise<void> {
+  const replicaPath = getReplicaPath();
+  const hadExistingReplica = existsSync(replicaPath);
+  const canBootOffline = hadExistingReplica && hasEverSynced();
+
+  const activate = async (h: ReplicaHandle) => {
+    await migrate(h.db, { migrationsFolder });
+    await ensureDefaultAccount(h.db);
+    _handle = h;
+    _db = h.db;
+    _repos = buildRepos(h.db);
+  };
+
+  const bootFresh = async (h: ReplicaHandle) => {
+    await withSyncTimeout(h.sync());
+    await activate(h);
+  };
+
+  let handle: ReplicaHandle;
+  try {
+    handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
+  } catch {
+    wipeReplicaFiles(replicaPath);
+    handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
+  }
+
+  if (canBootOffline) {
+    try {
+      await activate(handle);
+      return;
+    } catch (bootErr) {
+      if (isCorruptedReplicaError(bootErr)) {
+        handle.close();
+        wipeReplicaFiles(replicaPath);
+        handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
+        await bootFresh(handle);
+        return;
+      }
+      throw bootErr;
+    }
+  }
+
+  try {
+    await bootFresh(handle);
+  } catch (bootErr) {
+    if (isPermanentSyncError(bootErr)) {
+      handle.close();
+      clearCredentials();
+      wipeReplicaFiles(replicaPath);
+      const err = new Error('Cloud auth failed — update your auth token in Settings → Cloud Sync.');
+      Object.assign(err, { isCloudAuthError: true });
+      throw err;
+    } else if (isCorruptedReplicaError(bootErr)) {
+      handle.close();
+      wipeReplicaFiles(replicaPath);
+      handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
+      await bootFresh(handle);
+    } else {
+      handle.close();
+      wipeReplicaFiles(replicaPath);
+      throw new Error(
+        'Could not connect to cloud database. Check your internet connection and relaunch.',
+      );
+    }
+  }
+}
+
 export async function initDatabase(): Promise<void> {
   if (_db !== null || _initialising) return;
   _initialising = true;
   try {
     const migrationsFolder = getMigrationsFolder();
-
     if (hasCloudCredentials()) {
       const credentials = getStoredCredentials();
       if (credentials) {
-        const replicaPath = getReplicaPath();
-        const hadExistingReplica = existsSync(replicaPath);
-        const canBootOffline = hadExistingReplica && hasEverSynced();
-        let handle: ReplicaHandle;
-        try {
-          handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
-        } catch {
-          wipeReplicaFiles(replicaPath);
-          handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
-        }
-
-        const activate = async (h: typeof handle) => {
-          await migrate(h.db, { migrationsFolder });
-          await ensureDefaultAccount(h.db);
-          _handle = h;
-          _db = h.db;
-          _repos = buildRepos(h.db);
-        };
-
-        const bootFresh = async (h: typeof handle) => {
-          await withSyncTimeout(h.sync());
-          await activate(h);
-        };
-
-        if (canBootOffline) {
-          // Existing replica: open immediately from local data, sync in background via syncInterval
-          try {
-            await activate(handle);
-            return;
-          } catch (bootErr) {
-            if (isCorruptedReplicaError(bootErr)) {
-              handle.close();
-              wipeReplicaFiles(replicaPath);
-              handle = createReplicaClient(
-                replicaPath,
-                credentials.tursoUrl,
-                credentials.authToken,
-              );
-              await bootFresh(handle);
-              return;
-            }
-            throw bootErr;
-          }
-        }
-
-        try {
-          await bootFresh(handle);
-          return;
-        } catch (bootErr) {
-          if (isPermanentSyncError(bootErr)) {
-            handle.close();
-            clearCredentials();
-            wipeReplicaFiles(replicaPath);
-            const err = new Error(
-              'Cloud auth failed — update your auth token in Settings → Cloud Sync.',
-            );
-            Object.assign(err, { isCloudAuthError: true });
-            throw err;
-          } else if (isCorruptedReplicaError(bootErr)) {
-            handle.close();
-            wipeReplicaFiles(replicaPath);
-            handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
-            await bootFresh(handle);
-            return;
-          } else {
-            handle.close();
-            wipeReplicaFiles(replicaPath);
-            throw new Error(
-              'Could not connect to cloud database. Check your internet connection and relaunch.',
-            );
-          }
-        }
+        await bootWithReplica(credentials, migrationsFolder);
+        return;
       }
     }
-
     throw new Error('No cloud credentials found. Connect to Turso first.');
   } finally {
     _initialising = false;
