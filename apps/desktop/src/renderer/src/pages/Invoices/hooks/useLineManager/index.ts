@@ -1,10 +1,15 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { VatMode } from '@reyogo/types';
 import type { ProcessReceiptLine } from '../../types';
 import { createEmptyLine } from '../../utils/createEmptyLine';
 
-export function useLineManager(initialLines?: ProcessReceiptLine[]) {
+function newLine(vatMode?: VatMode): ProcessReceiptLine {
+  return { ...createEmptyLine(), isVatable: vatMode === VatMode.Exclusive };
+}
+
+export function useLineManager(initialLines?: ProcessReceiptLine[], vatMode?: VatMode) {
   const [lines, setLines] = useState<ProcessReceiptLine[]>(
-    () => initialLines ?? [createEmptyLine()],
+    () => initialLines ?? [newLine(vatMode)],
   );
   const pendingFocusRef = useRef<{ id: string; field: string } | null>(null);
 
@@ -24,18 +29,30 @@ export function useLineManager(initialLines?: ProcessReceiptLine[]) {
     return () => clearTimeout(t);
   }, [lines, focusPendingLine]);
 
-  const addLine = useCallback((focusField = 'item') => {
-    const newLine = createEmptyLine();
-    pendingFocusRef.current = { id: newLine.id, field: focusField };
-    setLines((prev) => [...prev, newLine]);
-  }, []);
+  const addLine = useCallback(
+    (focusField = 'item') => {
+      const line = newLine(vatMode);
+      pendingFocusRef.current = { id: line.id, field: focusField };
+      setLines((prev) => [...prev, line]);
+    },
+    [vatMode],
+  );
 
-  const removeLine = useCallback((id: string) => {
-    setLines((prev) => {
-      const next = prev.filter((l) => l.id !== id);
-      return next.length > 0 ? next : [createEmptyLine()];
-    });
-  }, []);
+  const removeLine = useCallback(
+    (id: string) => {
+      setLines((prev) => {
+        const idx = prev.findIndex((l) => l.id === id);
+        const next = prev.filter((l) => l.id !== id);
+        const remaining = next.length > 0 ? next : [newLine(vatMode)];
+        const focusTarget = next.length > 0 ? remaining[Math.max(0, idx - 1)] : remaining[0];
+        if (focusTarget) {
+          pendingFocusRef.current = { id: focusTarget.id, field: 'item' };
+        }
+        return remaining;
+      });
+    },
+    [vatMode],
+  );
 
   const updateLine = useCallback((id: string, updates: Partial<ProcessReceiptLine>) => {
     setLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)));
