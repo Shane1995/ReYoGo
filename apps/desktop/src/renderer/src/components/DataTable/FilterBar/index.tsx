@@ -116,6 +116,33 @@ function MultiSelect({
   );
 }
 
+function SingleSelectOption({
+  opt,
+  selected,
+  onSelect,
+}: {
+  opt: FilterOption;
+  selected: string;
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <button
+      key={opt.value}
+      type="button"
+      onClick={() => onSelect(opt.value)}
+      className={cn(
+        'flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-[var(--foreground)] hover:bg-[var(--accent)]',
+        selected === opt.value && 'bg-[var(--accent)]',
+      )}
+    >
+      <span className="size-3 shrink-0">
+        {selected === opt.value && <CheckIcon className="size-3 text-[var(--primary)]" />}
+      </span>
+      <span className="truncate">{opt.label}</span>
+    </button>
+  );
+}
+
 function SingleSelect({
   field,
   values,
@@ -127,6 +154,9 @@ function SingleSelect({
 }) {
   const selected = (values[field.key] as string) ?? '';
   const options = resolveOptions(field, values);
+  const label = selected
+    ? (options.find((o) => o.value === selected)?.label ?? field.label)
+    : field.label;
 
   return (
     <Popover>
@@ -140,9 +170,7 @@ function SingleSelect({
               : 'border-[var(--border)] bg-[var(--background)] text-[var(--muted-foreground)] hover:border-[var(--input)] hover:text-[var(--foreground)]',
           )}
         >
-          {selected
-            ? (options.find((o) => o.value === selected)?.label ?? field.label)
-            : field.label}
+          {label}
           <ChevronDownIcon className="size-3 opacity-60" />
         </button>
       </PopoverTrigger>
@@ -158,20 +186,12 @@ function SingleSelect({
           </button>
         )}
         {options.map((opt) => (
-          <button
+          <SingleSelectOption
             key={opt.value}
-            type="button"
-            onClick={() => onChange(field.key, opt.value)}
-            className={cn(
-              'flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-[var(--foreground)] hover:bg-[var(--accent)]',
-              selected === opt.value && 'bg-[var(--accent)]',
-            )}
-          >
-            <span className="size-3 shrink-0">
-              {selected === opt.value && <CheckIcon className="size-3 text-[var(--primary)]" />}
-            </span>
-            <span className="truncate">{opt.label}</span>
-          </button>
+            opt={opt}
+            selected={selected}
+            onSelect={(v) => onChange(field.key, v)}
+          />
         ))}
       </PopoverContent>
     </Popover>

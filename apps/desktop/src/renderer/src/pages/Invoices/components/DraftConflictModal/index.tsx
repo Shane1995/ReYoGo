@@ -13,8 +13,40 @@ const actionBtn = cn(
   'flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm font-medium transition-colors',
 );
 
+function ActionButton({
+  onClick,
+  className,
+  icon,
+  iconClass,
+  label,
+  sublabel,
+}: {
+  onClick: () => void;
+  className: string;
+  icon: React.ReactNode;
+  iconClass: string;
+  label: string;
+  sublabel: string;
+}) {
+  return (
+    <button type="button" onClick={onClick} className={cn(actionBtn, className)}>
+      <span
+        className={cn('flex size-8 shrink-0 items-center justify-center rounded-lg', iconClass)}
+      >
+        {icon}
+      </span>
+      <span>
+        <span className="block font-semibold">{label}</span>
+        <span className="block text-xs font-normal opacity-80">{sublabel}</span>
+      </span>
+    </button>
+  );
+}
+
 export function DraftConflictModal({ open, draftItemCount, onAppend, onFresh, onCancel }: Props) {
   if (!open) return null;
+
+  const itemLabel = `${draftItemCount} ${draftItemCount === 1 ? 'item' : 'items'}`;
 
   return (
     <div
@@ -31,51 +63,27 @@ export function DraftConflictModal({ open, draftItemCount, onAppend, onFresh, on
 
         <p className="mb-2 text-base font-semibold text-foreground">Draft invoice in progress</p>
         <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
-          You have{' '}
-          <span className="font-medium text-foreground">
-            {draftItemCount} {draftItemCount === 1 ? 'item' : 'items'}
-          </span>{' '}
-          in your current draft. What would you like to do with the items you're adding?
+          You have <span className="font-medium text-foreground">{itemLabel}</span> in your current
+          draft. What would you like to do with the items you're adding?
         </p>
 
         <div className="flex flex-col gap-2.5">
-          <button
-            type="button"
+          <ActionButton
             onClick={onAppend}
-            className={cn(
-              actionBtn,
-              'border-blue-200 bg-blue-500 text-white hover:bg-blue-600 dark:border-blue-800',
-            )}
-          >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/20">
-              <PlusIcon className="size-4" />
-            </span>
-            <span>
-              <span className="block font-semibold">Append to draft</span>
-              <span className="block text-xs font-normal opacity-80">
-                Add these items to your existing lines
-              </span>
-            </span>
-          </button>
-
-          <button
-            type="button"
+            className="border-blue-200 bg-blue-500 text-white hover:bg-blue-600 dark:border-blue-800"
+            icon={<PlusIcon className="size-4" />}
+            iconClass="bg-white/20"
+            label="Append to draft"
+            sublabel="Add these items to your existing lines"
+          />
+          <ActionButton
             onClick={onFresh}
-            className={cn(
-              actionBtn,
-              'border-[var(--border)] bg-background text-foreground hover:bg-muted/50',
-            )}
-          >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted">
-              <RotateCcwIcon className="size-4 text-muted-foreground" />
-            </span>
-            <span>
-              <span className="block font-semibold">Start fresh</span>
-              <span className="block text-xs font-normal text-muted-foreground">
-                Replace the draft with these items
-              </span>
-            </span>
-          </button>
+            className="border-[var(--border)] bg-background text-foreground hover:bg-muted/50"
+            icon={<RotateCcwIcon className="size-4 text-muted-foreground" />}
+            iconClass="bg-muted"
+            label="Start fresh"
+            sublabel="Replace the draft with these items"
+          />
         </div>
 
         <button

@@ -568,33 +568,65 @@ async function insertCreditNoteMovements(
   }
 }
 
+function buildCreditLines(payload: ISaveCreditNotePayload): CreditLine[] {
+  return payload.lines
+    .filter((l) => l.itemId && l.quantity > 0)
+    .map((l) => ({ ...l, totalVatExclude: l.unitPrice * l.quantity }));
+}
+
+async function fetchAndValidateSourceInvoice(
+  tx: TxClient,
+  payload: ISaveCreditNotePayload,
+  validLines: ISaveCreditNotePayload['lines'],
+): Promise<void> {
+  const sourceInvoice = await tx
+    .select()
+    .from(schema.invoices)
+    .where(eq(schema.invoices.id, payload.sourceInvoiceId))
+    .limit(1)
+    .then((rows) => rows[0] ?? null);
+
+  if (!sourceInvoice) throw new Error(`Source invoice not found: ${payload.sourceInvoiceId}`);
+  if (sourceInvoice.status !== InvoiceStatus.Posted)
+    throw new Error(`Credit notes can only be raised against posted invoices`);
+
+  const sourceLines = await tx
+    .select()
+    .from(schema.invoiceLineItems)
+    .where(eq(schema.invoiceLineItems.invoiceId, payload.sourceInvoiceId));
+
+  const alreadyCredited = await getCreditNotedQtyByItem(tx, payload.sourceInvoiceId);
+  await validateCreditNoteLines(validLines, sourceLines, alreadyCredited);
+}
+
+async function insertCreditNoteLineItems(
+  tx: TxClient,
+  payload: ISaveCreditNotePayload,
+  creditLines: CreditLine[],
+): Promise<void> {
+  if (creditLines.length === 0) return;
+  await tx.insert(schema.invoiceLineItems).values(
+    creditLines.map((l) => ({
+      id: l.id,
+      invoiceId: payload.id,
+      inventoryItemId: l.itemId,
+      itemNameSnapshot: l.itemNameSnapshot ?? '',
+      qty: l.quantity,
+      unitCost: l.unitPrice,
+      unitCostInclVat: inclVat(l.unitPrice, l.isVatable, payload.vatRate),
+      totalCost: l.totalVatExclude,
+      isVatable: l.isVatable,
+    })),
+  );
+}
+
 async function saveCreditNote(db: DbClient, payload: ISaveCreditNotePayload): Promise<void> {
   const createdAt = now();
+  const creditLines = buildCreditLines(payload);
   const validLines = payload.lines.filter((l) => l.itemId && l.quantity > 0);
-  const creditLines = validLines.map((l) => ({
-    ...l,
-    totalVatExclude: l.unitPrice * l.quantity,
-  }));
 
   await db.transaction(async (tx) => {
-    const sourceInvoice = await tx
-      .select()
-      .from(schema.invoices)
-      .where(eq(schema.invoices.id, payload.sourceInvoiceId))
-      .limit(1)
-      .then((rows) => rows[0] ?? null);
-
-    if (!sourceInvoice) throw new Error(`Source invoice not found: ${payload.sourceInvoiceId}`);
-    if (sourceInvoice.status !== InvoiceStatus.Posted)
-      throw new Error(`Credit notes can only be raised against posted invoices`);
-
-    const sourceLines = await tx
-      .select()
-      .from(schema.invoiceLineItems)
-      .where(eq(schema.invoiceLineItems.invoiceId, payload.sourceInvoiceId));
-
-    const alreadyCredited = await getCreditNotedQtyByItem(tx, payload.sourceInvoiceId);
-    await validateCreditNoteLines(validLines, sourceLines, alreadyCredited);
+    await fetchAndValidateSourceInvoice(tx, payload, validLines);
 
     const { totalExclTax, taxAmount } = computeTax(creditLines, payload.vatRate);
 
@@ -615,22 +647,7 @@ async function saveCreditNote(db: DbClient, payload: ISaveCreditNotePayload): Pr
       createdAt,
     });
 
-    if (creditLines.length > 0) {
-      await tx.insert(schema.invoiceLineItems).values(
-        creditLines.map((l) => ({
-          id: l.id,
-          invoiceId: payload.id,
-          inventoryItemId: l.itemId,
-          itemNameSnapshot: l.itemNameSnapshot ?? '',
-          qty: l.quantity,
-          unitCost: l.unitPrice,
-          unitCostInclVat: inclVat(l.unitPrice, l.isVatable, payload.vatRate),
-          totalCost: l.totalVatExclude,
-          isVatable: l.isVatable,
-        })),
-      );
-    }
-
+    await insertCreditNoteLineItems(tx, payload, creditLines);
     await insertCreditNoteMovements(tx, payload, creditLines, createdAt);
 
     await tx.insert(schema.invoiceAuditLog).values({

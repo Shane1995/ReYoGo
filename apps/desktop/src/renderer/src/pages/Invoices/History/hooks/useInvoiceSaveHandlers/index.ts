@@ -13,6 +13,54 @@ type SaveHandlerDeps = {
   setMode: (id: string, mode: RowMode) => void;
 };
 
+function buildSaveEditPayload(
+  invoice: ICapturedInvoice,
+  editLines: ProcessReceiptLine[],
+  note: string,
+  items: { id: string; name: string }[],
+  detailCache: Record<string, ICapturedInvoiceWithLines>,
+) {
+  return {
+    id: invoice.id,
+    note: note || undefined,
+    vatMode: invoice.vatMode,
+    vatRate: invoice.vatRate,
+    lines: editLines.map((line) => {
+      const computed = getProcessLineComputed(line, invoice.vatMode, invoice.vatRate);
+      return {
+        id: line.id,
+        itemId: line.itemId,
+        itemNameSnapshot:
+          items.find((i) => i.id === line.itemId)?.name ??
+          detailCache[invoice.id]?.lines.find((l) => l.itemId === line.itemId)?.itemNameSnapshot ??
+          'Unknown',
+        quantity: Number(line.quantity) || 0,
+        unitPrice: computed.netUnitPrice,
+        isVatable: line.isVatable,
+        totalVatExclude: computed.netTotal,
+      };
+    }),
+  };
+}
+
+function buildMetadataSavePayload(
+  id: string,
+  fields: {
+    supplierId: string | null;
+    invoiceNumber: string;
+    invoiceDate: Date | null;
+    note: string;
+  },
+) {
+  return {
+    id,
+    supplierId: fields.supplierId,
+    invoiceNumber: fields.invoiceNumber,
+    invoiceDate: fields.invoiceDate,
+    note: fields.note || undefined,
+  };
+}
+
 export function useInvoiceSaveHandlers({
   items,
   detailCache,
@@ -22,28 +70,7 @@ export function useInvoiceSaveHandlers({
 }: SaveHandlerDeps) {
   const handleSaveEdit = useCallback(
     async (invoice: ICapturedInvoice, editLines: ProcessReceiptLine[], note: string) => {
-      const payload = {
-        id: invoice.id,
-        note: note || undefined,
-        vatMode: invoice.vatMode,
-        vatRate: invoice.vatRate,
-        lines: editLines.map((line) => {
-          const computed = getProcessLineComputed(line, invoice.vatMode, invoice.vatRate);
-          return {
-            id: line.id,
-            itemId: line.itemId,
-            itemNameSnapshot:
-              items.find((i) => i.id === line.itemId)?.name ??
-              detailCache[invoice.id]?.lines.find((l) => l.itemId === line.itemId)
-                ?.itemNameSnapshot ??
-              'Unknown',
-            quantity: Number(line.quantity) || 0,
-            unitPrice: computed.netUnitPrice,
-            isVatable: line.isVatable,
-            totalVatExclude: computed.netTotal,
-          };
-        }),
-      };
+      const payload = buildSaveEditPayload(invoice, editLines, note, items, detailCache);
       await invoiceService.updateInvoice(payload);
       setDetailCache((prev) => {
         const next = { ...prev };
@@ -66,13 +93,7 @@ export function useInvoiceSaveHandlers({
         note: string;
       },
     ) => {
-      await invoiceService.updateInvoiceMetadata({
-        id,
-        supplierId: fields.supplierId,
-        invoiceNumber: fields.invoiceNumber,
-        invoiceDate: fields.invoiceDate,
-        note: fields.note || undefined,
-      });
+      await invoiceService.updateInvoiceMetadata(buildMetadataSavePayload(id, fields));
       setDetailCache((prev) => {
         const next = { ...prev };
         delete next[id];
