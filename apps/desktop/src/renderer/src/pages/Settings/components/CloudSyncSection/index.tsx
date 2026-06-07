@@ -1,13 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  Button,
-  Input,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@reyogo/ui';
 import { toast } from 'sonner';
 import { SectionHeader } from '../SectionHeader';
 import { cloudSyncService } from '@/services/cloudSync';
@@ -15,6 +6,9 @@ import { CloudSyncEventType } from '@shared/types/cloudSync';
 import type { CloudSyncEvent } from '@shared/types/cloudSync';
 import { STAGE_LABEL } from './constants';
 import type { CloudSyncStatus } from './types';
+import { ActivationForm } from './components/ActivationForm';
+import { ActiveStatus } from './components/ActiveStatus';
+import { EditConnectionModal } from './components/EditConnectionModal';
 
 export function CloudSyncSection() {
   const [status, setStatus] = useState<CloudSyncStatus | null>(null);
@@ -126,94 +120,36 @@ export function CloudSyncSection() {
       <SectionHeader label="Cloud Sync" />
 
       {!status?.isActive ? (
-        <div className="flex flex-col gap-3">
-          <p className="text-sm text-muted-foreground">
-            Enter your Turso database credentials to activate cloud sync. Your existing data will be
-            migrated to the cloud and kept in sync across devices.
-          </p>
-          <div className="flex flex-col gap-2">
-            <Input
-              placeholder="libsql://your-db.turso.io"
-              value={tursoUrl}
-              onChange={(e) => setTursoUrl(e.target.value)}
-              disabled={activating}
-            />
-            <Input
-              type="password"
-              placeholder="Auth token"
-              value={authToken}
-              onChange={(e) => setAuthToken(e.target.value)}
-              disabled={activating}
-            />
-          </div>
-
-          {activating && (
-            <div className="flex flex-col gap-1">
-              <p className="text-sm text-foreground">{progressLabel}</p>
-              {progressDetail && <p className="text-xs text-muted-foreground">{progressDetail}</p>}
-            </div>
-          )}
-
-          <Button onClick={handleActivate} disabled={activating} className="self-start">
-            {activating ? 'Activating…' : 'Activate Cloud Sync'}
-          </Button>
-        </div>
+        <ActivationForm
+          tursoUrl={tursoUrl}
+          authToken={authToken}
+          activating={activating}
+          progressLabel={progressLabel}
+          progressDetail={progressDetail}
+          onChangeTursoUrl={setTursoUrl}
+          onChangeAuthToken={setAuthToken}
+          onActivate={handleActivate}
+        />
       ) : (
-        <div className="flex flex-col gap-3">
-          <p className="text-sm text-muted-foreground">
-            Cloud sync is active.{lastSynced ? ` Last synced: ${lastSynced}.` : ''}
-            {status.error && <span className="text-amber-500"> Sync error: {status.error}</span>}
-          </p>
-          {credentials?.tursoUrl && (
-            <p className="text-xs text-muted-foreground break-all">DB: {credentials.tursoUrl}</p>
-          )}
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleManualSync} className="self-start">
-              Sync now
-            </Button>
-            <Button variant="ghost" onClick={openEditModal} className="self-start">
-              Edit connection
-            </Button>
-          </div>
-        </div>
+        <ActiveStatus
+          status={status}
+          tursoUrl={credentials?.tursoUrl ?? null}
+          lastSynced={lastSynced}
+          onManualSync={handleManualSync}
+          onEditConnection={openEditModal}
+        />
       )}
 
-      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit connection</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-3 py-2">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground">Database URL</label>
-              <Input
-                placeholder="libsql://your-db.turso.io"
-                value={editUrl}
-                onChange={(e) => setEditUrl(e.target.value)}
-                disabled={connecting}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground">Auth token</label>
-              <Input
-                type="password"
-                placeholder="Paste your auth token"
-                value={editToken}
-                onChange={(e) => setEditToken(e.target.value)}
-                disabled={connecting}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowEditModal(false)} disabled={connecting}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveConnection} disabled={connecting}>
-              {connecting ? 'Saving…' : 'Save'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EditConnectionModal
+        open={showEditModal}
+        editUrl={editUrl}
+        editToken={editToken}
+        connecting={connecting}
+        onChangeEditUrl={setEditUrl}
+        onChangeEditToken={setEditToken}
+        onClose={() => setShowEditModal(false)}
+        onSave={handleSaveConnection}
+      />
     </div>
   );
 }
