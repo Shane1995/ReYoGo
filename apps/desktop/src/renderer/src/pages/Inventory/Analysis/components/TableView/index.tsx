@@ -74,6 +74,22 @@ function SortHead({
   );
 }
 
+function PriceCell({ last }: { last: ItemGroup['entries'][number] }) {
+  return (
+    <TableCell className="py-2.5 text-right font-mono text-sm tabular-nums text-foreground">
+      <div>
+        {fmt(last.unitPriceInclVat)}
+        {last.uom ? <span className="text-muted-foreground/60"> / {last.uom}</span> : null}
+      </div>
+      {last.unitPrice !== last.unitPriceInclVat && (
+        <div className="text-[11px] text-muted-foreground/50 font-normal">
+          excl. {fmt(last.unitPrice)}
+        </div>
+      )}
+    </TableCell>
+  );
+}
+
 function renderGroupRow(
   group: ItemGroup,
   i: number,
@@ -109,17 +125,7 @@ function renderGroupRow(
           {group.name}
         </TableCell>
         <TableCell className="py-2.5 text-sm text-muted-foreground">{fmtDate(last.date)}</TableCell>
-        <TableCell className="py-2.5 text-right font-mono text-sm tabular-nums text-foreground">
-          <div>
-            {fmt(last.unitPriceInclVat)}
-            {last.uom ? <span className="text-muted-foreground/60"> / {last.uom}</span> : null}
-          </div>
-          {last.unitPrice !== last.unitPriceInclVat && (
-            <div className="text-[11px] text-muted-foreground/50 font-normal">
-              excl. {fmt(last.unitPrice)}
-            </div>
-          )}
-        </TableCell>
+        <PriceCell last={last} />
         <TableCell
           className={cn(
             'py-2.5 text-right font-mono text-sm tabular-nums',

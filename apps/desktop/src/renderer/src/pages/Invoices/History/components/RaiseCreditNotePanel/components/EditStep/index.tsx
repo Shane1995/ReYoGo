@@ -40,6 +40,57 @@ type Props = {
   onContinue: () => void;
 };
 
+function LineRow({
+  l,
+  onToggleLine,
+  onSetQty,
+  onSetPrice,
+}: {
+  l: EditLine;
+  onToggleLine: (id: string) => void;
+  onSetQty: (id: string, qty: number) => void;
+  onSetPrice: (id: string, price: number) => void;
+}) {
+  return (
+    <tr key={l.lineId} className={`border-b border-border/50 ${!l.selected ? 'opacity-40' : ''}`}>
+      <td className="px-3 py-2 w-8">
+        <Checkbox checked={l.selected} onChange={() => onToggleLine(l.lineId)} />
+      </td>
+      <td className={td}>{l.itemNameSnapshot}</td>
+      <td className={`${td} text-right tabular-nums text-muted-foreground`}>{l.origQty}</td>
+      <td className={`${td} text-right tabular-nums text-muted-foreground font-mono`}>
+        £{formatMoney(l.origUnitPrice)}
+      </td>
+      <td className={`${td} text-right`}>
+        <input
+          type="number"
+          min={0}
+          max={l.origQty}
+          step={1}
+          value={l.creditQty}
+          disabled={!l.selected}
+          onChange={(e) => onSetQty(l.lineId, Number(e.target.value))}
+          className={inputCls}
+        />
+      </td>
+      <td className={`${td} text-right`}>
+        <input
+          type="number"
+          min={0}
+          step={0.01}
+          value={l.creditPrice}
+          disabled={!l.selected}
+          onChange={(e) => onSetPrice(l.lineId, Number(e.target.value))}
+          className={priceCls(l.creditPrice !== l.origUnitPrice)}
+        />
+      </td>
+      <td className={`${td} text-right tabular-nums font-mono`}>
+        {l.selected ? `£${formatMoney(l.creditQty * l.creditPrice)}` : '—'}
+      </td>
+    </tr>
+  );
+}
+
 export function EditStep({
   invoiceNumber,
   lines,
@@ -73,45 +124,13 @@ export function EditStep({
         </thead>
         <tbody>
           {lines.map((l) => (
-            <tr
+            <LineRow
               key={l.lineId}
-              className={`border-b border-border/50 ${!l.selected ? 'opacity-40' : ''}`}
-            >
-              <td className="px-3 py-2 w-8">
-                <Checkbox checked={l.selected} onChange={() => onToggleLine(l.lineId)} />
-              </td>
-              <td className={td}>{l.itemNameSnapshot}</td>
-              <td className={`${td} text-right tabular-nums text-muted-foreground`}>{l.origQty}</td>
-              <td className={`${td} text-right tabular-nums text-muted-foreground font-mono`}>
-                £{formatMoney(l.origUnitPrice)}
-              </td>
-              <td className={`${td} text-right`}>
-                <input
-                  type="number"
-                  min={0}
-                  max={l.origQty}
-                  step={1}
-                  value={l.creditQty}
-                  disabled={!l.selected}
-                  onChange={(e) => onSetQty(l.lineId, Number(e.target.value))}
-                  className={inputCls}
-                />
-              </td>
-              <td className={`${td} text-right`}>
-                <input
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={l.creditPrice}
-                  disabled={!l.selected}
-                  onChange={(e) => onSetPrice(l.lineId, Number(e.target.value))}
-                  className={priceCls(l.creditPrice !== l.origUnitPrice)}
-                />
-              </td>
-              <td className={`${td} text-right tabular-nums font-mono`}>
-                {l.selected ? `£${formatMoney(l.creditQty * l.creditPrice)}` : '—'}
-              </td>
-            </tr>
+              l={l}
+              onToggleLine={onToggleLine}
+              onSetQty={onSetQty}
+              onSetPrice={onSetPrice}
+            />
           ))}
         </tbody>
       </table>

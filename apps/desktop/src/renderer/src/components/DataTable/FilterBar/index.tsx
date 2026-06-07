@@ -18,6 +18,48 @@ function hasActiveFilters(values: FilterValues): boolean {
   return Object.values(values).some((v) => (Array.isArray(v) ? v.length > 0 : Boolean(v)));
 }
 
+function buildGroups(options: FilterOption[]): { label: string; items: FilterOption[] }[] {
+  if (!options.some((o) => o.group)) return [{ label: '', items: options }];
+  return Array.from(
+    options.reduce((map, opt) => {
+      const key = opt.group ?? '';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(opt);
+      return map;
+    }, new Map<string, FilterOption[]>()),
+  ).map(([label, items]) => ({ label, items }));
+}
+
+function MultiSelectOption({
+  opt,
+  selected,
+  onToggle,
+}: {
+  opt: FilterOption;
+  selected: string[];
+  onToggle: (value: string) => void;
+}) {
+  const isSelected = selected.includes(opt.value);
+  return (
+    <button
+      key={opt.value}
+      type="button"
+      onClick={() => onToggle(opt.value)}
+      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-[var(--foreground)] hover:bg-[var(--accent)]"
+    >
+      <div
+        className={cn(
+          'flex size-3.5 shrink-0 items-center justify-center rounded-sm border',
+          isSelected ? 'border-[var(--primary)] bg-[var(--primary)]' : 'border-[var(--border)]',
+        )}
+      >
+        {isSelected && <CheckIcon className="size-2.5 text-white" />}
+      </div>
+      <span className="truncate">{opt.label}</span>
+    </button>
+  );
+}
+
 function MultiSelect({
   field,
   values,
@@ -29,6 +71,7 @@ function MultiSelect({
 }) {
   const selected = (values[field.key] as string[]) ?? [];
   const options = resolveOptions(field, values);
+  const groups = buildGroups(options);
 
   const toggle = (value: string) => {
     const next = selected.includes(value)
@@ -36,39 +79,6 @@ function MultiSelect({
       : [...selected, value];
     onChange(field.key, next);
   };
-
-  const hasGroups = options.some((o) => o.group);
-  const groups: { label: string; items: FilterOption[] }[] = hasGroups
-    ? Array.from(
-        options.reduce((map, opt) => {
-          const key = opt.group ?? '';
-          if (!map.has(key)) map.set(key, []);
-          map.get(key)!.push(opt);
-          return map;
-        }, new Map<string, FilterOption[]>()),
-      ).map(([label, items]) => ({ label, items }))
-    : [{ label: '', items: options }];
-
-  const renderOption = (opt: FilterOption) => (
-    <button
-      key={opt.value}
-      type="button"
-      onClick={() => toggle(opt.value)}
-      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-[var(--foreground)] hover:bg-[var(--accent)]"
-    >
-      <div
-        className={cn(
-          'flex size-3.5 shrink-0 items-center justify-center rounded-sm border',
-          selected.includes(opt.value)
-            ? 'border-[var(--primary)] bg-[var(--primary)]'
-            : 'border-[var(--border)]',
-        )}
-      >
-        {selected.includes(opt.value) && <CheckIcon className="size-2.5 text-white" />}
-      </div>
-      <span className="truncate">{opt.label}</span>
-    </button>
-  );
 
   return (
     <Popover>
@@ -107,7 +117,14 @@ function MultiSelect({
                   {label}
                 </p>
               )}
-              {items.map(renderOption)}
+              {items.map((opt) => (
+                <MultiSelectOption
+                  key={opt.value}
+                  opt={opt}
+                  selected={selected}
+                  onToggle={toggle}
+                />
+              ))}
             </div>
           ))
         )}

@@ -88,6 +88,55 @@ function CollapseToggle({ collapsed, onClick }: { collapsed: boolean; onClick: (
   );
 }
 
+type NavContentProps = {
+  navItems: readonly NavItem[];
+  bottomNavItems?: readonly NavItem[];
+  collapsed: boolean;
+  iconClassName?: string;
+  scrollable: boolean;
+  onToggle: () => void;
+};
+
+function NavContent({
+  navItems,
+  bottomNavItems,
+  collapsed,
+  iconClassName,
+  scrollable,
+  onToggle,
+}: NavContentProps) {
+  const items = (
+    <NavItemList navItems={navItems} collapsed={collapsed} iconClassName={iconClassName} />
+  );
+  const bottomItems = bottomNavItems && bottomNavItems.length > 0 && (
+    <NavItemList navItems={bottomNavItems} collapsed={collapsed} iconClassName={iconClassName} />
+  );
+  if (scrollable) {
+    return (
+      <>
+        <nav className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-3">
+          {items}
+        </nav>
+        <div className="shrink-0 border-t border-[rgba(255,255,255,0.07)]">
+          {bottomItems && <div className="px-2 pt-2">{bottomItems}</div>}
+          <div className="p-2">
+            <CollapseToggle collapsed={collapsed} onClick={onToggle} />
+          </div>
+        </div>
+      </>
+    );
+  }
+  return (
+    <div className="flex flex-1 flex-col gap-0.5 p-3">
+      {items}
+      {bottomItems}
+      <div className="mt-auto">
+        <CollapseToggle collapsed={collapsed} onClick={onToggle} />
+      </div>
+    </div>
+  );
+}
+
 export function CollapsibleNav({
   navItems,
   storageKey,
@@ -115,41 +164,14 @@ export function CollapsibleNav({
       className={cn('relative flex shrink-0 flex-col overflow-hidden', className)}
       style={style}
     >
-      {scrollable ? (
-        <>
-          <nav className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-3">
-            <NavItemList navItems={navItems} collapsed={collapsed} iconClassName={iconClassName} />
-          </nav>
-          <div className="shrink-0 border-t border-[rgba(255,255,255,0.07)]">
-            {bottomNavItems && bottomNavItems.length > 0 && (
-              <div className="px-2 pt-2">
-                <NavItemList
-                  navItems={bottomNavItems}
-                  collapsed={collapsed}
-                  iconClassName={iconClassName}
-                />
-              </div>
-            )}
-            <div className="p-2">
-              <CollapseToggle collapsed={collapsed} onClick={toggle} />
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className="flex flex-1 flex-col gap-0.5 p-3">
-          <NavItemList navItems={navItems} collapsed={collapsed} iconClassName={iconClassName} />
-          {bottomNavItems && bottomNavItems.length > 0 && (
-            <NavItemList
-              navItems={bottomNavItems}
-              collapsed={collapsed}
-              iconClassName={iconClassName}
-            />
-          )}
-          <div className="mt-auto">
-            <CollapseToggle collapsed={collapsed} onClick={toggle} />
-          </div>
-        </div>
-      )}
+      <NavContent
+        navItems={navItems}
+        bottomNavItems={bottomNavItems}
+        collapsed={collapsed}
+        iconClassName={iconClassName}
+        scrollable={scrollable}
+        onToggle={toggle}
+      />
     </motion.aside>
   );
 }

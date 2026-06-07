@@ -50,6 +50,31 @@ function getActiveLines(lines: CreditLine[]): CreditLine[] {
   return lines.filter((l) => l.selected && l.creditQty > 0);
 }
 
+function buildPayload(
+  lines: CreditLine[],
+  invoice: ICapturedInvoiceWithLines,
+): ISaveCreditNotePayload {
+  return {
+    id: crypto.randomUUID(),
+    sourceInvoiceId: invoice.id,
+    entityId: invoice.entityId,
+    supplierId: invoice.supplierId,
+    invoiceNumber: `CN-${invoice.invoiceNumber}`,
+    vatMode: invoice.vatMode,
+    vatRate: invoice.vatRate,
+    lines: lines.map((l) => ({
+      id: crypto.randomUUID(),
+      itemId: l.itemId,
+      itemNameSnapshot: l.itemNameSnapshot,
+      unitOfMeasure: l.unitOfMeasure,
+      quantity: l.creditQty,
+      unitPrice: l.creditPrice,
+      isVatable: l.isVatable,
+      totalVatExclude: l.creditQty * l.creditPrice,
+    })),
+  };
+}
+
 export function RaiseCreditNotePanel({ invoice, onConfirm, onCancel }: Props) {
   const [step, setStep] = useState<Step>(STEP_EDIT);
   const [lines, setLines] = useState<CreditLine[]>(() => buildInitialLines(invoice));
@@ -59,8 +84,7 @@ export function RaiseCreditNotePanel({ invoice, onConfirm, onCancel }: Props) {
   const someSelected = selectedCount > 0 && selectedCount < lines.length;
 
   const toggleAll = useCallback(() => {
-    const nextSelected = !allSelected;
-    setLines((prev) => prev.map((l) => ({ ...l, selected: nextSelected })));
+    setLines((prev) => prev.map((l) => ({ ...l, selected: !allSelected })));
   }, [allSelected]);
 
   const toggleLine = useCallback((lineId: string) => {
@@ -83,37 +107,14 @@ export function RaiseCreditNotePanel({ invoice, onConfirm, onCancel }: Props) {
     );
   }, []);
 
-  const canContinue = getActiveLines(lines).length > 0;
-
   const handleConfirm = useCallback(() => {
-    const creditLines = getActiveLines(lines);
-    const payload: ISaveCreditNotePayload = {
-      id: crypto.randomUUID(),
-      sourceInvoiceId: invoice.id,
-      entityId: invoice.entityId,
-      supplierId: invoice.supplierId,
-      invoiceNumber: `CN-${invoice.invoiceNumber}`,
-      vatMode: invoice.vatMode,
-      vatRate: invoice.vatRate,
-      lines: creditLines.map((l) => ({
-        id: crypto.randomUUID(),
-        itemId: l.itemId,
-        itemNameSnapshot: l.itemNameSnapshot,
-        unitOfMeasure: l.unitOfMeasure,
-        quantity: l.creditQty,
-        unitPrice: l.creditPrice,
-        isVatable: l.isVatable,
-        totalVatExclude: l.creditQty * l.creditPrice,
-      })),
-    };
-    onConfirm(payload);
+    onConfirm(buildPayload(getActiveLines(lines), invoice));
   }, [lines, invoice, onConfirm]);
 
   if (step === STEP_CONFIRM) {
-    const confirmed = getActiveLines(lines);
     return (
       <ConfirmStep
-        confirmedLines={confirmed}
+        confirmedLines={getActiveLines(lines)}
         onBack={() => setStep(STEP_EDIT)}
         onConfirm={handleConfirm}
       />
@@ -123,7 +124,6 @@ export function RaiseCreditNotePanel({ invoice, onConfirm, onCancel }: Props) {
   const editTotal = lines
     .filter((l) => l.selected)
     .reduce((s, l) => s + l.creditQty * l.creditPrice, 0);
-
   return (
     <EditStep
       invoiceNumber={invoice.invoiceNumber}
@@ -131,7 +131,7 @@ export function RaiseCreditNotePanel({ invoice, onConfirm, onCancel }: Props) {
       allSelected={allSelected}
       someSelected={someSelected}
       editTotal={editTotal}
-      canContinue={canContinue}
+      canContinue={getActiveLines(lines).length > 0}
       onToggleAll={toggleAll}
       onToggleLine={toggleLine}
       onSetQty={setQty}
