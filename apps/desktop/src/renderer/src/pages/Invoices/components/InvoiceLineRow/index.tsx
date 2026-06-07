@@ -23,6 +23,66 @@ type FieldKeyDownContext = {
   setConfirmingDelete: (v: boolean) => void;
 };
 
+function handleBackspaceKey(
+  e: React.KeyboardEvent<HTMLInputElement>,
+  val: string,
+  ctx: FieldKeyDownContext,
+): boolean {
+  if (ctx.confirmingDelete) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      ctx.setConfirmingDelete(false);
+      return true;
+    }
+    if (e.key === 'Enter' || (e.key === 'Backspace' && val === '')) {
+      e.preventDefault();
+      ctx.onRemove();
+      return true;
+    }
+  }
+
+  if (e.key === 'Backspace' && val === '') {
+    e.preventDefault();
+    if (ctx.isOnlyRow) return true;
+    if (ctx.isRowEmpty) {
+      ctx.onRemove();
+    } else {
+      ctx.setConfirmingDelete(true);
+    }
+    return true;
+  }
+
+  return false;
+}
+
+function handleArrowNavigation(
+  e: React.KeyboardEvent<HTMLInputElement>,
+  val: string,
+  pos: number | null,
+  field: 'qty' | 'total',
+  lineId: string,
+  ctx: FieldKeyDownContext,
+): boolean {
+  if (e.key === 'ArrowLeft' && (pos === 0 || pos === null)) {
+    e.preventDefault();
+    const prevId = field === 'qty' ? `invoice-item-${lineId}` : `invoice-qty-${lineId}`;
+    document.getElementById(prevId)?.focus();
+    return true;
+  }
+
+  if (e.key === 'ArrowRight' && (pos === val.length || pos === null)) {
+    e.preventDefault();
+    if (field === 'qty') {
+      document.getElementById(`invoice-total-${lineId}`)?.focus();
+    } else {
+      ctx.onNavigateToNextRowItem();
+    }
+    return true;
+  }
+
+  return false;
+}
+
 function handleFieldKeyDown(
   e: React.KeyboardEvent<HTMLInputElement>,
   ctx: FieldKeyDownContext,
@@ -31,56 +91,21 @@ function handleFieldKeyDown(
   const pos = e.currentTarget.selectionStart;
   const { field, lineId } = ctx;
 
-  if (ctx.confirmingDelete) {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      ctx.setConfirmingDelete(false);
-      return;
-    }
-    if (e.key === 'Enter' || (e.key === 'Backspace' && val === '')) {
-      e.preventDefault();
-      ctx.onRemove();
-      return;
-    }
-  }
-
-  if (e.key === 'Backspace' && val === '') {
-    e.preventDefault();
-    if (ctx.isOnlyRow) return;
-    if (ctx.isRowEmpty) {
-      ctx.onRemove();
-    } else {
-      ctx.setConfirmingDelete(true);
-    }
-    return;
-  }
-
-  if (e.key === 'ArrowLeft' && (pos === 0 || pos === null)) {
-    e.preventDefault();
-    const prevId = field === 'qty' ? `invoice-item-${lineId}` : `invoice-qty-${lineId}`;
-    document.getElementById(prevId)?.focus();
-    return;
-  }
-  if (e.key === 'ArrowRight' && (pos === val.length || pos === null)) {
-    e.preventDefault();
-    if (field === 'qty') {
-      document.getElementById(`invoice-total-${lineId}`)?.focus();
-    } else {
-      ctx.onNavigateToNextRowItem();
-    }
-    return;
-  }
+  if (handleBackspaceKey(e, val, ctx)) return;
+  if (handleArrowNavigation(e, val, pos, field, lineId, ctx)) return;
 
   if (e.key === 'Enter' || e.key === 'ArrowDown') {
     e.preventDefault();
     ctx.onNavigateNext(field);
     return;
   }
+
   if (e.key === 'ArrowUp') {
     e.preventDefault();
     ctx.onNavigatePrev(field);
     return;
   }
+
   if (e.key === 'Tab') {
     e.preventDefault();
     if (field === 'qty') {
