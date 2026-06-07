@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import type {
   ICapturedInvoice,
   ICapturedInvoiceWithLines,
@@ -7,8 +6,8 @@ import type {
   Supplier,
 } from '@reyogo/types';
 import { InvoiceStatus } from '@reyogo/types';
-import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
+import { useNavigateToInvoice } from '../../../hooks/useNavigateToInvoice';
 import { useEntities } from '@/Context/EntityContext';
 import { suppliersService } from '@/services/suppliers';
 import { invoiceService } from '@/services/invoice';
@@ -17,7 +16,6 @@ import { getProcessLineComputed } from '../../../types';
 import { lineToEditLine } from '../../../utils/lineToEditLine';
 import { toDateStr } from '../../utils/toDateStr';
 import { RowModeKind, type RowMode } from '../../types';
-export type { RowModeKind, RowMode } from '../../types';
 
 export function useInvoiceHistory() {
   const [invoices, setInvoices] = useState<ICapturedInvoice[]>([]);
@@ -34,7 +32,7 @@ export function useInvoiceHistory() {
 
   const { items } = useInventory();
   const { entities } = useEntities();
-  const navigate = useNavigate();
+  const { navigateToInvoice, conflictModal } = useNavigateToInvoice();
 
   const loadInvoices = useCallback(async () => {
     const list = await invoiceService.getInvoicesWithLines();
@@ -101,9 +99,9 @@ export function useInvoiceHistory() {
         isVatable: l.isVatable,
         totalVatExclude: 0,
       }));
-      navigate(InvoiceRoutes.Base, { state: { templateLines } });
+      navigateToInvoice(templateLines, { reuse: true });
     },
-    [detailCache, navigate],
+    [detailCache, navigateToInvoice],
   );
 
   const handleExpandDetail = useCallback(
@@ -305,5 +303,6 @@ export function useInvoiceHistory() {
     handleSaveCreditNote,
     creditNoteSubmitting,
     lineToEditLine,
+    conflictModal,
   };
 }
