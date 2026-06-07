@@ -21,6 +21,32 @@ type Props = {
   onConfirm: () => void;
 };
 
+function ConfirmRow({ l }: { l: ConfirmLine }) {
+  const origTotal = l.origQty * l.origUnitPrice;
+  const lineTotal = l.creditQty * l.creditPrice;
+  const priceChanged = l.creditPrice !== l.origUnitPrice;
+
+  return (
+    <tr key={l.lineId} className="border-b border-border/50">
+      <td className={td}>{l.itemNameSnapshot}</td>
+      <td className={`${td} text-right tabular-nums text-muted-foreground font-mono`}>
+        {l.origQty} × £{formatMoney(l.origUnitPrice)} = £{formatMoney(origTotal)}
+      </td>
+      <td className={`${td} text-right tabular-nums font-mono`}>
+        {l.creditQty} × {priceChanged && <span className="text-amber-400 mr-0.5">●</span>}£
+        {formatMoney(l.creditPrice)} = £{formatMoney(lineTotal)}
+      </td>
+      <td className={`${td} text-right tabular-nums font-mono`}>
+        {l.isFreeGift && l.creditPrice === 0 ? (
+          <span className="text-white/40">Stock only</span>
+        ) : (
+          <span className="text-rose-400">-£{formatMoney(lineTotal)}</span>
+        )}
+      </td>
+    </tr>
+  );
+}
+
 export function ConfirmStep({ confirmedLines, onBack, onConfirm }: Props) {
   const creditTotal = confirmedLines.reduce((s, l) => s + l.creditQty * l.creditPrice, 0);
 
@@ -40,31 +66,9 @@ export function ConfirmStep({ confirmedLines, onBack, onConfirm }: Props) {
           </tr>
         </thead>
         <tbody>
-          {confirmedLines.map((l) => {
-            const origTotal = l.origQty * l.origUnitPrice;
-            const lineTotal = l.creditQty * l.creditPrice;
-            const priceChanged = l.creditPrice !== l.origUnitPrice;
-
-            return (
-              <tr key={l.lineId} className="border-b border-border/50">
-                <td className={td}>{l.itemNameSnapshot}</td>
-                <td className={`${td} text-right tabular-nums text-muted-foreground font-mono`}>
-                  {l.origQty} × £{formatMoney(l.origUnitPrice)} = £{formatMoney(origTotal)}
-                </td>
-                <td className={`${td} text-right tabular-nums font-mono`}>
-                  {l.creditQty} × {priceChanged && <span className="text-amber-400 mr-0.5">●</span>}
-                  £{formatMoney(l.creditPrice)} = £{formatMoney(lineTotal)}
-                </td>
-                <td className={`${td} text-right tabular-nums font-mono`}>
-                  {l.isFreeGift && l.creditPrice === 0 ? (
-                    <span className="text-white/40">Stock only</span>
-                  ) : (
-                    <span className="text-rose-400">-£{formatMoney(lineTotal)}</span>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
+          {confirmedLines.map((l) => (
+            <ConfirmRow key={l.lineId} l={l} />
+          ))}
         </tbody>
         <tfoot>
           <tr>

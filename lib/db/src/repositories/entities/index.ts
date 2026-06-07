@@ -84,52 +84,44 @@ async function getSetupState(db: DbClient, accountId: string): Promise<{ setupCo
   return { setupComplete: rows[0]?.setupComplete ?? false };
 }
 
-async function completeSetup(
-  db: DbClient,
-  accountId: string,
-  groupName: string,
-  entityNames: string[],
-): Promise<void> {
-  await db.transaction(async (tx) => {
-    const groupRows = await tx
-      .select()
-      .from(schema.businessGroups)
-      .where(eq(schema.businessGroups.accountId, accountId))
-      .limit(1);
+type Tx = Parameters<Parameters<DbClient['transaction']>[0]>[0];
 
-    let groupId: string;
-    if (groupRows[0]) {
-      groupId = groupRows[0].id;
-      await tx
-        .update(schema.businessGroups)
-        .set({ name: groupName })
-        .where(eq(schema.businessGroups.id, groupId));
+async function upsertGroup(tx: Tx, accountId: string, groupName: string): Promise<string> {
+  const rows = await tx
+    .select()
+    .from(schema.businessGroups)
+    .where(eq(schema.businessGroups.accountId, accountId))
+    .limit(1);
+  if (rows[0]) {
+    await tx
+      .update(schema.businessGroups)
+      .set({ name: groupName })
+      .where(eq(schema.businessGroups.id, rows[0].id));
+    return rows[0].id;
+  }
+  const groupId = randomUUID();
+  await tx
+    .insert(schema.businessGroups)
+    .values({ id: groupId, accountId, name: groupName, createdAt: new Date() });
+  return groupId;
+}
+
+async function upsertEntities(tx: Tx, groupId: string, entityNames: string[]): Promise<void> {
+  const existing = await tx
+    .select()
+    .from(schema.entities)
+    .where(eq(schema.entities.groupId, groupId))
+    .orderBy(schema.entities.createdAt);
+  for (let i = 0; i < entityNames.length; i++) {
+    const name = entityNames[i];
+    const existingRow = existing[i];
+    if (!name) continue;
+    if (existingRow) {
+      await tx.update(schema.entities).set({ name }).where(eq(schema.entities.id, existingRow.id));
     } else {
-      groupId = randomUUID();
-      await tx.insert(schema.businessGroups).values({
-        id: groupId,
-        accountId,
-        name: groupName,
-        createdAt: new Date(),
-      });
-    }
-
-    const existing = await tx
-      .select()
-      .from(schema.entities)
-      .where(eq(schema.entities.groupId, groupId))
-      .orderBy(schema.entities.createdAt);
-
-    for (let i = 0; i < entityNames.length; i++) {
-      const existingRow = existing[i];
-      const name = entityNames[i];
-      if (existingRow && name) {
-        await tx
-          .update(schema.entities)
-          .set({ name })
-          .where(eq(schema.entities.id, existingRow.id));
-      } else if (name) {
-        await tx.insert(schema.entities).values({
+      await tx
+        .insert(schema.entities)
+        .values({
           id: randomUUID(),
           groupId,
           name,
@@ -137,9 +129,19 @@ async function completeSetup(
           defaultVatMode: VatMode.Exclusive,
           createdAt: new Date(),
         });
-      }
     }
+  }
+}
 
+async function completeSetup(
+  db: DbClient,
+  accountId: string,
+  groupName: string,
+  entityNames: string[],
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    const groupId = await upsertGroup(tx, accountId, groupName);
+    await upsertEntities(tx, groupId, entityNames);
     await tx
       .update(schema.accounts)
       .set({ setupComplete: true })
