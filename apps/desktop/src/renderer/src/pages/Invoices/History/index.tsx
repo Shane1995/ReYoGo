@@ -5,16 +5,12 @@ import { InvoiceStatus } from '@reyogo/types';
 import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
 import { useEntities } from '@/Context/EntityContext';
 import { ReceiptIcon } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { useInvoiceHistory } from './hooks/useInvoiceHistory';
-import { InvoiceRow } from './components/InvoiceRow';
 import { InvoiceFilterBar } from './components/InvoiceFilterBar';
-import { SortableHead } from './components/SortableHead';
+import { InvoiceHistoryTable } from './components/InvoiceHistoryTable';
 import { invoiceTotals } from '../utils/invoiceTotals';
 import type { ICapturedInvoice } from '@reyogo/types';
 import { useTableSort } from '@/hooks/useTableSort';
-
-const COLUMN_COUNT = 10;
 
 const sortByInvoiceNumber = (a: ICapturedInvoice, b: ICapturedInvoice) =>
   a.invoiceNumber.localeCompare(b.invoiceNumber);
@@ -104,22 +100,6 @@ export default function InvoiceHistoryPage() {
     toggleSort,
   } = useTableSort(posted, compareFns);
 
-  const rowProps = {
-    detailCache,
-    postingId,
-    suppliers,
-    onExpand: handleExpandDetail,
-    onEditClick: handleEditClick,
-    onAuditClick: handleAuditClick,
-    onPost: handlePost,
-    onReuse: handleReuse,
-    onRaiseCreditNoteClick: handleRaiseCreditNoteClick,
-    onSaveEdit: handleSaveEdit,
-    onMetadataSave: handleMetadataSave,
-    onSaveCreditNote: handleSaveCreditNote,
-    onSetMode: setMode,
-  };
-
   return (
     <>
       <div className="flex min-h-0 flex-1 flex-col">
@@ -150,132 +130,30 @@ export default function InvoiceHistoryPage() {
           />
         </PageHeader>
 
-        <div className="min-h-0 flex-1 overflow-auto p-4">
-          {loading ? (
-            <p className="text-muted-foreground text-sm">Loading…</p>
-          ) : visibleInvoices.length === 0 ? (
-            <div className="rounded-lg border border-[var(--nav-border)] bg-muted/10 p-10 text-center text-sm text-muted-foreground/60">
-              {hasFilters ? (
-                <p>No invoices match the current filters.</p>
-              ) : (
-                <>
-                  <p>No captured invoices yet.</p>
-                  <Button asChild variant="link" className="mt-2">
-                    <Link to={InvoiceRoutes.Base}>Capture your first invoice</Link>
-                  </Button>
-                </>
-              )}
-            </div>
-          ) : (
-            <div className="rounded-lg border border-[var(--nav-border)] overflow-hidden">
-              <Table className="table-fixed">
-                <TableHeader>
-                  <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableHead className="w-8 p-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70" />
-                    <SortableHead
-                      sortKey="invoiceNumber"
-                      label="Invoice #"
-                      activeKey={sortKey}
-                      activeDir={sortDir}
-                      onToggle={toggleSort}
-                    />
-                    <SortableHead
-                      sortKey="date"
-                      label="Date"
-                      activeKey={sortKey}
-                      activeDir={sortDir}
-                      onToggle={toggleSort}
-                    />
-                    <SortableHead
-                      sortKey="lines"
-                      label="Lines"
-                      activeKey={sortKey}
-                      activeDir={sortDir}
-                      onToggle={toggleSort}
-                      className="w-14"
-                    />
-                    <SortableHead
-                      sortKey="excl"
-                      label="Excl."
-                      activeKey={sortKey}
-                      activeDir={sortDir}
-                      onToggle={toggleSort}
-                      className="w-28"
-                    />
-                    <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 w-24 text-right">
-                      VAT
-                    </TableHead>
-                    <TableHead className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 w-28 text-right">
-                      Total
-                    </TableHead>
-                    <SortableHead
-                      sortKey="status"
-                      label="Status"
-                      activeKey={sortKey}
-                      activeDir={sortDir}
-                      onToggle={toggleSort}
-                      className="w-24"
-                    />
-                    <SortableHead
-                      sortKey="lastEdited"
-                      label="Last edited"
-                      activeKey={sortKey}
-                      activeDir={sortDir}
-                      onToggle={toggleSort}
-                      className="w-36"
-                    />
-                    <TableHead className="w-10" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {drafts.length > 0 && (
-                    <TableRow className="hover:bg-transparent border-none h-7">
-                      <TableCell
-                        colSpan={COLUMN_COUNT}
-                        className="py-1.5 px-3 border-l-[2.5px] border-l-amber-500 bg-amber-100 dark:bg-amber-900/40"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="size-1.5 rounded-full bg-amber-600 inline-block animate-pulse" />
-                          <span className="text-[10px] uppercase tracking-[0.14em] text-amber-900 dark:text-amber-200 font-semibold">
-                            {drafts.length} draft{drafts.length !== 1 ? 's' : ''} pending review
-                          </span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-
-                  {drafts.map((inv, i) => (
-                    <InvoiceRow
-                      key={inv.id}
-                      inv={inv}
-                      rowIndex={i}
-                      mode={rowMode[inv.id]}
-                      detail={detailCache[inv.id]}
-                      {...rowProps}
-                    />
-                  ))}
-
-                  {drafts.length > 0 && posted.length > 0 && (
-                    <TableRow className="hover:bg-transparent h-px">
-                      <TableCell colSpan={COLUMN_COUNT} className="p-0 bg-border/40" />
-                    </TableRow>
-                  )}
-
-                  {sortedPosted.map((inv, i) => (
-                    <InvoiceRow
-                      key={inv.id}
-                      inv={inv}
-                      rowIndex={i}
-                      mode={rowMode[inv.id]}
-                      detail={detailCache[inv.id]}
-                      {...rowProps}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </div>
+        <InvoiceHistoryTable
+          loading={loading}
+          invoices={visibleInvoices}
+          drafts={drafts}
+          sortedPosted={sortedPosted}
+          hasFilters={hasFilters}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          toggleSort={toggleSort}
+          rowMode={rowMode}
+          detailCache={detailCache}
+          postingId={postingId}
+          suppliers={suppliers}
+          onExpand={handleExpandDetail}
+          onEditClick={handleEditClick}
+          onAuditClick={handleAuditClick}
+          onPost={handlePost}
+          onReuse={handleReuse}
+          onRaiseCreditNoteClick={handleRaiseCreditNoteClick}
+          onSaveEdit={handleSaveEdit}
+          onMetadataSave={handleMetadataSave}
+          onSaveCreditNote={handleSaveCreditNote}
+          onSetMode={setMode}
+        />
       </div>
       {conflictModal}
     </>
