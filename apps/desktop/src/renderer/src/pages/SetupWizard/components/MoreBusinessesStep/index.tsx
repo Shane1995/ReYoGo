@@ -46,6 +46,48 @@ function BusinessNameList({
   );
 }
 
+function StepFooter({
+  hasAny,
+  isSubmitting,
+  onBack,
+  onSkip,
+  onSubmit,
+}: Pick<MoreBusinessesStepProps, 'isSubmitting' | 'onBack' | 'onSkip' | 'onSubmit'> & {
+  hasAny: boolean;
+}) {
+  return (
+    <div className="flex justify-between items-center">
+      <button
+        className="bg-transparent text-white/40 border border-white/10 rounded-[10px] px-5 py-[11px] text-sm font-sans cursor-pointer transition-[border-color,color] duration-150 hover:border-white/25 hover:text-white/70"
+        onClick={onBack}
+        disabled={isSubmitting}
+      >
+        ← Back
+      </button>
+      <div className="flex gap-2">
+        {!hasAny && (
+          <button
+            className="bg-transparent text-white/40 border border-white/10 rounded-[10px] px-5 py-[11px] text-sm font-sans cursor-pointer transition-[border-color,color] duration-150 hover:border-white/25 hover:text-white/70"
+            onClick={onSkip}
+            disabled={isSubmitting}
+          >
+            Skip →
+          </button>
+        )}
+        {hasAny && (
+          <button
+            className="bg-[#20C997] text-[#0D1117] rounded-[10px] px-6 py-[11px] text-sm font-semibold font-sans cursor-pointer transition-[background,transform] duration-150 whitespace-nowrap hover:bg-[#18a87a] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={onSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Setting up…' : 'Get started'}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function MoreBusinessesStep({
   names,
   onAdd,
@@ -83,35 +125,13 @@ export function MoreBusinessesStep({
         + Add a business
       </button>
       {submitError && <p className="text-[13px] text-[#E63946] m-0">{submitError}</p>}
-      <div className="flex justify-between items-center">
-        <button
-          className="bg-transparent text-white/40 border border-white/10 rounded-[10px] px-5 py-[11px] text-sm font-sans cursor-pointer transition-[border-color,color] duration-150 hover:border-white/25 hover:text-white/70"
-          onClick={onBack}
-          disabled={isSubmitting}
-        >
-          ← Back
-        </button>
-        <div className="flex gap-2">
-          {!hasAny && (
-            <button
-              className="bg-transparent text-white/40 border border-white/10 rounded-[10px] px-5 py-[11px] text-sm font-sans cursor-pointer transition-[border-color,color] duration-150 hover:border-white/25 hover:text-white/70"
-              onClick={onSkip}
-              disabled={isSubmitting}
-            >
-              Skip →
-            </button>
-          )}
-          {hasAny && (
-            <button
-              className="bg-[#20C997] text-[#0D1117] rounded-[10px] px-6 py-[11px] text-sm font-semibold font-sans cursor-pointer transition-[background,transform] duration-150 whitespace-nowrap hover:bg-[#18a87a] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
-              onClick={onSubmit}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Setting up…' : 'Get started'}
-            </button>
-          )}
-        </div>
-      </div>
+      <StepFooter
+        hasAny={hasAny}
+        isSubmitting={isSubmitting}
+        onBack={onBack}
+        onSkip={onSkip}
+        onSubmit={onSubmit}
+      />
     </div>
   );
 }

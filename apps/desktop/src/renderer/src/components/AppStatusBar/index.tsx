@@ -28,11 +28,89 @@ const spinTransition = {
   scale: iconTransition,
 };
 
-export function AppStatusBar() {
-  const [version, setVersion] = useState<AppVersionInfo | null>(null);
+function useSyncState(): { sync: SyncStatus | null; syncing: boolean } {
   const [sync, setSync] = useState<SyncStatus | null>(null);
   const [syncing, setSyncing] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const refresh = async () => {
+      const status = await cloudSyncService.getStatus().catch(() => null);
+      if (active && status)
+        setSync({
+          isActive: status.isActive,
+          lastSyncedAt: status.lastSyncedAt,
+          state: status.state,
+          error: status.error,
+        });
+    };
+    refresh();
+    const off = cloudSyncService.onSyncEvent((event: CloudSyncEvent) => {
+      if (!active) return;
+      if (event.type === CloudSyncEventType.Syncing) {
+        setSyncing(true);
+      } else if (
+        event.type === CloudSyncEventType.Success ||
+        event.type === CloudSyncEventType.BackgroundSync
+      ) {
+        setSyncing(false);
+        refresh();
+      } else if (event.type === CloudSyncEventType.Error) {
+        setSyncing(false);
+        refresh();
+      }
+    });
+    return () => {
+      active = false;
+      off();
+    };
+  }, []);
+
+  return { sync, syncing };
+}
+
+function SyncIcon({ syncing, connected }: { syncing: boolean; connected: boolean }) {
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      {syncing ? (
+        <motion.div
+          key="syncing"
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={{ opacity: 1, scale: 1, rotate: 360 }}
+          exit={{ opacity: 0, scale: 0.7 }}
+          transition={spinTransition}
+        >
+          <Loader2 className="size-3.5 shrink-0 text-[#20C997]" aria-hidden />
+        </motion.div>
+      ) : connected ? (
+        <motion.div
+          key="connected"
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.7 }}
+          transition={iconTransition}
+        >
+          <Cloud className="size-3.5 shrink-0 text-[#20C997]" aria-hidden />
+        </motion.div>
+      ) : (
+        <motion.div
+          key="disconnected"
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.7 }}
+          transition={iconTransition}
+        >
+          <CloudOff className="size-3.5 shrink-0" aria-hidden />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+export function AppStatusBar() {
+  const [version, setVersion] = useState<AppVersionInfo | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const { sync, syncing } = useSyncState();
 
   useEffect(() => {
     appService.getVersion().then(setVersion);
@@ -49,89 +127,16 @@ export function AppStatusBar() {
     };
   }, []);
 
-  useEffect(() => {
-    let active = true;
-
-    const refresh = async () => {
-      const status = await cloudSyncService.getStatus().catch(() => null);
-      if (active && status)
-        setSync({
-          isActive: status.isActive,
-          lastSyncedAt: status.lastSyncedAt,
-          state: status.state,
-          error: status.error,
-        });
-    };
-
-    refresh();
-
-    const off = cloudSyncService.onSyncEvent((event: CloudSyncEvent) => {
-      if (!active) return;
-      if (event.type === CloudSyncEventType.Syncing) {
-        setSyncing(true);
-      } else if (
-        event.type === CloudSyncEventType.Success ||
-        event.type === CloudSyncEventType.BackgroundSync
-      ) {
-        setSyncing(false);
-        refresh();
-      } else if (event.type === CloudSyncEventType.Error) {
-        setSyncing(false);
-        refresh();
-      }
-    });
-
-    return () => {
-      active = false;
-      off();
-    };
-  }, []);
-
   const label = syncLabel(sync, syncing, isOnline);
   const connected = sync?.isActive === true && isOnline && sync.state !== 'error' && !syncing;
 
   return (
     <div
       className="flex shrink-0 items-center border-t border-[rgba(255,255,255,0.07)] px-4 py-1 text-xs text-[rgba(255,255,255,0.4)]"
-      style={{
-        background: 'rgba(13,17,23,0.88)',
-        backdropFilter: 'blur(28px) saturate(200%)',
-      }}
+      style={{ background: 'rgba(13,17,23,0.88)', backdropFilter: 'blur(28px) saturate(200%)' }}
     >
       <div className="ml-auto flex items-center gap-2">
-        <AnimatePresence mode="wait" initial={false}>
-          {syncing ? (
-            <motion.div
-              key="syncing"
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1, rotate: 360 }}
-              exit={{ opacity: 0, scale: 0.7 }}
-              transition={spinTransition}
-            >
-              <Loader2 className="size-3.5 shrink-0 text-[#20C997]" aria-hidden />
-            </motion.div>
-          ) : connected ? (
-            <motion.div
-              key="connected"
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.7 }}
-              transition={iconTransition}
-            >
-              <Cloud className="size-3.5 shrink-0 text-[#20C997]" aria-hidden />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="disconnected"
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.7 }}
-              transition={iconTransition}
-            >
-              <CloudOff className="size-3.5 shrink-0" aria-hidden />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <SyncIcon syncing={syncing} connected={connected} />
         <span>
           {label}
           {!syncing && version && ` · v${version.version}`}

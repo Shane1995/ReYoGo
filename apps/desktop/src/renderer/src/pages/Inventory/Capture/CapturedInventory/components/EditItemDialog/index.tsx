@@ -13,6 +13,57 @@ type Props = {
   onClose: () => void;
 };
 
+function CategorySelect({
+  categoryId,
+  namedCategories,
+  types,
+  selectedCategory,
+  onChange,
+}: {
+  categoryId: string;
+  namedCategories: InventoryCategory[];
+  types: string[];
+  selectedCategory: InventoryCategory | undefined;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        Category
+      </label>
+      <select
+        value={categoryId}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          'h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40',
+          !categoryId && 'text-muted-foreground',
+        )}
+        required
+      >
+        <option value="" disabled>
+          Select a category…
+        </option>
+        {types.map((type) => (
+          <optgroup key={type} label={type}>
+            {namedCategories
+              .filter((c) => c.type === type)
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+          </optgroup>
+        ))}
+      </select>
+      {selectedCategory && (
+        <p className="text-xs text-muted-foreground">
+          Type: <span className="font-medium text-foreground">{selectedCategory.type}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function EditItemDialog({ item, categories, unitOptions, onSave, onClose }: Props) {
   const [name, setName] = useState(item?.name ?? '');
   const [categoryId, setCategoryId] = useState(item?.categoryId ?? '');
@@ -58,7 +109,6 @@ export function EditItemDialog({ item, categories, unitOptions, onSave, onClose 
             <XIcon className="size-4" />
           </button>
         </div>
-
         <form onSubmit={handleSubmit} className="space-y-4 px-5 py-5">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -73,42 +123,13 @@ export function EditItemDialog({ item, categories, unitOptions, onSave, onClose 
               required
             />
           </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Category
-            </label>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className={cn(
-                'h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40',
-                !categoryId && 'text-muted-foreground',
-              )}
-              required
-            >
-              <option value="" disabled>
-                Select a category…
-              </option>
-              {types.map((type) => (
-                <optgroup key={type} label={type}>
-                  {namedCategories
-                    .filter((c) => c.type === type)
-                    .map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                </optgroup>
-              ))}
-            </select>
-            {selectedCategory && (
-              <p className="text-xs text-muted-foreground">
-                Type: <span className="font-medium text-foreground">{selectedCategory.type}</span>
-              </p>
-            )}
-          </div>
-
+          <CategorySelect
+            categoryId={categoryId}
+            namedCategories={namedCategories}
+            types={types}
+            selectedCategory={selectedCategory}
+            onChange={setCategoryId}
+          />
           <div className="space-y-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Unit of measure
@@ -126,7 +147,6 @@ export function EditItemDialog({ item, categories, unitOptions, onSave, onClose 
               ))}
             </select>
           </div>
-
           <div className="flex justify-end gap-2 pt-1">
             <Button type="button" variant="outline" size="sm" onClick={onClose}>
               Cancel

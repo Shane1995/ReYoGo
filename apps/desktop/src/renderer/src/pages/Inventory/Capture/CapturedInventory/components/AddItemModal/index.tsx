@@ -43,6 +43,55 @@ function CategoryField({
   );
 }
 
+function ModalForm({
+  name,
+  categoryId,
+  unitOfMeasureId,
+  categories,
+  unitOptions,
+  onNameChange,
+  onCategoryChange,
+  onUomChange,
+  onSave,
+  onClose,
+}: {
+  name: string;
+  categoryId: string;
+  unitOfMeasureId: string;
+  categories: InventoryCategory[];
+  unitOptions: UnitOption[];
+  onNameChange: (v: string) => void;
+  onCategoryChange: (v: string) => void;
+  onUomChange: (v: string) => void;
+  onSave: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="mt-4 space-y-4">
+      <NameField value={name} placeholder="Item name" onChange={onNameChange} onSave={onSave} />
+      <CategoryField categories={categories} categoryId={categoryId} onChange={onCategoryChange} />
+      <UnitOfMeasureField
+        value={unitOfMeasureId}
+        unitOptions={unitOptions}
+        onChange={onUomChange}
+      />
+      <div className="mt-6 flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          variant="success"
+          onClick={onSave}
+          disabled={!name.trim() || !categoryId}
+        >
+          Save
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function AddItemModal({
   open,
   onClose,
@@ -91,28 +140,18 @@ export function AddItemModal({
         <p className="mt-1 text-sm text-muted-foreground">
           Add a new item to inventory. It will appear in the item dropdown.
         </p>
-        <div className="mt-4 space-y-4">
-          <NameField value={name} placeholder="Item name" onChange={setName} onSave={handleSave} />
-          <CategoryField categories={categories} categoryId={categoryId} onChange={setCategoryId} />
-          <UnitOfMeasureField
-            value={unitOfMeasureId}
-            unitOptions={unitOptions}
-            onChange={setUnitOfMeasureId}
-          />
-        </div>
-        <div className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="success"
-            onClick={handleSave}
-            disabled={!name.trim() || !categoryId}
-          >
-            Save
-          </Button>
-        </div>
+        <ModalForm
+          name={name}
+          categoryId={categoryId}
+          unitOfMeasureId={unitOfMeasureId}
+          categories={categories}
+          unitOptions={unitOptions}
+          onNameChange={setName}
+          onCategoryChange={setCategoryId}
+          onUomChange={setUnitOfMeasureId}
+          onSave={handleSave}
+          onClose={handleClose}
+        />
       </div>
     </div>
   );

@@ -8,126 +8,131 @@ import { InvoiceLinesTable } from './components/InvoiceLinesTable';
 import { InvoiceSummaryFooter } from './components/InvoiceSummaryFooter';
 import { suppliersService } from '@/services/suppliers';
 import type { Supplier } from '@reyogo/types';
+import type {
+  InventoryCategory,
+  InventoryItem,
+} from '@/pages/Inventory/Capture/CapturedInventory/types';
+import type { UnitOption } from '@/pages/Inventory/Capture/CapturedInventory/components/ItemsTable/types';
 
-export default function InvoicePage() {
-  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
-  const [itemModalOpen, setItemModalOpen] = useState(false);
+type InvoiceModalsProps = {
+  categoryModalOpen: boolean;
+  itemModalOpen: boolean;
+  categories: InventoryCategory[];
+  unitOptions: UnitOption[];
+  onCloseCategory: () => void;
+  onCloseItem: () => void;
+  onSaveCategory: (category: Omit<InventoryCategory, 'id'>) => void;
+  onSaveItem: (item: Omit<InventoryItem, 'id'>) => void;
+};
+
+function InvoiceModals({
+  categoryModalOpen,
+  itemModalOpen,
+  categories,
+  unitOptions,
+  onCloseCategory,
+  onCloseItem,
+  onSaveCategory,
+  onSaveItem,
+}: InvoiceModalsProps) {
+  return (
+    <>
+      <AddCategoryModal
+        open={categoryModalOpen}
+        onClose={onCloseCategory}
+        onSave={onSaveCategory}
+      />
+      <AddItemModal
+        open={itemModalOpen}
+        onClose={onCloseItem}
+        categories={categories}
+        unitOptions={unitOptions}
+        onSave={onSaveItem}
+      />
+    </>
+  );
+}
+
+function useSuppliers(entityId: string | null): Supplier[] {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-
-  const {
-    unitOptions,
-    categories,
-    addCategory,
-    addItem,
-    lines,
-    invoiceNumber,
-    setInvoiceNumber,
-    invoiceDate,
-    setInvoiceDate,
-    supplierId,
-    setSupplierId,
-    vatMode,
-    setVatMode,
-    selectedEntity,
-    entityId,
-    expandedResultLineIds,
-    isReused,
-    reuseNoticeDismissed,
-    setReuseNoticeDismissed,
-    isSaving,
-    isSavingDraft,
-    saveError,
-    toggleResultRow,
-    addLine,
-    removeLine,
-    updateLine,
-    clearForm,
-    isDirty,
-    canSave,
-    itemsWithCategory,
-    itemMetaMap,
-    invoiceSummary,
-    handleSave,
-    handleSaveDraft,
-  } = useInvoiceForm();
-
   useEffect(() => {
     if (!entityId) return;
     suppliersService.getSuppliers(entityId).then((s) => setSuppliers(s ?? []));
   }, [entityId]);
+  return suppliers;
+}
 
+export default function InvoicePage() {
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [itemModalOpen, setItemModalOpen] = useState(false);
+
+  const form = useInvoiceForm();
+  const suppliers = useSuppliers(form.entityId);
   const sortedItems = useMemo(
-    () => [...itemsWithCategory].sort((a, b) => a.name.localeCompare(b.name)),
-    [itemsWithCategory],
+    () => [...form.itemsWithCategory].sort((a, b) => a.name.localeCompare(b.name)),
+    [form.itemsWithCategory],
   );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <InvoiceHeader
-        invoiceNumber={invoiceNumber}
-        onInvoiceNumberChange={setInvoiceNumber}
-        invoiceDate={invoiceDate}
-        onInvoiceDateChange={setInvoiceDate}
-        supplierId={supplierId}
-        onSupplierChange={setSupplierId}
+        invoiceNumber={form.invoiceNumber}
+        onInvoiceNumberChange={form.setInvoiceNumber}
+        invoiceDate={form.invoiceDate}
+        onInvoiceDateChange={form.setInvoiceDate}
+        supplierId={form.supplierId}
+        onSupplierChange={form.setSupplierId}
         suppliers={suppliers}
-        vatMode={vatMode}
-        onVatModeChange={setVatMode}
+        vatMode={form.vatMode}
+        onVatModeChange={form.setVatMode}
         onAddCategory={() => setCategoryModalOpen(true)}
         onAddItem={() => setItemModalOpen(true)}
-        isDirty={isDirty}
-        onClear={clearForm}
+        isDirty={form.isDirty}
+        onClear={form.clearForm}
       />
-
-      {isReused && !reuseNoticeDismissed && (
-        <ReuseNotice onDismiss={() => setReuseNoticeDismissed(true)} />
+      {form.isReused && !form.reuseNoticeDismissed && (
+        <ReuseNotice onDismiss={() => form.setReuseNoticeDismissed(true)} />
       )}
-
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-4 my-4">
           <InvoiceLinesTable
-            lines={lines}
-            vatMode={vatMode}
-            vatRate={selectedEntity?.defaultVatRate ?? 0}
-            expandedLineIds={expandedResultLineIds}
+            lines={form.lines}
+            vatMode={form.vatMode}
+            vatRate={form.selectedEntity?.defaultVatRate ?? 0}
+            expandedLineIds={form.expandedResultLineIds}
             sortedItems={sortedItems}
-            entityId={entityId}
-            itemMetaMap={itemMetaMap}
-            onToggleExpand={toggleResultRow}
-            onUpdateLine={updateLine}
-            onRemoveLine={removeLine}
-            onAddLine={addLine}
+            entityId={form.entityId}
+            itemMetaMap={form.itemMetaMap}
+            onToggleExpand={form.toggleResultRow}
+            onUpdateLine={form.updateLine}
+            onRemoveLine={form.removeLine}
+            onAddLine={form.addLine}
           />
         </div>
       </div>
-
-      {saveError && (
+      {form.saveError && (
         <div className="shrink-0 border-t border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">
-          {saveError}
+          {form.saveError}
         </div>
       )}
-
       <InvoiceSummaryFooter
-        summary={invoiceSummary}
-        isSaving={isSaving}
-        isSavingDraft={isSavingDraft}
-        canSave={canSave}
-        isDirty={isDirty}
-        onSave={handleSave}
-        onSaveDraft={handleSaveDraft}
+        summary={form.invoiceSummary}
+        isSaving={form.isSaving}
+        isSavingDraft={form.isSavingDraft}
+        canSave={form.canSave}
+        isDirty={form.isDirty}
+        onSave={form.handleSave}
+        onSaveDraft={form.handleSaveDraft}
       />
-
-      <AddCategoryModal
-        open={categoryModalOpen}
-        onClose={() => setCategoryModalOpen(false)}
-        onSave={(category) => addCategory(category)}
-      />
-      <AddItemModal
-        open={itemModalOpen}
-        onClose={() => setItemModalOpen(false)}
-        categories={categories}
-        unitOptions={unitOptions}
-        onSave={(item) => addItem(item)}
+      <InvoiceModals
+        categoryModalOpen={categoryModalOpen}
+        itemModalOpen={itemModalOpen}
+        categories={form.categories}
+        unitOptions={form.unitOptions}
+        onCloseCategory={() => setCategoryModalOpen(false)}
+        onCloseItem={() => setItemModalOpen(false)}
+        onSaveCategory={(category) => form.addCategory(category)}
+        onSaveItem={(item) => form.addItem(item)}
       />
     </div>
   );
