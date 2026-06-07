@@ -4,22 +4,39 @@ import { ArrowLeftIcon } from 'lucide-react';
 import { stockMovementsService } from '@/services/stockMovements';
 import type { ItemCostHistory } from '@reyogo/types';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ReferenceLine,
-} from 'recharts';
 import { useAnalysisLines } from '../hooks/useAnalysisLines';
 import { buildItemGroups } from '../utils/buildItemGroups';
 import { overallChangePct } from '../utils/stats';
 import { fmt, fmtDate, fmtDateShort, fmtPct } from '../utils/format';
 import { changeCls } from '../utils/styles';
 import { AnalysisRoutes } from '@/components/AppRoutes/routePaths';
+import { TrendChart } from './components/TrendChart';
+import { TrendHistoryTable } from './components/TrendHistoryTable';
+
+function StatCard({
+  label,
+  value,
+  muted,
+  className,
+}: {
+  label: string;
+  value: string;
+  muted?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className="rounded-lg border border-[var(--nav-border)] bg-background p-3">
+      <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
+        {label}
+      </p>
+      <p
+        className={`mt-1.5 font-mono text-base font-semibold tabular-nums ${className ?? (muted ? 'text-muted-foreground' : 'text-foreground')}`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
 
 export default function ItemTrendPage() {
   const { itemId } = useParams<{ itemId: string }>();
@@ -159,154 +176,9 @@ export default function ItemTrendPage() {
         </div>
       )}
 
-      {chartData.length < 2 ? (
-        <div className="rounded-lg border border-[var(--nav-border)] bg-muted/10 p-10 text-center text-sm text-muted-foreground/60">
-          Not enough data to show a trend — capture this item on at least 2 invoices.
-        </div>
-      ) : (
-        <div className="rounded-lg border border-[var(--nav-border)] bg-background p-4">
-          <p className="mb-4 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
-            Price per unit over time (excl. VAT)
-          </p>
-          <ResponsiveContainer width="100%" height={260}>
-            <LineChart data={chartData} margin={{ top: 4, right: 16, bottom: 4, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--nav-border)" />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 11, fill: 'var(--muted-foreground)', fontFamily: 'DM Mono' }}
-                tickLine={false}
-                axisLine={{ stroke: 'var(--nav-border)' }}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: 'var(--muted-foreground)', fontFamily: 'DM Mono' }}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(v) => fmt(v)}
-                width={52}
-              />
-              <Tooltip content={<PriceTip uom={group.uom} />} />
-              <ReferenceLine
-                y={avgPrice}
-                stroke="var(--muted-foreground)"
-                strokeDasharray="4 4"
-                strokeOpacity={0.3}
-              />
-              <Line
-                type="monotone"
-                dataKey="price"
-                stroke="var(--primary)"
-                strokeWidth={2}
-                dot={{ r: 3.5, fill: 'var(--primary)', strokeWidth: 0 }}
-                activeDot={{ r: 5, fill: 'var(--primary)', strokeWidth: 0 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-          <p className="mt-2 text-center text-[11px] text-muted-foreground/40">
-            Dashed line = average ({fmt(avgPrice)})
-          </p>
-        </div>
-      )}
+      <TrendChart chartData={chartData} avgPrice={avgPrice} uom={group.uom} />
 
-      <div className="rounded-lg border border-[var(--nav-border)] overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[var(--nav-border)] bg-muted/30">
-              <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70">
-                Date
-              </th>
-              <th className="px-4 py-2.5 text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70">
-                Qty
-              </th>
-              <th className="px-4 py-2.5 text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70">
-                Unit price
-              </th>
-              <th className="px-4 py-2.5 text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70">
-                vs prev
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {group.entries.map((e, i) => {
-              const prev = i > 0 ? group.entries[i - 1]!.unitPrice : null;
-              const diff = prev !== null && prev > 0 ? ((e.unitPrice - prev) / prev) * 100 : null;
-              return (
-                <tr
-                  key={`${e.invoiceId}-${i}`}
-                  className="border-t border-[var(--nav-border)] hover:bg-muted/20 transition-colors"
-                >
-                  <td className="px-4 py-2.5 text-sm text-muted-foreground">{fmtDate(e.date)}</td>
-                  <td className="px-4 py-2.5 text-right font-mono text-sm tabular-nums text-muted-foreground">
-                    {e.quantity}
-                    {e.uom ? <span className="text-muted-foreground/50"> {e.uom}</span> : ''}
-                  </td>
-                  <td className="px-4 py-2.5 text-right font-mono text-sm tabular-nums font-medium text-foreground">
-                    {fmt(e.unitPrice)}
-                  </td>
-                  <td
-                    className={`px-4 py-2.5 text-right font-mono text-sm tabular-nums ${changeCls(diff)}`}
-                  >
-                    {diff === null ? (
-                      <span className="text-muted-foreground/30">—</span>
-                    ) : (
-                      fmtPct(diff)
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  muted,
-  className,
-}: {
-  label: string;
-  value: string;
-  muted?: boolean;
-  className?: string;
-}) {
-  return (
-    <div className="rounded-lg border border-[var(--nav-border)] bg-background p-3">
-      <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
-        {label}
-      </p>
-      <p
-        className={`mt-1.5 font-mono text-base font-semibold tabular-nums ${className ?? (muted ? 'text-muted-foreground' : 'text-foreground')}`}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function PriceTip({
-  active,
-  payload,
-  uom,
-}: {
-  active?: boolean;
-  payload?: { payload: { fullDate: string; price: number; qty: number } }[];
-  uom?: string;
-}) {
-  if (!active || !payload?.length) return null;
-  const { fullDate, price, qty } = payload[0]!.payload;
-  return (
-    <div className="rounded-lg border border-[var(--nav-border)] bg-background px-3 py-2 text-sm shadow-md">
-      <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60 mb-1">
-        {fullDate}
-      </p>
-      <p className="font-mono font-semibold tabular-nums text-foreground">
-        {fmt(price)}
-        {uom ? <span className="text-muted-foreground/60"> / {uom}</span> : ''}
-      </p>
-      <p className="text-[11px] text-muted-foreground/60 mt-0.5">qty {qty}</p>
+      <TrendHistoryTable entries={group.entries} />
     </div>
   );
 }
