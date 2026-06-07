@@ -13,6 +13,7 @@ import type {
   InventoryItem,
 } from '@/pages/Inventory/Capture/CapturedInventory/types';
 import type { UnitOption } from '@/pages/Inventory/Capture/CapturedInventory/components/ItemsTable/types';
+import type { ItemOption } from './components/ItemAutocomplete';
 
 type InvoiceModalsProps = {
   categoryModalOpen: boolean;
@@ -62,6 +63,36 @@ function useSuppliers(entityId: string | null): Supplier[] {
   return suppliers;
 }
 
+type InvoiceFormReturn = ReturnType<typeof useInvoiceForm>;
+
+function InvoiceBody({
+  form,
+  sortedItems,
+}: {
+  form: InvoiceFormReturn;
+  sortedItems: ItemOption[];
+}) {
+  return (
+    <div className="min-h-0 flex-1 overflow-auto">
+      <div className="mx-4 my-4">
+        <InvoiceLinesTable
+          lines={form.lines}
+          vatMode={form.vatMode}
+          vatRate={form.selectedEntity?.defaultVatRate ?? 0}
+          expandedLineIds={form.expandedResultLineIds}
+          sortedItems={sortedItems}
+          entityId={form.entityId}
+          itemMetaMap={form.itemMetaMap}
+          onToggleExpand={form.toggleResultRow}
+          onUpdateLine={form.updateLine}
+          onRemoveLine={form.removeLine}
+          onAddLine={form.addLine}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function InvoicePage() {
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [itemModalOpen, setItemModalOpen] = useState(false);
@@ -93,23 +124,7 @@ export default function InvoicePage() {
       {form.isReused && !form.reuseNoticeDismissed && (
         <ReuseNotice onDismiss={() => form.setReuseNoticeDismissed(true)} />
       )}
-      <div className="min-h-0 flex-1 overflow-auto">
-        <div className="mx-4 my-4">
-          <InvoiceLinesTable
-            lines={form.lines}
-            vatMode={form.vatMode}
-            vatRate={form.selectedEntity?.defaultVatRate ?? 0}
-            expandedLineIds={form.expandedResultLineIds}
-            sortedItems={sortedItems}
-            entityId={form.entityId}
-            itemMetaMap={form.itemMetaMap}
-            onToggleExpand={form.toggleResultRow}
-            onUpdateLine={form.updateLine}
-            onRemoveLine={form.removeLine}
-            onAddLine={form.addLine}
-          />
-        </div>
-      </div>
+      <InvoiceBody form={form} sortedItems={sortedItems} />
       {form.saveError && (
         <div className="shrink-0 border-t border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">
           {form.saveError}

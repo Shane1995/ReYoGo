@@ -77,37 +77,27 @@ function TableActionBar({
   );
 }
 
-export default function AddInventoryPage() {
+function useAddInventoryData() {
   const { categories, items, unitOptions, addItem, addCategory, inventoryTypes } = useInventory();
   const { selectedEntityId: entityId } = useEntities();
-  const [mode, setMode] = useState<Mode>('items');
-
   const namedCategories = categories
     .filter((c) => c.name.trim())
     .sort((a, b) => a.name.localeCompare(b.name));
   const categoryTypes = inventoryTypes.filter((t) => namedCategories.some((c) => c.type === t));
+  const items_ = useItemRows({ items, entityId, addItem });
+  const cats_ = useCategoryRows({ categories, addCategory });
+  return { namedCategories, categoryTypes, unitOptions, items_, cats_ };
+}
 
+export default function AddInventoryPage() {
+  const [mode, setMode] = useState<Mode>('items');
   const {
-    itemRows,
-    itemDupes,
-    canSubmitItems,
-    hasIncompleteItemRows,
-    addItemRow,
-    removeItemRow,
-    updateItemRow,
-    submitItems,
-    clearItemRows,
-  } = useItemRows({ items, entityId, addItem });
-  const {
-    catRows,
-    catDupes,
-    canSubmitCats,
-    addCatRow,
-    removeCatRow,
-    updateCatRow,
-    submitCats,
-    clearCatRows,
-  } = useCategoryRows({ categories, addCategory });
+    namedCategories,
+    categoryTypes,
+    unitOptions,
+    items_: i,
+    cats_: c,
+  } = useAddInventoryData();
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -118,32 +108,32 @@ export default function AddInventoryPage() {
           <div className="rounded-lg border border-[var(--nav-border)] bg-background">
             {mode === 'items' ? (
               <ItemsSection
-                itemRows={itemRows}
-                itemDupes={itemDupes}
+                itemRows={i.itemRows}
+                itemDupes={i.itemDupes}
                 namedCategories={namedCategories}
                 categoryTypes={categoryTypes}
                 unitOptions={unitOptions}
-                onUpdateRow={updateItemRow}
-                onRemoveRow={removeItemRow}
-                onAddRow={addItemRow}
+                onUpdateRow={i.updateItemRow}
+                onRemoveRow={i.removeItemRow}
+                onAddRow={i.addItemRow}
               />
             ) : (
               <CategoriesSection
-                catRows={catRows}
-                catDupes={catDupes}
-                onUpdateRow={updateCatRow}
-                onRemoveRow={removeCatRow}
-                onAddRow={addCatRow}
+                catRows={c.catRows}
+                catDupes={c.catDupes}
+                onUpdateRow={c.updateCatRow}
+                onRemoveRow={c.removeCatRow}
+                onAddRow={c.addCatRow}
               />
             )}
             <TableActionBar
               mode={mode}
-              hasIncompleteItemRows={hasIncompleteItemRows}
-              canSubmitItems={canSubmitItems}
-              canSubmitCats={canSubmitCats}
-              onAddRow={mode === 'items' ? addItemRow : addCatRow}
-              onClear={mode === 'items' ? clearItemRows : clearCatRows}
-              onSubmit={mode === 'items' ? submitItems : submitCats}
+              hasIncompleteItemRows={i.hasIncompleteItemRows}
+              canSubmitItems={i.canSubmitItems}
+              canSubmitCats={c.canSubmitCats}
+              onAddRow={mode === 'items' ? i.addItemRow : c.addCatRow}
+              onClear={mode === 'items' ? i.clearItemRows : c.clearCatRows}
+              onSubmit={mode === 'items' ? i.submitItems : c.submitCats}
             />
           </div>
         </div>

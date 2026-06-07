@@ -64,16 +64,93 @@ function CategorySelect({
   );
 }
 
-export function EditItemDialog({ item, categories, unitOptions, onSave, onClose }: Props) {
+function UomSelect({
+  value,
+  unitOptions,
+  onChange,
+}: {
+  value: string;
+  unitOptions: UnitOption[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        Unit of measure
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40 text-muted-foreground"
+      >
+        <option value="">None</option>
+        {unitOptions.map((u) => (
+          <option key={u.id} value={u.id}>
+            {u.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function ItemNameField({
+  nameRef,
+  value,
+  onChange,
+}: {
+  nameRef: React.RefObject<HTMLInputElement | null>;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        Item name
+      </label>
+      <input
+        ref={nameRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="e.g. Chicken breast"
+        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
+        required
+      />
+    </div>
+  );
+}
+
+function DialogHeader({ isEdit, onClose }: { isEdit: boolean; onClose: () => void }) {
+  return (
+    <div className="flex items-center justify-between border-b border-border px-5 py-4">
+      <h2 className="text-base font-semibold text-foreground">
+        {isEdit ? 'Edit item' : 'Add item'}
+      </h2>
+      <button
+        type="button"
+        onClick={onClose}
+        className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+      >
+        <XIcon className="size-4" />
+      </button>
+    </div>
+  );
+}
+
+function useItemDialogState(item: InventoryItem | null) {
   const [name, setName] = useState(item?.name ?? '');
   const [categoryId, setCategoryId] = useState(item?.categoryId ?? '');
   const [unitOfMeasureId, setUnitOfMeasureId] = useState(item?.unitOfMeasureId ?? '');
   const nameRef = useRef<HTMLInputElement>(null);
-
   useEffect(() => {
     nameRef.current?.focus();
   }, []);
+  return { name, setName, categoryId, setCategoryId, unitOfMeasureId, setUnitOfMeasureId, nameRef };
+}
 
+export function EditItemDialog({ item, categories, unitOptions, onSave, onClose }: Props) {
+  const { name, setName, categoryId, setCategoryId, unitOfMeasureId, setUnitOfMeasureId, nameRef } =
+    useItemDialogState(item);
   const namedCategories = categories.filter((c) => c.name.trim());
   const selectedCategory = namedCategories.find((c) => c.id === categoryId);
   const types = Array.from(new Set(namedCategories.map((c) => c.type)));
@@ -97,32 +174,9 @@ export function EditItemDialog({ item, categories, unitOptions, onSave, onClose 
       }}
     >
       <div className="w-full max-w-md rounded-xl border border-border bg-background shadow-xl">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <h2 className="text-base font-semibold text-foreground">
-            {item ? 'Edit item' : 'Add item'}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <XIcon className="size-4" />
-          </button>
-        </div>
+        <DialogHeader isEdit={!!item} onClose={onClose} />
         <form onSubmit={handleSubmit} className="space-y-4 px-5 py-5">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Item name
-            </label>
-            <input
-              ref={nameRef}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Chicken breast"
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-              required
-            />
-          </div>
+          <ItemNameField nameRef={nameRef} value={name} onChange={setName} />
           <CategorySelect
             categoryId={categoryId}
             namedCategories={namedCategories}
@@ -130,23 +184,11 @@ export function EditItemDialog({ item, categories, unitOptions, onSave, onClose 
             selectedCategory={selectedCategory}
             onChange={setCategoryId}
           />
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Unit of measure
-            </label>
-            <select
-              value={unitOfMeasureId}
-              onChange={(e) => setUnitOfMeasureId(e.target.value)}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40 text-muted-foreground"
-            >
-              <option value="">None</option>
-              {unitOptions.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <UomSelect
+            value={unitOfMeasureId}
+            unitOptions={unitOptions}
+            onChange={setUnitOfMeasureId}
+          />
           <div className="flex justify-end gap-2 pt-1">
             <Button type="button" variant="outline" size="sm" onClick={onClose}>
               Cancel
