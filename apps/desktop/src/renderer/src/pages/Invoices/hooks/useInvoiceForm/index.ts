@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
 import type { InventoryItem } from '@/pages/Inventory/Capture/CapturedInventory/types';
@@ -17,10 +17,12 @@ export function useInvoiceForm() {
   const { items, categories, unitOptions, addCategory, addItem } = useInventory();
   const { entities, selectedEntityId: entityId } = useEntities();
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const locationState = (location.state as { templateLines?: ProcessReceiptLine[] } | null) ?? null;
+  const locationState =
+    (location.state as { templateLines?: ProcessReceiptLine[]; isReuse?: boolean } | null) ?? null;
   const templateLines = locationState?.templateLines;
-  const isReused = !!templateLines;
+  const isReused = locationState?.isReuse === true;
 
   const initialLines = (() => {
     if (templateLines && templateLines.length > 0) return templateLines;
@@ -45,7 +47,24 @@ export function useInvoiceForm() {
   const [reuseNoticeDismissed, setReuseNoticeDismissed] = useState(false);
   const [lastUnitCosts, setLastUnitCosts] = useState<Record<string, number>>({});
 
-  const { lines, setLines, addLine, removeLine, updateLine } = useLineManager(initialLines);
+  const { lines, setLines, addLine, removeLine, updateLine } = useLineManager(
+    initialLines,
+    vatMode,
+  );
+
+  // When navigating here from inventory the component stays mounted (same route), so useState
+  // initialisers don't re-run. Re-sync on location.key — a stable string that only changes on
+  // actual navigation, never on local state updates — so clearForm can't accidentally retrigger it.
+  useEffect(() => {
+    if (!templateLines || templateLines.length === 0) return;
+    setLines(templateLines);
+    setInvoiceNumber('');
+    setInvoiceDate('');
+    setSupplierId('');
+    setVatModeState(VatMode.Exclusive);
+    setReuseNoticeDismissed(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key]);
 
   useEffect(() => {
     invoiceService
@@ -111,7 +130,10 @@ export function useInvoiceForm() {
     setVatModeState(VatMode.Exclusive);
     setExpandedResultLineIds(new Set());
     clearDraft();
-  }, [clearDraft, setLines]);
+    // Replace the current history entry with no state so that location.state.templateLines
+    // doesn't survive a page reload (createHashRouter persists history state across Cmd+R).
+    navigate(location.pathname, { replace: true, state: null });
+  }, [clearDraft, setLines, navigate, location.pathname]);
 
   const isDirty =
     lines.some((l) => l.itemId) || !!invoiceNumber.trim() || !!invoiceDate || !!supplierId;
