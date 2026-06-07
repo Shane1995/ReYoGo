@@ -16,8 +16,11 @@ function isInWindow(date: Date, from: Date | null, to: Date | null): boolean {
   return true;
 }
 
-function buildEntry(line: InvoiceLineWithDate, item: ItemLookup | undefined): ItemEntry {
-  const date = new Date(line.invoiceDate);
+function buildEntry(
+  line: InvoiceLineWithDate,
+  item: ItemLookup | undefined,
+  date: Date,
+): ItemEntry {
   return {
     invoiceId: line.invoiceId,
     date,
@@ -41,7 +44,7 @@ function upsertGroup(
       itemId: line.inventoryItemId,
       name: item?.name ?? line.inventoryItemId,
       categoryType: line.categoryType ?? 'other',
-      categoryName: line.categoryName ?? undefined,
+      categoryName: line.categoryName === null ? undefined : line.categoryName,
       entries: [],
     });
   }
@@ -68,7 +71,7 @@ export function buildItemGroups(
     const date = new Date(line.invoiceDate);
     if (!isInWindow(date, from, to)) continue;
     const item = itemById.get(line.inventoryItemId);
-    upsertGroup(map, line, item, buildEntry(line, item));
+    upsertGroup(map, line, item, buildEntry(line, item, date));
   }
 
   return Array.from(map.values())
