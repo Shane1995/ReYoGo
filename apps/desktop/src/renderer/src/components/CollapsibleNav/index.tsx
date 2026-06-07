@@ -67,6 +67,27 @@ function NavItemList({
   );
 }
 
+function CollapseToggle({ collapsed, onClick }: { collapsed: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center justify-center gap-2 rounded-lg bg-[rgba(255,255,255,0.05)] px-3 py-2 text-xs font-medium text-[rgba(255,255,255,0.4)] transition-colors hover:bg-[rgba(255,255,255,0.09)] hover:text-[rgba(255,255,255,0.75)]"
+      aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+    >
+      <motion.span animate={{ rotate: collapsed ? 0 : 180 }} transition={spring} className="flex">
+        <ChevronRightIcon className="size-3.5" />
+      </motion.span>
+      <AnimatePresence initial={false}>
+        {!collapsed && (
+          <motion.span key="label" {...labelAnim} className="whitespace-nowrap">
+            Collapse
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </button>
+  );
+}
+
 export function CollapsibleNav({
   navItems,
   storageKey,
@@ -85,25 +106,6 @@ export function CollapsibleNav({
       localStorage.setItem(storageKey, String(next));
       return next;
     });
-
-  const toggleButton = (
-    <button
-      onClick={toggle}
-      className="flex w-full items-center justify-center gap-2 rounded-lg bg-[rgba(255,255,255,0.05)] px-3 py-2 text-xs font-medium text-[rgba(255,255,255,0.4)] transition-colors hover:bg-[rgba(255,255,255,0.09)] hover:text-[rgba(255,255,255,0.75)]"
-      aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-    >
-      <motion.span animate={{ rotate: collapsed ? 0 : 180 }} transition={spring} className="flex">
-        <ChevronRightIcon className="size-3.5" />
-      </motion.span>
-      <AnimatePresence initial={false}>
-        {!collapsed && (
-          <motion.span key="label" {...labelAnim} className="whitespace-nowrap">
-            Collapse
-          </motion.span>
-        )}
-      </AnimatePresence>
-    </button>
-  );
 
   return (
     <motion.aside
@@ -128,7 +130,9 @@ export function CollapsibleNav({
                 />
               </div>
             )}
-            <div className="p-2">{toggleButton}</div>
+            <div className="p-2">
+              <CollapseToggle collapsed={collapsed} onClick={toggle} />
+            </div>
           </div>
         </>
       ) : (
@@ -141,7 +145,9 @@ export function CollapsibleNav({
               iconClassName={iconClassName}
             />
           )}
-          <div className="mt-auto">{toggleButton}</div>
+          <div className="mt-auto">
+            <CollapseToggle collapsed={collapsed} onClick={toggle} />
+          </div>
         </div>
       )}
     </motion.aside>

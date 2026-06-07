@@ -23,6 +23,52 @@ function avatarColor(index: number) {
   return AVATAR_COLORS[index % AVATAR_COLORS.length] ?? FALLBACK_COLOR;
 }
 
+function EntityRowActions({
+  editing,
+  saving,
+  name,
+  onCancel,
+  onSave,
+  onStartEdit,
+}: {
+  editing: boolean;
+  saving: boolean;
+  name: string;
+  onCancel: () => void;
+  onSave: () => void;
+  onStartEdit: () => void;
+}) {
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1.5 shrink-0">
+        <button
+          onClick={onCancel}
+          className="h-7 px-2.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={onSave}
+          disabled={saving || !name.trim()}
+          className="h-7 px-2.5 rounded-md text-xs font-semibold bg-primary text-primary-foreground disabled:opacity-40 hover:bg-[var(--primary-hover)] transition-colors"
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-1.5 shrink-0">
+      <button
+        onClick={onStartEdit}
+        className="h-7 px-2.5 rounded-md text-xs text-muted-foreground border border-transparent hover:border-border hover:text-foreground opacity-0 group-hover:opacity-100 transition-all"
+      >
+        Rename
+      </button>
+    </div>
+  );
+}
+
 function EntityRow({
   entity,
   index,
@@ -74,33 +120,14 @@ function EntityRow({
           <span className="text-sm font-medium text-foreground truncate">{entity.name}</span>
         )}
       </div>
-
-      <div className="flex items-center gap-1.5 shrink-0">
-        {editing ? (
-          <>
-            <button
-              onClick={() => setEditing(false)}
-              className="h-7 px-2.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleRename}
-              disabled={saving || !name.trim()}
-              className="h-7 px-2.5 rounded-md text-xs font-semibold bg-primary text-primary-foreground disabled:opacity-40 hover:bg-[var(--primary-hover)] transition-colors"
-            >
-              {saving ? 'Saving…' : 'Save'}
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={() => setEditing(true)}
-            className="h-7 px-2.5 rounded-md text-xs text-muted-foreground border border-transparent hover:border-border hover:text-foreground opacity-0 group-hover:opacity-100 transition-all"
-          >
-            Rename
-          </button>
-        )}
-      </div>
+      <EntityRowActions
+        editing={editing}
+        saving={saving}
+        name={name}
+        onCancel={() => setEditing(false)}
+        onSave={handleRename}
+        onStartEdit={() => setEditing(true)}
+      />
     </div>
   );
 }

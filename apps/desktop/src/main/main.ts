@@ -58,53 +58,52 @@ function createWindow(): BrowserWindow {
   return window;
 }
 
-app.whenReady().then(() => {
-  registerIPC();
-  createWindow();
+function initDbState() {
+  return {
+    dbReady: false,
+    dbSetupNeeded: false,
+    dbError: null as string | null,
+    dbAuthError: null as string | null,
+    pendingSender: null as Electron.WebContents | null,
+  };
+}
 
-  if (app.isPackaged) {
-    autoUpdater.checkForUpdates();
-  }
+function buildTrySendDbReady(state: ReturnType<typeof initDbState>) {
+  return () => {
+    if (!state.pendingSender || state.pendingSender.isDestroyed()) return;
+    const signal: [string, string?] | null =
+      state.dbAuthError !== null
+        ? [DB_AUTH_ERROR_CHANNEL, state.dbAuthError]
+        : state.dbError !== null
+          ? [DB_INIT_ERROR_CHANNEL, state.dbError]
+          : state.dbReady
+            ? [getDbReadyChannel()]
+            : state.dbSetupNeeded
+              ? [DB_SETUP_NEEDED_CHANNEL]
+              : null;
+    if (!signal) return;
+    state.pendingSender.send(...signal);
+    state.pendingSender = null;
+  };
+}
 
-  let dbReady = false;
-  let dbSetupNeeded = false;
-  let dbError: string | null = null;
-  let dbAuthError: string | null = null;
-  let pendingSender: Electron.WebContents | null = null;
+function setupDbLifecycle() {
+  const state = initDbState();
+  const trySendDbReady = buildTrySendDbReady(state);
 
   const onDbReady = () => {
     if (isReplicaMode() && !net.isOnline()) markOffline();
-    dbReady = true;
-    dbSetupNeeded = false;
+    state.dbReady = true;
+    state.dbSetupNeeded = false;
     trySendDbReady();
     repairUomLinksIfNeeded().catch((err) => {
       console.error('[ReYoGo] UoM repair failed:', err);
     });
   };
 
-  const trySendDbReady = () => {
-    if (!pendingSender || pendingSender.isDestroyed()) return;
-
-    const signal: [string, string?] | null =
-      dbAuthError !== null
-        ? [DB_AUTH_ERROR_CHANNEL, dbAuthError]
-        : dbError !== null
-          ? [DB_INIT_ERROR_CHANNEL, dbError]
-          : dbReady
-            ? [getDbReadyChannel()]
-            : dbSetupNeeded
-              ? [DB_SETUP_NEEDED_CHANNEL]
-              : null;
-
-    if (!signal) return;
-    pendingSender.send(...signal);
-    pendingSender = null;
-  };
-
   ipcMain.on(DB_REQUEST_READY_CHANNEL, (event) => {
-    pendingSender = event.sender;
-    // Renderer reloaded after wizard connect — reinitialise() already ran, signal ready
-    if (!dbReady && isDbInitialized()) {
+    state.pendingSender = event.sender;
+    if (!state.dbReady && isDbInitialized()) {
       onDbReady();
       return;
     }
@@ -112,7 +111,7 @@ app.whenReady().then(() => {
   });
 
   if (!hasCloudCredentials()) {
-    dbSetupNeeded = true;
+    state.dbSetupNeeded = true;
     trySendDbReady();
   } else {
     initDatabase()
@@ -121,15 +120,24 @@ app.whenReady().then(() => {
         console.error('[ReYoGo] Failed to initialize database:', err);
         const isAuthError = (err as { isCloudAuthError?: boolean }).isCloudAuthError === true;
         if (isAuthError) {
-          // initDatabase already cleared credentials — treat as setup needed so the
-          // wizard appears and the user can reconnect with a fresh token.
-          dbSetupNeeded = true;
+          state.dbSetupNeeded = true;
         } else {
-          dbError = err instanceof Error ? err.message : String(err);
+          state.dbError = err instanceof Error ? err.message : String(err);
         }
         trySendDbReady();
       });
   }
+}
+
+app.whenReady().then(() => {
+  registerIPC();
+  createWindow();
+
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdates();
+  }
+
+  setupDbLifecycle();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

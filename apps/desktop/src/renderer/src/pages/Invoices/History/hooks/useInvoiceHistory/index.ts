@@ -8,15 +8,10 @@ import { type RowMode } from '../../types';
 import { useInvoiceFilters } from '../useInvoiceFilters';
 import { useInvoiceActions } from '../useInvoiceActions';
 
-export function useInvoiceHistory() {
+function useLoadInvoices() {
   const [invoices, setInvoices] = useState<ICapturedInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [detailCache, setDetailCache] = useState<Record<string, ICapturedInvoiceWithLines>>({});
-  const [rowMode, setRowModeState] = useState<Record<string, RowMode>>({});
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-
-  const filters = useInvoiceFilters();
-  const { entities } = useEntities();
 
   const loadInvoices = useCallback(async () => {
     const list = await invoiceService.getInvoicesWithLines();
@@ -42,7 +37,14 @@ export function useInvoiceHistory() {
     };
   }, [loadInvoices]);
 
+  return { invoices, loading, detailCache, setDetailCache, loadInvoices };
+}
+
+function useLoadSuppliers() {
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const { entities } = useEntities();
   const entityIds = entities.map((e) => e.id).join(',');
+
   useEffect(() => {
     if (!entities.length) return;
     Promise.all(entities.map((e) => suppliersService.getSuppliers(e.id)))
@@ -50,6 +52,15 @@ export function useInvoiceHistory() {
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityIds]);
+
+  return suppliers;
+}
+
+export function useInvoiceHistory() {
+  const { invoices, loading, detailCache, setDetailCache, loadInvoices } = useLoadInvoices();
+  const [rowMode, setRowModeState] = useState<Record<string, RowMode>>({});
+  const suppliers = useLoadSuppliers();
+  const filters = useInvoiceFilters();
 
   const setMode = useCallback((id: string, mode: RowMode) => {
     setRowModeState((prev) => ({ ...prev, [id]: mode }));
