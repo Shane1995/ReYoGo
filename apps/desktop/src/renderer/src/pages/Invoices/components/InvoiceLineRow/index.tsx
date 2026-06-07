@@ -98,114 +98,70 @@ export function InvoiceLineRow({
     }
   }
 
-  function buildQtyKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    const val = e.currentTarget.value;
-    const pos = e.currentTarget.selectionStart;
+  function buildFieldKeyDown(field: 'qty' | 'total') {
+    return function (e: React.KeyboardEvent<HTMLInputElement>) {
+      const val = e.currentTarget.value;
+      const pos = e.currentTarget.selectionStart;
 
-    if (confirmingDelete) {
-      if (e.key === 'Escape') {
+      if (confirmingDelete) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setConfirmingDelete(false);
+          return;
+        }
+        if (e.key === 'Enter' || (e.key === 'Backspace' && val === '')) {
+          e.preventDefault();
+          onRemove();
+          return;
+        }
+      }
+
+      if (e.key === 'Backspace' && val === '') {
         e.preventDefault();
-        setConfirmingDelete(false);
+        if (isOnlyRow) return;
+        if (isRowEmpty) {
+          onRemove();
+        } else {
+          setConfirmingDelete(true);
+        }
         return;
       }
-      if (e.key === 'Enter' || (e.key === 'Backspace' && val === '')) {
+
+      if (e.key === 'ArrowLeft' && (pos === 0 || pos === null)) {
         e.preventDefault();
-        onRemove();
+        const prevId = field === 'qty' ? `invoice-item-${line.id}` : `invoice-qty-${line.id}`;
+        document.getElementById(prevId)?.focus();
         return;
       }
-    }
-
-    if (e.key === 'Backspace' && val === '') {
-      e.preventDefault();
-      if (isOnlyRow) return;
-      if (isRowEmpty) {
-        onRemove();
-      } else {
-        setConfirmingDelete(true);
-      }
-      return;
-    }
-
-    if (e.key === 'ArrowLeft' && (pos === 0 || pos === null)) {
-      e.preventDefault();
-      document.getElementById(`invoice-item-${line.id}`)?.focus();
-      return;
-    }
-    if (e.key === 'ArrowRight' && (pos === val.length || pos === null)) {
-      e.preventDefault();
-      document.getElementById(`invoice-total-${line.id}`)?.focus();
-      return;
-    }
-
-    if (e.key === 'Enter' || e.key === 'ArrowDown') {
-      e.preventDefault();
-      onNavigateNext('qty');
-      return;
-    }
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      onNavigatePrev('qty');
-      return;
-    }
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      document.getElementById(`invoice-total-${line.id}`)?.focus();
-    }
-  }
-
-  function buildTotalKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    const val = e.currentTarget.value;
-    const pos = e.currentTarget.selectionStart;
-
-    if (confirmingDelete) {
-      if (e.key === 'Escape') {
+      if (e.key === 'ArrowRight' && (pos === val.length || pos === null)) {
         e.preventDefault();
-        setConfirmingDelete(false);
+        if (field === 'qty') {
+          document.getElementById(`invoice-total-${line.id}`)?.focus();
+        } else {
+          onNavigateToNextRowItem();
+        }
         return;
       }
-      if (e.key === 'Enter' || (e.key === 'Backspace' && val === '')) {
+
+      if (e.key === 'Enter' || e.key === 'ArrowDown') {
         e.preventDefault();
-        onRemove();
+        onNavigateNext(field);
         return;
       }
-    }
-
-    if (e.key === 'Backspace' && val === '') {
-      e.preventDefault();
-      if (isOnlyRow) return;
-      if (isRowEmpty) {
-        onRemove();
-      } else {
-        setConfirmingDelete(true);
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        onNavigatePrev(field);
+        return;
       }
-      return;
-    }
-
-    if (e.key === 'ArrowLeft' && (pos === 0 || pos === null)) {
-      e.preventDefault();
-      document.getElementById(`invoice-qty-${line.id}`)?.focus();
-      return;
-    }
-    if (e.key === 'ArrowRight' && (pos === val.length || pos === null)) {
-      e.preventDefault();
-      onNavigateToNextRowItem();
-      return;
-    }
-
-    if (e.key === 'Enter' || e.key === 'ArrowDown') {
-      e.preventDefault();
-      onNavigateNext('total');
-      return;
-    }
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      onNavigatePrev('total');
-      return;
-    }
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      onAddLine();
-    }
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        if (field === 'qty') {
+          document.getElementById(`invoice-total-${line.id}`)?.focus();
+        } else {
+          onAddLine();
+        }
+      }
+    };
   }
 
   return (
@@ -272,7 +228,7 @@ export function InvoiceLineRow({
               setConfirmingDelete(false);
               onUpdate({ quantity: e.target.value === '' ? 0 : Number(e.target.value) });
             }}
-            onKeyDown={buildQtyKeyDown}
+            onKeyDown={buildFieldKeyDown('qty')}
             onBlur={handleBlurRow}
             className={cn(
               inputClass,
@@ -321,7 +277,7 @@ export function InvoiceLineRow({
               setConfirmingDelete(false);
               onUpdate({ totalVatExclude: e.target.value === '' ? 0 : Number(e.target.value) });
             }}
-            onKeyDown={buildTotalKeyDown}
+            onKeyDown={buildFieldKeyDown('total')}
             onBlur={handleBlurRow}
             className={cn(
               inputClass,
