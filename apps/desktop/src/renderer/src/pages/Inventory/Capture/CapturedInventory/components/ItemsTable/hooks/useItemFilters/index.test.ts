@@ -21,6 +21,7 @@ function makeCategory(overrides: Partial<InventoryCategory> = {}): InventoryCate
 
 const emptyCostMap = new Map<string, ItemCostEntry>();
 const emptyStockMap = new Map<string, number>();
+const defaultTypes = ['food', 'beverage', 'non-food'];
 
 describe('useItemFilters', () => {
   describe('flatItems', () => {
@@ -31,6 +32,7 @@ describe('useItemFilters', () => {
           categories: [makeCategory()],
           costMap: emptyCostMap,
           stockMap: emptyStockMap,
+          inventoryTypes: defaultTypes,
         }),
       );
       expect(result.current.filteredItems[0]!.categoryName).toBe('Poultry');
@@ -43,6 +45,7 @@ describe('useItemFilters', () => {
           categories: [],
           costMap: emptyCostMap,
           stockMap: emptyStockMap,
+          inventoryTypes: defaultTypes,
         }),
       );
       expect(result.current.filteredItems[0]!.categoryName).toBe('—');
@@ -67,6 +70,7 @@ describe('useItemFilters', () => {
           categories: [makeCategory()],
           costMap,
           stockMap,
+          inventoryTypes: defaultTypes,
         }),
       );
       expect(result.current.filteredItems[0]!.lastCostPerUnit).toBe(12.5);
@@ -80,7 +84,13 @@ describe('useItemFilters', () => {
     it('returns all items when search is empty', () => {
       const items = [makeItem({ id: 'a', name: 'Apple' }), makeItem({ id: 'b', name: 'Banana' })];
       const { result } = renderHook(() =>
-        useItemFilters({ items, categories: [], costMap: emptyCostMap, stockMap: emptyStockMap }),
+        useItemFilters({
+          items,
+          categories: [],
+          costMap: emptyCostMap,
+          stockMap: emptyStockMap,
+          inventoryTypes: defaultTypes,
+        }),
       );
       expect(result.current.filteredItems).toHaveLength(2);
     });
@@ -88,7 +98,13 @@ describe('useItemFilters', () => {
     it('filters case-insensitively by name', () => {
       const items = [makeItem({ id: 'a', name: 'Apple' }), makeItem({ id: 'b', name: 'Banana' })];
       const { result } = renderHook(() =>
-        useItemFilters({ items, categories: [], costMap: emptyCostMap, stockMap: emptyStockMap }),
+        useItemFilters({
+          items,
+          categories: [],
+          costMap: emptyCostMap,
+          stockMap: emptyStockMap,
+          inventoryTypes: defaultTypes,
+        }),
       );
       act(() => result.current.handleFilterChange('search', 'apple'));
       expect(result.current.filteredItems).toHaveLength(1);
@@ -100,7 +116,13 @@ describe('useItemFilters', () => {
     it('filters to only matching type', () => {
       const items = [makeItem({ id: 'a', type: 'food' }), makeItem({ id: 'b', type: 'beverage' })];
       const { result } = renderHook(() =>
-        useItemFilters({ items, categories: [], costMap: emptyCostMap, stockMap: emptyStockMap }),
+        useItemFilters({
+          items,
+          categories: [],
+          costMap: emptyCostMap,
+          stockMap: emptyStockMap,
+          inventoryTypes: defaultTypes,
+        }),
       );
       act(() => result.current.handleFilterChange('type', 'beverage'));
       expect(result.current.filteredItems).toHaveLength(1);
@@ -117,7 +139,13 @@ describe('useItemFilters', () => {
         makeItem({ id: 'b', type: 'beverage', categoryId: 'cat-bev' }),
       ];
       const { result } = renderHook(() =>
-        useItemFilters({ items, categories, costMap: emptyCostMap, stockMap: emptyStockMap }),
+        useItemFilters({
+          items,
+          categories,
+          costMap: emptyCostMap,
+          stockMap: emptyStockMap,
+          inventoryTypes: defaultTypes,
+        }),
       );
       act(() => result.current.handleFilterChange('category', ['cat-food', 'cat-bev']));
       act(() => result.current.handleFilterChange('type', 'food'));
@@ -137,7 +165,13 @@ describe('useItemFilters', () => {
         makeItem({ id: 'b', categoryId: 'cat-2' }),
       ];
       const { result } = renderHook(() =>
-        useItemFilters({ items, categories, costMap: emptyCostMap, stockMap: emptyStockMap }),
+        useItemFilters({
+          items,
+          categories,
+          costMap: emptyCostMap,
+          stockMap: emptyStockMap,
+          inventoryTypes: defaultTypes,
+        }),
       );
       act(() => result.current.handleFilterChange('category', ['cat-2']));
       expect(result.current.filteredItems).toHaveLength(1);
@@ -152,7 +186,13 @@ describe('useItemFilters', () => {
         makeItem({ id: 'b', unitOfMeasure: 'L' }),
       ];
       const { result } = renderHook(() =>
-        useItemFilters({ items, categories: [], costMap: emptyCostMap, stockMap: emptyStockMap }),
+        useItemFilters({
+          items,
+          categories: [],
+          costMap: emptyCostMap,
+          stockMap: emptyStockMap,
+          inventoryTypes: defaultTypes,
+        }),
       );
       act(() => result.current.handleFilterChange('unit', ['L']));
       expect(result.current.filteredItems).toHaveLength(1);
@@ -164,7 +204,13 @@ describe('useItemFilters', () => {
     it('resets all filter values and restores full item list', () => {
       const items = [makeItem({ id: 'a', name: 'Apple' }), makeItem({ id: 'b', name: 'Banana' })];
       const { result } = renderHook(() =>
-        useItemFilters({ items, categories: [], costMap: emptyCostMap, stockMap: emptyStockMap }),
+        useItemFilters({
+          items,
+          categories: [],
+          costMap: emptyCostMap,
+          stockMap: emptyStockMap,
+          inventoryTypes: defaultTypes,
+        }),
       );
       act(() => result.current.handleFilterChange('search', 'apple'));
       expect(result.current.filteredItems).toHaveLength(1);

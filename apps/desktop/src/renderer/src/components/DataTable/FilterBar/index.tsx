@@ -37,6 +37,39 @@ function MultiSelect({
     onChange(field.key, next);
   };
 
+  const hasGroups = options.some((o) => o.group);
+  const groups: { label: string; items: FilterOption[] }[] = hasGroups
+    ? Array.from(
+        options.reduce((map, opt) => {
+          const key = opt.group ?? '';
+          if (!map.has(key)) map.set(key, []);
+          map.get(key)!.push(opt);
+          return map;
+        }, new Map<string, FilterOption[]>()),
+      ).map(([label, items]) => ({ label, items }))
+    : [{ label: '', items: options }];
+
+  const renderOption = (opt: FilterOption) => (
+    <button
+      key={opt.value}
+      type="button"
+      onClick={() => toggle(opt.value)}
+      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-[var(--foreground)] hover:bg-[var(--accent)]"
+    >
+      <div
+        className={cn(
+          'flex size-3.5 shrink-0 items-center justify-center rounded-sm border',
+          selected.includes(opt.value)
+            ? 'border-[var(--primary)] bg-[var(--primary)]'
+            : 'border-[var(--border)]',
+        )}
+      >
+        {selected.includes(opt.value) && <CheckIcon className="size-2.5 text-white" />}
+      </div>
+      <span className="truncate">{opt.label}</span>
+    </button>
+  );
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -58,29 +91,24 @@ function MultiSelect({
           <ChevronDownIcon className="size-3 opacity-60" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-48 p-1 max-h-60 overflow-y-auto" align="start">
+      <PopoverContent className="w-52 p-1 max-h-72 overflow-y-auto" align="start">
         {options.length === 0 ? (
           <p className="px-2 py-1.5 text-xs text-[var(--muted-foreground)]">No options</p>
         ) : (
-          options.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => toggle(opt.value)}
-              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-[var(--foreground)] hover:bg-[var(--accent)]"
-            >
-              <div
-                className={cn(
-                  'flex size-3.5 shrink-0 items-center justify-center rounded-sm border',
-                  selected.includes(opt.value)
-                    ? 'border-[var(--primary)] bg-[var(--primary)]'
-                    : 'border-[var(--border)]',
-                )}
-              >
-                {selected.includes(opt.value) && <CheckIcon className="size-2.5 text-white" />}
-              </div>
-              <span className="truncate">{opt.label}</span>
-            </button>
+          groups.map(({ label, items }, i) => (
+            <div key={label || i}>
+              {label && (
+                <p
+                  className={cn(
+                    'px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]/60',
+                    i > 0 && 'mt-1 border-t border-[var(--border)] pt-2',
+                  )}
+                >
+                  {label}
+                </p>
+              )}
+              {items.map(renderOption)}
+            </div>
           ))
         )}
       </PopoverContent>
@@ -118,7 +146,7 @@ function SingleSelect({
           <ChevronDownIcon className="size-3 opacity-60" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-48 p-1 max-h-60 overflow-y-auto" align="start">
+      <PopoverContent className="w-52 p-1 max-h-72 overflow-y-auto" align="start">
         {selected && (
           <button
             type="button"
@@ -165,7 +193,7 @@ export function FilterBar({ filters, values, onChange, onClearAll }: Props) {
                 placeholder={field.placeholder ?? `Search ${field.label}…`}
                 value={(values[field.key] as string) ?? ''}
                 onChange={(e) => onChange(field.key, e.target.value)}
-                className="h-8 w-52 pl-8 text-xs placeholder:text-muted-foreground/40"
+                className="h-8 w-72 pl-8 text-xs placeholder:text-muted-foreground/40"
               />
             </div>
           );

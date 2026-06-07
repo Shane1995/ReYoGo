@@ -56,7 +56,7 @@ export default function InventoryAnalysis() {
                 placeholder="Search items…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className={cn(fieldBase, 'w-48 pl-8 placeholder:text-muted-foreground/40')}
+                className={cn(fieldBase, 'w-72 pl-8 placeholder:text-muted-foreground/40')}
               />
             </div>
           </div>

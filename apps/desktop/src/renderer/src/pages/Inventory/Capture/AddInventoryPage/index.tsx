@@ -4,6 +4,8 @@ import { Button, PageHeader } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { INVENTORY_TYPES, InventoryType } from '@reyogo/types';
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
+import { typeGroupLabel } from '../CapturedInventory/utils/typeConfig';
+
 import { useEntities } from '@/Context/EntityContext';
 import type { TypeValue } from '../CapturedInventory/types';
 import { cn } from '@reyogo/ui';
@@ -34,7 +36,7 @@ function emptyCategoryRow(): CategoryRow {
 }
 
 export default function AddInventoryPage() {
-  const { categories, items, unitOptions, addItem, addCategory } = useInventory();
+  const { categories, items, unitOptions, addItem, addCategory, inventoryTypes } = useInventory();
   const { selectedEntityId: entityId } = useEntities();
 
   const [mode, setMode] = useState<Mode>('items');
@@ -42,8 +44,10 @@ export default function AddInventoryPage() {
   const [catRows, setCatRows] = useState<CategoryRow[]>([emptyCategoryRow()]);
   const [lastFocusId, setLastFocusId] = useState<string | null>(null);
 
-  const namedCategories = categories.filter((c) => c.name.trim());
-  const categoryTypes = Array.from(new Set(namedCategories.map((c) => c.type)));
+  const namedCategories = categories
+    .filter((c) => c.name.trim())
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const categoryTypes = inventoryTypes.filter((t) => namedCategories.some((c) => c.type === t));
 
   // Focus newly added row's name input
   useEffect(() => {
@@ -241,7 +245,7 @@ export default function AddInventoryPage() {
                           >
                             <option value="">Select a category…</option>
                             {categoryTypes.map((type) => (
-                              <optgroup key={type} label={type}>
+                              <optgroup key={type} label={typeGroupLabel(type)}>
                                 {namedCategories
                                   .filter((c) => c.type === type)
                                   .map((c) => (

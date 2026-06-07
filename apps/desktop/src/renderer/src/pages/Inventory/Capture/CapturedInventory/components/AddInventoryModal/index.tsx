@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Button } from '@reyogo/ui';
 import { INVENTORY_TYPES, InventoryType } from '@reyogo/types';
 import { useInventory } from '../../Context/InventoryContext';
+import { typeGroupLabel } from '../../utils/typeConfig';
 import { useEntities } from '@/Context/EntityContext';
 
 import { cn } from '@reyogo/ui';
@@ -71,7 +72,7 @@ function CategoryForm({ onDone }: { onDone: () => void }) {
 }
 
 function ItemForm({ onDone }: { onDone: () => void }) {
-  const { categories, unitOptions, addItem } = useInventory();
+  const { categories, unitOptions, addItem, inventoryTypes } = useInventory();
   const { selectedEntityId: entityId } = useEntities();
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -115,14 +116,20 @@ function ItemForm({ onDone }: { onDone: () => void }) {
           onChange={(e) => setCategoryId(e.target.value)}
           className={cn(inputClass, 'cursor-pointer')}
         >
-          <option value="">Select category</option>
-          {categories
-            .slice()
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.type} → {c.name}
-              </option>
+          <option value="">Select category…</option>
+          {inventoryTypes
+            .filter((t) => categories.some((c) => c.type === t))
+            .map((type) => (
+              <optgroup key={type} label={typeGroupLabel(type)}>
+                {categories
+                  .filter((c) => c.name.trim() && c.type === type)
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+              </optgroup>
             ))}
         </select>
       </div>

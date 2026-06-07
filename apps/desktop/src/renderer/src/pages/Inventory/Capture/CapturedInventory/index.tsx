@@ -16,7 +16,8 @@ import type { InventoryItem } from './types';
 import { useState } from 'react';
 
 export default function InventoryIndex() {
-  const { categories, items, unitOptions, updateItem, archiveItemInBackend } = useInventory();
+  const { categories, items, unitOptions, updateItem, archiveItemInBackend, inventoryTypes } =
+    useInventory();
   const { selectedEntityId } = useEntities();
 
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ export default function InventoryIndex() {
   );
 
   const { filterValues, filteredItems, filters, allTypes, handleFilterChange, clearFilters } =
-    useItemFilters({ items: entityFilteredItems, categories, costMap, stockMap });
+    useItemFilters({ items: entityFilteredItems, categories, costMap, stockMap, inventoryTypes });
 
   const handleViewInsights = useCallback(
     (itemId: string) => navigate(itemTrendPath(itemId)),

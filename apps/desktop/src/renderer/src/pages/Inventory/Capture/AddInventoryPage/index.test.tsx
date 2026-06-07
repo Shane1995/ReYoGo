@@ -16,6 +16,7 @@ const mockUseInventory = {
   categories: [],
   items: [],
   unitOptions: [],
+  inventoryTypes: [],
   addItem: vi.fn(),
   addCategory: vi.fn(),
 };

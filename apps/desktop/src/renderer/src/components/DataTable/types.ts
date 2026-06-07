@@ -10,7 +10,7 @@ export interface ColumnDef<T> {
   sortFn?: (a: T, b: T) => number;
 }
 
-export type FilterOption = { value: string; label: string };
+export type FilterOption = { value: string; label: string; group?: string };
 
 export interface FilterField {
   key: string;

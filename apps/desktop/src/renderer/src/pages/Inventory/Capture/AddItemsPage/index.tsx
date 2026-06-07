@@ -4,6 +4,7 @@ import { Button, PageHeader } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
 import { useEntities } from '@/Context/EntityContext';
+import { typeGroupLabel } from '../CapturedInventory/utils/typeConfig';
 import type { TypeValue } from '../CapturedInventory/types';
 import { cn } from '@reyogo/ui';
 
@@ -25,10 +26,12 @@ function createEmptyRow(): PendingRow {
 }
 
 export default function AddItemsPage() {
-  const { categories, items, unitOptions, addItem } = useInventory();
+  const { categories, items, unitOptions, addItem, inventoryTypes } = useInventory();
   const { selectedEntityId: entityId } = useEntities();
-  const namedCategories = categories.filter((c) => c.name.trim());
-  const categoryTypes = Array.from(new Set(namedCategories.map((c) => c.type)));
+  const namedCategories = categories
+    .filter((c) => c.name.trim())
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const categoryTypes = inventoryTypes.filter((t) => namedCategories.some((c) => c.type === t));
 
   const [rows, setRows] = useState<PendingRow[]>([createEmptyRow()]);
   const [lastAddedRowId, setLastAddedRowId] = useState<string | null>(null);
@@ -164,7 +167,7 @@ export default function AddItemsPage() {
                         >
                           <option value="">Select a category…</option>
                           {categoryTypes.map((type) => (
-                            <optgroup key={type} label={type}>
+                            <optgroup key={type} label={typeGroupLabel(type)}>
                               {namedCategories
                                 .filter((c) => c.type === type)
                                 .map((c) => (

@@ -61,6 +61,17 @@ export const FALLBACK_PALETTE: TypeConfig[] = [
   },
 ];
 
+export const TYPE_EMOJI: Record<string, string> = {
+  food: '🍴',
+  beverage: '🥤',
+  'non-food': '📦',
+};
+
+export function typeGroupLabel(type: string): string {
+  const label = type.replace(/-/g, '‑').replace(/^\w/, (c) => c.toUpperCase());
+  return TYPE_EMOJI[type] ? `${TYPE_EMOJI[type]} ${label}` : label;
+}
+
 export function getTypeConfig(type: string, allTypes: string[]): TypeConfig {
   if (KNOWN_TYPE_CONFIG[type]) return KNOWN_TYPE_CONFIG[type];
   const idx = allTypes.indexOf(type);
