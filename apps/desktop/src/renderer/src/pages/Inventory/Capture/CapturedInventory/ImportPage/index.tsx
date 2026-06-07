@@ -27,14 +27,13 @@ type PageState =
   | { phase: 'error'; message: string };
 
 export default function ImportPage() {
-  const { entities } = useEntities();
+  const { entities, selectedEntityId } = useEntities();
   const { categories: existingCats, items: existingItems, addCategory, addItem } = useInventory();
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<PageState>({ phase: 'idle' });
-  const [selectedEntityId, setSelectedEntityId] = useState('');
 
-  const selectedEntity = entities.find((e) => e.id === selectedEntityId);
+  const selectedEntity = entities.find((e) => e.id === selectedEntityId) ?? entities[0];
 
   const handleFile = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,6 +106,7 @@ export default function ImportPage() {
             type: (cat?.type as 'food' | 'beverage' | 'non-food') ?? 'food',
             unitOfMeasureId,
             unitOfMeasure: item.unit,
+            entityId: selectedEntityId,
           });
         }
 
@@ -135,7 +135,7 @@ export default function ImportPage() {
               <p className="mt-0.5 text-sm text-muted-foreground">
                 {state.phase === 'review'
                   ? `Review what will be added to ${selectedEntity?.name ?? 'your business'}, then click commit.`
-                  : 'Select a business, then upload an Excel or CSV file to bulk-add units, categories and items.'}
+                  : `Upload an Excel or CSV file to bulk-add units, categories and items${selectedEntity ? ` for ${selectedEntity.name}` : ''}.`}
               </p>
             </div>
           </div>
@@ -170,29 +170,8 @@ export default function ImportPage() {
         <div className="mx-auto w-full max-w-2xl px-5 py-5">
           {state.phase === 'idle' && (
             <div className="space-y-4">
-              <div className="rounded-lg border border-[var(--nav-border)] bg-muted/20 p-4 space-y-2">
-                <p className="text-sm font-semibold text-foreground">Select business</p>
-                <p className="text-xs text-muted-foreground">
-                  All items in the file will be imported for this business.
-                </p>
-                <select
-                  value={selectedEntityId}
-                  onChange={(e) => setSelectedEntityId(e.target.value)}
-                  className="h-8 w-full max-w-xs rounded-md border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50"
-                >
-                  <option value="">Choose a business…</option>
-                  {entities.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
               <FormatGuide />
-              <DropZone
-                onClick={() => selectedEntity && fileRef.current?.click()}
-                disabled={!selectedEntity}
-              />
+              <DropZone onClick={() => fileRef.current?.click()} disabled={false} />
             </div>
           )}
 

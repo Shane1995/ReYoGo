@@ -4,6 +4,8 @@ import { Button, PageHeader } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { INVENTORY_TYPES, InventoryType } from '@reyogo/types';
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
+import { typeGroupLabel } from '../CapturedInventory/utils/typeConfig';
+
 import { useEntities } from '@/Context/EntityContext';
 import type { TypeValue } from '../CapturedInventory/types';
 import { cn } from '@reyogo/ui';
@@ -34,17 +36,18 @@ function emptyCategoryRow(): CategoryRow {
 }
 
 export default function AddInventoryPage() {
-  const { categories, items, unitOptions, addItem, addCategory } = useInventory();
-  const { entities } = useEntities();
+  const { categories, items, unitOptions, addItem, addCategory, inventoryTypes } = useInventory();
+  const { selectedEntityId: entityId } = useEntities();
 
-  const [entityId, setEntityId] = useState('');
   const [mode, setMode] = useState<Mode>('items');
   const [itemRows, setItemRows] = useState<ItemRow[]>([emptyItemRow()]);
   const [catRows, setCatRows] = useState<CategoryRow[]>([emptyCategoryRow()]);
   const [lastFocusId, setLastFocusId] = useState<string | null>(null);
 
-  const namedCategories = categories.filter((c) => c.name.trim());
-  const categoryTypes = Array.from(new Set(namedCategories.map((c) => c.type)));
+  const namedCategories = categories
+    .filter((c) => c.name.trim())
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const categoryTypes = inventoryTypes.filter((t) => namedCategories.some((c) => c.type === t));
 
   // Focus newly added row's name input
   useEffect(() => {
@@ -165,20 +168,6 @@ export default function AddInventoryPage() {
 
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-6 my-5 space-y-3">
-          <div>
-            <select
-              value={entityId}
-              onChange={(e) => setEntityId(e.target.value)}
-              className={cn(inputClass, 'max-w-xs cursor-pointer')}
-            >
-              <option value="">Select entity…</option>
-              {entities.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name}
-                </option>
-              ))}
-            </select>
-          </div>
           {/* Mode toggle */}
           <div className="inline-flex items-center rounded-lg border border-[var(--nav-border)] bg-muted/20 p-0.5 gap-0.5">
             {(['items', 'categories'] as Mode[]).map((m) => (
@@ -256,7 +245,7 @@ export default function AddInventoryPage() {
                           >
                             <option value="">Select a category…</option>
                             {categoryTypes.map((type) => (
-                              <optgroup key={type} label={type}>
+                              <optgroup key={type} label={typeGroupLabel(type)}>
                                 {namedCategories
                                   .filter((c) => c.type === type)
                                   .map((c) => (

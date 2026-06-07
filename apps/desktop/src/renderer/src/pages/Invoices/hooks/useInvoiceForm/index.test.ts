@@ -12,7 +12,10 @@ vi.mock('@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext', 
 }));
 
 vi.mock('@/Context/EntityContext', () => ({
-  useEntities: () => ({ entities: [{ id: 'e1', name: 'Venue', defaultVatRate: 15 }] }),
+  useEntities: () => ({
+    entities: [{ id: 'e1', name: 'Venue', defaultVatRate: 15 }],
+    selectedEntityId: 'e1',
+  }),
 }));
 
 vi.mock('@/services/invoice', () => ({
@@ -20,7 +23,8 @@ vi.mock('@/services/invoice', () => ({
 }));
 
 vi.mock('react-router-dom', () => ({
-  useLocation: () => ({ state: { entityId: 'e1' } }),
+  useLocation: () => ({ state: null, pathname: '/invoices', key: 'default' }),
+  useNavigate: () => vi.fn(),
 }));
 
 vi.mock('../useDraftPersistence', () => ({
@@ -48,7 +52,7 @@ vi.mock('../useInvoiceSummary', () => ({
 }));
 
 describe('useInvoiceForm', () => {
-  it('initialises entityId from route state', async () => {
+  it('reads entityId from global entity context', async () => {
     const { useInvoiceForm } = await import('./index');
     const { result } = renderHook(() => useInvoiceForm());
     expect(result.current.entityId).toBe('e1');
@@ -67,13 +71,17 @@ describe('useInvoiceForm', () => {
       }),
     }));
     vi.doMock('@/Context/EntityContext', () => ({
-      useEntities: () => ({ entities: [{ id: 'e1', name: 'Venue', defaultVatRate: 15 }] }),
+      useEntities: () => ({
+        entities: [{ id: 'e1', name: 'Venue', defaultVatRate: 15 }],
+        selectedEntityId: 'e1',
+      }),
     }));
     vi.doMock('@/services/invoice', () => ({
       invoiceService: { getLastUnitPrices: vi.fn().mockResolvedValue({}) },
     }));
     vi.doMock('react-router-dom', () => ({
-      useLocation: () => ({ state: { entityId: 'e1' } }),
+      useLocation: () => ({ state: null, pathname: '/invoices', key: 'default' }),
+      useNavigate: () => vi.fn(),
     }));
     vi.doMock('../useDraftPersistence', () => ({
       loadDraft: () => null,

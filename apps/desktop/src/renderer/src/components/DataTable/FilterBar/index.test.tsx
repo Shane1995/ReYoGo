@@ -94,7 +94,7 @@ describe('FilterBar', () => {
       );
       await userEvent.click(screen.getByRole('button', { name: /type/i }));
       const popover = document.querySelector('[data-slot="popover-content"]');
-      expect(popover?.className).toContain('max-h-60');
+      expect(popover?.className).toContain('max-h-72');
       expect(popover?.className).toContain('overflow-y-auto');
     });
   });
@@ -118,7 +118,7 @@ describe('FilterBar', () => {
       );
       await userEvent.click(screen.getByRole('button', { name: /categories/i }));
       const popover = document.querySelector('[data-slot="popover-content"]');
-      expect(popover?.className).toContain('max-h-60');
+      expect(popover?.className).toContain('max-h-72');
       expect(popover?.className).toContain('overflow-y-auto');
     });
   });

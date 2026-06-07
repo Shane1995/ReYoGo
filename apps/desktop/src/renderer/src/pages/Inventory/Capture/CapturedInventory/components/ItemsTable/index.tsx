@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge, cn } from '@reyogo/ui';
-import { VatMode } from '@reyogo/types';
 import { DataTable } from '@/components/DataTable';
 import type { ColumnDef } from '@/components/DataTable';
 import { Checkbox } from '@/components/Checkbox';
@@ -41,7 +40,6 @@ export function ItemsTable({
   allTypes,
   categories,
   unitOptions,
-  currentEntityId,
   onUpdate,
   onDelete,
   onViewInsights,
@@ -80,14 +78,11 @@ export function ItemsTable({
       id: crypto.randomUUID(),
       itemId,
       quantity: 0,
-      vatMode: VatMode.Exclusive,
-      vatRate: 15,
+      isVatable: false,
       totalVatExclude: 0,
     }));
-    navigate(InvoiceRoutes.Base, {
-      state: { templateLines, entityId: currentEntityId ?? '' },
-    });
-  }, [selectedIds, navigate, currentEntityId]);
+    navigate(InvoiceRoutes.Base, { state: { templateLines } });
+  }, [selectedIds, navigate]);
 
   const columns = useMemo<ColumnDef<FlatItem>[]>(
     () => [

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import type { IPCChannel } from '@shared/types/ipc';
 import { InventoryIPC } from '@shared/types/ipc';
+import { INVENTORY_TYPES } from '@reyogo/types';
 import type { InventoryCategory, InventoryItem } from '../../types';
 import type { UnitOption } from '../../components/ItemsTable/types';
 
@@ -19,6 +20,7 @@ type InventoryContextValue = {
   categories: InventoryCategory[];
   items: InventoryItem[];
   unitOptions: UnitOption[];
+  inventoryTypes: string[];
   addCategory: (category: Omit<InventoryCategory, 'id'>) => string;
   updateCategory: (id: string, updates: Partial<InventoryCategory>) => void;
   addItem: (item: Omit<InventoryItem, 'id'>) => string;
@@ -133,6 +135,11 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
       .catch(console.error);
   }, []);
 
+  const inventoryTypes = useMemo(() => {
+    const present = new Set(categories.map((c) => c.type));
+    return INVENTORY_TYPES.filter((t) => present.has(t));
+  }, [categories]);
+
   const categoryTypeMap = useMemo(
     () => new Map(categories.map((c) => [c.id, c.type])),
     [categories],
@@ -154,6 +161,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     categories,
     items: enrichedItems,
     unitOptions,
+    inventoryTypes,
     addCategory,
     updateCategory,
     addItem,

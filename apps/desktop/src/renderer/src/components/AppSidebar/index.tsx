@@ -5,7 +5,6 @@ import { cn, navLinkClass } from '@reyogo/ui';
 import { ChevronRightIcon, Settings as SettingsIcon } from 'lucide-react';
 import { useNavItems } from '@/config/nav';
 import { SettingsRoutes } from '@/components/AppRoutes/routePaths';
-import { useEntities } from '@/Context/EntityContext';
 
 const EXPANDED_W = 224;
 const COLLAPSED_W = 56;
@@ -19,7 +18,6 @@ const labelAnim = {
 
 export function AppSidebar() {
   const { primary } = useNavItems();
-  const { group } = useEntities();
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem('sidebar-primary-collapsed') === 'true',
   );
@@ -39,7 +37,7 @@ export function AppSidebar() {
       className="flex h-full shrink-0 flex-col overflow-hidden border-r border-[rgba(255,255,255,0.08)]"
       style={
         {
-          background: 'rgba(13,17,23,0.88)',
+          background: 'rgba(13,17,23,0.92)',
           backdropFilter: 'blur(28px) saturate(200%)',
           boxShadow: 'inset -1px 0 0 rgba(255,255,255,0.05), 4px 0 24px rgba(0,0,0,0.35)',
           '--nav-active-border': '#20C997',
@@ -49,33 +47,6 @@ export function AppSidebar() {
         } as React.CSSProperties
       }
     >
-      <div
-        className={cn(
-          'flex shrink-0 items-center border-b border-[rgba(255,255,255,0.07)] px-3 py-4',
-          collapsed ? 'justify-center' : 'gap-2.5',
-        )}
-      >
-        <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="ReYoGo" className="size-6 shrink-0" />
-        <AnimatePresence initial={false}>
-          {!collapsed && (
-            <motion.div
-              key="brand"
-              {...labelAnim}
-              className="flex flex-col gap-0.5 overflow-hidden"
-            >
-              <span className="whitespace-nowrap text-sm font-semibold leading-none text-white">
-                ReYoGo
-              </span>
-              {group?.name && (
-                <span className="whitespace-nowrap text-xs text-[rgba(255,255,255,0.3)]">
-                  {group.name}
-                </span>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
       <nav className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-3">
         {primary.map((item) => (
           <NavLink

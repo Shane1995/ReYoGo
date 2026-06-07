@@ -2,7 +2,9 @@ import { useState, useCallback } from 'react';
 import { Button } from '@reyogo/ui';
 import { INVENTORY_TYPES, InventoryType } from '@reyogo/types';
 import { useInventory } from '../../Context/InventoryContext';
+import { typeGroupLabel } from '../../utils/typeConfig';
 import { useEntities } from '@/Context/EntityContext';
+
 import { cn } from '@reyogo/ui';
 
 const inputClass = cn(
@@ -70,12 +72,11 @@ function CategoryForm({ onDone }: { onDone: () => void }) {
 }
 
 function ItemForm({ onDone }: { onDone: () => void }) {
-  const { categories, unitOptions, addItem } = useInventory();
-  const { entities } = useEntities();
+  const { categories, unitOptions, addItem, inventoryTypes } = useInventory();
+  const { selectedEntityId: entityId } = useEntities();
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [unitOfMeasureId, setUnitOfMeasureId] = useState('');
-  const [entityId, setEntityId] = useState('');
 
   const category = categories.find((c) => c.id === categoryId);
 
@@ -92,26 +93,11 @@ function ItemForm({ onDone }: { onDone: () => void }) {
     setName('');
     setCategoryId('');
     setUnitOfMeasureId('');
-    setEntityId('');
     onDone();
   }
 
   return (
     <div className="space-y-4">
-      <div>
-        <select
-          value={entityId}
-          onChange={(e) => setEntityId(e.target.value)}
-          className={cn(inputClass, 'cursor-pointer')}
-        >
-          <option value="">Select entity</option>
-          {entities.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.name}
-            </option>
-          ))}
-        </select>
-      </div>
       <div>
         <label className="mb-1.5 block text-sm font-medium text-foreground">Name</label>
         <input
@@ -130,14 +116,20 @@ function ItemForm({ onDone }: { onDone: () => void }) {
           onChange={(e) => setCategoryId(e.target.value)}
           className={cn(inputClass, 'cursor-pointer')}
         >
-          <option value="">Select category</option>
-          {categories
-            .slice()
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.type} → {c.name}
-              </option>
+          <option value="">Select category…</option>
+          {inventoryTypes
+            .filter((t) => categories.some((c) => c.type === t))
+            .map((type) => (
+              <optgroup key={type} label={typeGroupLabel(type)}>
+                {categories
+                  .filter((c) => c.name.trim() && c.type === type)
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+              </optgroup>
             ))}
         </select>
       </div>
@@ -157,11 +149,7 @@ function ItemForm({ onDone }: { onDone: () => void }) {
         </select>
       </div>
       <div className="flex justify-end gap-2 pt-2">
-        <Button
-          type="button"
-          onClick={handleSave}
-          disabled={!name.trim() || !categoryId || !entityId}
-        >
+        <Button type="button" onClick={handleSave} disabled={!name.trim() || !categoryId}>
           Add item
         </Button>
       </div>

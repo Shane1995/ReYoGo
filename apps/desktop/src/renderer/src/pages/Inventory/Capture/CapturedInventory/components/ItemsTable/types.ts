@@ -22,7 +22,6 @@ export type ItemsTableProps = {
   allTypes: string[];
   categories: InventoryCategory[];
   unitOptions: UnitOption[];
-  currentEntityId?: string | null;
   onUpdate: (id: string, values: Omit<InventoryItem, 'id'>) => void;
   onDelete: (id: string) => void;
   onViewInsights: (id: string) => void;

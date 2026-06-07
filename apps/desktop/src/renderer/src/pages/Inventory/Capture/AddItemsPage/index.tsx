@@ -4,6 +4,7 @@ import { Button, PageHeader } from '@reyogo/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { useInventory } from '../CapturedInventory/Context/InventoryContext';
 import { useEntities } from '@/Context/EntityContext';
+import { typeGroupLabel } from '../CapturedInventory/utils/typeConfig';
 import type { TypeValue } from '../CapturedInventory/types';
 import { cn } from '@reyogo/ui';
 
@@ -25,12 +26,13 @@ function createEmptyRow(): PendingRow {
 }
 
 export default function AddItemsPage() {
-  const { categories, items, unitOptions, addItem } = useInventory();
-  const { entities } = useEntities();
-  const namedCategories = categories.filter((c) => c.name.trim());
-  const categoryTypes = Array.from(new Set(namedCategories.map((c) => c.type)));
+  const { categories, items, unitOptions, addItem, inventoryTypes } = useInventory();
+  const { selectedEntityId: entityId } = useEntities();
+  const namedCategories = categories
+    .filter((c) => c.name.trim())
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const categoryTypes = inventoryTypes.filter((t) => namedCategories.some((c) => c.type === t));
 
-  const [entityId, setEntityId] = useState('');
   const [rows, setRows] = useState<PendingRow[]>([createEmptyRow()]);
   const [lastAddedRowId, setLastAddedRowId] = useState<string | null>(null);
 
@@ -107,20 +109,6 @@ export default function AddItemsPage() {
 
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-6 my-5 space-y-3">
-          <div>
-            <select
-              value={entityId}
-              onChange={(e) => setEntityId(e.target.value)}
-              className={cn(inputClass, 'max-w-xs cursor-pointer')}
-            >
-              <option value="">Select entity…</option>
-              {entities.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name}
-                </option>
-              ))}
-            </select>
-          </div>
           <div className="rounded-lg border border-[var(--nav-border)] bg-background">
             <Table>
               <TableHeader>
@@ -179,7 +167,7 @@ export default function AddItemsPage() {
                         >
                           <option value="">Select a category…</option>
                           {categoryTypes.map((type) => (
-                            <optgroup key={type} label={type}>
+                            <optgroup key={type} label={typeGroupLabel(type)}>
                               {namedCategories
                                 .filter((c) => c.type === type)
                                 .map((c) => (

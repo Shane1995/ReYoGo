@@ -3,9 +3,13 @@ import type { ReactNode } from 'react';
 import type { IBusinessGroup, IEntity } from '@reyogo/types';
 import { entitiesService } from '@/services/entities';
 
+const SELECTED_ENTITY_KEY = 'reyogo-selected-entity';
+
 interface EntityContextValue {
   group: IBusinessGroup | null;
   entities: IEntity[];
+  selectedEntityId: string;
+  setSelectedEntityId: (id: string) => void;
   refetchEntities: () => Promise<void>;
 }
 
@@ -14,19 +18,36 @@ const EntityContext = createContext<EntityContextValue | null>(null);
 export function EntityProvider({ children }: { children: ReactNode }) {
   const [group, setGroup] = useState<IBusinessGroup | null>(null);
   const [entities, setEntities] = useState<IEntity[]>([]);
+  const [selectedEntityId, setSelectedEntityIdState] = useState<string>(
+    () => localStorage.getItem(SELECTED_ENTITY_KEY) ?? '',
+  );
 
   const refetchEntities = useCallback(async () => {
     const [g, e] = await Promise.all([entitiesService.getGroup(), entitiesService.getEntities()]);
     setGroup(g);
     setEntities(e);
+    setSelectedEntityIdState((prev) => {
+      const valid = e.find((en) => en.id === prev);
+      if (valid) return prev;
+      const first = e[0]?.id ?? '';
+      localStorage.setItem(SELECTED_ENTITY_KEY, first);
+      return first;
+    });
   }, []);
 
   useEffect(() => {
     refetchEntities().catch(console.error);
   }, [refetchEntities]);
 
+  const setSelectedEntityId = useCallback((id: string) => {
+    localStorage.setItem(SELECTED_ENTITY_KEY, id);
+    setSelectedEntityIdState(id);
+  }, []);
+
   return (
-    <EntityContext.Provider value={{ group, entities, refetchEntities }}>
+    <EntityContext.Provider
+      value={{ group, entities, selectedEntityId, setSelectedEntityId, refetchEntities }}
+    >
       {children}
     </EntityContext.Provider>
   );

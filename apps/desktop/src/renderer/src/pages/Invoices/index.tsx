@@ -33,7 +33,6 @@ export default function InvoicePage() {
     setVatMode,
     selectedEntity,
     entityId,
-    handleEntityChange,
     expandedResultLineIds,
     isReused,
     reuseNoticeDismissed,
@@ -77,8 +76,6 @@ export default function InvoicePage() {
         suppliers={suppliers}
         vatMode={vatMode}
         onVatModeChange={setVatMode}
-        entityId={entityId}
-        onEntityChange={handleEntityChange}
         onAddCategory={() => setCategoryModalOpen(true)}
         onAddItem={() => setItemModalOpen(true)}
         isDirty={isDirty}

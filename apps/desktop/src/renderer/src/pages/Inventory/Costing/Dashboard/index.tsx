@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { PageHeader, DatePicker, cn } from '@reyogo/ui';
 import { stockMovementsService } from '@/services/stockMovements';
 import { useEntities } from '@/Context/EntityContext';
-import { EntityFilter } from '@/components/EntityFilter';
 import type { COGSSummary } from '@reyogo/types';
 
 function fmt(n: number) {
@@ -14,27 +13,25 @@ function fmt(n: number) {
 }
 
 export default function CostingDashboard() {
-  const { entities } = useEntities();
+  const { selectedEntityId } = useEntities();
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
-  const [entityFilter, setEntityFilter] = useState<string | null>(null);
   const [cogs, setCogs] = useState<COGSSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
     stockMovementsService
-      .getCOGS(fromDate || undefined, toDate || undefined, entityFilter ?? undefined)
+      .getCOGS(fromDate || undefined, toDate || undefined, selectedEntityId || undefined)
       .then(setCogs)
       .catch(() => setCogs(null))
       .finally(() => setLoading(false));
-  }, [fromDate, toDate, entityFilter]);
+  }, [fromDate, toDate, selectedEntityId]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <PageHeader title="Costing Dashboard" description="Cost of Goods Used (COGS) summary.">
         <div className="space-y-2.5">
-          <EntityFilter entities={entities} selected={entityFilter} onChange={setEntityFilter} />
           <div className="flex flex-wrap items-center gap-2.5 text-sm">
             <div className="flex items-center gap-1.5">
               <label className="text-muted-foreground shrink-0">From</label>

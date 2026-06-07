@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { INVENTORY_TYPES } from '@reyogo/types';
 import type { FilterField, FilterValues } from '@/components/DataTable';
+import { typeGroupLabel } from '../../../../utils/typeConfig';
 import type { InventoryCategory, InventoryItem } from '../../../../types';
 import type { ItemCostEntry } from '../../../../hooks/useInventoryCosts';
 import type { FlatItem } from '../../types';
@@ -10,12 +10,11 @@ type Props = {
   categories: InventoryCategory[];
   costMap: Map<string, ItemCostEntry>;
   stockMap: Map<string, number>;
+  inventoryTypes: string[];
 };
 
-export function useItemFilters({ items, categories, costMap, stockMap }: Props) {
+export function useItemFilters({ items, categories, costMap, stockMap, inventoryTypes }: Props) {
   const [filterValues, setFilterValues] = useState<FilterValues>({});
-
-  const allTypes = useMemo(() => [...INVENTORY_TYPES], []);
 
   const flatItems = useMemo<FlatItem[]>(() => {
     return items.map((item) => {
@@ -58,8 +57,13 @@ export function useItemFilters({ items, categories, costMap, stockMap }: Props) 
     const seen = new Set<string>();
     return categories
       .filter((c) => c.name.trim() && !seen.has(c.id) && seen.add(c.id))
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map((c) => ({ value: c.id, label: c.name }));
+      .sort((a, b) => {
+        const tA = inventoryTypes.indexOf(a.type);
+        const tB = inventoryTypes.indexOf(b.type);
+        if (tA !== tB) return tA - tB;
+        return a.name.localeCompare(b.name);
+      })
+      .map((c) => ({ value: c.id, label: c.name, group: typeGroupLabel(c.type) }));
   }, [categories]);
 
   const unitOptions = useMemo(() => {
@@ -75,7 +79,7 @@ export function useItemFilters({ items, categories, costMap, stockMap }: Props) 
       key: 'type',
       label: 'Type',
       type: 'select',
-      options: allTypes.map((t) => ({ value: t, label: t })),
+      options: inventoryTypes.map((t) => ({ value: t, label: t })),
     },
     {
       key: 'category',
@@ -121,7 +125,7 @@ export function useItemFilters({ items, categories, costMap, stockMap }: Props) 
     filterValues,
     filteredItems,
     filters,
-    allTypes,
+    allTypes: inventoryTypes,
     handleFilterChange,
     clearFilters: () => setFilterValues({}),
   };
