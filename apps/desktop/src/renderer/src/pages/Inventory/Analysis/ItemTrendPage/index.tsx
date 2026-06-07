@@ -12,6 +12,7 @@ import { changeCls } from '../utils/styles';
 import { AnalysisRoutes } from '@/components/AppRoutes/routePaths';
 import { TrendChart } from './components/TrendChart';
 import { TrendHistoryTable } from './components/TrendHistoryTable';
+import type { ItemGroup } from '../types';
 
 function StatCard({
   label,
@@ -38,9 +39,99 @@ function StatCard({
   );
 }
 
-export default function ItemTrendPage() {
-  const { itemId } = useParams<{ itemId: string }>();
-  const navigate = useNavigate();
+type Stats = {
+  min: number;
+  max: number;
+  avg: number;
+  first: number;
+  last: number;
+  change: number | null;
+  count: number;
+  uom: string | undefined;
+};
+
+function PriceStatCards({ stats }: { stats: Stats }) {
+  const uomSuffix = stats.uom ? ` / ${stats.uom}` : '';
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <StatCard label="First price" value={`${fmt(stats.first)}${uomSuffix}`} />
+      <StatCard label="Latest price" value={`${fmt(stats.last)}${uomSuffix}`} />
+      <StatCard label="Average price" value={`${fmt(stats.avg)}${uomSuffix}`} muted />
+      <StatCard
+        label="Overall change"
+        value={stats.change === null ? '—' : fmtPct(stats.change)}
+        className={changeCls(stats.change, true)}
+      />
+    </div>
+  );
+}
+
+function CostHistoryCards({
+  costHistory,
+  uom,
+}: {
+  costHistory: ItemCostHistory;
+  uom: string | undefined;
+}) {
+  const uomSuffix = uom ? ` / ${uom}` : '';
+  const stockSuffix = uom ? ` ${uom}` : '';
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <StatCard
+        label="Weighted avg cost"
+        value={
+          costHistory.weightedAvgCost != null
+            ? `${fmt(costHistory.weightedAvgCost)}${uomSuffix}`
+            : '—'
+        }
+        muted
+      />
+      <StatCard
+        label="Current stock"
+        value={
+          costHistory.totalStock != null
+            ? `${costHistory.totalStock % 1 === 0 ? costHistory.totalStock.toFixed(0) : costHistory.totalStock.toFixed(2)}${stockSuffix}`
+            : '—'
+        }
+        muted
+      />
+    </div>
+  );
+}
+
+function ItemTrendHeader({
+  group,
+  stats,
+  onBack,
+}: {
+  group: ItemGroup;
+  stats: Stats | null;
+  onBack: () => void;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <button
+        type="button"
+        onClick={onBack}
+        className="mt-1 flex items-center gap-1 text-xs font-medium uppercase tracking-widest text-muted-foreground/50 hover:text-foreground transition-colors shrink-0"
+      >
+        <ArrowLeftIcon className="size-3" />
+        Back
+      </button>
+      <div>
+        <h1 className="text-lg font-semibold text-foreground leading-tight">{group.name}</h1>
+        <p className="text-sm text-muted-foreground/70 mt-0.5">
+          {group.categoryName ?? group.categoryType}
+          {stats?.uom ? ` · ${stats.uom}` : ''}
+          {' · '}
+          {stats?.count} capture{stats?.count !== 1 ? 's' : ''}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function useItemTrendData(itemId: string | undefined) {
   const { lines, loading } = useAnalysisLines();
   const { items } = useInventory();
   const [costHistory, setCostHistory] = useState<ItemCostHistory | null>(null);
@@ -69,7 +160,7 @@ export default function ItemTrendPage() {
     }));
   }, [group]);
 
-  const stats = useMemo(() => {
+  const stats = useMemo((): Stats | null => {
     if (!group || !group.entries.length) return null;
     const prices = group.entries.map((e) => e.unitPrice);
     const first = prices[0]!;
@@ -86,18 +177,23 @@ export default function ItemTrendPage() {
     };
   }, [group]);
 
-  const avgPrice = stats?.avg ?? 0;
+  return { loading, group, costHistory, chartData, stats };
+}
 
-  if (loading) {
-    return <div className="p-6 text-muted-foreground">Loading…</div>;
-  }
+export default function ItemTrendPage() {
+  const { itemId } = useParams<{ itemId: string }>();
+  const navigate = useNavigate();
+  const { loading, group, costHistory, chartData, stats } = useItemTrendData(itemId);
+  const goBack = () => navigate(AnalysisRoutes.CostPerUnit);
+
+  if (loading) return <div className="p-6 text-muted-foreground">Loading…</div>;
 
   if (!group) {
     return (
       <div className="p-6">
         <button
           type="button"
-          onClick={() => navigate(AnalysisRoutes.CostPerUnit)}
+          onClick={goBack}
           className="mb-4 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeftIcon className="size-3.5" />
@@ -110,74 +206,10 @@ export default function ItemTrendPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto p-5 space-y-5">
-      <div className="flex items-start gap-3">
-        <button
-          type="button"
-          onClick={() => navigate(AnalysisRoutes.CostPerUnit)}
-          className="mt-1 flex items-center gap-1 text-xs font-medium uppercase tracking-widest text-muted-foreground/50 hover:text-foreground transition-colors shrink-0"
-        >
-          <ArrowLeftIcon className="size-3" />
-          Back
-        </button>
-        <div>
-          <h1 className="text-lg font-semibold text-foreground leading-tight">{group.name}</h1>
-          <p className="text-sm text-muted-foreground/70 mt-0.5">
-            {group.categoryName ?? group.categoryType}
-            {stats?.uom ? ` · ${stats.uom}` : ''}
-            {' · '}
-            {stats?.count} capture{stats?.count !== 1 ? 's' : ''}
-          </p>
-        </div>
-      </div>
-
-      {stats && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard
-            label="First price"
-            value={`${fmt(stats.first)}${stats.uom ? ` / ${stats.uom}` : ''}`}
-          />
-          <StatCard
-            label="Latest price"
-            value={`${fmt(stats.last)}${stats.uom ? ` / ${stats.uom}` : ''}`}
-          />
-          <StatCard
-            label="Average price"
-            value={`${fmt(stats.avg)}${stats.uom ? ` / ${stats.uom}` : ''}`}
-            muted
-          />
-          <StatCard
-            label="Overall change"
-            value={stats.change === null ? '—' : fmtPct(stats.change)}
-            className={changeCls(stats.change, true)}
-          />
-        </div>
-      )}
-
-      {costHistory && (
-        <div className="grid grid-cols-2 gap-3">
-          <StatCard
-            label="Weighted avg cost"
-            value={
-              costHistory.weightedAvgCost != null
-                ? `${fmt(costHistory.weightedAvgCost)}${stats?.uom ? ` / ${stats.uom}` : ''}`
-                : '—'
-            }
-            muted
-          />
-          <StatCard
-            label="Current stock"
-            value={
-              costHistory.totalStock != null
-                ? `${costHistory.totalStock % 1 === 0 ? costHistory.totalStock.toFixed(0) : costHistory.totalStock.toFixed(2)}${stats?.uom ? ` ${stats.uom}` : ''}`
-                : '—'
-            }
-            muted
-          />
-        </div>
-      )}
-
-      <TrendChart chartData={chartData} avgPrice={avgPrice} uom={group.uom} />
-
+      <ItemTrendHeader group={group} stats={stats} onBack={goBack} />
+      {stats && <PriceStatCards stats={stats} />}
+      {costHistory && <CostHistoryCards costHistory={costHistory} uom={stats?.uom} />}
+      <TrendChart chartData={chartData} avgPrice={stats?.avg ?? 0} uom={group.uom} />
       <TrendHistoryTable entries={group.entries} />
     </div>
   );

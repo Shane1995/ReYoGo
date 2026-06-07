@@ -10,28 +10,12 @@ import { ActivationForm } from './components/ActivationForm';
 import { ActiveStatus } from './components/ActiveStatus';
 import { EditConnectionModal } from './components/EditConnectionModal';
 
-export function CloudSyncSection() {
-  const [status, setStatus] = useState<CloudSyncStatus | null>(null);
-  const [tursoUrl, setTursoUrl] = useState('');
-  const [authToken, setAuthToken] = useState('');
-  const [activating, setActivating] = useState(false);
-  const [progressLabel, setProgressLabel] = useState('');
-  const [progressDetail, setProgressDetail] = useState('');
-  const [credentials, setCredentials] = useState<{ tursoUrl: string } | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editUrl, setEditUrl] = useState('');
-  const [editToken, setEditToken] = useState('');
-  const [connecting, setConnecting] = useState(false);
-
-  const refreshStatus = useCallback(async () => {
-    const [s, c] = await Promise.all([
-      cloudSyncService.getStatus().catch(() => null),
-      cloudSyncService.getCredentials().catch(() => null),
-    ]);
-    setStatus(s);
-    setCredentials(c);
-  }, []);
-
+function useSyncEvents(
+  refreshStatus: () => Promise<void>,
+  setActivating: (v: boolean) => void,
+  setProgressLabel: (v: string) => void,
+  setProgressDetail: (v: string) => void,
+) {
   useEffect(() => {
     let mounted = true;
     refreshStatus();
@@ -62,8 +46,47 @@ export function CloudSyncSection() {
       mounted = false;
       off();
     };
-  }, [refreshStatus]);
+  }, [refreshStatus, setActivating, setProgressLabel, setProgressDetail]);
+}
 
+function makeHandleSaveConnection(
+  editUrl: string,
+  editToken: string,
+  setConnecting: (v: boolean) => void,
+) {
+  return async function handleSaveConnection() {
+    if (!editUrl.trim() || !editToken.trim()) {
+      toast.error('Both URL and auth token are required.');
+      return;
+    }
+    setConnecting(true);
+    try {
+      await cloudSyncService.connect(editUrl.trim(), editToken.trim());
+      toast.success('Connection updated — reloading…');
+      window.location.reload();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update connection');
+    } finally {
+      setConnecting(false);
+    }
+  };
+}
+
+function useCloudSyncHandlers(
+  tursoUrl: string,
+  authToken: string,
+  editUrl: string,
+  editToken: string,
+  credentials: { tursoUrl: string } | null,
+  refreshStatus: () => Promise<void>,
+  setActivating: (v: boolean) => void,
+  setProgressLabel: (v: string) => void,
+  setProgressDetail: (v: string) => void,
+  setShowEditModal: (v: boolean) => void,
+  setEditUrl: (v: string) => void,
+  setEditToken: (v: string) => void,
+  setConnecting: (v: boolean) => void,
+) {
   async function handleActivate() {
     if (!tursoUrl.trim() || !authToken.trim()) {
       toast.error('Both Turso URL and auth token are required.');
@@ -96,29 +119,60 @@ export function CloudSyncSection() {
     setShowEditModal(true);
   }
 
-  async function handleSaveConnection() {
-    if (!editUrl.trim() || !editToken.trim()) {
-      toast.error('Both URL and auth token are required.');
-      return;
-    }
-    setConnecting(true);
-    try {
-      await cloudSyncService.connect(editUrl.trim(), editToken.trim());
-      toast.success('Connection updated — reloading…');
-      window.location.reload();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update connection');
-    } finally {
-      setConnecting(false);
-    }
-  }
+  return {
+    handleActivate,
+    handleManualSync,
+    openEditModal,
+    handleSaveConnection: makeHandleSaveConnection(editUrl, editToken, setConnecting),
+  };
+}
+
+export function CloudSyncSection() {
+  const [status, setStatus] = useState<CloudSyncStatus | null>(null);
+  const [tursoUrl, setTursoUrl] = useState('');
+  const [authToken, setAuthToken] = useState('');
+  const [activating, setActivating] = useState(false);
+  const [progressLabel, setProgressLabel] = useState('');
+  const [progressDetail, setProgressDetail] = useState('');
+  const [credentials, setCredentials] = useState<{ tursoUrl: string } | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editUrl, setEditUrl] = useState('');
+  const [editToken, setEditToken] = useState('');
+  const [connecting, setConnecting] = useState(false);
+
+  const refreshStatus = useCallback(async () => {
+    const [s, c] = await Promise.all([
+      cloudSyncService.getStatus().catch(() => null),
+      cloudSyncService.getCredentials().catch(() => null),
+    ]);
+    setStatus(s);
+    setCredentials(c);
+  }, []);
+
+  useSyncEvents(refreshStatus, setActivating, setProgressLabel, setProgressDetail);
+
+  const { handleActivate, handleManualSync, openEditModal, handleSaveConnection } =
+    useCloudSyncHandlers(
+      tursoUrl,
+      authToken,
+      editUrl,
+      editToken,
+      credentials,
+      refreshStatus,
+      setActivating,
+      setProgressLabel,
+      setProgressDetail,
+      setShowEditModal,
+      setEditUrl,
+      setEditToken,
+      setConnecting,
+    );
 
   const lastSynced = status?.lastSyncedAt ? new Date(status.lastSyncedAt).toLocaleString() : null;
 
   return (
     <div className="flex flex-col gap-4">
       <SectionHeader label="Cloud Sync" />
-
       {!status?.isActive ? (
         <ActivationForm
           tursoUrl={tursoUrl}
@@ -139,7 +193,6 @@ export function CloudSyncSection() {
           onEditConnection={openEditModal}
         />
       )}
-
       <EditConnectionModal
         open={showEditModal}
         editUrl={editUrl}
