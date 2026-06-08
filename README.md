@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="packages/desktop/src/renderer/public/logo.png" alt="ReYoGo logo" width="120" />
+  <img src="apps/desktop/src/renderer/public/logo.png" alt="ReYoGo logo" width="120" />
 </p>
 
 # ReYoGo
@@ -63,7 +63,7 @@ pnpm --filter @reyogo/desktop run db:studio    # Open Drizzle Studio
 
 ## Architecture
 
-### Desktop (`packages/desktop`)
+### Desktop (`apps/desktop`)
 
 Electron app with three zones inside `src/`:
 
@@ -78,7 +78,7 @@ Electron app with three zones inside `src/`:
 
 The preload script (`src/main/preload.ts`) is the security boundary — it exposes `window.electronAPI` with `contextIsolation: true` and `nodeIntegration: false`.
 
-### Web (`packages/web`)
+### Web (`apps/web`)
 
 React 18 + Vite SPA. Consumes entity types from `@reyogo/shared`. Dev server runs on `:5174` (desktop uses `:5173`).
 
