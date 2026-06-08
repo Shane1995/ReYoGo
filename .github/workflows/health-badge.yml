@@ -9,6 +9,10 @@ on:
       - '.fallowrc.json'
       - 'fallow-baselines/**'
 
+env:
+  NODE_VERSION: "24"
+  PNPM_VERSION: "9.15.0"
+
 jobs:
   health-badge:
     runs-on: ubuntu-latest
@@ -16,10 +20,18 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Generate health badge
         run: |
           mkdir -p .github/badges
-          npx fallow@2.89.0 health --format badge --report-only > .github/badges/health.svg
+          pnpm dlx fallow@2.89.0 health --format badge --report-only > .github/badges/health.svg
       - name: Commit badge
         run: |
           git config user.name "github-actions[bot]"
