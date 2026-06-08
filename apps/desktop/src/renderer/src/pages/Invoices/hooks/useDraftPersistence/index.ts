@@ -24,7 +24,7 @@ export function saveDraft(state: DraftState): void {
   localStorage.setItem(DRAFT_KEY, JSON.stringify(state));
 }
 
-export function clearDraft(): void {
+function clearDraft(): void {
   localStorage.removeItem(DRAFT_KEY);
 }
 
