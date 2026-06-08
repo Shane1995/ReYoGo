@@ -13,6 +13,48 @@ import { loadDraft, useDraftPersistence } from '../useDraftPersistence';
 import { useLineManager } from '../useLineManager';
 import { useInvoiceSummary } from '../useInvoiceSummary';
 
+function buildSaveLines(
+  validLines: ProcessReceiptLine[],
+  itemMetaMap: Map<string, { name: string }>,
+  vatMode: VatMode,
+  vatRate: number,
+) {
+  return validLines.map((line) => {
+    const computed = getProcessLineComputed(line, vatMode, vatRate);
+    return {
+      id: line.id,
+      itemId: line.itemId,
+      itemNameSnapshot: itemMetaMap.get(line.itemId)?.name ?? '',
+      quantity: Number(line.quantity),
+      unitPrice: computed.netUnitPrice,
+      isVatable: line.isVatable,
+      totalVatExclude: computed.netTotal,
+    };
+  });
+}
+
+function buildInvoiceInput(params: {
+  entityId: string;
+  supplierId: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  vatMode: VatMode;
+  vatRate: number;
+  validLines: ProcessReceiptLine[];
+  itemMetaMap: Map<string, { name: string }>;
+}) {
+  return {
+    id: window.crypto.randomUUID(),
+    entityId: params.entityId,
+    supplierId: params.supplierId || null,
+    invoiceNumber: params.invoiceNumber.trim(),
+    invoiceDate: params.invoiceDate ? new Date(params.invoiceDate) : null,
+    vatMode: params.vatMode,
+    vatRate: params.vatRate,
+    lines: buildSaveLines(params.validLines, params.itemMetaMap, params.vatMode, params.vatRate),
+  };
+}
+
 export function useInvoiceForm() {
   const { items, categories, unitOptions, addCategory, addItem } = useInventory();
   const { entities, selectedEntityId: entityId } = useEntities();
@@ -138,10 +180,10 @@ export function useInvoiceForm() {
   const isDirty =
     lines.some((l) => l.itemId) || !!invoiceNumber.trim() || !!invoiceDate || !!supplierId;
 
-  const handleSave = useCallback(async () => {
+  const validateBeforeSave = useCallback((): boolean => {
     if (!selectedEntity) {
       setSaveError('No entity selected. Please select a business in the top bar.');
-      return;
+      return false;
     }
     if (!canSave) {
       setSaveError(
@@ -149,33 +191,28 @@ export function useInvoiceForm() {
           ? 'Invoice number is required.'
           : 'Complete all rows before saving — each row needs an item and quantity.',
       );
-      return;
+      return false;
     }
     setSaveError(null);
+    return true;
+  }, [selectedEntity, canSave, invoiceNumber]);
+
+  const handleSave = useCallback(async () => {
+    if (!validateBeforeSave() || !selectedEntity) return;
     setIsSaving(true);
-    const vatRate = selectedEntity.defaultVatRate;
     try {
-      await invoiceService.saveAndPostInvoice({
-        id: window.crypto.randomUUID(),
-        entityId,
-        supplierId: supplierId || null,
-        invoiceNumber: invoiceNumber.trim(),
-        invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
-        vatMode,
-        vatRate,
-        lines: validLines.map((line) => {
-          const computed = getProcessLineComputed(line, vatMode, vatRate);
-          return {
-            id: line.id,
-            itemId: line.itemId,
-            itemNameSnapshot: itemMetaMap.get(line.itemId)?.name ?? '',
-            quantity: Number(line.quantity),
-            unitPrice: computed.netUnitPrice,
-            isVatable: line.isVatable,
-            totalVatExclude: computed.netTotal,
-          };
+      await invoiceService.saveAndPostInvoice(
+        buildInvoiceInput({
+          entityId,
+          supplierId,
+          invoiceNumber,
+          invoiceDate,
+          vatMode,
+          vatRate: selectedEntity.defaultVatRate,
+          validLines,
+          itemMetaMap,
         }),
-      });
+      );
       clearForm();
       toast.success('Invoice posted');
     } catch (e) {
@@ -184,8 +221,8 @@ export function useInvoiceForm() {
       setIsSaving(false);
     }
   }, [
+    validateBeforeSave,
     selectedEntity,
-    canSave,
     validLines,
     entityId,
     invoiceNumber,
@@ -197,43 +234,21 @@ export function useInvoiceForm() {
   ]);
 
   const handleSaveDraft = useCallback(async () => {
-    if (!selectedEntity) {
-      setSaveError('No entity selected. Please select a business in the top bar.');
-      return;
-    }
-    if (!canSave) {
-      setSaveError(
-        !invoiceNumber.trim()
-          ? 'Invoice number is required.'
-          : 'Complete all rows before saving — each row needs an item and quantity.',
-      );
-      return;
-    }
-    setSaveError(null);
+    if (!validateBeforeSave() || !selectedEntity) return;
     setIsSavingDraft(true);
-    const vatRate = selectedEntity.defaultVatRate;
     try {
-      await invoiceService.saveInvoice({
-        id: window.crypto.randomUUID(),
-        entityId,
-        supplierId: supplierId || null,
-        invoiceNumber: invoiceNumber.trim(),
-        invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
-        vatMode,
-        vatRate,
-        lines: validLines.map((line) => {
-          const computed = getProcessLineComputed(line, vatMode, vatRate);
-          return {
-            id: line.id,
-            itemId: line.itemId,
-            itemNameSnapshot: itemMetaMap.get(line.itemId)?.name ?? '',
-            quantity: Number(line.quantity),
-            unitPrice: computed.netUnitPrice,
-            isVatable: line.isVatable,
-            totalVatExclude: computed.netTotal,
-          };
+      await invoiceService.saveInvoice(
+        buildInvoiceInput({
+          entityId,
+          supplierId,
+          invoiceNumber,
+          invoiceDate,
+          vatMode,
+          vatRate: selectedEntity.defaultVatRate,
+          validLines,
+          itemMetaMap,
         }),
-      });
+      );
       clearForm();
       toast.success('Draft saved');
     } catch (e) {
@@ -242,8 +257,8 @@ export function useInvoiceForm() {
       setIsSavingDraft(false);
     }
   }, [
+    validateBeforeSave,
     selectedEntity,
-    canSave,
     validLines,
     entityId,
     invoiceNumber,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveIcon, resolvePath, iconRegistry } from '.';
+import { resolveIcon, resolvePath } from '.';
 import { appConfig } from '@/config/app.config';
 
 describe('resolveIcon', () => {
@@ -13,12 +13,6 @@ describe('resolveIcon', () => {
 
   it('throws for an unknown icon key', () => {
     expect(() => resolveIcon('NonExistentIcon')).toThrow('Unknown icon key');
-  });
-
-  it('resolves every key registered in the icon registry', () => {
-    Object.keys(iconRegistry).forEach((key) => {
-      expect(() => resolveIcon(key)).not.toThrow();
-    });
   });
 });
 

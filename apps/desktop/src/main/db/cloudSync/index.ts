@@ -143,6 +143,87 @@ async function copyTable<T extends SQLiteTable>(
   return rows.length;
 }
 
+async function migrateAndClearRemote(
+  webContents: Pick<WebContents, 'send'>,
+  remoteDb: DbClient,
+): Promise<void> {
+  sendEvent(webContents, {
+    type: CloudSyncEventType.Progress,
+    stage: CloudSyncStage.Migrating,
+    done: 0,
+    total: 1,
+  });
+  await migrate(remoteDb, { migrationsFolder: getMigrationsFolder() });
+  for (const table of [...FK_ORDER_TABLES].reverse()) {
+    await remoteDb.delete(table);
+  }
+  sendEvent(webContents, {
+    type: CloudSyncEventType.Progress,
+    stage: CloudSyncStage.Migrating,
+    done: 1,
+    total: 1,
+  });
+}
+
+async function pushTables(
+  webContents: Pick<WebContents, 'send'>,
+  localDb: DbClient,
+  remoteDb: DbClient,
+): Promise<Array<{ table: SQLiteTable; localCount: number }>> {
+  const total = FK_ORDER_TABLES.length;
+  const pushed: Array<{ table: SQLiteTable; localCount: number }> = [];
+  sendEvent(webContents, {
+    type: CloudSyncEventType.Progress,
+    stage: CloudSyncStage.Pushing,
+    done: 0,
+    total,
+  });
+  for (const table of FK_ORDER_TABLES) {
+    pushed.push({ table, localCount: await copyTable(localDb, remoteDb, table) });
+    sendEvent(webContents, {
+      type: CloudSyncEventType.Progress,
+      stage: CloudSyncStage.Pushing,
+      done: pushed.length,
+      total,
+    });
+  }
+  return pushed;
+}
+
+async function verifyTables(
+  webContents: Pick<WebContents, 'send'>,
+  remoteDb: DbClient,
+  pushed: Array<{ table: SQLiteTable; localCount: number }>,
+): Promise<boolean> {
+  const total = pushed.length;
+  sendEvent(webContents, {
+    type: CloudSyncEventType.Progress,
+    stage: CloudSyncStage.Verifying,
+    done: 0,
+    total,
+  });
+  let done = 0;
+  for (const { table, localCount } of pushed) {
+    const remoteRows = await remoteDb.select().from(table);
+    if (remoteRows.length < localCount) {
+      sendEvent(webContents, {
+        type: CloudSyncEventType.Error,
+        message: `Data loss detected in ${getTableName(table)}: pushed ${localCount} rows but remote only has ${remoteRows.length}`,
+        retryable: true,
+      });
+      return false;
+    }
+    done++;
+    sendEvent(webContents, {
+      type: CloudSyncEventType.Progress,
+      stage: CloudSyncStage.Verifying,
+      done,
+      total,
+    });
+  }
+  return true;
+}
+
 export async function activateCloudSync(
   webContents: Pick<WebContents, 'send'>,
   localDb: DbClient,
@@ -151,76 +232,10 @@ export async function activateCloudSync(
 ): Promise<void> {
   const remoteHandle: DbHandle = createDbClient(tursoUrl, authToken);
   try {
-    sendEvent(webContents, {
-      type: CloudSyncEventType.Progress,
-      stage: CloudSyncStage.Migrating,
-      done: 0,
-      total: 1,
-    });
-
-    await migrate(remoteHandle.db, { migrationsFolder: getMigrationsFolder() });
-
-    // Migrations seed default rows (e.g. 'My Business', 'My Venue'). Clear all
-    // tables in reverse FK order so the local data copy below always wins.
-    for (const table of [...FK_ORDER_TABLES].reverse()) {
-      await remoteHandle.db.delete(table);
-    }
-
-    sendEvent(webContents, {
-      type: CloudSyncEventType.Progress,
-      stage: CloudSyncStage.Migrating,
-      done: 1,
-      total: 1,
-    });
-
-    const totalTables = FK_ORDER_TABLES.length;
-    const pushed: Array<{ table: SQLiteTable; localCount: number }> = [];
-
-    sendEvent(webContents, {
-      type: CloudSyncEventType.Progress,
-      stage: CloudSyncStage.Pushing,
-      done: 0,
-      total: totalTables,
-    });
-
-    for (const table of FK_ORDER_TABLES) {
-      pushed.push({ table, localCount: await copyTable(localDb, remoteHandle.db, table) });
-      sendEvent(webContents, {
-        type: CloudSyncEventType.Progress,
-        stage: CloudSyncStage.Pushing,
-        done: pushed.length,
-        total: totalTables,
-      });
-    }
-
-    sendEvent(webContents, {
-      type: CloudSyncEventType.Progress,
-      stage: CloudSyncStage.Verifying,
-      done: 0,
-      total: totalTables,
-    });
-
-    let verifyDone = 0;
-    for (const { table, localCount } of pushed) {
-      const remoteRows = await remoteHandle.db.select().from(table);
-
-      if (remoteRows.length < localCount) {
-        sendEvent(webContents, {
-          type: CloudSyncEventType.Error,
-          message: `Data loss detected in ${getTableName(table)}: pushed ${localCount} rows but remote only has ${remoteRows.length}`,
-          retryable: true,
-        });
-        return;
-      }
-
-      verifyDone++;
-      sendEvent(webContents, {
-        type: CloudSyncEventType.Progress,
-        stage: CloudSyncStage.Verifying,
-        done: verifyDone,
-        total: totalTables,
-      });
-    }
+    await migrateAndClearRemote(webContents, remoteHandle.db);
+    const pushed = await pushTables(webContents, localDb, remoteHandle.db);
+    const verified = await verifyTables(webContents, remoteHandle.db, pushed);
+    if (!verified) return;
 
     sendEvent(webContents, {
       type: CloudSyncEventType.Progress,
@@ -228,12 +243,9 @@ export async function activateCloudSync(
       done: 0,
       total: 1,
     });
-
     persistCredentials({ tursoUrl, authToken });
-
     updateSyncStatus({ state: SyncState.Idle, lastSyncedAt: new Date(), error: null });
     store.set(STORE_KEY_LAST_SYNCED, new Date().toISOString());
-
     sendEvent(webContents, {
       type: CloudSyncEventType.Progress,
       stage: CloudSyncStage.Activating,

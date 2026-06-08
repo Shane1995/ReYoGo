@@ -3,11 +3,7 @@ import { Button } from '@reyogo/ui';
 import type { TypeValue, InventoryCategory, InventoryItem } from '../../types';
 import type { UnitOption } from '../ItemsTable/types';
 import { cn } from '@reyogo/ui';
-
-const inputClass = cn(
-  'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm',
-  'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0',
-);
+import { modalInputClass, NameField, UnitOfMeasureField } from '../SharedFormFields';
 
 type AddItemModalProps = {
   open: boolean;
@@ -16,6 +12,85 @@ type AddItemModalProps = {
   unitOptions: UnitOption[];
   onSave: (item: Omit<InventoryItem, 'id'>) => void;
 };
+
+function CategoryField({
+  categories,
+  categoryId,
+  onChange,
+}: {
+  categories: InventoryCategory[];
+  categoryId: string;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-sm font-medium text-foreground">Category</label>
+      <select
+        value={categoryId}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(modalInputClass, 'cursor-pointer')}
+      >
+        <option value="">Select category</option>
+        {categories
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.type} → {c.name}
+            </option>
+          ))}
+      </select>
+    </div>
+  );
+}
+
+function ModalForm({
+  name,
+  categoryId,
+  unitOfMeasureId,
+  categories,
+  unitOptions,
+  onNameChange,
+  onCategoryChange,
+  onUomChange,
+  onSave,
+  onClose,
+}: {
+  name: string;
+  categoryId: string;
+  unitOfMeasureId: string;
+  categories: InventoryCategory[];
+  unitOptions: UnitOption[];
+  onNameChange: (v: string) => void;
+  onCategoryChange: (v: string) => void;
+  onUomChange: (v: string) => void;
+  onSave: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="mt-4 space-y-4">
+      <NameField value={name} placeholder="Item name" onChange={onNameChange} onSave={onSave} />
+      <CategoryField categories={categories} categoryId={categoryId} onChange={onCategoryChange} />
+      <UnitOfMeasureField
+        value={unitOfMeasureId}
+        unitOptions={unitOptions}
+        onChange={onUomChange}
+      />
+      <div className="mt-6 flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          variant="success"
+          onClick={onSave}
+          disabled={!name.trim() || !categoryId}
+        >
+          Save
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export function AddItemModal({
   open,
@@ -31,27 +106,24 @@ export function AddItemModal({
   const category = categories.find((c) => c.id === categoryId);
   const type: TypeValue = category?.type ?? '';
 
+  const reset = useCallback(() => {
+    setName('');
+    setCategoryId('');
+    setUnitOfMeasureId('');
+  }, []);
+
   const handleSave = useCallback(() => {
     const trimmed = name.trim();
     if (!trimmed || !categoryId) return;
-    onSave({
-      name: trimmed,
-      categoryId,
-      type,
-      unitOfMeasureId: unitOfMeasureId || null,
-    });
-    setName('');
-    setCategoryId('');
-    setUnitOfMeasureId('');
+    onSave({ name: trimmed, categoryId, type, unitOfMeasureId: unitOfMeasureId || null });
+    reset();
     onClose();
-  }, [name, categoryId, type, unitOfMeasureId, onSave, onClose]);
+  }, [name, categoryId, type, unitOfMeasureId, onSave, onClose, reset]);
 
   const handleClose = useCallback(() => {
-    setName('');
-    setCategoryId('');
-    setUnitOfMeasureId('');
+    reset();
     onClose();
-  }, [onClose]);
+  }, [onClose, reset]);
 
   if (!open) return null;
 
@@ -68,66 +140,18 @@ export function AddItemModal({
         <p className="mt-1 text-sm text-muted-foreground">
           Add a new item to inventory. It will appear in the item dropdown.
         </p>
-        <div className="mt-4 space-y-4">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Name</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-              className={inputClass}
-              placeholder="Item name"
-              autoFocus
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Category</label>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className={cn(inputClass, 'cursor-pointer')}
-            >
-              <option value="">Select category</option>
-              {categories
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.type} → {c.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Unit of measure
-            </label>
-            <select
-              value={unitOfMeasureId}
-              onChange={(e) => setUnitOfMeasureId(e.target.value)}
-              className={cn(inputClass, 'cursor-pointer')}
-            >
-              <option value="">— none —</option>
-              {unitOptions.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="success"
-            onClick={handleSave}
-            disabled={!name.trim() || !categoryId}
-          >
-            Save
-          </Button>
-        </div>
+        <ModalForm
+          name={name}
+          categoryId={categoryId}
+          unitOfMeasureId={unitOfMeasureId}
+          categories={categories}
+          unitOptions={unitOptions}
+          onNameChange={setName}
+          onCategoryChange={setCategoryId}
+          onUomChange={setUnitOfMeasureId}
+          onSave={handleSave}
+          onClose={handleClose}
+        />
       </div>
     </div>
   );

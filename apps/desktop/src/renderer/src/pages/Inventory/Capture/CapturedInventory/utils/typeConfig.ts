@@ -7,7 +7,7 @@ export type TypeConfig = {
   icon: React.FC<{ className?: string }>;
 };
 
-export const KNOWN_TYPE_CONFIG: Record<string, TypeConfig> = {
+const KNOWN_TYPE_CONFIG: Record<string, TypeConfig> = {
   food: {
     color: 'text-emerald-700 dark:text-emerald-400',
     badgeClass:
@@ -30,7 +30,7 @@ export const KNOWN_TYPE_CONFIG: Record<string, TypeConfig> = {
   },
 };
 
-export const FALLBACK_PALETTE: TypeConfig[] = [
+const FALLBACK_PALETTE: TypeConfig[] = [
   {
     color: 'text-violet-700 dark:text-violet-400',
     badgeClass:
@@ -61,7 +61,7 @@ export const FALLBACK_PALETTE: TypeConfig[] = [
   },
 ];
 
-export const TYPE_EMOJI: Record<string, string> = {
+const TYPE_EMOJI: Record<string, string> = {
   food: '🍴',
   beverage: '🥤',
   'non-food': '📦',

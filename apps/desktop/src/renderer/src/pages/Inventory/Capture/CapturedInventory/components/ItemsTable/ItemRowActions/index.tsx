@@ -4,6 +4,69 @@ import { Popover, PopoverContent, PopoverTrigger } from '@reyogo/ui';
 import type { InventoryItem } from '../../../types';
 import type { FlatItem } from '../types';
 
+function ConfirmArchive({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+      <p className="mb-2 font-medium text-foreground">Archive this item?</p>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onConfirm}
+          className="rounded px-2 py-1 text-xs font-medium text-amber-600 hover:bg-amber-500/10 transition-colors"
+        >
+          Archive
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded px-2 py-1 text-xs hover:bg-muted transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ActionsMenu({
+  onEdit,
+  onViewInsights,
+  onArchive,
+}: {
+  onEdit: () => void;
+  onViewInsights: () => void;
+  onArchive: () => void;
+}) {
+  return (
+    <div className="flex flex-col">
+      <button
+        type="button"
+        onClick={onEdit}
+        className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-left hover:bg-muted transition-colors"
+      >
+        <PencilIcon className="size-3.5 text-muted-foreground" />
+        Edit
+      </button>
+      <button
+        type="button"
+        onClick={onViewInsights}
+        className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-left hover:bg-muted transition-colors"
+      >
+        <LineChartIcon className="size-3.5 text-muted-foreground" />
+        Cost insights
+      </button>
+      <button
+        type="button"
+        onClick={onArchive}
+        className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-left text-muted-foreground hover:bg-muted transition-colors"
+      >
+        <Trash2Icon className="size-3.5" />
+        Archive
+      </button>
+    </div>
+  );
+}
+
 type Props = {
   row: FlatItem;
   originalItem: InventoryItem;
@@ -41,61 +104,25 @@ export function ItemRowActions({ row, originalItem, onEdit, onViewInsights, onDe
         </PopoverTrigger>
         <PopoverContent className="w-40 p-1" align="end" sideOffset={4}>
           {confirming ? (
-            <div className="px-2 py-1.5 text-xs text-muted-foreground">
-              <p className="mb-2 font-medium text-foreground">Archive this item?</p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onDelete(row.id);
-                    close();
-                  }}
-                  className="rounded px-2 py-1 text-xs font-medium text-amber-600 hover:bg-amber-500/10 transition-colors"
-                >
-                  Archive
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirming(false)}
-                  className="rounded px-2 py-1 text-xs hover:bg-muted transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
+            <ConfirmArchive
+              onConfirm={() => {
+                onDelete(row.id);
+                close();
+              }}
+              onCancel={() => setConfirming(false)}
+            />
           ) : (
-            <div className="flex flex-col">
-              <button
-                type="button"
-                onClick={() => {
-                  onEdit(originalItem);
-                  close();
-                }}
-                className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-left hover:bg-muted transition-colors"
-              >
-                <PencilIcon className="size-3.5 text-muted-foreground" />
-                Edit
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onViewInsights(row.id);
-                  close();
-                }}
-                className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-left hover:bg-muted transition-colors"
-              >
-                <LineChartIcon className="size-3.5 text-muted-foreground" />
-                Cost insights
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirming(true)}
-                className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-left text-muted-foreground hover:bg-muted transition-colors"
-              >
-                <Trash2Icon className="size-3.5" />
-                Archive
-              </button>
-            </div>
+            <ActionsMenu
+              onEdit={() => {
+                onEdit(originalItem);
+                close();
+              }}
+              onViewInsights={() => {
+                onViewInsights(row.id);
+                close();
+              }}
+              onArchive={() => setConfirming(true)}
+            />
           )}
         </PopoverContent>
       </Popover>

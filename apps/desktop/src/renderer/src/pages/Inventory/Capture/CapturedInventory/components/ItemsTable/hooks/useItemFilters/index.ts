@@ -64,7 +64,7 @@ export function useItemFilters({ items, categories, costMap, stockMap, inventory
         return a.name.localeCompare(b.name);
       })
       .map((c) => ({ value: c.id, label: c.name, group: typeGroupLabel(c.type) }));
-  }, [categories]);
+  }, [categories, inventoryTypes]);
 
   const unitOptions = useMemo(() => {
     const used = Array.from(

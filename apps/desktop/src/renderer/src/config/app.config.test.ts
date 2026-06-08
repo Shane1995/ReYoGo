@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { appConfig } from './app.config';
-import { iconRegistry } from './resolvers';
+import { resolveIcon } from './resolvers';
 
 describe('appConfig.nav', () => {
   const allNavItems = [
@@ -10,9 +10,9 @@ describe('appConfig.nav', () => {
     ...appConfig.nav.costing,
   ];
 
-  it('every nav item icon key exists in the icon registry', () => {
+  it('every nav item icon key resolves without throwing', () => {
     allNavItems.forEach((item) => {
-      expect(iconRegistry).toHaveProperty(item.icon);
+      expect(() => resolveIcon(item.icon)).not.toThrow();
     });
   });
 
@@ -36,9 +36,9 @@ describe('appConfig.dashboard.statCards', () => {
     expect(appConfig.dashboard.statCards).toHaveLength(4);
   });
 
-  it('every stat card icon key exists in the icon registry', () => {
+  it('every stat card icon key resolves without throwing', () => {
     appConfig.dashboard.statCards.forEach((card) => {
-      expect(iconRegistry).toHaveProperty(card.icon);
+      expect(() => resolveIcon(card.icon)).not.toThrow();
     });
   });
 

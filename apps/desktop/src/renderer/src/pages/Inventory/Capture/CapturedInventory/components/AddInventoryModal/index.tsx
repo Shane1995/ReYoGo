@@ -4,13 +4,8 @@ import { INVENTORY_TYPES, InventoryType } from '@reyogo/types';
 import { useInventory } from '../../Context/InventoryContext';
 import { typeGroupLabel } from '../../utils/typeConfig';
 import { useEntities } from '@/Context/EntityContext';
-
 import { cn } from '@reyogo/ui';
-
-const inputClass = cn(
-  'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm',
-  'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0',
-);
+import { modalInputClass, NameField, UnitOfMeasureField } from '../SharedFormFields';
 
 enum Tab {
   ITEM = 'item',
@@ -37,23 +32,13 @@ function CategoryForm({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="space-y-4">
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-foreground">Name</label>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-          className={inputClass}
-          placeholder="Category name"
-          autoFocus
-        />
-      </div>
+      <NameField value={name} placeholder="Category name" onChange={setName} onSave={handleSave} />
       <div>
         <label className="mb-1.5 block text-sm font-medium text-foreground">Type</label>
         <select
           value={type}
           onChange={(e) => setType(e.target.value as InventoryType)}
-          className={cn(inputClass, 'cursor-pointer')}
+          className={cn(modalInputClass, 'cursor-pointer')}
         >
           {INVENTORY_TYPES.map((t) => (
             <option key={t} value={t}>
@@ -67,6 +52,45 @@ function CategoryForm({ onDone }: { onDone: () => void }) {
           Add category
         </Button>
       </div>
+    </div>
+  );
+}
+
+function CategorySelect({
+  categories,
+  inventoryTypes,
+  value,
+  onChange,
+}: {
+  categories: ReturnType<typeof useInventory>['categories'];
+  inventoryTypes: ReturnType<typeof useInventory>['inventoryTypes'];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-sm font-medium text-foreground">Category</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(modalInputClass, 'cursor-pointer')}
+      >
+        <option value="">Select category…</option>
+        {inventoryTypes
+          .filter((t) => categories.some((c) => c.type === t))
+          .map((type) => (
+            <optgroup key={type} label={typeGroupLabel(type)}>
+              {categories
+                .filter((c) => c.name.trim() && c.type === type)
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+            </optgroup>
+          ))}
+      </select>
     </div>
   );
 }
@@ -98,56 +122,18 @@ function ItemForm({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="space-y-4">
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-foreground">Name</label>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-          className={inputClass}
-          placeholder="Item name"
-          autoFocus
-        />
-      </div>
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-foreground">Category</label>
-        <select
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          className={cn(inputClass, 'cursor-pointer')}
-        >
-          <option value="">Select category…</option>
-          {inventoryTypes
-            .filter((t) => categories.some((c) => c.type === t))
-            .map((type) => (
-              <optgroup key={type} label={typeGroupLabel(type)}>
-                {categories
-                  .filter((c) => c.name.trim() && c.type === type)
-                  .sort((a, b) => a.name.localeCompare(b.name))
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-              </optgroup>
-            ))}
-        </select>
-      </div>
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-foreground">Unit of measure</label>
-        <select
-          value={unitOfMeasureId}
-          onChange={(e) => setUnitOfMeasureId(e.target.value)}
-          className={cn(inputClass, 'cursor-pointer')}
-        >
-          <option value="">— none —</option>
-          {unitOptions.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      <NameField value={name} placeholder="Item name" onChange={setName} onSave={handleSave} />
+      <CategorySelect
+        categories={categories}
+        inventoryTypes={inventoryTypes}
+        value={categoryId}
+        onChange={setCategoryId}
+      />
+      <UnitOfMeasureField
+        value={unitOfMeasureId}
+        unitOptions={unitOptions}
+        onChange={setUnitOfMeasureId}
+      />
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" onClick={handleSave} disabled={!name.trim() || !categoryId}>
           Add item
@@ -161,6 +147,31 @@ const TABS: { id: Tab; label: string }[] = [
   { id: Tab.ITEM, label: Tab.ITEM },
   { id: Tab.CATEGORY, label: Tab.CATEGORY },
 ];
+
+function ModalTabBar({ activeTab, onSelect }: { activeTab: Tab; onSelect: (t: Tab) => void }) {
+  return (
+    <div className="flex items-center justify-between border-b border-border px-6 pt-5 pb-0">
+      <h2 className="text-base font-semibold text-foreground">Add to inventory</h2>
+      <div className="flex gap-0.5">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => onSelect(tab.id)}
+            className={cn(
+              'rounded-t-md px-3.5 py-2 text-xs font-medium transition-colors',
+              activeTab === tab.id
+                ? 'border-b-2 border-primary text-foreground'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function AddInventoryModal({ open, onClose }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.ITEM);
@@ -182,40 +193,16 @@ export function AddInventoryModal({ open, onClose }: Props) {
         className="w-full max-w-md rounded-xl border border-[var(--nav-border)] bg-background shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-border px-6 pt-5 pb-0">
-          <div>
-            <h2 className="text-base font-semibold text-foreground">Add to inventory</h2>
-          </div>
-          <div className="flex gap-0.5">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  'rounded-t-md px-3.5 py-2 text-xs font-medium transition-colors',
-                  activeTab === tab.id
-                    ? 'border-b-2 border-primary text-foreground'
-                    : 'text-muted-foreground hover:text-foreground',
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
+        <ModalTabBar activeTab={activeTab} onSelect={setActiveTab} />
         <div className="px-6 py-5">
           {successMsg && (
             <div className="mb-4 rounded-md bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
               {successMsg}
             </div>
           )}
-
           {activeTab === Tab.ITEM && <ItemForm onDone={() => handleDone(Tab.ITEM)} />}
           {activeTab === Tab.CATEGORY && <CategoryForm onDone={() => handleDone(Tab.CATEGORY)} />}
         </div>
-
         <div className="flex justify-end border-t border-border px-6 py-4">
           <Button type="button" variant="outline" onClick={onClose}>
             Close

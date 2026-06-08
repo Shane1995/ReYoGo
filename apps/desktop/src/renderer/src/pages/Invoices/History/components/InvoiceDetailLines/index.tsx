@@ -3,6 +3,59 @@ import type { ICapturedInvoiceWithLines } from '@reyogo/types';
 import { formatMoney } from '../../../utils/formatMoney';
 import { invoiceTotals } from '../../../utils/invoiceTotals';
 
+const thCls = 'pb-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60';
+
+function DetailLinesHead() {
+  return (
+    <thead>
+      <tr className="border-b border-[var(--nav-border)]">
+        <th className={`${thCls} pr-4 text-left`}>Item</th>
+        <th className={`${thCls} pr-4 text-right`}>Qty</th>
+        <th className={`${thCls} pr-4 text-right`}>Unit</th>
+        <th className={`${thCls} pr-4 text-right`}>Unit price</th>
+        <th className={`${thCls} pr-4 text-center`}>VAT</th>
+        <th className={`${thCls} text-right`}>Line total</th>
+      </tr>
+    </thead>
+  );
+}
+
+function TotalsSummary({
+  excl,
+  vat,
+  total,
+  vatMode,
+  vatRate,
+}: {
+  excl: number;
+  vat: number;
+  total: number;
+  vatMode: string;
+  vatRate: number;
+}) {
+  const statCls = 'text-muted-foreground/60 text-[11px] uppercase tracking-widest font-medium';
+  const valCls = 'font-mono font-semibold text-foreground text-sm normal-case tracking-normal';
+  return (
+    <div className="mt-3 flex gap-6 text-sm border-t border-[var(--nav-border)] pt-3">
+      <span className={statCls}>
+        Excl. <span className={valCls}>{formatMoney(excl)}</span>
+      </span>
+      <span className={statCls}>
+        VAT <span className={valCls}>{formatMoney(vat)}</span>
+      </span>
+      <span className={statCls}>
+        Total <span className={`${valCls} font-bold`}>{formatMoney(total)}</span>
+      </span>
+      <span className={statCls}>
+        Mode{' '}
+        <span className="font-medium text-foreground text-sm normal-case tracking-normal">
+          {vatMode === VatMode.Inclusive ? 'Incl.' : 'Excl.'} · {vatRate}%
+        </span>
+      </span>
+    </div>
+  );
+}
+
 type Props = { invoice: ICapturedInvoiceWithLines };
 
 export function InvoiceDetailLines({ invoice }: Props) {
@@ -15,28 +68,7 @@ export function InvoiceDetailLines({ invoice }: Props) {
   return (
     <>
       <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-[var(--nav-border)]">
-            <th className="pb-2 pr-4 text-left text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
-              Item
-            </th>
-            <th className="pb-2 pr-4 text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
-              Qty
-            </th>
-            <th className="pb-2 pr-4 text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
-              Unit
-            </th>
-            <th className="pb-2 pr-4 text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
-              Unit price
-            </th>
-            <th className="pb-2 pr-4 text-center text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
-              VAT
-            </th>
-            <th className="pb-2 text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
-              Line total
-            </th>
-          </tr>
-        </thead>
+        <DetailLinesHead />
         <tbody>
           {invoice.lines.map((line) => {
             const qty = line.quantity || 0;
@@ -66,32 +98,13 @@ export function InvoiceDetailLines({ invoice }: Props) {
           })}
         </tbody>
       </table>
-      <div className="mt-3 flex gap-6 text-sm border-t border-[var(--nav-border)] pt-3">
-        <span className="text-muted-foreground/60 text-[11px] uppercase tracking-widest font-medium">
-          Excl.{' '}
-          <span className="font-mono font-semibold text-foreground text-sm normal-case tracking-normal">
-            {formatMoney(t.excl)}
-          </span>
-        </span>
-        <span className="text-muted-foreground/60 text-[11px] uppercase tracking-widest font-medium">
-          VAT{' '}
-          <span className="font-mono font-semibold text-foreground text-sm normal-case tracking-normal">
-            {formatMoney(t.vat)}
-          </span>
-        </span>
-        <span className="text-muted-foreground/60 text-[11px] uppercase tracking-widest font-medium">
-          Total{' '}
-          <span className="font-mono font-bold text-foreground text-sm normal-case tracking-normal">
-            {formatMoney(t.total)}
-          </span>
-        </span>
-        <span className="text-muted-foreground/60 text-[11px] uppercase tracking-widest font-medium">
-          Mode{' '}
-          <span className="font-medium text-foreground text-sm normal-case tracking-normal">
-            {invoice.vatMode === VatMode.Inclusive ? 'Incl.' : 'Excl.'} · {invoice.vatRate}%
-          </span>
-        </span>
-      </div>
+      <TotalsSummary
+        excl={t.excl}
+        vat={t.vat}
+        total={t.total}
+        vatMode={invoice.vatMode}
+        vatRate={invoice.vatRate}
+      />
     </>
   );
 }

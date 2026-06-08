@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { renderHook } from '@testing-library/react';
 import { VatMode } from '@reyogo/types';
-import { loadDraft, saveDraft, clearDraft } from './index';
+import { loadDraft, saveDraft, useDraftPersistence } from './index';
 
 const DRAFT_KEY = 'reyogo:invoice-draft';
 
@@ -41,10 +42,13 @@ describe('saveDraft', () => {
   });
 });
 
-describe('clearDraft', () => {
-  it('removes the key from localStorage', () => {
+describe('useDraftPersistence clearDraft', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('removes the key from localStorage when invoked', () => {
     localStorage.setItem(DRAFT_KEY, '{}');
-    clearDraft();
+    const { result } = renderHook(() => useDraftPersistence([], '', '', VatMode.Exclusive, true));
+    result.current.clearDraft();
     expect(localStorage.getItem(DRAFT_KEY)).toBeNull();
   });
 });

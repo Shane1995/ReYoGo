@@ -18,6 +18,85 @@ function hasActiveFilters(values: FilterValues): boolean {
   return Object.values(values).some((v) => (Array.isArray(v) ? v.length > 0 : Boolean(v)));
 }
 
+function buildGroups(options: FilterOption[]): { label: string; items: FilterOption[] }[] {
+  if (!options.some((o) => o.group)) return [{ label: '', items: options }];
+  return Array.from(
+    options.reduce((map, opt) => {
+      const key = opt.group ?? '';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(opt);
+      return map;
+    }, new Map<string, FilterOption[]>()),
+  ).map(([label, items]) => ({ label, items }));
+}
+
+function MultiSelectOption({
+  opt,
+  selected,
+  onToggle,
+}: {
+  opt: FilterOption;
+  selected: string[];
+  onToggle: (value: string) => void;
+}) {
+  const isSelected = selected.includes(opt.value);
+  return (
+    <button
+      key={opt.value}
+      type="button"
+      onClick={() => onToggle(opt.value)}
+      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-[var(--foreground)] hover:bg-[var(--accent)]"
+    >
+      <div
+        className={cn(
+          'flex size-3.5 shrink-0 items-center justify-center rounded-sm border',
+          isSelected ? 'border-[var(--primary)] bg-[var(--primary)]' : 'border-[var(--border)]',
+        )}
+      >
+        {isSelected && <CheckIcon className="size-2.5 text-white" />}
+      </div>
+      <span className="truncate">{opt.label}</span>
+    </button>
+  );
+}
+
+function MultiSelectGroups({
+  groups,
+  options,
+  selected,
+  onToggle,
+}: {
+  groups: { label: string; items: FilterOption[] }[];
+  options: FilterOption[];
+  selected: string[];
+  onToggle: (value: string) => void;
+}) {
+  if (options.length === 0) {
+    return <p className="px-2 py-1.5 text-xs text-[var(--muted-foreground)]">No options</p>;
+  }
+  return (
+    <>
+      {groups.map(({ label, items }, i) => (
+        <div key={label || i}>
+          {label && (
+            <p
+              className={cn(
+                'px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]/60',
+                i > 0 && 'mt-1 border-t border-[var(--border)] pt-2',
+              )}
+            >
+              {label}
+            </p>
+          )}
+          {items.map((opt) => (
+            <MultiSelectOption key={opt.value} opt={opt} selected={selected} onToggle={onToggle} />
+          ))}
+        </div>
+      ))}
+    </>
+  );
+}
+
 function MultiSelect({
   field,
   values,
@@ -29,6 +108,7 @@ function MultiSelect({
 }) {
   const selected = (values[field.key] as string[]) ?? [];
   const options = resolveOptions(field, values);
+  const groups = buildGroups(options);
 
   const toggle = (value: string) => {
     const next = selected.includes(value)
@@ -36,39 +116,6 @@ function MultiSelect({
       : [...selected, value];
     onChange(field.key, next);
   };
-
-  const hasGroups = options.some((o) => o.group);
-  const groups: { label: string; items: FilterOption[] }[] = hasGroups
-    ? Array.from(
-        options.reduce((map, opt) => {
-          const key = opt.group ?? '';
-          if (!map.has(key)) map.set(key, []);
-          map.get(key)!.push(opt);
-          return map;
-        }, new Map<string, FilterOption[]>()),
-      ).map(([label, items]) => ({ label, items }))
-    : [{ label: '', items: options }];
-
-  const renderOption = (opt: FilterOption) => (
-    <button
-      key={opt.value}
-      type="button"
-      onClick={() => toggle(opt.value)}
-      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-[var(--foreground)] hover:bg-[var(--accent)]"
-    >
-      <div
-        className={cn(
-          'flex size-3.5 shrink-0 items-center justify-center rounded-sm border',
-          selected.includes(opt.value)
-            ? 'border-[var(--primary)] bg-[var(--primary)]'
-            : 'border-[var(--border)]',
-        )}
-      >
-        {selected.includes(opt.value) && <CheckIcon className="size-2.5 text-white" />}
-      </div>
-      <span className="truncate">{opt.label}</span>
-    </button>
-  );
 
   return (
     <Popover>
@@ -92,27 +139,41 @@ function MultiSelect({
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-52 p-1 max-h-72 overflow-y-auto" align="start">
-        {options.length === 0 ? (
-          <p className="px-2 py-1.5 text-xs text-[var(--muted-foreground)]">No options</p>
-        ) : (
-          groups.map(({ label, items }, i) => (
-            <div key={label || i}>
-              {label && (
-                <p
-                  className={cn(
-                    'px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]/60',
-                    i > 0 && 'mt-1 border-t border-[var(--border)] pt-2',
-                  )}
-                >
-                  {label}
-                </p>
-              )}
-              {items.map(renderOption)}
-            </div>
-          ))
-        )}
+        <MultiSelectGroups
+          groups={groups}
+          options={options}
+          selected={selected}
+          onToggle={toggle}
+        />
       </PopoverContent>
     </Popover>
+  );
+}
+
+function SingleSelectOption({
+  opt,
+  selected,
+  onSelect,
+}: {
+  opt: FilterOption;
+  selected: string;
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <button
+      key={opt.value}
+      type="button"
+      onClick={() => onSelect(opt.value)}
+      className={cn(
+        'flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-[var(--foreground)] hover:bg-[var(--accent)]',
+        selected === opt.value && 'bg-[var(--accent)]',
+      )}
+    >
+      <span className="size-3 shrink-0">
+        {selected === opt.value && <CheckIcon className="size-3 text-[var(--primary)]" />}
+      </span>
+      <span className="truncate">{opt.label}</span>
+    </button>
   );
 }
 
@@ -127,6 +188,9 @@ function SingleSelect({
 }) {
   const selected = (values[field.key] as string) ?? '';
   const options = resolveOptions(field, values);
+  const label = selected
+    ? (options.find((o) => o.value === selected)?.label ?? field.label)
+    : field.label;
 
   return (
     <Popover>
@@ -140,9 +204,7 @@ function SingleSelect({
               : 'border-[var(--border)] bg-[var(--background)] text-[var(--muted-foreground)] hover:border-[var(--input)] hover:text-[var(--foreground)]',
           )}
         >
-          {selected
-            ? (options.find((o) => o.value === selected)?.label ?? field.label)
-            : field.label}
+          {label}
           <ChevronDownIcon className="size-3 opacity-60" />
         </button>
       </PopoverTrigger>
@@ -158,20 +220,12 @@ function SingleSelect({
           </button>
         )}
         {options.map((opt) => (
-          <button
+          <SingleSelectOption
             key={opt.value}
-            type="button"
-            onClick={() => onChange(field.key, opt.value)}
-            className={cn(
-              'flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs text-[var(--foreground)] hover:bg-[var(--accent)]',
-              selected === opt.value && 'bg-[var(--accent)]',
-            )}
-          >
-            <span className="size-3 shrink-0">
-              {selected === opt.value && <CheckIcon className="size-3 text-[var(--primary)]" />}
-            </span>
-            <span className="truncate">{opt.label}</span>
-          </button>
+            opt={opt}
+            selected={selected}
+            onSelect={(v) => onChange(field.key, v)}
+          />
         ))}
       </PopoverContent>
     </Popover>

@@ -15,6 +15,51 @@ type AddCategoryModalProps = {
   onSave: (category: Omit<InventoryCategory, 'id'>) => void;
 };
 
+function CategoryFields({
+  name,
+  type,
+  onNameChange,
+  onTypeChange,
+  onSave,
+}: {
+  name: string;
+  type: TypeValue;
+  onNameChange: (v: string) => void;
+  onTypeChange: (v: TypeValue) => void;
+  onSave: () => void;
+}) {
+  return (
+    <div className="mt-4 space-y-4">
+      <div>
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Name</label>
+        <input
+          value={name}
+          onChange={(e) => onNameChange(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && onSave()}
+          className={inputClass}
+          placeholder="Category name"
+          autoFocus
+        />
+      </div>
+      <div>
+        <label className="mb-1.5 block text-sm font-medium text-foreground">Type</label>
+        <select
+          value={type}
+          onChange={(e) => onTypeChange(e.target.value as TypeValue)}
+          className={cn(inputClass, 'cursor-pointer')}
+        >
+          {!type && <option value="">Select type</option>}
+          {INVENTORY_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
 export function AddCategoryModal({ open, onClose, onSave }: AddCategoryModalProps) {
   const [name, setName] = useState('');
   const [type, setType] = useState<TypeValue>('');
@@ -49,34 +94,13 @@ export function AddCategoryModal({ open, onClose, onSave }: AddCategoryModalProp
         <p className="mt-1 text-sm text-muted-foreground">
           Add a new category to use in the item dropdown.
         </p>
-        <div className="mt-4 space-y-4">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Name</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-              className={inputClass}
-              placeholder="Category name"
-              autoFocus
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Type</label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value as TypeValue)}
-              className={cn(inputClass, 'cursor-pointer')}
-            >
-              {!type && <option value="">Select type</option>}
-              {INVENTORY_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+        <CategoryFields
+          name={name}
+          type={type}
+          onNameChange={setName}
+          onTypeChange={setType}
+          onSave={handleSave}
+        />
         <div className="mt-6 flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={handleClose}>
             Cancel

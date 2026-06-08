@@ -6,4 +6,4 @@ export { InvoicesIPC } from './invoices';
 export { SetupIPC } from './setup';
 export { StockMovementsIPC } from './stockMovements';
 export { SuppliersIPC } from './suppliers';
-export type { IPCInvokeMap, IPCChannel, TypedInvoke } from './invoke-map';
+export type { IPCChannel, TypedInvoke } from './invoke-map';

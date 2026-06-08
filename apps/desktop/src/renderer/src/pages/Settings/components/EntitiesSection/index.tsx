@@ -23,6 +23,52 @@ function avatarColor(index: number) {
   return AVATAR_COLORS[index % AVATAR_COLORS.length] ?? FALLBACK_COLOR;
 }
 
+function EntityRowActions({
+  editing,
+  saving,
+  name,
+  onCancel,
+  onSave,
+  onStartEdit,
+}: {
+  editing: boolean;
+  saving: boolean;
+  name: string;
+  onCancel: () => void;
+  onSave: () => void;
+  onStartEdit: () => void;
+}) {
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1.5 shrink-0">
+        <button
+          onClick={onCancel}
+          className="h-7 px-2.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={onSave}
+          disabled={saving || !name.trim()}
+          className="h-7 px-2.5 rounded-md text-xs font-semibold bg-primary text-primary-foreground disabled:opacity-40 hover:bg-[var(--primary-hover)] transition-colors"
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-1.5 shrink-0">
+      <button
+        onClick={onStartEdit}
+        className="h-7 px-2.5 rounded-md text-xs text-muted-foreground border border-transparent hover:border-border hover:text-foreground opacity-0 group-hover:opacity-100 transition-all"
+      >
+        Rename
+      </button>
+    </div>
+  );
+}
+
 function EntityRow({
   entity,
   index,
@@ -74,38 +120,19 @@ function EntityRow({
           <span className="text-sm font-medium text-foreground truncate">{entity.name}</span>
         )}
       </div>
-
-      <div className="flex items-center gap-1.5 shrink-0">
-        {editing ? (
-          <>
-            <button
-              onClick={() => setEditing(false)}
-              className="h-7 px-2.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleRename}
-              disabled={saving || !name.trim()}
-              className="h-7 px-2.5 rounded-md text-xs font-semibold bg-primary text-primary-foreground disabled:opacity-40 hover:bg-[var(--primary-hover)] transition-colors"
-            >
-              {saving ? 'Saving…' : 'Save'}
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={() => setEditing(true)}
-            className="h-7 px-2.5 rounded-md text-xs text-muted-foreground border border-transparent hover:border-border hover:text-foreground opacity-0 group-hover:opacity-100 transition-all"
-          >
-            Rename
-          </button>
-        )}
-      </div>
+      <EntityRowActions
+        editing={editing}
+        saving={saving}
+        name={name}
+        onCancel={() => setEditing(false)}
+        onSave={handleRename}
+        onStartEdit={() => setEditing(true)}
+      />
     </div>
   );
 }
 
-export function EntitiesSection({ entities, onSaved }: EntitiesSectionProps) {
+function AddEntityForm({ onSaved }: { onSaved: () => Promise<void> }) {
   const [addingName, setAddingName] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -123,6 +150,48 @@ export function EntitiesSection({ entities, onSaved }: EntitiesSectionProps) {
     }
   };
 
+  if (!showAdd) {
+    return (
+      <button
+        onClick={() => setShowAdd(true)}
+        className="w-full text-center text-sm text-muted-foreground border border-dashed border-border rounded-xl py-2 hover:text-primary hover:border-primary/40 transition-colors"
+      >
+        + Add business
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex gap-2">
+      <Input
+        value={addingName}
+        onChange={(ev) => setAddingName(ev.target.value)}
+        placeholder="New business name"
+        className="h-8 text-sm"
+        autoFocus
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') handleAdd();
+          if (e.key === 'Escape') setShowAdd(false);
+        }}
+      />
+      <button
+        onClick={handleAdd}
+        disabled={adding || !addingName.trim()}
+        className="h-8 px-3 rounded-lg text-xs font-semibold bg-primary text-primary-foreground disabled:opacity-40 hover:bg-[var(--primary-hover)] transition-colors"
+      >
+        {adding ? 'Adding…' : 'Add'}
+      </button>
+      <button
+        onClick={() => setShowAdd(false)}
+        className="h-8 px-3 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+      >
+        Cancel
+      </button>
+    </div>
+  );
+}
+
+export function EntitiesSection({ entities, onSaved }: EntitiesSectionProps) {
   return (
     <section className="flex flex-col gap-3">
       <SectionHeader label="Entities" />
@@ -131,41 +200,7 @@ export function EntitiesSection({ entities, onSaved }: EntitiesSectionProps) {
           <EntityRow key={e.id} entity={e} index={i} onSaved={onSaved} />
         ))}
         <div className="px-5 py-3">
-          {showAdd ? (
-            <div className="flex gap-2">
-              <Input
-                value={addingName}
-                onChange={(ev) => setAddingName(ev.target.value)}
-                placeholder="New business name"
-                className="h-8 text-sm"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAdd();
-                  if (e.key === 'Escape') setShowAdd(false);
-                }}
-              />
-              <button
-                onClick={handleAdd}
-                disabled={adding || !addingName.trim()}
-                className="h-8 px-3 rounded-lg text-xs font-semibold bg-primary text-primary-foreground disabled:opacity-40 hover:bg-[var(--primary-hover)] transition-colors"
-              >
-                {adding ? 'Adding…' : 'Add'}
-              </button>
-              <button
-                onClick={() => setShowAdd(false)}
-                className="h-8 px-3 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowAdd(true)}
-              className="w-full text-center text-sm text-muted-foreground border border-dashed border-border rounded-xl py-2 hover:text-primary hover:border-primary/40 transition-colors"
-            >
-              + Add business
-            </button>
-          )}
+          <AddEntityForm onSaved={onSaved} />
         </div>
       </div>
     </section>

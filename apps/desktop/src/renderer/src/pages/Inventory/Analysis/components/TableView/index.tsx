@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRightIcon } from 'lucide-react';
 import { Button, cn } from '@reyogo/ui';
@@ -10,6 +10,7 @@ import { itemTrendPath } from '@/components/AppRoutes/routePaths';
 import type { ItemGroup } from '../../types';
 import { useTableSort } from '@/hooks/useTableSort';
 import { SortIndicator } from '@/components/DataTable/SortIndicator';
+import { ExpandedEntries } from './components/ExpandedEntries';
 
 const sortByName = (a: ItemGroup, b: ItemGroup) => a.name.localeCompare(b.name);
 
@@ -34,19 +35,138 @@ const sortByOverallChange = (a: ItemGroup, b: ItemGroup) => {
   return aChange - bChange;
 };
 
+type ToggleFn = (id: string) => void;
+type NavigateFn = ReturnType<typeof useNavigate>;
+
+function SortHead({
+  sortKey,
+  activeKey,
+  dir,
+  label,
+  className,
+  onToggle,
+}: {
+  sortKey: string;
+  activeKey: string | null;
+  dir: 'asc' | 'desc' | null;
+  label: string;
+  className?: string;
+  onToggle: (key: string) => void;
+}) {
+  const isActive = activeKey === sortKey;
+  return (
+    <TableHead
+      className={cn(
+        'text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5',
+        className,
+      )}
+    >
+      <Button
+        variant="ghost"
+        size="sm"
+        className="-mx-2 h-auto py-0 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 hover:text-foreground hover:bg-transparent gap-0"
+        onClick={() => onToggle(sortKey)}
+      >
+        {label}
+        <SortIndicator active={isActive} dir={isActive ? dir : null} />
+      </Button>
+    </TableHead>
+  );
+}
+
+function PriceCell({ last }: { last: ItemGroup['entries'][number] }) {
+  return (
+    <TableCell className="py-2.5 text-right font-mono text-sm tabular-nums text-foreground">
+      <div>
+        {fmt(last.unitPriceInclVat)}
+        {last.uom ? <span className="text-muted-foreground/60"> / {last.uom}</span> : null}
+      </div>
+      {last.unitPrice !== last.unitPriceInclVat && (
+        <div className="text-[11px] text-muted-foreground/50 font-normal">
+          excl. {fmt(last.unitPrice)}
+        </div>
+      )}
+    </TableCell>
+  );
+}
+
+function renderGroupRow(
+  group: ItemGroup,
+  i: number,
+  expanded: Set<string>,
+  toggle: ToggleFn,
+  navigate: NavigateFn,
+) {
+  const last = group.entries[group.entries.length - 1]!;
+  const change = overallChangePct(group);
+  const isExpanded = expanded.has(group.itemId);
+  return (
+    <Fragment key={group.itemId}>
+      <TableRow
+        className={cn(
+          'border-[var(--nav-border)] transition-colors hover:bg-muted/20 group',
+          !isExpanded && i % 2 !== 0 && 'bg-black/[0.025]',
+        )}
+      >
+        <TableCell className="w-10 cursor-pointer text-center" onClick={() => toggle(group.itemId)}>
+          <ChevronRightIcon
+            className={cn(
+              'size-3.5 mx-auto transition-all',
+              isExpanded
+                ? 'rotate-90 text-primary'
+                : 'text-muted-foreground/30 group-hover:text-muted-foreground',
+            )}
+          />
+        </TableCell>
+        <TableCell
+          className="py-2.5 font-medium text-foreground cursor-pointer hover:text-primary transition-colors"
+          onClick={() => navigate(itemTrendPath(group.itemId))}
+        >
+          {group.name}
+        </TableCell>
+        <TableCell className="py-2.5 text-sm text-muted-foreground">{fmtDate(last.date)}</TableCell>
+        <PriceCell last={last} />
+        <TableCell
+          className={cn(
+            'py-2.5 text-right font-mono text-sm tabular-nums',
+            changeCls(change, true),
+          )}
+        >
+          {change === null ? <span className="text-muted-foreground/30">—</span> : fmtPct(change)}
+        </TableCell>
+      </TableRow>
+      {isExpanded && (
+        <TableRow className="border-[var(--nav-border)] hover:bg-transparent">
+          <TableCell />
+          <TableCell colSpan={4} className="py-3 bg-[var(--nav-accent)]/20">
+            <ExpandedEntries entries={group.entries} />
+          </TableCell>
+        </TableRow>
+      )}
+    </Fragment>
+  );
+}
+
+const compareFns = {
+  name: sortByName,
+  lastCaptured: sortByLastCaptured,
+  lastUnitPrice: sortByLastUnitPrice,
+  overallChange: sortByOverallChange,
+};
+
+function toggleExpanded(prev: Set<string>, id: string): Set<string> {
+  const next = new Set(prev);
+  if (next.has(id)) {
+    next.delete(id);
+  } else {
+    next.add(id);
+  }
+  return next;
+}
+
 export function TableView({ groups }: { groups: ItemGroup[] }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
-
-  const compareFns = useMemo(
-    () => ({
-      name: sortByName,
-      lastCaptured: sortByLastCaptured,
-      lastUnitPrice: sortByLastUnitPrice,
-      overallChange: sortByOverallChange,
-    }),
-    [],
-  );
 
   const {
     sortedData: sortedGroups,
@@ -55,38 +175,7 @@ export function TableView({ groups }: { groups: ItemGroup[] }) {
     toggleSort,
   } = useTableSort(groups, compareFns);
 
-  const renderSortHead = (key: string, label: string, className?: string) => {
-    const isActive = sortKey === key;
-    return (
-      <TableHead
-        className={cn(
-          'text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5',
-          className,
-        )}
-      >
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-mx-2 h-auto py-0 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 hover:text-foreground hover:bg-transparent gap-0"
-          onClick={() => toggleSort(key)}
-        >
-          {label}
-          <SortIndicator active={isActive} dir={isActive ? sortDir : null} />
-        </Button>
-      </TableHead>
-    );
-  };
-
-  const toggle = (id: string) =>
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+  const toggle = (id: string) => setExpanded((prev) => toggleExpanded(prev, id));
 
   if (groups.length === 0) {
     return (
@@ -102,151 +191,40 @@ export function TableView({ groups }: { groups: ItemGroup[] }) {
         <TableHeader>
           <TableRow className="bg-muted/30 hover:bg-muted/30 border-[var(--nav-border)]">
             <TableHead className="w-10 py-2.5" />
-            {renderSortHead('name', 'Item')}
-            {renderSortHead('lastCaptured', 'Last captured')}
-            {renderSortHead('lastUnitPrice', 'Last unit price', 'text-right')}
-            {renderSortHead('overallChange', 'Overall change', 'text-right')}
+            <SortHead
+              sortKey="name"
+              activeKey={sortKey}
+              dir={sortDir}
+              label="Item"
+              onToggle={toggleSort}
+            />
+            <SortHead
+              sortKey="lastCaptured"
+              activeKey={sortKey}
+              dir={sortDir}
+              label="Last captured"
+              onToggle={toggleSort}
+            />
+            <SortHead
+              sortKey="lastUnitPrice"
+              activeKey={sortKey}
+              dir={sortDir}
+              label="Last unit price"
+              className="text-right"
+              onToggle={toggleSort}
+            />
+            <SortHead
+              sortKey="overallChange"
+              activeKey={sortKey}
+              dir={sortDir}
+              label="Overall change"
+              className="text-right"
+              onToggle={toggleSort}
+            />
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedGroups.map((group, i) => {
-            const last = group.entries[group.entries.length - 1]!;
-            const change = overallChangePct(group);
-            const isExpanded = expanded.has(group.itemId);
-            return (
-              <Fragment key={group.itemId}>
-                <TableRow
-                  className={cn(
-                    'border-[var(--nav-border)] transition-colors hover:bg-muted/20 group',
-                    !isExpanded && i % 2 !== 0 && 'bg-black/[0.025]',
-                  )}
-                >
-                  <TableCell
-                    className="w-10 cursor-pointer text-center"
-                    onClick={() => toggle(group.itemId)}
-                  >
-                    <ChevronRightIcon
-                      className={cn(
-                        'size-3.5 mx-auto transition-all',
-                        isExpanded
-                          ? 'rotate-90 text-primary'
-                          : 'text-muted-foreground/30 group-hover:text-muted-foreground',
-                      )}
-                    />
-                  </TableCell>
-                  <TableCell
-                    className="py-2.5 font-medium text-foreground cursor-pointer hover:text-primary transition-colors"
-                    onClick={() => navigate(itemTrendPath(group.itemId))}
-                  >
-                    {group.name}
-                  </TableCell>
-                  <TableCell className="py-2.5 text-sm text-muted-foreground">
-                    {fmtDate(last.date)}
-                  </TableCell>
-                  <TableCell className="py-2.5 text-right font-mono text-sm tabular-nums text-foreground">
-                    <div>
-                      {fmt(last.unitPriceInclVat)}
-                      {last.uom ? (
-                        <span className="text-muted-foreground/60"> / {last.uom}</span>
-                      ) : null}
-                    </div>
-                    {last.unitPrice !== last.unitPriceInclVat && (
-                      <div className="text-[11px] text-muted-foreground/50 font-normal">
-                        excl. {fmt(last.unitPrice)}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      'py-2.5 text-right font-mono text-sm tabular-nums',
-                      changeCls(change, true),
-                    )}
-                  >
-                    {change === null ? (
-                      <span className="text-muted-foreground/30">—</span>
-                    ) : (
-                      fmtPct(change)
-                    )}
-                  </TableCell>
-                </TableRow>
-                {isExpanded && (
-                  <TableRow className="border-[var(--nav-border)] hover:bg-transparent">
-                    <TableCell />
-                    <TableCell colSpan={4} className="py-3 bg-[var(--nav-accent)]/20">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr>
-                            <th className="pb-2 text-left text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
-                              Date
-                            </th>
-                            <th className="pb-2 text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
-                              Qty
-                            </th>
-                            <th className="pb-2 text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
-                              UoM
-                            </th>
-                            <th className="pb-2 text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
-                              Unit price
-                            </th>
-                            <th className="pb-2 text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
-                              vs prev
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {group.entries.map((entry, ei) => {
-                            const prev = ei > 0 ? group.entries[ei - 1] : null;
-                            const pct =
-                              prev && prev.unitPriceInclVat > 0
-                                ? ((entry.unitPriceInclVat - prev.unitPriceInclVat) /
-                                    prev.unitPriceInclVat) *
-                                  100
-                                : null;
-                            return (
-                              <tr
-                                key={`${entry.invoiceId}-${ei}`}
-                                className="border-t border-[var(--nav-border)]/40"
-                              >
-                                <td className="py-1.5 text-muted-foreground">
-                                  {fmtDate(entry.date)}
-                                </td>
-                                <td className="py-1.5 text-right font-mono tabular-nums">
-                                  {entry.quantity}
-                                </td>
-                                <td className="py-1.5 text-right text-muted-foreground/60">
-                                  {entry.uom ?? '—'}
-                                </td>
-                                <td className="py-1.5 text-right font-mono font-medium tabular-nums">
-                                  <div>{fmt(entry.unitPriceInclVat)}</div>
-                                  {entry.unitPrice !== entry.unitPriceInclVat && (
-                                    <div className="text-[11px] text-muted-foreground/50 font-normal">
-                                      excl. {fmt(entry.unitPrice)}
-                                    </div>
-                                  )}
-                                </td>
-                                <td
-                                  className={cn(
-                                    'py-1.5 text-right font-mono tabular-nums',
-                                    changeCls(pct),
-                                  )}
-                                >
-                                  {pct === null ? (
-                                    <span className="text-muted-foreground/30">—</span>
-                                  ) : (
-                                    fmtPct(pct)
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </Fragment>
-            );
-          })}
+          {sortedGroups.map((group, i) => renderGroupRow(group, i, expanded, toggle, navigate))}
         </TableBody>
       </Table>
     </div>

@@ -35,3 +35,4 @@ apps/*/node_modules
 apps/*/.data.worktrees/
 docs/superpowers/
 .superpowers/
+.fallow/

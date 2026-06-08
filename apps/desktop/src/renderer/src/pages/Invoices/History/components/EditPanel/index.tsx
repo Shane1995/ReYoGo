@@ -14,6 +14,124 @@ import { lineToEditLine } from '../../../utils/lineToEditLine';
 import { cn } from '@reyogo/ui';
 import { Checkbox } from '@/components/Checkbox';
 
+type EditLineRowProps = {
+  line: ProcessReceiptLine;
+  itemsWithCategory: Array<
+    ReturnType<typeof useInventory>['items'][number] & { categoryName: string; typeLabel: string }
+  >;
+  entityId: string;
+  onUpdate: (id: string, updates: Partial<ProcessReceiptLine>) => void;
+  onRemove: (id: string) => void;
+};
+
+function EditLineRow({ line, itemsWithCategory, entityId, onUpdate, onRemove }: EditLineRowProps) {
+  return (
+    <tr key={line.id} className="border-b border-[var(--nav-border)]/40">
+      <td className="py-1.5 pr-3">
+        <ItemAutocomplete
+          items={[...itemsWithCategory].sort((a, b) => a.name.localeCompare(b.name))}
+          value={line.itemId}
+          onChange={(itemId) => onUpdate(line.id, { itemId })}
+          entityId={entityId}
+          placeholder="Select item…"
+        />
+      </td>
+      <td className="py-1.5 pr-3">
+        <input
+          type="number"
+          min={0}
+          step={1}
+          value={line.quantity || ''}
+          onChange={(e) =>
+            onUpdate(line.id, {
+              quantity: e.target.value === '' ? 0 : Number(e.target.value),
+            })
+          }
+          className={cn(inputClass, 'w-20')}
+          placeholder="0"
+        />
+      </td>
+      <td className="py-1.5 pr-3 text-center">
+        <Checkbox
+          checked={line.isVatable}
+          onChange={(val) => onUpdate(line.id, { isVatable: val })}
+        />
+      </td>
+      <td className="py-1.5 pr-3">
+        <input
+          type="number"
+          min={0}
+          step={1}
+          value={line.totalVatExclude || ''}
+          onChange={(e) =>
+            onUpdate(line.id, {
+              totalVatExclude: e.target.value === '' ? 0 : Number(e.target.value),
+            })
+          }
+          className={cn(inputClass, 'w-28')}
+          placeholder="0.00"
+        />
+      </td>
+      <td className="py-1.5">
+        <button
+          type="button"
+          onClick={() => onRemove(line.id)}
+          className="text-xs text-muted-foreground hover:text-destructive px-1"
+        >
+          Remove
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+type EditPanelFooterProps = {
+  summary: { excl: number; vat: number; total: number };
+  saving: boolean;
+  validLineCount: number;
+  onCancel: () => void;
+  onSave: () => void;
+};
+
+function EditPanelFooter({
+  summary,
+  saving,
+  validLineCount,
+  onCancel,
+  onSave,
+}: EditPanelFooterProps) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-t border-[var(--nav-border)] bg-muted/10 px-4 py-2">
+      <div className="flex gap-5 text-sm text-muted-foreground">
+        <span>
+          Excl.{' '}
+          <span className="font-mono font-medium text-foreground">{formatMoney(summary.excl)}</span>
+        </span>
+        <span>
+          VAT{' '}
+          <span className="font-mono font-medium text-foreground">{formatMoney(summary.vat)}</span>
+        </span>
+        <span>
+          Total{' '}
+          <span className="font-mono font-semibold text-foreground">
+            {formatMoney(summary.total)}
+          </span>
+        </span>
+      </div>
+      <div className="flex gap-2">
+        <Button type="button" variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
+          <XIcon className="size-3.5 mr-1" />
+          Cancel
+        </Button>
+        <Button type="button" size="sm" onClick={onSave} disabled={saving || validLineCount === 0}>
+          <CheckIcon className="size-3.5 mr-1" />
+          {saving ? 'Saving…' : 'Save changes'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 type Props = {
   invoice: ICapturedInvoiceWithLines;
   onSave: (lines: ProcessReceiptLine[], note: string) => Promise<void>;
@@ -102,7 +220,6 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
           </span>
         </div>
       </div>
-
       <div className="px-4 pb-2">
         <table className="w-full text-sm">
           <thead>
@@ -116,62 +233,14 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
           </thead>
           <tbody>
             {lines.map((line) => (
-              <tr key={line.id} className="border-b border-[var(--nav-border)]/40">
-                <td className="py-1.5 pr-3">
-                  <ItemAutocomplete
-                    items={[...itemsWithCategory].sort((a, b) => a.name.localeCompare(b.name))}
-                    value={line.itemId}
-                    onChange={(itemId) => updateLine(line.id, { itemId })}
-                    entityId={invoice.entityId}
-                    placeholder="Select item…"
-                  />
-                </td>
-                <td className="py-1.5 pr-3">
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={line.quantity || ''}
-                    onChange={(e) =>
-                      updateLine(line.id, {
-                        quantity: e.target.value === '' ? 0 : Number(e.target.value),
-                      })
-                    }
-                    className={cn(inputClass, 'w-20')}
-                    placeholder="0"
-                  />
-                </td>
-                <td className="py-1.5 pr-3 text-center">
-                  <Checkbox
-                    checked={line.isVatable}
-                    onChange={(val) => updateLine(line.id, { isVatable: val })}
-                  />
-                </td>
-                <td className="py-1.5 pr-3">
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={line.totalVatExclude || ''}
-                    onChange={(e) =>
-                      updateLine(line.id, {
-                        totalVatExclude: e.target.value === '' ? 0 : Number(e.target.value),
-                      })
-                    }
-                    className={cn(inputClass, 'w-28')}
-                    placeholder="0.00"
-                  />
-                </td>
-                <td className="py-1.5">
-                  <button
-                    type="button"
-                    onClick={() => removeLine(line.id)}
-                    className="text-xs text-muted-foreground hover:text-destructive px-1"
-                  >
-                    Remove
-                  </button>
-                </td>
-              </tr>
+              <EditLineRow
+                key={line.id}
+                line={line}
+                itemsWithCategory={itemsWithCategory}
+                entityId={invoice.entityId}
+                onUpdate={updateLine}
+                onRemove={removeLine}
+              />
             ))}
           </tbody>
         </table>
@@ -183,46 +252,14 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
           + Add row
         </button>
       </div>
-
       {error && <p className="px-4 pb-2 text-sm text-destructive">{error}</p>}
-
-      <div className="flex items-center justify-between gap-4 border-t border-[var(--nav-border)] bg-muted/10 px-4 py-2">
-        <div className="flex gap-5 text-sm text-muted-foreground">
-          <span>
-            Excl.{' '}
-            <span className="font-mono font-medium text-foreground">
-              {formatMoney(summary.excl)}
-            </span>
-          </span>
-          <span>
-            VAT{' '}
-            <span className="font-mono font-medium text-foreground">
-              {formatMoney(summary.vat)}
-            </span>
-          </span>
-          <span>
-            Total{' '}
-            <span className="font-mono font-semibold text-foreground">
-              {formatMoney(summary.total)}
-            </span>
-          </span>
-        </div>
-        <div className="flex gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
-            <XIcon className="size-3.5 mr-1" />
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleSave}
-            disabled={saving || validLines.length === 0}
-          >
-            <CheckIcon className="size-3.5 mr-1" />
-            {saving ? 'Saving…' : 'Save changes'}
-          </Button>
-        </div>
-      </div>
+      <EditPanelFooter
+        summary={summary}
+        saving={saving}
+        validLineCount={validLines.length}
+        onCancel={onCancel}
+        onSave={handleSave}
+      />
     </div>
   );
 }

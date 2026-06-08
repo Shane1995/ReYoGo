@@ -20,6 +20,53 @@ function MetaRow({ label, value }: { label: string; value: string | null | undef
   );
 }
 
+function AuditEntry({
+  entry,
+  suppliers,
+  isOpen,
+  onToggle,
+}: {
+  entry: ICapturedInvoiceAuditEntry;
+  suppliers: Supplier[];
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  const snap = entry.snapshot;
+  const supplierName = snap.supplierId
+    ? (suppliers.find((s) => s.id === snap.supplierId)?.name ?? snap.supplierId)
+    : null;
+  return (
+    <div className="rounded-md border border-[var(--nav-border)] overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/30"
+      >
+        {isOpen ? (
+          <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
+        ) : (
+          <ChevronRightIcon className="size-3.5 shrink-0 text-muted-foreground" />
+        )}
+        <span className="font-medium">{formatDate(entry.editedAt)}</span>
+        {entry.note && <span className="text-muted-foreground truncate">— {entry.note}</span>}
+      </button>
+      {isOpen && (
+        <div className="border-t border-[var(--nav-border)]/60 bg-muted/10 px-3 py-2.5 space-y-1.5">
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground/60 font-medium mb-2">
+            Before this edit
+          </p>
+          <MetaRow label="Supplier" value={supplierName} />
+          <MetaRow label="Invoice number" value={snap.invoiceNumber} />
+          <MetaRow
+            label="Invoice date"
+            value={snap.invoiceDate ? formatDate(snap.invoiceDate) : null}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AuditPanel({ invoiceId, suppliers, onClose }: Props) {
   const [entries, setEntries] = useState<ICapturedInvoiceAuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +102,6 @@ export function AuditPanel({ invoiceId, suppliers, onClose }: Props) {
           <XIcon className="size-4" />
         </button>
       </div>
-
       <div className="px-4 py-3">
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
@@ -63,49 +109,15 @@ export function AuditPanel({ invoiceId, suppliers, onClose }: Props) {
           <p className="text-sm text-muted-foreground">No edits recorded for this invoice.</p>
         ) : (
           <div className="flex flex-col gap-2">
-            {entries.map((entry) => {
-              const snap = entry.snapshot;
-              const isOpen = expanded === entry.id;
-              const supplierName = snap.supplierId
-                ? (suppliers.find((s) => s.id === snap.supplierId)?.name ?? snap.supplierId)
-                : null;
-
-              return (
-                <div
-                  key={entry.id}
-                  className="rounded-md border border-[var(--nav-border)] overflow-hidden"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setExpanded(isOpen ? null : entry.id)}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/30"
-                  >
-                    {isOpen ? (
-                      <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                    ) : (
-                      <ChevronRightIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                    )}
-                    <span className="font-medium">{formatDate(entry.editedAt)}</span>
-                    {entry.note && (
-                      <span className="text-muted-foreground truncate">— {entry.note}</span>
-                    )}
-                  </button>
-                  {isOpen && (
-                    <div className="border-t border-[var(--nav-border)]/60 bg-muted/10 px-3 py-2.5 space-y-1.5">
-                      <p className="text-[11px] uppercase tracking-widest text-muted-foreground/60 font-medium mb-2">
-                        Before this edit
-                      </p>
-                      <MetaRow label="Supplier" value={supplierName} />
-                      <MetaRow label="Invoice number" value={snap.invoiceNumber} />
-                      <MetaRow
-                        label="Invoice date"
-                        value={snap.invoiceDate ? formatDate(snap.invoiceDate) : null}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {entries.map((entry) => (
+              <AuditEntry
+                key={entry.id}
+                entry={entry}
+                suppliers={suppliers}
+                isOpen={expanded === entry.id}
+                onToggle={() => setExpanded(expanded === entry.id ? null : entry.id)}
+              />
+            ))}
           </div>
         )}
       </div>

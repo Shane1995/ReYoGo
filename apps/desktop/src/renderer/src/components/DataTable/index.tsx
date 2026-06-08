@@ -28,6 +28,94 @@ const alignClass = (align?: 'left' | 'right' | 'center') => {
   return 'text-left';
 };
 
+function TableHeadRow<T>({
+  columns,
+  sortKey,
+  sortDir,
+  toggleSort,
+}: {
+  columns: ColumnDef<T>[];
+  sortKey: string | null;
+  sortDir: 'asc' | 'desc' | null;
+  toggleSort: (key: string) => void;
+}) {
+  return (
+    <TableRow className="bg-muted/30 hover:bg-muted/30 border-[var(--nav-border)]">
+      {columns.map((col) => (
+        <TableHead
+          key={col.key}
+          style={col.width ? { width: col.width } : undefined}
+          className={cn(
+            'text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5',
+            alignClass(col.align),
+          )}
+        >
+          {col.sortable && col.sortFn ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="-mx-2 h-auto py-0 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 hover:text-foreground hover:bg-transparent inline-flex items-center"
+              onClick={() => toggleSort(col.key)}
+            >
+              {col.header}
+              <SortIndicator
+                active={sortKey === col.key}
+                dir={sortKey === col.key ? sortDir : null}
+              />
+            </Button>
+          ) : (
+            col.header
+          )}
+        </TableHead>
+      ))}
+    </TableRow>
+  );
+}
+
+function TableBodyRows<T>({
+  sortedData,
+  columns,
+  rowKey,
+  emptyMessage,
+}: {
+  sortedData: T[];
+  columns: ColumnDef<T>[];
+  rowKey: (row: T) => string;
+  emptyMessage: string;
+}) {
+  if (sortedData.length === 0) {
+    return (
+      <TableRow>
+        <TableCell
+          colSpan={columns.length}
+          className="py-16 text-center text-sm text-muted-foreground/60"
+        >
+          {emptyMessage}
+        </TableCell>
+      </TableRow>
+    );
+  }
+  return (
+    <>
+      {sortedData.map((row, i) => (
+        <TableRow
+          key={rowKey(row)}
+          className={cn(
+            'border-[var(--nav-border)] transition-colors hover:bg-muted/20 group',
+            i % 2 !== 0 && 'bg-black/[0.025]',
+          )}
+        >
+          {columns.map((col) => (
+            <TableCell key={col.key} className={cn('py-2.5 px-4', alignClass(col.align))}>
+              {col.cell(row)}
+            </TableCell>
+          ))}
+        </TableRow>
+      ))}
+    </>
+  );
+}
+
 export function DataTable<T>({
   columns,
   data,
@@ -61,69 +149,22 @@ export function DataTable<T>({
           onClearAll={onClearFilters}
         />
       )}
-
       <Table>
         <TableHeader>
-          <TableRow className="bg-muted/30 hover:bg-muted/30 border-[var(--nav-border)]">
-            {columns.map((col) => {
-              const { sortFn } = col;
-              return (
-                <TableHead
-                  key={col.key}
-                  style={col.width ? { width: col.width } : undefined}
-                  className={cn(
-                    'text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 py-2.5',
-                    alignClass(col.align),
-                  )}
-                >
-                  {col.sortable && sortFn ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="-mx-2 h-auto py-0 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 hover:text-foreground hover:bg-transparent inline-flex items-center"
-                      onClick={() => toggleSort(col.key)}
-                    >
-                      {col.header}
-                      <SortIndicator
-                        active={sortKey === col.key}
-                        dir={sortKey === col.key ? sortDir : null}
-                      />
-                    </Button>
-                  ) : (
-                    col.header
-                  )}
-                </TableHead>
-              );
-            })}
-          </TableRow>
+          <TableHeadRow
+            columns={columns}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            toggleSort={toggleSort}
+          />
         </TableHeader>
         <TableBody>
-          {sortedData.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={columns.length}
-                className="py-16 text-center text-sm text-muted-foreground/60"
-              >
-                {emptyMessage}
-              </TableCell>
-            </TableRow>
-          ) : (
-            sortedData.map((row, i) => (
-              <TableRow
-                key={rowKey(row)}
-                className={cn(
-                  'border-[var(--nav-border)] transition-colors hover:bg-muted/20 group',
-                  i % 2 !== 0 && 'bg-black/[0.025]',
-                )}
-              >
-                {columns.map((col) => (
-                  <TableCell key={col.key} className={cn('py-2.5 px-4', alignClass(col.align))}>
-                    {col.cell(row)}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
-          )}
+          <TableBodyRows
+            sortedData={sortedData}
+            columns={columns}
+            rowKey={rowKey}
+            emptyMessage={emptyMessage}
+          />
         </TableBody>
       </Table>
     </div>
