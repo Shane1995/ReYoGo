@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { cloudSyncService } from '@/services/cloudSync';
+import { ipcErrorMessage } from '@/utils/ipcErrorMessage';
 import { CloudSyncEventType } from '@shared/types/cloudSync';
 import type { CloudSyncEvent } from '@shared/types/cloudSync';
 import { STAGE_LABEL } from '../constants';
@@ -89,8 +90,7 @@ function isBlank(value: string): boolean {
 }
 
 function connectionErrorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  return 'Failed to update connection';
+  return ipcErrorMessage(err, 'Failed to update connection');
 }
 
 async function handleManualSync(refreshStatus: () => Promise<void>) {
@@ -99,7 +99,7 @@ async function handleManualSync(refreshStatus: () => Promise<void>) {
     await refreshStatus();
     toast.success('Synced');
   } catch (err) {
-    toast.error(err instanceof Error ? err.message : 'Sync failed');
+    toast.error(ipcErrorMessage(err, 'Sync failed'));
   }
 }
 

@@ -1,14 +1,16 @@
 import { useCallback, useState } from 'react';
 import { cloudSyncService } from '@/services/cloudSync';
 import { entitiesService } from '@/services/entities';
+import { ipcErrorMessage } from '@/utils/ipcErrorMessage';
+
+const CONNECT_ERROR_FALLBACK = 'Connection failed. Please try again.';
 
 function isBlank(value: string): boolean {
   return !value.trim();
 }
 
 function connectErrorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  return 'Connection failed. Please try again.';
+  return ipcErrorMessage(err, CONNECT_ERROR_FALLBACK);
 }
 
 function finishConnect(setupComplete: boolean, onConnected: () => void): void {
