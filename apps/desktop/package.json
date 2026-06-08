@@ -1,6 +1,6 @@
 {
   "name": "@reyogo/desktop",
-  "version": "0.7.0-beta.1",
+  "version": "0.7.0-beta.2",
   "description": "ReYoGo Electron desktop app",
   "main": "out/main/index.js",
   "private": true,
