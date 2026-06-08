@@ -19,7 +19,7 @@ jobs:
       - name: Generate health badge
         run: |
           mkdir -p .github/badges
-          npx fallow@2.89.0 health --format badge > .github/badges/health.svg
+          npx fallow@2.89.0 health --format badge --report-only > .github/badges/health.svg
       - name: Commit badge
         run: |
           git config user.name "github-actions[bot]"
