@@ -5,6 +5,15 @@ import * as schema from '../../schema';
 import type { SupplierRow } from '../../schema';
 import { now } from '../../utils/timestamps';
 
+function supplierValuesOf(payload: UpsertSupplierPayload) {
+  return {
+    name: payload.name,
+    contactName: payload.contactName ?? null,
+    phone: payload.phone ?? null,
+    email: payload.email ?? null,
+  };
+}
+
 function toSupplier(row: SupplierRow): Supplier {
   return {
     id: row.id,
@@ -30,27 +39,13 @@ export function createSuppliersRepo(db: DbClient) {
 
     async upsertSupplier(payload: UpsertSupplierPayload, entityId: string): Promise<void> {
       const ts = now();
+      const values = supplierValuesOf(payload);
       await db
         .insert(schema.suppliers)
-        .values({
-          id: payload.id,
-          entityId,
-          name: payload.name,
-          contactName: payload.contactName ?? null,
-          phone: payload.phone ?? null,
-          email: payload.email ?? null,
-          createdAt: ts,
-          updatedAt: ts,
-        })
+        .values({ id: payload.id, entityId, ...values, createdAt: ts, updatedAt: ts })
         .onConflictDoUpdate({
           target: schema.suppliers.id,
-          set: {
-            name: payload.name,
-            contactName: payload.contactName ?? null,
-            phone: payload.phone ?? null,
-            email: payload.email ?? null,
-            updatedAt: ts,
-          },
+          set: { ...values, updatedAt: ts },
         });
     },
 

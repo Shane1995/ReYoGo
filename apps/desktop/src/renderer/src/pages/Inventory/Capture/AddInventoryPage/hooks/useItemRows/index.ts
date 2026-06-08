@@ -34,19 +34,33 @@ function submitValidRows(
   );
 }
 
+function markItemDupe(
+  dupes: Set<string>,
+  seen: Map<string, string>,
+  existing: Set<string>,
+  row: ItemRow,
+): void {
+  const key = row.name.trim().toLowerCase();
+  if (!key) return;
+  if (existing.has(key)) {
+    dupes.add(row.id);
+    return;
+  }
+  const seenId = seen.get(key);
+  if (seenId) {
+    dupes.add(row.id);
+    dupes.add(seenId);
+    return;
+  }
+  seen.set(key, row.id);
+}
+
 function buildItemDupes(itemRows: ItemRow[], items: InventoryItem[]): Set<string> {
   const existing = new Set(items.map((i) => i.name.trim().toLowerCase()));
   const seen = new Map<string, string>();
   const dupes = new Set<string>();
   for (const row of itemRows) {
-    const key = row.name.trim().toLowerCase();
-    if (!key) continue;
-    if (existing.has(key)) {
-      dupes.add(row.id);
-    } else if (seen.has(key)) {
-      dupes.add(row.id);
-      dupes.add(seen.get(key)!);
-    } else seen.set(key, row.id);
+    markItemDupe(dupes, seen, existing, row);
   }
   return dupes;
 }

@@ -13,12 +13,33 @@ type SyncStatus = {
   error: string | null;
 };
 
-function syncLabel(sync: SyncStatus | null, syncing: boolean, isOnline: boolean): string {
-  if (!sync?.isActive) return 'Local only';
+function isSyncActive(sync: SyncStatus | null): sync is SyncStatus {
+  return sync?.isActive === true;
+}
+
+function activeSyncLabel(sync: SyncStatus, syncing: boolean, isOnline: boolean): string {
   if (!isOnline) return 'Offline';
   if (syncing) return 'Syncing…';
   if (sync.state === 'error') return 'Sync failed';
   return 'Connected';
+}
+
+function syncLabel(sync: SyncStatus | null, syncing: boolean, isOnline: boolean): string {
+  if (!isSyncActive(sync)) return 'Local only';
+  return activeSyncLabel(sync, syncing, isOnline);
+}
+
+function isConnected(sync: SyncStatus | null, syncing: boolean, isOnline: boolean): boolean {
+  if (!isSyncActive(sync)) return false;
+  if (!isOnline) return false;
+  if (syncing) return false;
+  return sync.state !== 'error';
+}
+
+function versionSuffix(syncing: boolean, version: AppVersionInfo | null): string {
+  if (syncing) return '';
+  if (!version) return '';
+  return ` · v${version.version}`;
 }
 
 const iconTransition = { duration: 0.15 };
@@ -27,6 +48,27 @@ const spinTransition = {
   opacity: iconTransition,
   scale: iconTransition,
 };
+
+const REFRESH_EVENT_TYPES: CloudSyncEventType[] = [
+  CloudSyncEventType.Success,
+  CloudSyncEventType.BackgroundSync,
+  CloudSyncEventType.Error,
+];
+
+function dispatchSyncStateEvent(
+  event: CloudSyncEvent,
+  setSyncing: (v: boolean) => void,
+  refresh: () => void,
+): void {
+  if (event.type === CloudSyncEventType.Syncing) {
+    setSyncing(true);
+    return;
+  }
+  if (REFRESH_EVENT_TYPES.includes(event.type)) {
+    setSyncing(false);
+    refresh();
+  }
+}
 
 function useSyncState(): { sync: SyncStatus | null; syncing: boolean } {
   const [sync, setSync] = useState<SyncStatus | null>(null);
@@ -47,18 +89,7 @@ function useSyncState(): { sync: SyncStatus | null; syncing: boolean } {
     refresh();
     const off = cloudSyncService.onSyncEvent((event: CloudSyncEvent) => {
       if (!active) return;
-      if (event.type === CloudSyncEventType.Syncing) {
-        setSyncing(true);
-      } else if (
-        event.type === CloudSyncEventType.Success ||
-        event.type === CloudSyncEventType.BackgroundSync
-      ) {
-        setSyncing(false);
-        refresh();
-      } else if (event.type === CloudSyncEventType.Error) {
-        setSyncing(false);
-        refresh();
-      }
+      dispatchSyncStateEvent(event, setSyncing, refresh);
     });
     return () => {
       active = false;
@@ -128,7 +159,7 @@ export function AppStatusBar() {
   }, []);
 
   const label = syncLabel(sync, syncing, isOnline);
-  const connected = sync?.isActive === true && isOnline && sync.state !== 'error' && !syncing;
+  const connected = isConnected(sync, syncing, isOnline);
 
   return (
     <div
@@ -139,7 +170,7 @@ export function AppStatusBar() {
         <SyncIcon syncing={syncing} connected={connected} />
         <span>
           {label}
-          {!syncing && version && ` · v${version.version}`}
+          {versionSuffix(syncing, version)}
         </span>
       </div>
     </div>

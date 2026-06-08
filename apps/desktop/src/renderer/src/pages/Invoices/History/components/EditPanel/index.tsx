@@ -14,6 +14,16 @@ import { lineToEditLine } from '../../../utils/lineToEditLine';
 import { cn } from '@reyogo/ui';
 import { Checkbox } from '@/components/Checkbox';
 
+function categoryNameOf(category: { name: string } | undefined): string {
+  if (!category) return '';
+  return category.name;
+}
+
+function categoryTypeOf(category: { type: string } | undefined): string {
+  if (!category) return '';
+  return category.type;
+}
+
 type EditLineRowProps = {
   line: ProcessReceiptLine;
   itemsWithCategory: Array<
@@ -153,7 +163,7 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
 
   const itemsWithCategory = items.map((item) => {
     const cat = categories.find((c) => c.id === item.categoryId);
-    return { ...item, categoryName: cat?.name ?? '', typeLabel: cat?.type ?? '' };
+    return { ...item, categoryName: categoryNameOf(cat), typeLabel: categoryTypeOf(cat) };
   });
 
   const updateLine = useCallback((id: string, updates: Partial<ProcessReceiptLine>) => {

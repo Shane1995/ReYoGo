@@ -12,26 +12,20 @@ import { useItemSelection } from './hooks/useItemSelection';
 import { SelectionBar } from './SelectionBar';
 import { ItemRowActions } from './ItemRowActions';
 
+function compareNullableAsc(a: number | null | undefined, b: number | null | undefined): number {
+  if (a == null) return b == null ? 0 : 1;
+  if (b == null) return -1;
+  return a - b;
+}
+
 const sortByName = (a: FlatItem, b: FlatItem) => a.name.localeCompare(b.name);
 const sortByCategory = (a: FlatItem, b: FlatItem) => a.categoryName.localeCompare(b.categoryName);
-const sortByStock = (a: FlatItem, b: FlatItem) => {
-  if (a.currentStock == null && b.currentStock == null) return 0;
-  if (a.currentStock == null) return 1;
-  if (b.currentStock == null) return -1;
-  return a.currentStock - b.currentStock;
-};
-const sortByLastCost = (a: FlatItem, b: FlatItem) => {
-  if (a.lastCostPerUnitInclVat == null && b.lastCostPerUnitInclVat == null) return 0;
-  if (a.lastCostPerUnitInclVat == null) return 1;
-  if (b.lastCostPerUnitInclVat == null) return -1;
-  return a.lastCostPerUnitInclVat - b.lastCostPerUnitInclVat;
-};
-const sortByAvgCost = (a: FlatItem, b: FlatItem) => {
-  if (a.weightedAvgCost == null && b.weightedAvgCost == null) return 0;
-  if (a.weightedAvgCost == null) return 1;
-  if (b.weightedAvgCost == null) return -1;
-  return a.weightedAvgCost - b.weightedAvgCost;
-};
+const sortByStock = (a: FlatItem, b: FlatItem) =>
+  compareNullableAsc(a.currentStock, b.currentStock);
+const sortByLastCost = (a: FlatItem, b: FlatItem) =>
+  compareNullableAsc(a.lastCostPerUnitInclVat, b.lastCostPerUnitInclVat);
+const sortByAvgCost = (a: FlatItem, b: FlatItem) =>
+  compareNullableAsc(a.weightedAvgCost, b.weightedAvgCost);
 
 export function ItemsTable({
   items,

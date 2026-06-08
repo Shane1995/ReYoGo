@@ -5,6 +5,40 @@ import { invoiceTotals } from '../../../utils/invoiceTotals';
 
 const thCls = 'pb-2 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60';
 
+type DetailLine = ICapturedInvoiceWithLines['lines'][number];
+
+function unitPriceOf(line: DetailLine): number {
+  const qty = line.quantity || 0;
+  if (qty <= 0) return 0;
+  return line.totalVatExclude / qty;
+}
+
+function VatMark({ isVatable }: { isVatable: boolean }) {
+  if (isVatable) return <span className="text-[var(--nav-active-border)]">✓</span>;
+  return <span className="text-muted-foreground/30">—</span>;
+}
+
+function DetailLineRow({ line }: { line: DetailLine }) {
+  return (
+    <tr className="border-b border-[var(--nav-border)]/50">
+      <td className="py-1.5 pr-4">{line.itemNameSnapshot}</td>
+      <td className="py-1.5 pr-4 text-right font-mono tabular-nums">{line.quantity}</td>
+      <td className="py-1.5 pr-4 text-right text-muted-foreground/60">
+        {line.unitOfMeasure ?? '—'}
+      </td>
+      <td className="py-1.5 pr-4 text-right font-mono tabular-nums">
+        {formatMoney(unitPriceOf(line))}
+      </td>
+      <td className="py-1.5 pr-4 text-center">
+        <VatMark isVatable={line.isVatable} />
+      </td>
+      <td className="py-1.5 text-right font-mono tabular-nums font-medium">
+        {formatMoney(line.totalVatExclude)}
+      </td>
+    </tr>
+  );
+}
+
 function DetailLinesHead() {
   return (
     <thead>
@@ -70,32 +104,9 @@ export function InvoiceDetailLines({ invoice }: Props) {
       <table className="w-full text-sm">
         <DetailLinesHead />
         <tbody>
-          {invoice.lines.map((line) => {
-            const qty = line.quantity || 0;
-            const unitPrice = qty > 0 ? line.totalVatExclude / qty : 0;
-            return (
-              <tr key={line.id} className="border-b border-[var(--nav-border)]/50">
-                <td className="py-1.5 pr-4">{line.itemNameSnapshot}</td>
-                <td className="py-1.5 pr-4 text-right font-mono tabular-nums">{line.quantity}</td>
-                <td className="py-1.5 pr-4 text-right text-muted-foreground/60">
-                  {line.unitOfMeasure ?? '—'}
-                </td>
-                <td className="py-1.5 pr-4 text-right font-mono tabular-nums">
-                  {formatMoney(unitPrice)}
-                </td>
-                <td className="py-1.5 pr-4 text-center">
-                  {line.isVatable ? (
-                    <span className="text-[var(--nav-active-border)]">✓</span>
-                  ) : (
-                    <span className="text-muted-foreground/30">—</span>
-                  )}
-                </td>
-                <td className="py-1.5 text-right font-mono tabular-nums font-medium">
-                  {formatMoney(line.totalVatExclude)}
-                </td>
-              </tr>
-            );
-          })}
+          {invoice.lines.map((line) => (
+            <DetailLineRow key={line.id} line={line} />
+          ))}
         </tbody>
       </table>
       <TotalsSummary

@@ -15,6 +15,11 @@ interface ReconnectModalProps {
   authError: string | null;
 }
 
+function reconnectErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return 'Connection failed. Please try again.';
+}
+
 function ReconnectButton({
   connecting,
   canConnect,
@@ -98,7 +103,7 @@ export function ReconnectModal({ authError }: ReconnectModalProps) {
       await cloudSyncService.connect(tursoUrl.trim(), authToken.trim());
       window.location.reload();
     } catch (err) {
-      setConnectError(err instanceof Error ? err.message : 'Connection failed. Please try again.');
+      setConnectError(reconnectErrorMessage(err));
       setConnecting(false);
     }
   }, [tursoUrl, authToken, canConnect, connecting]);

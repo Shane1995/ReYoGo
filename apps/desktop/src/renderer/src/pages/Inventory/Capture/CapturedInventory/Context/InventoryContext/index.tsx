@@ -31,6 +31,20 @@ type InventoryContextValue = {
   archiveItemInBackend: (id: string) => Promise<void>;
 };
 
+function enrichedTypeOf(item: InventoryItem, categoryTypeMap: Map<string, string>): string {
+  if (item.type) return item.type;
+  return categoryTypeMap.get(item.categoryId) ?? '';
+}
+
+function enrichedUnitOfMeasureOf(
+  item: InventoryItem,
+  unitMap: Map<string, string>,
+): string | undefined {
+  if (item.unitOfMeasure) return item.unitOfMeasure;
+  if (!item.unitOfMeasureId) return undefined;
+  return unitMap.get(item.unitOfMeasureId);
+}
+
 const InventoryContext = createContext<InventoryContextValue | null>(null);
 
 export function InventoryProvider({ children }: { children: React.ReactNode }) {
@@ -149,10 +163,8 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     () =>
       items.map((item) => ({
         ...item,
-        type: item.type ?? categoryTypeMap.get(item.categoryId) ?? '',
-        unitOfMeasure:
-          item.unitOfMeasure ??
-          (item.unitOfMeasureId ? unitMap.get(item.unitOfMeasureId) : undefined),
+        type: enrichedTypeOf(item, categoryTypeMap),
+        unitOfMeasure: enrichedUnitOfMeasureOf(item, unitMap),
       })),
     [items, categoryTypeMap, unitMap],
   );

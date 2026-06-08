@@ -5,6 +5,82 @@ import { MoreBusinessesStep } from './components/MoreBusinessesStep';
 
 const STEP_LABELS = ['Connect', 'Your business', 'More businesses'];
 
+function rowOpacityClass(isActive: boolean, isDone: boolean): string {
+  if (isActive) return 'opacity-100';
+  if (isDone) return 'opacity-60';
+  return 'opacity-25';
+}
+
+function stepCircleClass(isDone: boolean, isActive: boolean): string {
+  if (isDone) return 'bg-[#20C997] border-[#20C997]';
+  if (isActive) return 'bg-transparent border-[#20C997]';
+  return 'bg-transparent border-white/20';
+}
+
+function stepNumberClass(isActive: boolean): string {
+  return isActive ? 'text-[#20C997]' : 'text-white/40';
+}
+
+function stepLabelClass(isActive: boolean): string {
+  return isActive ? 'font-medium' : 'font-normal';
+}
+
+function StepIndicator({
+  isDone,
+  isActive,
+  stepNum,
+}: {
+  isDone: boolean;
+  isActive: boolean;
+  stepNum: 1 | 2 | 3;
+}) {
+  if (isDone) {
+    return (
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+        <path
+          d="M2 5L4.2 7.2L8 3"
+          stroke="#0D1117"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+  return (
+    <span className={`text-[10px] font-semibold ${stepNumberClass(isActive)}`}>{stepNum}</span>
+  );
+}
+
+function StepRow({
+  label,
+  stepNum,
+  currentStep,
+}: {
+  label: string;
+  stepNum: 1 | 2 | 3;
+  currentStep: number;
+}) {
+  const isDone = currentStep > stepNum;
+  const isActive = currentStep === stepNum;
+  const isOptional = stepNum === 3;
+  return (
+    <div
+      className={`flex items-center gap-3 transition-opacity duration-300 ${rowOpacityClass(isActive, isDone)}`}
+    >
+      <div
+        className={`w-[22px] h-[22px] rounded-full border-[1.5px] flex items-center justify-center shrink-0 transition-all duration-300 ${stepCircleClass(isDone, isActive)}`}
+      >
+        <StepIndicator isDone={isDone} isActive={isActive} stepNum={stepNum} />
+      </div>
+      <div className="flex items-baseline gap-1.5">
+        <span className={`text-[13px] text-[#F8F9FA] ${stepLabelClass(isActive)}`}>{label}</span>
+        {isOptional && <span className="text-[10px] text-white/25 font-normal">optional</span>}
+      </div>
+    </div>
+  );
+}
+
 export default function SetupWizard({ initialStep = 1 }: { initialStep?: 1 | 2 }) {
   const wizard = useSetupWizard({ initialStep });
 
@@ -62,46 +138,8 @@ export default function SetupWizard({ initialStep = 1 }: { initialStep?: 1 | 2 }
           <div className="flex flex-col gap-2">
             {STEP_LABELS.map((label, i) => {
               const stepNum = (i + 1) as 1 | 2 | 3;
-              const isDone = wizard.step > stepNum;
-              const isActive = wizard.step === stepNum;
-              const isOptional = stepNum === 3;
               return (
-                <div
-                  key={label}
-                  className={`flex items-center gap-3 transition-opacity duration-300 ${isActive ? 'opacity-100' : isDone ? 'opacity-60' : 'opacity-25'}`}
-                >
-                  <div
-                    className={`w-[22px] h-[22px] rounded-full border-[1.5px] flex items-center justify-center shrink-0 transition-all duration-300 ${isDone ? 'bg-[#20C997] border-[#20C997]' : isActive ? 'bg-transparent border-[#20C997]' : 'bg-transparent border-white/20'}`}
-                  >
-                    {isDone ? (
-                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                        <path
-                          d="M2 5L4.2 7.2L8 3"
-                          stroke="#0D1117"
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    ) : (
-                      <span
-                        className={`text-[10px] font-semibold ${isActive ? 'text-[#20C997]' : 'text-white/40'}`}
-                      >
-                        {stepNum}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span
-                      className={`text-[13px] text-[#F8F9FA] ${isActive ? 'font-medium' : 'font-normal'}`}
-                    >
-                      {label}
-                    </span>
-                    {isOptional && (
-                      <span className="text-[10px] text-white/25 font-normal">optional</span>
-                    )}
-                  </div>
-                </div>
+                <StepRow key={label} label={label} stepNum={stepNum} currentStep={wizard.step} />
               );
             })}
           </div>

@@ -7,20 +7,35 @@ import { AnalysisCategoryRow } from '../shared/AnalysisCategoryRow';
 import { AnalysisItemRow } from '../shared/AnalysisItemRow';
 import type { ItemGroup } from '../../types';
 
+function toggleSetMember(prev: Set<string>, key: string): Set<string> {
+  const next = new Set(prev);
+  if (next.has(key)) {
+    next.delete(key);
+  } else {
+    next.add(key);
+  }
+  return next;
+}
+
+function groupByCategoryName(groups: ItemGroup[]): [string, ItemGroup[]][] {
+  const catMap = new Map<string, ItemGroup[]>();
+  for (const g of groups) {
+    const key = g.categoryName ?? '';
+    const existing = catMap.get(key);
+    if (existing) {
+      existing.push(g);
+    } else {
+      catMap.set(key, [g]);
+    }
+  }
+  return Array.from(catMap.entries()).sort(([a], [b]) => a.localeCompare(b));
+}
+
 export function ByCategoryView({ groups }: { groups: ItemGroup[] }) {
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
 
-  const toggleCat = (key: string) =>
-    setExpandedCats((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
+  const toggleCat = (key: string) => setExpandedCats((prev) => toggleSetMember(prev, key));
 
   if (groups.length === 0) {
     return (
@@ -30,13 +45,7 @@ export function ByCategoryView({ groups }: { groups: ItemGroup[] }) {
     );
   }
 
-  const catMap = new Map<string, ItemGroup[]>();
-  for (const g of groups) {
-    const key = g.categoryName ?? '';
-    if (!catMap.has(key)) catMap.set(key, []);
-    catMap.get(key)!.push(g);
-  }
-  const catSections = Array.from(catMap.entries()).sort(([a], [b]) => a.localeCompare(b));
+  const catSections = groupByCategoryName(groups);
 
   return (
     <div className="rounded-lg border border-[var(--nav-border)] overflow-hidden">

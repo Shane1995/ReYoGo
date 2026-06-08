@@ -5,6 +5,24 @@ import { getProcessLineComputed } from '../../types';
 type ItemLike = { id: string; name: string; categoryId: string };
 type CategoryLike = { id: string; name: string; type: string };
 
+function categoryOf(categories: CategoryLike[], categoryId: string): CategoryLike | undefined {
+  return categories.find((c) => c.id === categoryId);
+}
+
+function enrichedItemOf(
+  item: ItemLike,
+  categories: CategoryLike[],
+  lastUnitCosts: Record<string, number>,
+) {
+  const cat = categoryOf(categories, item.categoryId);
+  return {
+    ...item,
+    categoryName: cat ? cat.name : '',
+    typeLabel: cat ? cat.type : '',
+    lastUnitCostInclVat: lastUnitCosts[item.id],
+  };
+}
+
 export function useInvoiceSummary(
   lines: ProcessReceiptLine[],
   items: ItemLike[],
@@ -14,16 +32,7 @@ export function useInvoiceSummary(
   lastUnitCosts: Record<string, number> = {},
 ) {
   const itemsWithCategory = useMemo(
-    () =>
-      items.map((item) => {
-        const cat = categories.find((c) => c.id === item.categoryId);
-        return {
-          ...item,
-          categoryName: cat?.name ?? '',
-          typeLabel: cat?.type ?? '',
-          lastUnitCostInclVat: lastUnitCosts[item.id],
-        };
-      }),
+    () => items.map((item) => enrichedItemOf(item, categories, lastUnitCosts)),
     [items, categories, lastUnitCosts],
   );
 

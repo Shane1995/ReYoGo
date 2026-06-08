@@ -12,17 +12,28 @@ import { fmt } from '../../../utils/format';
 
 type ChartEntry = { date: string; fullDate: string; price: number; qty: number };
 
+type TipEntry = { fullDate: string; price: number; qty: number };
+
+function tipEntryOf(payload?: { payload: TipEntry }[]): TipEntry | null {
+  if (!payload || payload.length === 0) return null;
+  const first = payload[0];
+  if (!first) return null;
+  return first.payload;
+}
+
 function PriceTip({
   active,
   payload,
   uom,
 }: {
   active?: boolean;
-  payload?: { payload: { fullDate: string; price: number; qty: number } }[];
+  payload?: { payload: TipEntry }[];
   uom?: string;
 }) {
-  if (!active || !payload?.length) return null;
-  const { fullDate, price, qty } = payload[0]!.payload;
+  if (!active) return null;
+  const entry = tipEntryOf(payload);
+  if (!entry) return null;
+  const { fullDate, price, qty } = entry;
   return (
     <div className="rounded-lg border border-[var(--nav-border)] bg-background px-3 py-2 text-sm shadow-md">
       <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60 mb-1">

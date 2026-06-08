@@ -28,6 +28,16 @@ function clearDraft(): void {
   localStorage.removeItem(DRAFT_KEY);
 }
 
+function hasMeaningfulContent(
+  lines: ProcessReceiptLine[],
+  invoiceNumber: string,
+  invoiceDate: string,
+): boolean {
+  if (lines.some((l) => l.itemId)) return true;
+  if (invoiceNumber.trim()) return true;
+  return !!invoiceDate;
+}
+
 export function useDraftPersistence(
   lines: ProcessReceiptLine[],
   invoiceNumber: string,
@@ -37,13 +47,11 @@ export function useDraftPersistence(
 ): { clearDraft: () => void } {
   const save = useCallback(() => {
     if (isReused) return;
-    const hasMeaningfulContent =
-      lines.some((l) => l.itemId) || !!invoiceNumber.trim() || !!invoiceDate;
-    if (hasMeaningfulContent) {
+    if (hasMeaningfulContent(lines, invoiceNumber, invoiceDate)) {
       saveDraft({ lines, invoiceNumber, invoiceDate, vatMode });
-    } else {
-      clearDraft();
+      return;
     }
+    clearDraft();
   }, [lines, invoiceNumber, invoiceDate, vatMode, isReused]);
 
   useEffect(() => {

@@ -97,6 +97,63 @@ type NavContentProps = {
   onToggle: () => void;
 };
 
+function bottomItemsOf(
+  bottomNavItems: readonly NavItem[] | undefined,
+  collapsed: boolean,
+  iconClassName: string | undefined,
+) {
+  if (!bottomNavItems || bottomNavItems.length === 0) return null;
+  return (
+    <NavItemList navItems={bottomNavItems} collapsed={collapsed} iconClassName={iconClassName} />
+  );
+}
+
+function ScrollableNavBody({
+  items,
+  bottomItems,
+  collapsed,
+  onToggle,
+}: {
+  items: React.ReactNode;
+  bottomItems: React.ReactNode;
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <>
+      <nav className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-3">{items}</nav>
+      <div className="shrink-0 border-t border-[rgba(255,255,255,0.07)]">
+        {bottomItems && <div className="px-2 pt-2">{bottomItems}</div>}
+        <div className="p-2">
+          <CollapseToggle collapsed={collapsed} onClick={onToggle} />
+        </div>
+      </div>
+    </>
+  );
+}
+
+function FixedNavBody({
+  items,
+  bottomItems,
+  collapsed,
+  onToggle,
+}: {
+  items: React.ReactNode;
+  bottomItems: React.ReactNode;
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="flex flex-1 flex-col gap-0.5 p-3">
+      {items}
+      {bottomItems}
+      <div className="mt-auto">
+        <CollapseToggle collapsed={collapsed} onClick={onToggle} />
+      </div>
+    </div>
+  );
+}
+
 function NavContent({
   navItems,
   bottomNavItems,
@@ -108,32 +165,24 @@ function NavContent({
   const items = (
     <NavItemList navItems={navItems} collapsed={collapsed} iconClassName={iconClassName} />
   );
-  const bottomItems = bottomNavItems && bottomNavItems.length > 0 && (
-    <NavItemList navItems={bottomNavItems} collapsed={collapsed} iconClassName={iconClassName} />
-  );
+  const bottomItems = bottomItemsOf(bottomNavItems, collapsed, iconClassName);
   if (scrollable) {
     return (
-      <>
-        <nav className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-3">
-          {items}
-        </nav>
-        <div className="shrink-0 border-t border-[rgba(255,255,255,0.07)]">
-          {bottomItems && <div className="px-2 pt-2">{bottomItems}</div>}
-          <div className="p-2">
-            <CollapseToggle collapsed={collapsed} onClick={onToggle} />
-          </div>
-        </div>
-      </>
+      <ScrollableNavBody
+        items={items}
+        bottomItems={bottomItems}
+        collapsed={collapsed}
+        onToggle={onToggle}
+      />
     );
   }
   return (
-    <div className="flex flex-1 flex-col gap-0.5 p-3">
-      {items}
-      {bottomItems}
-      <div className="mt-auto">
-        <CollapseToggle collapsed={collapsed} onClick={onToggle} />
-      </div>
-    </div>
+    <FixedNavBody
+      items={items}
+      bottomItems={bottomItems}
+      collapsed={collapsed}
+      onToggle={onToggle}
+    />
   );
 }
 

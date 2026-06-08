@@ -21,19 +21,29 @@ type TxClient = Parameters<DbClient['transaction']>[0] extends (tx: infer T) => 
   ? T
   : never;
 
+function orNull<T>(value: T | null | undefined): T | null {
+  if (value == null) return null;
+  return value;
+}
+
+function orDefault<T>(value: T | null | undefined, fallback: T): T {
+  if (value == null) return fallback;
+  return value;
+}
+
 function toIInvoice(row: schema.InvoiceRow): IInvoice {
   return {
     id: row.id,
     entityId: row.entityId,
-    supplierId: row.supplierId ?? null,
-    sourceInvoiceId: row.sourceInvoiceId ?? null,
+    supplierId: orNull(row.supplierId),
+    sourceInvoiceId: orNull(row.sourceInvoiceId),
     invoiceNumber: row.invoiceNumber,
-    invoiceDate: row.invoiceDate ?? null,
-    status: row.status ?? InvoiceStatus.Draft,
-    vatMode: row.vatMode ?? VatMode.Exclusive,
-    vatRate: row.vatRate ?? 15,
+    invoiceDate: orNull(row.invoiceDate),
+    status: orDefault(row.status, InvoiceStatus.Draft),
+    vatMode: orDefault(row.vatMode, VatMode.Exclusive),
+    vatRate: orDefault(row.vatRate, 15),
     createdAt: row.createdAt,
-    updatedAt: row.updatedAt ?? null,
+    updatedAt: orNull(row.updatedAt),
   };
 }
 
@@ -67,6 +77,26 @@ async function getLatestMovement(
 }
 
 type MovementLine = { itemId: string; quantity: number; totalVatExclude: number };
+type PrevMovement = { stockQtyAfter: number; weightedAvgCostAfter: number | null } | null;
+
+function unitCostOf(line: MovementLine): number {
+  if (line.quantity <= 0) return 0;
+  return line.totalVatExclude / line.quantity;
+}
+
+function prevStockQty(prev: PrevMovement): number {
+  if (!prev) return 0;
+  return prev.stockQtyAfter;
+}
+
+function prevWac(prev: PrevMovement): number | null {
+  if (!prev) return null;
+  return prev.weightedAvgCostAfter;
+}
+
+function positiveQuantityLines(lines: MovementLine[]): MovementLine[] {
+  return lines.filter((l) => l.quantity > 0);
+}
 
 async function insertMovementsForLines(
   tx: TxClient,
@@ -76,16 +106,11 @@ async function insertMovementsForLines(
   createdAt: Date,
   entityId: string,
 ): Promise<void> {
-  for (const line of lines.filter((l) => l.quantity > 0)) {
+  for (const line of positiveQuantityLines(lines)) {
     const prev = await getLatestMovement(tx, line.itemId);
-    const unitCost = line.quantity > 0 ? line.totalVatExclude / line.quantity : 0;
-    const newWac = calculateWAC(
-      prev?.stockQtyAfter ?? 0,
-      prev?.weightedAvgCostAfter ?? null,
-      line.quantity,
-      unitCost,
-    );
-    const newQty = (prev?.stockQtyAfter ?? 0) + line.quantity;
+    const unitCost = unitCostOf(line);
+    const newWac = calculateWAC(prevStockQty(prev), prevWac(prev), line.quantity, unitCost);
+    const newQty = prevStockQty(prev) + line.quantity;
     await tx.insert(schema.stockMovements).values({
       id: generateId(),
       inventoryItemId: line.itemId,
@@ -107,6 +132,21 @@ async function insertMovementsForLines(
 
 function inclVat(unitCost: number, isVatable: boolean, vatRate: number): number {
   return isVatable ? unitCost * (1 + vatRate / 100) : unitCost;
+}
+
+function isVatableOf(value: boolean | null | undefined): boolean {
+  if (value === null || value === undefined) return true;
+  return value;
+}
+
+function unitCostInclVatOf(
+  unitCostInclVat: number | null,
+  unitCost: number,
+  isVatable: boolean,
+  vatRate: number,
+): number {
+  if (unitCostInclVat != null) return unitCostInclVat;
+  return inclVat(unitCost, isVatable, vatRate);
 }
 
 type LineValues = {
@@ -208,6 +248,21 @@ async function saveInvoice(db: DbClient, payload: ISaveCapturedInvoicePayload): 
   });
 }
 
+function resolveVatMode(payload: IUpdateCapturedInvoicePayload, current: IInvoice): VatMode {
+  if (payload.vatMode != null) return payload.vatMode;
+  return current.vatMode;
+}
+
+function resolveVatRate(payload: IUpdateCapturedInvoicePayload, current: IInvoice): number {
+  if (payload.vatRate != null) return payload.vatRate;
+  return current.vatRate;
+}
+
+function isValidInvoiceLine(line: { itemId: string | null; quantity: number }): boolean {
+  if (!line.itemId) return false;
+  return line.quantity >= 0;
+}
+
 async function updateInvoice(db: DbClient, payload: IUpdateCapturedInvoicePayload): Promise<void> {
   const editedAt = now();
   const current = await getInvoiceById(db, payload.id);
@@ -215,10 +270,10 @@ async function updateInvoice(db: DbClient, payload: IUpdateCapturedInvoicePayloa
   if (current.status === InvoiceStatus.Posted)
     throw new Error(`Invoice ${payload.id} is posted and cannot be edited`);
 
-  const vatMode = payload.vatMode ?? current.vatMode;
-  const vatRate = payload.vatRate ?? current.vatRate;
+  const vatMode = resolveVatMode(payload, current);
+  const vatRate = resolveVatRate(payload, current);
 
-  const validLines = payload.lines.filter((l) => l.itemId && l.quantity >= 0);
+  const validLines = payload.lines.filter(isValidInvoiceLine);
   const { totalExclTax, taxAmount } = computeTax(validLines, vatRate);
 
   await db.transaction(async (tx) => {
@@ -252,6 +307,11 @@ async function updateInvoice(db: DbClient, payload: IUpdateCapturedInvoicePayloa
   });
 }
 
+function withDefault<T>(value: T | undefined, fallback: T): T {
+  if (value !== undefined) return value;
+  return fallback;
+}
+
 async function updateInvoiceMetadata(
   db: DbClient,
   payload: IUpdateCapturedInvoiceMetadataPayload,
@@ -271,10 +331,9 @@ async function updateInvoiceMetadata(
     await tx
       .update(schema.invoices)
       .set({
-        supplierId: payload.supplierId !== undefined ? payload.supplierId : current.supplierId,
-        invoiceNumber:
-          payload.invoiceNumber !== undefined ? payload.invoiceNumber : current.invoiceNumber,
-        invoiceDate: payload.invoiceDate !== undefined ? payload.invoiceDate : current.invoiceDate,
+        supplierId: withDefault(payload.supplierId, current.supplierId),
+        invoiceNumber: withDefault(payload.invoiceNumber, current.invoiceNumber),
+        invoiceDate: withDefault(payload.invoiceDate, current.invoiceDate),
         updatedAt: editedAt,
       })
       .where(eq(schema.invoices.id, payload.id));
@@ -397,20 +456,23 @@ async function getLinesForAnalysis(
         : eq(schema.invoices.status, InvoiceStatus.Posted),
     )
     .orderBy(asc(effectiveDate));
-  return rows.map((r) => ({
-    id: r.id,
-    invoiceId: r.invoiceId,
-    inventoryItemId: r.inventoryItemId,
-    qty: r.qty,
-    unitCost: r.unitCost,
-    totalCost: r.totalCost,
-    invoiceDate: new Date(Number(r.invoiceDate) * 1000),
-    categoryType: r.categoryType ?? null,
-    categoryName: r.categoryName ?? null,
-    vatRate: r.vatRate!,
-    isVatable: r.isVatable ?? true,
-    unitCostInclVat: r.unitCostInclVat ?? inclVat(r.unitCost, r.isVatable ?? true, r.vatRate!),
-  }));
+  return rows.map((r) => {
+    const isVatable = isVatableOf(r.isVatable);
+    return {
+      id: r.id,
+      invoiceId: r.invoiceId,
+      inventoryItemId: r.inventoryItemId,
+      qty: r.qty,
+      unitCost: r.unitCost,
+      totalCost: r.totalCost,
+      invoiceDate: new Date(Number(r.invoiceDate) * 1000),
+      categoryType: orNull(r.categoryType),
+      categoryName: orNull(r.categoryName),
+      vatRate: r.vatRate!,
+      isVatable,
+      unitCostInclVat: unitCostInclVatOf(r.unitCostInclVat, r.unitCost, isVatable, r.vatRate!),
+    };
+  });
 }
 
 async function getLastUnitPrices(
@@ -432,14 +494,17 @@ async function getLastUnitPrices(
     .orderBy(desc(sql`COALESCE(${schema.invoices.invoiceDate}, ${schema.invoices.createdAt})`));
   const result: Record<string, { exclVat: number; inclVat: number }> = {};
   for (const row of rows) {
-    if (!(row.inventoryItemId in result)) {
-      const exclVat = row.unitCost;
-      const stored = row.unitCostInclVat;
-      result[row.inventoryItemId] = {
+    if (row.inventoryItemId in result) continue;
+    const exclVat = row.unitCost;
+    result[row.inventoryItemId] = {
+      exclVat,
+      inclVat: unitCostInclVatOf(
+        row.unitCostInclVat,
         exclVat,
-        inclVat: stored ?? inclVat(exclVat, row.isVatable ?? true, row.vatRate!),
-      };
-    }
+        isVatableOf(row.isVatable),
+        row.vatRate!,
+      ),
+    };
   }
   return result;
 }
@@ -522,14 +587,26 @@ async function postInvoice(db: DbClient, id: string): Promise<void> {
   });
 }
 
+function sourceQtyFor(sourceLines: schema.InvoiceLineItemRow[], itemId: string): number {
+  const found = sourceLines.find((l) => l.inventoryItemId === itemId);
+  if (!found) return 0;
+  return found.qty;
+}
+
+function creditedQtyFor(alreadyCredited: Record<string, number>, itemId: string): number {
+  const value = alreadyCredited[itemId];
+  if (value === undefined) return 0;
+  return value;
+}
+
 async function validateCreditNoteLines(
   validLines: ISaveCreditNotePayload['lines'],
   sourceLines: schema.InvoiceLineItemRow[],
   alreadyCredited: Record<string, number>,
 ): Promise<void> {
   for (const line of validLines) {
-    const sourceQty = sourceLines.find((l) => l.inventoryItemId === line.itemId)?.qty ?? 0;
-    const credited = alreadyCredited[line.itemId] ?? 0;
+    const sourceQty = sourceQtyFor(sourceLines, line.itemId);
+    const credited = creditedQtyFor(alreadyCredited, line.itemId);
     if (credited + line.quantity > sourceQty) {
       throw new Error(
         `Credited quantity exceeds original invoice quantity for item ${line.itemId}`,
@@ -548,7 +625,7 @@ async function insertCreditNoteMovements(
 ): Promise<void> {
   for (const line of creditLines) {
     const prev = await getLatestMovement(tx, line.itemId);
-    const newQty = (prev?.stockQtyAfter ?? 0) - line.quantity;
+    const newQty = prevStockQty(prev) - line.quantity;
     await tx.insert(schema.stockMovements).values({
       id: generateId(),
       inventoryItemId: line.itemId,
@@ -558,7 +635,7 @@ async function insertCreditNoteMovements(
       qty: -line.quantity,
       unitCostAtTime: line.unitPrice,
       totalCost: -line.totalVatExclude,
-      weightedAvgCostAfter: prev?.weightedAvgCostAfter ?? null,
+      weightedAvgCostAfter: prevWac(prev),
       stockQtyAfter: newQty,
       referenceType: ReferenceType.CreditNote,
       referenceId: payload.id,

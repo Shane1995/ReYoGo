@@ -46,6 +46,55 @@ function SummaryStats({
   );
 }
 
+function draftLabelOf(isSavingDraft: boolean): string {
+  if (isSavingDraft) return 'Saving…';
+  return 'Save draft';
+}
+
+function postLabelOf(isSaving: boolean): string {
+  if (isSaving) return 'Posting…';
+  return 'Post invoice';
+}
+
+function SaveButtons({
+  isSaving,
+  isSavingDraft,
+  canSave,
+  onSave,
+  onSaveDraft,
+}: {
+  isSaving: boolean;
+  isSavingDraft: boolean;
+  canSave: boolean;
+  onSave: () => void;
+  onSaveDraft: () => void;
+}) {
+  const disabled = isSaving || isSavingDraft || !canSave;
+  return (
+    <div className="flex items-center gap-2">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onSaveDraft}
+        disabled={disabled}
+        className="min-w-[100px] text-muted-foreground"
+      >
+        {draftLabelOf(isSavingDraft)}
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        onClick={onSave}
+        disabled={disabled}
+        className="min-w-[110px]"
+      >
+        {postLabelOf(isSaving)}
+      </Button>
+    </div>
+  );
+}
+
 type Summary = {
   lineCount: number;
   subtotal: number;
@@ -93,27 +142,13 @@ export function InvoiceSummaryFooter({
               {formatMoney(summary.grandTotal)}
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onSaveDraft}
-              disabled={isSavingDraft || isSaving || !canSave}
-              className="min-w-[100px] text-muted-foreground"
-            >
-              {isSavingDraft ? 'Saving…' : 'Save draft'}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={onSave}
-              disabled={isSaving || isSavingDraft || !canSave}
-              className="min-w-[110px]"
-            >
-              {isSaving ? 'Posting…' : 'Post invoice'}
-            </Button>
-          </div>
+          <SaveButtons
+            isSaving={isSaving}
+            isSavingDraft={isSavingDraft}
+            canSave={canSave}
+            onSave={onSave}
+            onSaveDraft={onSaveDraft}
+          />
         </div>
       </div>
     </footer>

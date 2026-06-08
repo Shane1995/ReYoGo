@@ -44,6 +44,10 @@ function filterGroups(
   return filtered;
 }
 
+function anyFilterActive(...filters: string[]): boolean {
+  return filters.some((filter) => !!filter);
+}
+
 export function useAnalysisData() {
   const { lines, loading } = useAnalysisLines();
   const { items } = useInventory();
@@ -74,7 +78,7 @@ export function useAnalysisData() {
     setFilterCategory('');
   };
 
-  const hasFilters = !!(search || fromDate || toDate || filterType || filterCategory);
+  const hasFilters = anyFilterActive(search, fromDate, toDate, filterType, filterCategory);
 
   return {
     lines,

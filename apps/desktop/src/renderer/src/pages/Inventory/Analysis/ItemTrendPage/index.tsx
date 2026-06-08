@@ -66,6 +66,26 @@ function PriceStatCards({ stats }: { stats: Stats }) {
   );
 }
 
+function suffixOf(uom: string | undefined, prefix: string): string {
+  if (!uom) return '';
+  return `${prefix}${uom}`;
+}
+
+function weightedAvgCostLabel(costHistory: ItemCostHistory, uomSuffix: string): string {
+  if (costHistory.weightedAvgCost == null) return '—';
+  return `${fmt(costHistory.weightedAvgCost)}${uomSuffix}`;
+}
+
+function stockQuantityLabel(stock: number): string {
+  if (stock % 1 === 0) return stock.toFixed(0);
+  return stock.toFixed(2);
+}
+
+function currentStockLabel(costHistory: ItemCostHistory, stockSuffix: string): string {
+  if (costHistory.totalStock == null) return '—';
+  return `${stockQuantityLabel(costHistory.totalStock)}${stockSuffix}`;
+}
+
 function CostHistoryCards({
   costHistory,
   uom,
@@ -73,30 +93,34 @@ function CostHistoryCards({
   costHistory: ItemCostHistory;
   uom: string | undefined;
 }) {
-  const uomSuffix = uom ? ` / ${uom}` : '';
-  const stockSuffix = uom ? ` ${uom}` : '';
+  const uomSuffix = suffixOf(uom, ' / ');
+  const stockSuffix = suffixOf(uom, ' ');
   return (
     <div className="grid grid-cols-2 gap-3">
       <StatCard
         label="Weighted avg cost"
-        value={
-          costHistory.weightedAvgCost != null
-            ? `${fmt(costHistory.weightedAvgCost)}${uomSuffix}`
-            : '—'
-        }
+        value={weightedAvgCostLabel(costHistory, uomSuffix)}
         muted
       />
-      <StatCard
-        label="Current stock"
-        value={
-          costHistory.totalStock != null
-            ? `${costHistory.totalStock % 1 === 0 ? costHistory.totalStock.toFixed(0) : costHistory.totalStock.toFixed(2)}${stockSuffix}`
-            : '—'
-        }
-        muted
-      />
+      <StatCard label="Current stock" value={currentStockLabel(costHistory, stockSuffix)} muted />
     </div>
   );
+}
+
+function uomPartOf(stats: Stats): string {
+  if (!stats.uom) return '';
+  return ` · ${stats.uom}`;
+}
+
+function captureCountLabel(stats: Stats): string {
+  if (stats.count === 1) return '1 capture';
+  return `${stats.count} captures`;
+}
+
+function subtitleOf(group: ItemGroup, stats: Stats | null): string {
+  const category = group.categoryName ?? group.categoryType;
+  if (!stats) return category;
+  return `${category}${uomPartOf(stats)} · ${captureCountLabel(stats)}`;
 }
 
 function ItemTrendHeader({
@@ -120,12 +144,7 @@ function ItemTrendHeader({
       </button>
       <div>
         <h1 className="text-lg font-semibold text-foreground leading-tight">{group.name}</h1>
-        <p className="text-sm text-muted-foreground/70 mt-0.5">
-          {group.categoryName ?? group.categoryType}
-          {stats?.uom ? ` · ${stats.uom}` : ''}
-          {' · '}
-          {stats?.count} capture{stats?.count !== 1 ? 's' : ''}
-        </p>
+        <p className="text-sm text-muted-foreground/70 mt-0.5">{subtitleOf(group, stats)}</p>
       </div>
     </div>
   );
@@ -180,6 +199,47 @@ function useItemTrendData(itemId: string | undefined) {
   return { loading, group, costHistory, chartData, stats };
 }
 
+function NotFoundScreen({ onBack }: { onBack: () => void }) {
+  return (
+    <div className="p-6">
+      <button
+        type="button"
+        onClick={onBack}
+        className="mb-4 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeftIcon className="size-3.5" />
+        Back to analysis
+      </button>
+      <p className="text-muted-foreground">Item not found.</p>
+    </div>
+  );
+}
+
+function uomOf(stats: Stats | null): string | undefined {
+  if (!stats) return undefined;
+  return stats.uom;
+}
+
+function avgPriceOf(stats: Stats | null): number {
+  if (!stats) return 0;
+  return stats.avg;
+}
+
+function StatsAndCostSection({
+  stats,
+  costHistory,
+}: {
+  stats: Stats | null;
+  costHistory: ItemCostHistory | null;
+}) {
+  return (
+    <>
+      {stats && <PriceStatCards stats={stats} />}
+      {costHistory && <CostHistoryCards costHistory={costHistory} uom={uomOf(stats)} />}
+    </>
+  );
+}
+
 export default function ItemTrendPage() {
   const { itemId } = useParams<{ itemId: string }>();
   const navigate = useNavigate();
@@ -187,29 +247,13 @@ export default function ItemTrendPage() {
   const goBack = () => navigate(AnalysisRoutes.CostPerUnit);
 
   if (loading) return <div className="p-6 text-muted-foreground">Loading…</div>;
-
-  if (!group) {
-    return (
-      <div className="p-6">
-        <button
-          type="button"
-          onClick={goBack}
-          className="mb-4 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeftIcon className="size-3.5" />
-          Back to analysis
-        </button>
-        <p className="text-muted-foreground">Item not found.</p>
-      </div>
-    );
-  }
+  if (!group) return <NotFoundScreen onBack={goBack} />;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto p-5 space-y-5">
       <ItemTrendHeader group={group} stats={stats} onBack={goBack} />
-      {stats && <PriceStatCards stats={stats} />}
-      {costHistory && <CostHistoryCards costHistory={costHistory} uom={stats?.uom} />}
-      <TrendChart chartData={chartData} avgPrice={stats?.avg ?? 0} uom={group.uom} />
+      <StatsAndCostSection stats={stats} costHistory={costHistory} />
+      <TrendChart chartData={chartData} avgPrice={avgPriceOf(stats)} uom={group.uom} />
       <TrendHistoryTable entries={group.entries} />
     </div>
   );

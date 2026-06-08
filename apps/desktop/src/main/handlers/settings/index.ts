@@ -1,4 +1,5 @@
 import { ipcMain, type IpcMainInvokeEvent } from 'electron';
+import { classifyConnectError, getErrorCode } from './classifyConnectError';
 import { CloudSyncIPC } from '@shared/types/ipc';
 import { CloudSyncEventType } from '@shared/types/cloudSync';
 import { CLOUD_SYNC_EVENT_CHANNEL } from '@shared/ipc-events';
@@ -27,6 +28,25 @@ import {
   INITIAL_SYNC_TIMEOUT_MS,
 } from '../../db/cloudSync';
 
+async function syncNewConnection(
+  replicaPath: string,
+  tursoUrl: string,
+  authToken: string,
+): Promise<void> {
+  await withSyncTimeout(
+    syncViaUtilityProcess(replicaPath, tursoUrl, authToken),
+    INITIAL_SYNC_TIMEOUT_MS,
+  );
+  await reinitialiseNoSync(replicaPath, tursoUrl, authToken);
+}
+
+function handleConnectFailure(replicaPath: string, err: unknown): never {
+  clearCredentials();
+  wipeReplicaFiles(replicaPath);
+  console.error(`[ReYoGo] CONNECT failed (code=${getErrorCode(err)}):`, err);
+  throw classifyConnectError(err);
+}
+
 async function handleConnect(tursoUrl: string, authToken: string): Promise<void> {
   if (!tursoUrl.startsWith('libsql://')) {
     throw new Error('Invalid URL — must start with libsql://');
@@ -35,38 +55,9 @@ async function handleConnect(tursoUrl: string, authToken: string): Promise<void>
   wipeReplicaFiles(replicaPath);
   saveCredentials(tursoUrl, authToken);
   try {
-    await withSyncTimeout(
-      syncViaUtilityProcess(replicaPath, tursoUrl, authToken),
-      INITIAL_SYNC_TIMEOUT_MS,
-    );
-    await reinitialiseNoSync(replicaPath, tursoUrl, authToken);
+    await syncNewConnection(replicaPath, tursoUrl, authToken);
   } catch (err) {
-    clearCredentials();
-    wipeReplicaFiles(replicaPath);
-    const raw = err instanceof Error ? err.message : String(err);
-    const code =
-      err instanceof Error && 'code' in err ? String((err as { code: string }).code) : '';
-    console.error(`[ReYoGo] CONNECT failed (code=${code}):`, err);
-    const haystack = (raw + ' ' + code).toLowerCase();
-    if (
-      haystack.includes('401') ||
-      haystack.includes('auth') ||
-      haystack.includes('forbidden') ||
-      haystack.includes('unauthorized')
-    ) {
-      throw new Error('Authentication failed — check your auth token.');
-    }
-    if (haystack.includes('404') || haystack.includes('not found')) {
-      throw new Error('Database not found — check your URL.');
-    }
-    if (
-      haystack.includes('timed out') ||
-      haystack.includes('timeout') ||
-      haystack.includes('deadline')
-    ) {
-      throw new Error('Connection timed out — the database took too long to sync. Try again.');
-    }
-    throw new Error(`Could not connect to the database: ${raw}${code ? ` [${code}]` : ''}`);
+    handleConnectFailure(replicaPath, err);
   }
 }
 

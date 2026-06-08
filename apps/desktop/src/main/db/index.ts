@@ -198,14 +198,11 @@ export async function reinitialiseNoSync(
   }
 }
 
+const PERMANENT_SYNC_ERROR_MARKERS = ['404', '401', 'auth role not found', 'WriteDelegation'];
+
 function isPermanentSyncError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
-  return (
-    msg.includes('404') ||
-    msg.includes('401') ||
-    msg.includes('auth role not found') ||
-    msg.includes('WriteDelegation')
-  );
+  return PERMANENT_SYNC_ERROR_MARKERS.some((marker) => msg.includes(marker));
 }
 
 function isCorruptedReplicaError(err: unknown): boolean {
@@ -238,6 +235,12 @@ async function ensureDefaultAccount(db: DbClient): Promise<void> {
   }
 }
 
+function firstIdOrThrow(rows: { id: string }[], message: string): string {
+  const row = rows[0];
+  if (!row) throw new Error(message);
+  return row.id;
+}
+
 export async function resolveCurrentIds(): Promise<{ groupId: string; entityId: string }> {
   const db = getDb();
 
@@ -247,8 +250,7 @@ export async function resolveCurrentIds(): Promise<{ groupId: string; entityId: 
     .where(eq(schema.businessGroups.accountId, ACCOUNT_ID))
     .limit(1);
 
-  const groupId = groupRows[0]?.id;
-  if (!groupId) throw new Error('No business group found — setup not complete');
+  const groupId = firstIdOrThrow(groupRows, 'No business group found — setup not complete');
 
   const entityRows = await db
     .select({ id: schema.entities.id })
@@ -257,8 +259,7 @@ export async function resolveCurrentIds(): Promise<{ groupId: string; entityId: 
     .orderBy(schema.entities.createdAt)
     .limit(1);
 
-  const entityId = entityRows[0]?.id;
-  if (!entityId) throw new Error('No entity found — setup not complete');
+  const entityId = firstIdOrThrow(entityRows, 'No entity found — setup not complete');
 
   return { groupId, entityId };
 }
@@ -310,74 +311,105 @@ export function _setDbStateForTest(
   _db = db;
 }
 
-async function bootWithReplica(credentials: {
-  tursoUrl: string;
-  authToken: string;
-}): Promise<void> {
-  const replicaPath = getReplicaPath();
-  const hadExistingReplica = existsSync(replicaPath);
-  const canBootOffline = hadExistingReplica && hasEverSynced();
+type ReplicaCredentials = { tursoUrl: string; authToken: string };
 
-  const bootFresh = async (h: ReplicaHandle) => {
-    await withSyncTimeout(h.sync());
-    await activateHandle(h);
-  };
+async function bootFresh(handle: ReplicaHandle): Promise<void> {
+  await withSyncTimeout(handle.sync());
+  await activateHandle(handle);
+}
 
-  let handle = openReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
+async function recoverFromCorruption(
+  replicaPath: string,
+  credentials: ReplicaCredentials,
+): Promise<void> {
+  wipeReplicaFiles(replicaPath);
+  const handle = openReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
+  await bootFresh(handle);
+}
 
-  if (canBootOffline) {
-    try {
-      await activateHandle(handle);
-      return;
-    } catch (bootErr) {
-      if (isCorruptedReplicaError(bootErr)) {
-        handle.close();
-        wipeReplicaFiles(replicaPath);
-        handle = openReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
-        await bootFresh(handle);
-        return;
-      }
-      throw bootErr;
-    }
+function cloudAuthError(): Error {
+  const err = new Error('Cloud auth failed — update your auth token in Settings → Cloud Sync.');
+  Object.assign(err, { isCloudAuthError: true });
+  return err;
+}
+
+function cloudConnectionError(): Error {
+  return new Error(
+    'Could not connect to cloud database. Check your internet connection and relaunch.',
+  );
+}
+
+async function bootOffline(
+  handle: ReplicaHandle,
+  replicaPath: string,
+  credentials: ReplicaCredentials,
+): Promise<void> {
+  try {
+    await activateHandle(handle);
+  } catch (bootErr) {
+    if (!isCorruptedReplicaError(bootErr)) throw bootErr;
+    handle.close();
+    await recoverFromCorruption(replicaPath, credentials);
   }
+}
 
+async function recoverFromPermanentSyncError(
+  handle: ReplicaHandle,
+  replicaPath: string,
+): Promise<never> {
+  handle.close();
+  clearCredentials();
+  wipeReplicaFiles(replicaPath);
+  throw cloudAuthError();
+}
+
+async function recoverFromUnknownBootError(
+  handle: ReplicaHandle,
+  replicaPath: string,
+): Promise<never> {
+  handle.close();
+  wipeReplicaFiles(replicaPath);
+  throw cloudConnectionError();
+}
+
+async function bootOnline(
+  handle: ReplicaHandle,
+  replicaPath: string,
+  credentials: ReplicaCredentials,
+): Promise<void> {
   try {
     await bootFresh(handle);
   } catch (bootErr) {
-    if (isPermanentSyncError(bootErr)) {
+    if (isPermanentSyncError(bootErr)) await recoverFromPermanentSyncError(handle, replicaPath);
+    if (isCorruptedReplicaError(bootErr)) {
       handle.close();
-      clearCredentials();
-      wipeReplicaFiles(replicaPath);
-      const err = new Error('Cloud auth failed — update your auth token in Settings → Cloud Sync.');
-      Object.assign(err, { isCloudAuthError: true });
-      throw err;
-    } else if (isCorruptedReplicaError(bootErr)) {
-      handle.close();
-      wipeReplicaFiles(replicaPath);
-      handle = openReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
-      await bootFresh(handle);
-    } else {
-      handle.close();
-      wipeReplicaFiles(replicaPath);
-      throw new Error(
-        'Could not connect to cloud database. Check your internet connection and relaunch.',
-      );
+      await recoverFromCorruption(replicaPath, credentials);
+      return;
     }
+    await recoverFromUnknownBootError(handle, replicaPath);
   }
+}
+
+async function bootWithReplica(credentials: ReplicaCredentials): Promise<void> {
+  const replicaPath = getReplicaPath();
+  const canBootOffline = existsSync(replicaPath) && hasEverSynced();
+  const handle = openReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
+
+  if (canBootOffline) return bootOffline(handle, replicaPath, credentials);
+  return bootOnline(handle, replicaPath, credentials);
+}
+
+async function bootFromStoredCredentials(): Promise<void> {
+  const credentials = hasCloudCredentials() ? getStoredCredentials() : null;
+  if (!credentials) throw new Error('No cloud credentials found. Connect to Turso first.');
+  await bootWithReplica(credentials);
 }
 
 export async function initDatabase(): Promise<void> {
   if (_db !== null || _initialising) return;
   _initialising = true;
   try {
-    if (hasCloudCredentials()) {
-      const credentials = getStoredCredentials();
-      if (credentials) {
-        await bootWithReplica(credentials);
-        return;
-      }
-    }
-    throw new Error('No cloud credentials found. Connect to Turso first.');
+    await bootFromStoredCredentials();
   } finally {
     _initialising = false;
   }

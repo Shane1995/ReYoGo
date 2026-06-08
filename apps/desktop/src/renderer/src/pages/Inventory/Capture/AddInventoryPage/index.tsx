@@ -89,6 +89,68 @@ function useAddInventoryData() {
   return { namedCategories, categoryTypes, unitOptions, items_, cats_ };
 }
 
+type ItemRows = ReturnType<typeof useItemRows>;
+type CategoryRows = ReturnType<typeof useCategoryRows>;
+
+function ModeSection({
+  mode,
+  itemRows,
+  catRows,
+  namedCategories,
+  categoryTypes,
+  unitOptions,
+}: {
+  mode: Mode;
+  itemRows: ItemRows;
+  catRows: CategoryRows;
+  namedCategories: ReturnType<typeof useAddInventoryData>['namedCategories'];
+  categoryTypes: ReturnType<typeof useAddInventoryData>['categoryTypes'];
+  unitOptions: ReturnType<typeof useAddInventoryData>['unitOptions'];
+}) {
+  if (mode === 'items') {
+    return (
+      <ItemsSection
+        itemRows={itemRows.itemRows}
+        itemDupes={itemRows.itemDupes}
+        namedCategories={namedCategories}
+        categoryTypes={categoryTypes}
+        unitOptions={unitOptions}
+        onUpdateRow={itemRows.updateItemRow}
+        onRemoveRow={itemRows.removeItemRow}
+        onAddRow={itemRows.addItemRow}
+      />
+    );
+  }
+  return (
+    <CategoriesSection
+      catRows={catRows.catRows}
+      catDupes={catRows.catDupes}
+      onUpdateRow={catRows.updateCatRow}
+      onRemoveRow={catRows.removeCatRow}
+      onAddRow={catRows.addCatRow}
+    />
+  );
+}
+
+function tableActionsFor(
+  mode: Mode,
+  itemRows: ItemRows,
+  catRows: CategoryRows,
+): { onAddRow: () => void; onClear: () => void; onSubmit: () => void } {
+  if (mode === 'items') {
+    return {
+      onAddRow: itemRows.addItemRow,
+      onClear: itemRows.clearItemRows,
+      onSubmit: itemRows.submitItems,
+    };
+  }
+  return {
+    onAddRow: catRows.addCatRow,
+    onClear: catRows.clearCatRows,
+    onSubmit: catRows.submitCats,
+  };
+}
+
 export default function AddInventoryPage() {
   const [mode, setMode] = useState<Mode>('items');
   const {
@@ -99,6 +161,8 @@ export default function AddInventoryPage() {
     cats_: c,
   } = useAddInventoryData();
 
+  const tableActions = tableActionsFor(mode, i, c);
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <PageHeader title="Add inventory" description="Add items and categories in bulk." />
@@ -106,34 +170,22 @@ export default function AddInventoryPage() {
         <div className="mx-6 my-5 space-y-3">
           <ModeTabBar mode={mode} onSelect={setMode} />
           <div className="rounded-lg border border-[var(--nav-border)] bg-background">
-            {mode === 'items' ? (
-              <ItemsSection
-                itemRows={i.itemRows}
-                itemDupes={i.itemDupes}
-                namedCategories={namedCategories}
-                categoryTypes={categoryTypes}
-                unitOptions={unitOptions}
-                onUpdateRow={i.updateItemRow}
-                onRemoveRow={i.removeItemRow}
-                onAddRow={i.addItemRow}
-              />
-            ) : (
-              <CategoriesSection
-                catRows={c.catRows}
-                catDupes={c.catDupes}
-                onUpdateRow={c.updateCatRow}
-                onRemoveRow={c.removeCatRow}
-                onAddRow={c.addCatRow}
-              />
-            )}
+            <ModeSection
+              mode={mode}
+              itemRows={i}
+              catRows={c}
+              namedCategories={namedCategories}
+              categoryTypes={categoryTypes}
+              unitOptions={unitOptions}
+            />
             <TableActionBar
               mode={mode}
               hasIncompleteItemRows={i.hasIncompleteItemRows}
               canSubmitItems={i.canSubmitItems}
               canSubmitCats={c.canSubmitCats}
-              onAddRow={mode === 'items' ? i.addItemRow : c.addCatRow}
-              onClear={mode === 'items' ? i.clearItemRows : c.clearCatRows}
-              onSubmit={mode === 'items' ? i.submitItems : c.submitCats}
+              onAddRow={tableActions.onAddRow}
+              onClear={tableActions.onClear}
+              onSubmit={tableActions.onSubmit}
             />
           </div>
         </div>

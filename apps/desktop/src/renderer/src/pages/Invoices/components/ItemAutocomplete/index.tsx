@@ -25,6 +25,136 @@ type Props = {
   onNavigateRight?: () => void;
 };
 
+function entityFilteredItemsOf(items: ItemOption[], entityId: string): ItemOption[] {
+  if (!entityId) return items;
+  return items.filter((item) => item.entityId === entityId);
+}
+
+function displayValueOf(
+  isOpen: boolean,
+  query: string,
+  selectedItem: ItemOption | undefined,
+): string {
+  if (isOpen) return query;
+  return selectedItem?.name ?? '';
+}
+
+function isInsideAutocomplete(target: HTMLElement, containerId: string, listId: string): boolean {
+  if (target.closest?.(`#${containerId}`)) return true;
+  return !!target.closest?.(`#${listId}`);
+}
+
+function blurActiveElement(): void {
+  if (!(document.activeElement instanceof HTMLElement)) return;
+  document.activeElement.blur();
+}
+
+function moveHighlightDown(current: number, length: number): number {
+  return (current + 1) % Math.max(1, length);
+}
+
+function moveHighlightUp(current: number, length: number): number {
+  if (current <= 0) return Math.max(0, length - 1);
+  return current - 1;
+}
+
+const OPEN_LIST_KEYS = ['Enter', ' ', 'ArrowDown'];
+
+function shouldOpenOnKey(key: string): boolean {
+  return OPEN_LIST_KEYS.includes(key);
+}
+
+function handleKeyDownClosed(
+  e: React.KeyboardEvent,
+  onNavigateRight: (() => void) | undefined,
+  openList: () => void,
+): void {
+  if (e.key === 'ArrowRight') {
+    onNavigateRight?.();
+    return;
+  }
+  if (shouldOpenOnKey(e.key)) {
+    openList();
+  }
+}
+
+const PREVENT_DEFAULT_KEYS = new Set(['ArrowDown', 'ArrowUp', 'Enter']);
+
+type OpenKeyActions = Record<string, (() => void) | undefined>;
+
+function handleKeyDownOpen(e: React.KeyboardEvent, actions: OpenKeyActions): void {
+  const action = actions[e.key];
+  if (!action) return;
+  if (PREVENT_DEFAULT_KEYS.has(e.key)) e.preventDefault();
+  action();
+}
+
+function OptionCost({ cost }: { cost: number | undefined }) {
+  if (cost == null) return null;
+  return (
+    <span className="shrink-0 font-mono text-xs tabular-nums opacity-60">{formatMoney(cost)}</span>
+  );
+}
+
+function OptionRow({
+  item,
+  isHighlighted,
+  onSelect,
+}: {
+  item: ItemOption;
+  isHighlighted: boolean;
+  onSelect: (item: ItemOption) => void;
+}) {
+  return (
+    <li
+      id={`item-option-${item.id}`}
+      role="option"
+      aria-selected={isHighlighted}
+      className={cn(
+        'cursor-pointer px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground flex items-center justify-between gap-2',
+        isHighlighted && 'bg-accent text-accent-foreground',
+      )}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        onSelect(item);
+      }}
+    >
+      <span className="truncate">{item.name}</span>
+      <OptionCost cost={item.lastUnitCostInclVat} />
+    </li>
+  );
+}
+
+function AutocompleteOptionsList({
+  items,
+  highlightIndex,
+  onSelect,
+}: {
+  items: ItemOption[];
+  highlightIndex: number;
+  onSelect: (item: ItemOption) => void;
+}) {
+  if (items.length === 0) {
+    return (
+      <li className="px-3 py-2 text-sm text-muted-foreground" role="option">
+        No items match
+      </li>
+    );
+  }
+  return (
+    <>
+      {items.map((item, index) => (
+        <OptionRow
+          key={item.id}
+          item={item}
+          isHighlighted={index === highlightIndex}
+          onSelect={onSelect}
+        />
+      ))}
+    </>
+  );
+}
+
 export function ItemAutocomplete({
   items,
   value,
@@ -37,7 +167,7 @@ export function ItemAutocomplete({
   onSelectComplete,
   onNavigateRight,
 }: Props) {
-  const entityFilteredItems = entityId ? items.filter((item) => item.entityId === entityId) : items;
+  const entityFilteredItems = entityFilteredItemsOf(items, entityId);
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
@@ -57,7 +187,7 @@ export function ItemAutocomplete({
     return sorted.filter((i) => i.name.toLowerCase().includes(q));
   }, [entityFilteredItems, query]);
 
-  const displayValue = isOpen ? query : (selectedItem?.name ?? '');
+  const displayValue = displayValueOf(isOpen, query, selectedItem);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -93,8 +223,9 @@ export function ItemAutocomplete({
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      const target = e.target as HTMLElement;
-      if (target.closest?.(`#${containerId}`) || target.closest?.(`#${listId}`)) return;
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (isInsideAutocomplete(target, containerId, listId)) return;
       setIsOpen(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -110,52 +241,61 @@ export function ItemAutocomplete({
     setTimeout(() => setIsOpen(false), 150);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isOpen) {
-      if (e.key === 'ArrowRight') {
-        onNavigateRight?.();
+  const handleSelect = useCallback(
+    (item: ItemOption) => {
+      onChange(item.id);
+      setQuery('');
+      setIsOpen(false);
+      onSelectComplete?.();
+    },
+    [onChange, onSelectComplete],
+  );
+
+  const openList = useCallback(() => {
+    setIsOpen(true);
+    setQuery('');
+  }, []);
+
+  const closeList = useCallback(() => {
+    setIsOpen(false);
+    setQuery('');
+    blurActiveElement();
+  }, []);
+
+  const moveHighlightDownward = useCallback(() => {
+    setHighlightIndex((i) => moveHighlightDown(i, filteredItems.length));
+  }, [filteredItems.length]);
+
+  const moveHighlightUpward = useCallback(() => {
+    setHighlightIndex((i) => moveHighlightUp(i, filteredItems.length));
+  }, [filteredItems.length]);
+
+  const commitHighlighted = useCallback(() => {
+    const item = filteredItems[highlightIndex];
+    if (!item) return;
+    handleSelect(item);
+  }, [filteredItems, highlightIndex, handleSelect]);
+
+  const openKeyActions = useMemo<OpenKeyActions>(
+    () => ({
+      ArrowDown: moveHighlightDownward,
+      ArrowUp: moveHighlightUpward,
+      Enter: commitHighlighted,
+      Escape: closeList,
+    }),
+    [moveHighlightDownward, moveHighlightUpward, commitHighlighted, closeList],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!isOpen) {
+        handleKeyDownClosed(e, onNavigateRight, openList);
         return;
       }
-      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
-        setIsOpen(true);
-        setQuery('');
-      }
-      return;
-    }
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setHighlightIndex((i) => (i + 1) % Math.max(1, filteredItems.length));
-      return;
-    }
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setHighlightIndex((i) => (i <= 0 ? Math.max(0, filteredItems.length - 1) : i - 1));
-      return;
-    }
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const item = filteredItems[highlightIndex];
-      if (item) {
-        onChange(item.id);
-        setQuery('');
-        setIsOpen(false);
-        onSelectComplete?.();
-      }
-      return;
-    }
-    if (e.key === 'Escape') {
-      setIsOpen(false);
-      setQuery('');
-      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-    }
-  };
-
-  const handleSelect = (item: ItemOption) => {
-    onChange(item.id);
-    setQuery('');
-    setIsOpen(false);
-    onSelectComplete?.();
-  };
+      handleKeyDownOpen(e, openKeyActions);
+    },
+    [isOpen, onNavigateRight, openList, openKeyActions],
+  );
 
   return (
     <div id={containerId} className={cn('relative w-full min-w-[10rem]', className)}>
@@ -196,35 +336,11 @@ export function ItemAutocomplete({
             }}
             className="max-h-64 overflow-auto rounded-md border border-[var(--nav-border)] bg-popover py-1 shadow-lg"
           >
-            {filteredItems.length === 0 ? (
-              <li className="px-3 py-2 text-sm text-muted-foreground" role="option">
-                No items match
-              </li>
-            ) : (
-              filteredItems.map((item, index) => (
-                <li
-                  key={item.id}
-                  id={`item-option-${item.id}`}
-                  role="option"
-                  aria-selected={index === highlightIndex}
-                  className={cn(
-                    'cursor-pointer px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground flex items-center justify-between gap-2',
-                    index === highlightIndex && 'bg-accent text-accent-foreground',
-                  )}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    handleSelect(item);
-                  }}
-                >
-                  <span className="truncate">{item.name}</span>
-                  {item.lastUnitCostInclVat != null && (
-                    <span className="shrink-0 font-mono text-xs tabular-nums opacity-60">
-                      {formatMoney(item.lastUnitCostInclVat)}
-                    </span>
-                  )}
-                </li>
-              ))
-            )}
+            <AutocompleteOptionsList
+              items={filteredItems}
+              highlightIndex={highlightIndex}
+              onSelect={handleSelect}
+            />
           </ul>,
           document.body,
         )}

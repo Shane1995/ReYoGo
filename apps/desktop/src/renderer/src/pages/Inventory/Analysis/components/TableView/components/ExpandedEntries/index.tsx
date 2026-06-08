@@ -7,6 +7,19 @@ type Props = {
   entries: ItemGroup['entries'];
 };
 
+function prevInclVatOf(entries: ItemGroup['entries'], index: number): number | null {
+  if (index <= 0) return null;
+  const prev = entries[index - 1];
+  if (!prev) return null;
+  return prev.unitPriceInclVat;
+}
+
+function pctChangeOf(current: number, prev: number | null): number | null {
+  if (prev === null) return null;
+  if (prev <= 0) return null;
+  return ((current - prev) / prev) * 100;
+}
+
 export function ExpandedEntries({ entries }: Props) {
   return (
     <table className="w-full text-xs">
@@ -31,11 +44,7 @@ export function ExpandedEntries({ entries }: Props) {
       </thead>
       <tbody>
         {entries.map((entry, ei) => {
-          const prev = ei > 0 ? entries[ei - 1] : null;
-          const pct =
-            prev && prev.unitPriceInclVat > 0
-              ? ((entry.unitPriceInclVat - prev.unitPriceInclVat) / prev.unitPriceInclVat) * 100
-              : null;
+          const pct = pctChangeOf(entry.unitPriceInclVat, prevInclVatOf(entries, ei));
           return (
             <tr key={`${entry.invoiceId}-${ei}`} className="border-t border-[var(--nav-border)]/40">
               <td className="py-1.5 text-muted-foreground">{fmtDate(entry.date)}</td>

@@ -9,13 +9,34 @@ interface BusinessSectionProps {
   onSaved: () => Promise<void>;
 }
 
+function canSubmit(name: string, group: IBusinessGroup | null): boolean {
+  if (!name.trim()) return false;
+  return !!group;
+}
+
+function isSaveDisabled(saving: boolean, name: string): boolean {
+  if (saving) return true;
+  return !name.trim();
+}
+
+function saveButtonLabel(saved: boolean, saving: boolean): string {
+  if (saved) return '✓ Saved';
+  if (saving) return 'Saving…';
+  return 'Save';
+}
+
+function saveButtonOpacity(disabled: boolean): number {
+  return disabled ? 0.4 : 1;
+}
+
 export function BusinessSection({ group, onSaved }: BusinessSectionProps) {
   const [name, setName] = useState(group?.name ?? '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const disabled = isSaveDisabled(saving, name);
 
   const handleSave = async () => {
-    if (!name.trim() || !group) return;
+    if (!canSubmit(name, group)) return;
     setSaving(true);
     try {
       await entitiesService.updateGroupName(name.trim());
@@ -47,15 +68,15 @@ export function BusinessSection({ group, onSaved }: BusinessSectionProps) {
             />
             <button
               onClick={handleSave}
-              disabled={saving || !name.trim()}
+              disabled={disabled}
               className="h-8 px-3 rounded-lg text-xs font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               style={{
-                background: saved ? 'var(--primary)' : 'var(--primary)',
+                background: 'var(--primary)',
                 color: 'var(--primary-foreground)',
-                opacity: saving || !name.trim() ? 0.4 : 1,
+                opacity: saveButtonOpacity(disabled),
               }}
             >
-              {saved ? '✓ Saved' : saving ? 'Saving…' : 'Save'}
+              {saveButtonLabel(saved, saving)}
             </button>
           </div>
         </div>

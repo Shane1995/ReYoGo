@@ -20,37 +20,100 @@ type CatRow = {
 
 type CatAccum = { categoryId: string | null; categoryName: string | null; total: number };
 
+function entityFilter(entityId: string | undefined) {
+  if (!entityId) return undefined;
+  return eq(schema.stockMovements.entityId, entityId);
+}
+
+function orNull<T>(value: T | null | undefined): T | null {
+  if (value == null) return null;
+  return value;
+}
+
+function appendWac(
+  itemWacs: Map<string, (number | null)[]>,
+  itemId: string,
+  wac: number | null,
+): void {
+  const existing = itemWacs.get(itemId);
+  if (existing) {
+    existing.push(wac);
+    return;
+  }
+  itemWacs.set(itemId, [wac]);
+}
+
 function aggregateEntityWacs(rows: WacRow[]): Map<string, (number | null)[]> {
   const latestWac = new Map<string, number | null>();
   for (const row of rows) {
-    latestWac.set(`${row.inventoryItemId}::${row.entityId}`, row.weightedAvgCostAfter ?? null);
+    latestWac.set(`${row.inventoryItemId}::${row.entityId}`, orNull(row.weightedAvgCostAfter));
   }
   const itemWacs = new Map<string, (number | null)[]>();
   for (const [key, wac] of latestWac) {
-    const itemId = key.split('::')[0]!;
-    const arr = itemWacs.get(itemId) ?? [];
-    arr.push(wac);
-    itemWacs.set(itemId, arr);
+    appendWac(itemWacs, key.split('::')[0]!, wac);
   }
   return itemWacs;
+}
+
+function categoryKeyOf(categoryId: string | null): string {
+  if (categoryId === null) return '__uncategorised';
+  return categoryId;
+}
+
+function ensureCategoryEntry(catMap: Map<string, CatAccum>, row: CatRow): CatAccum {
+  const key = categoryKeyOf(row.categoryId);
+  const existing = catMap.get(key);
+  if (existing) return existing;
+  const entry: CatAccum = {
+    categoryId: orNull(row.categoryId),
+    categoryName: orNull(row.categoryName),
+    total: 0,
+  };
+  catMap.set(key, entry);
+  return entry;
+}
+
+function unitCostOf(value: number | null): number {
+  if (value === null) return 0;
+  return value;
 }
 
 function aggregateCogsByCategory(rows: CatRow[]): { total: number; catMap: Map<string, CatAccum> } {
   let total = 0;
   const catMap = new Map<string, CatAccum>();
   for (const row of rows) {
-    const amount = row.qty * (row.unitCostAtTime ?? 0);
+    const amount = row.qty * unitCostOf(row.unitCostAtTime);
     total += amount;
-    const key = row.categoryId ?? '__uncategorised';
-    if (!catMap.has(key))
-      catMap.set(key, {
-        categoryId: row.categoryId ?? null,
-        categoryName: row.categoryName ?? null,
-        total: 0,
-      });
-    catMap.get(key)!.total += amount;
+    ensureCategoryEntry(catMap, row).total += amount;
   }
   return { total, catMap };
+}
+
+type StockRow = { inventoryItemId: string; entityId: string; stockQtyAfter: number };
+
+function stockByItemForEntity(rows: StockRow[]): Record<string, number> {
+  const result: Record<string, number> = {};
+  for (const row of rows) result[row.inventoryItemId] = row.stockQtyAfter;
+  return result;
+}
+
+function addToStock(result: Record<string, number>, itemId: string, qty: number): void {
+  const existing = result[itemId];
+  if (existing === undefined) {
+    result[itemId] = qty;
+    return;
+  }
+  result[itemId] = existing + qty;
+}
+
+function stockAcrossEntities(rows: StockRow[]): Record<string, number> {
+  const perEntityItem = new Map<string, number>();
+  for (const row of rows) {
+    perEntityItem.set(`${row.inventoryItemId}::${row.entityId}`, row.stockQtyAfter);
+  }
+  const result: Record<string, number> = {};
+  for (const [key, qty] of perEntityItem) addToStock(result, key.split('::')[0]!, qty);
+  return result;
 }
 
 async function getCurrentStockByItem(
@@ -65,24 +128,35 @@ async function getCurrentStockByItem(
       occurredAt: schema.stockMovements.occurredAt,
     })
     .from(schema.stockMovements)
-    .where(entityId ? eq(schema.stockMovements.entityId, entityId) : undefined)
+    .where(entityFilter(entityId))
     .orderBy(asc(schema.stockMovements.occurredAt));
 
-  if (entityId) {
-    const result: Record<string, number> = {};
-    for (const row of rows) result[row.inventoryItemId] = row.stockQtyAfter;
-    return result;
-  }
+  if (entityId) return stockByItemForEntity(rows);
+  return stockAcrossEntities(rows);
+}
 
-  const perEntityItem = new Map<string, number>();
-  for (const row of rows) {
-    perEntityItem.set(`${row.inventoryItemId}::${row.entityId}`, row.stockQtyAfter);
-  }
-  const result: Record<string, number> = {};
-  for (const [key, qty] of perEntityItem) {
-    const itemId = key.split('::')[0]!;
-    result[itemId] = (result[itemId] ?? 0) + qty;
-  }
+function wacConditions(entityId: string | undefined) {
+  const conditions = [eq(schema.stockMovements.movementType, MovementType.In)];
+  if (entityId) conditions.push(eq(schema.stockMovements.entityId, entityId));
+  return conditions;
+}
+
+function wacByItemForEntity(rows: WacRow[]): Record<string, number | null> {
+  const result: Record<string, number | null> = {};
+  for (const row of rows) result[row.inventoryItemId] = orNull(row.weightedAvgCostAfter);
+  return result;
+}
+
+function reconciledWac(wacs: (number | null)[]): number | null {
+  const allSame = wacs.every((w) => w === wacs[0]);
+  if (!allSame) return null;
+  return orNull(wacs[0]);
+}
+
+function wacAcrossEntities(rows: WacRow[]): Record<string, number | null> {
+  const itemWacs = aggregateEntityWacs(rows);
+  const result: Record<string, number | null> = {};
+  for (const [itemId, wacs] of itemWacs) result[itemId] = reconciledWac(wacs);
   return result;
 }
 
@@ -90,9 +164,6 @@ async function getWeightedAvgCosts(
   db: DbClient,
   entityId?: string,
 ): Promise<Record<string, number | null>> {
-  const conditions = [eq(schema.stockMovements.movementType, MovementType.In)];
-  if (entityId) conditions.push(eq(schema.stockMovements.entityId, entityId));
-
   const rows = await db
     .select({
       inventoryItemId: schema.stockMovements.inventoryItemId,
@@ -101,22 +172,29 @@ async function getWeightedAvgCosts(
       occurredAt: schema.stockMovements.occurredAt,
     })
     .from(schema.stockMovements)
-    .where(and(...conditions))
+    .where(and(...wacConditions(entityId)))
     .orderBy(asc(schema.stockMovements.occurredAt));
 
-  if (entityId) {
-    const result: Record<string, number | null> = {};
-    for (const row of rows) result[row.inventoryItemId] = row.weightedAvgCostAfter ?? null;
-    return result;
-  }
+  if (entityId) return wacByItemForEntity(rows);
+  return wacAcrossEntities(rows);
+}
 
-  const itemWacs = aggregateEntityWacs(rows);
-  const result: Record<string, number | null> = {};
-  for (const [itemId, wacs] of itemWacs) {
-    const allSame = wacs.every((w) => w === wacs[0]);
-    result[itemId] = allSame ? (wacs[0] ?? null) : null;
-  }
-  return result;
+function toStockMovement(row: schema.StockMovementRow): StockMovement {
+  return {
+    id: row.id,
+    inventoryItemId: row.inventoryItemId,
+    movementType: row.movementType,
+    qty: row.qty,
+    unitCostAtTime: orNull(row.unitCostAtTime),
+    totalCost: orNull(row.totalCost),
+    weightedAvgCostAfter: orNull(row.weightedAvgCostAfter),
+    stockQtyAfter: row.stockQtyAfter,
+    referenceType: orNull(row.referenceType),
+    referenceId: orNull(row.referenceId),
+    notes: orNull(row.notes),
+    occurredAt: row.occurredAt,
+    createdAt: row.createdAt,
+  };
 }
 
 async function getMovementsForItem(
@@ -131,21 +209,17 @@ async function getMovementsForItem(
     .from(schema.stockMovements)
     .where(and(...conditions))
     .orderBy(desc(schema.stockMovements.occurredAt), desc(schema.stockMovements.createdAt));
-  return rows.map((r) => ({
-    id: r.id,
-    inventoryItemId: r.inventoryItemId,
-    movementType: r.movementType,
-    qty: r.qty,
-    unitCostAtTime: r.unitCostAtTime ?? null,
-    totalCost: r.totalCost ?? null,
-    weightedAvgCostAfter: r.weightedAvgCostAfter ?? null,
-    stockQtyAfter: r.stockQtyAfter,
-    referenceType: r.referenceType ?? null,
-    referenceId: r.referenceId ?? null,
-    notes: r.notes ?? null,
-    occurredAt: r.occurredAt,
-    createdAt: r.createdAt,
-  }));
+  return rows.map((r) => toStockMovement(r));
+}
+
+function weightedAvgCostOf(movement: StockMovement | undefined): number | null {
+  if (!movement) return null;
+  return movement.weightedAvgCostAfter;
+}
+
+function totalStockOf(movement: StockMovement | undefined): number {
+  if (!movement) return 0;
+  return movement.stockQtyAfter;
 }
 
 async function getItemCostHistory(
@@ -158,8 +232,8 @@ async function getItemCostHistory(
   const latest = movements.at(0);
   return {
     itemId,
-    weightedAvgCost: latestIn?.weightedAvgCostAfter ?? null,
-    totalStock: latest?.stockQtyAfter ?? 0,
+    weightedAvgCost: weightedAvgCostOf(latestIn),
+    totalStock: totalStockOf(latest),
     movements: movements.map((m) => ({
       id: m.id,
       movementType: m.movementType,

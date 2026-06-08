@@ -34,6 +34,80 @@ function fmtDisplay(d: Date): string {
 
 type Preset = { label: string; range: () => DateRange };
 
+function isSameDay(a: Date, b: Date): boolean {
+  return a.toDateString() === b.toDateString();
+}
+
+function definedRangeOf(r: DateRange | undefined): { from: Date; to: Date | undefined } | null {
+  if (!r) return null;
+  if (!r.from) return null;
+  return { from: r.from, to: r.to };
+}
+
+function storeRangeOf(r: DateRange | undefined): { from: string; to: string } {
+  const bounds = definedRangeOf(r);
+  if (!bounds) return { from: '', to: '' };
+  if (!bounds.to) return { from: toStore(bounds.from), to: '' };
+  if (isSameDay(bounds.from, bounds.to)) return { from: toStore(bounds.from), to: '' };
+  return { from: toStore(bounds.from), to: toStore(bounds.to) };
+}
+
+function handleRangeSelect(
+  r: DateRange | undefined,
+  onChange: (from: string, to: string) => void,
+  closeOnComplete: () => void,
+): void {
+  const { from, to } = storeRangeOf(r);
+  onChange(from, to);
+  if (!from || !to) return;
+  closeOnComplete();
+}
+
+function selectedRangeOf(
+  fromDate: Date | undefined,
+  toDate: Date | undefined,
+): DateRange | undefined {
+  if (!fromDate && !toDate) return undefined;
+  return { from: fromDate, to: toDate };
+}
+
+function rangeLabelOf(fromDate: Date | undefined, toDate: Date | undefined): string {
+  if (!fromDate) return toDate ? `Until ${fmtDisplay(toDate)}` : '';
+  if (!toDate) return `From ${fmtDisplay(fromDate)}`;
+  return `${fmtDisplay(fromDate)} – ${fmtDisplay(toDate)}`;
+}
+
+function isCompleteRange(from: string, to: string): boolean {
+  if (!from) return false;
+  return !!to;
+}
+
+function rangeBoundsOf(r: DateRange): { from: Date; to: Date } | null {
+  if (!r.from) return null;
+  if (!r.to) return null;
+  return { from: r.from, to: r.to };
+}
+
+function triggerButtonClassName(hasRange: boolean, className: string | undefined): string {
+  const stateCls = hasRange
+    ? 'border border-[var(--primary)]/30 bg-primary/5 text-primary hover:bg-primary/10'
+    : 'border border-input bg-background text-muted-foreground/60 hover:border-input hover:text-foreground';
+  return cn(
+    'flex h-8 min-w-0 items-center gap-1.5 rounded-md px-2.5 text-sm transition-colors',
+    'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50',
+    stateCls,
+    className,
+  );
+}
+
+function isActivePreset(preset: Preset, from: string, to: string): boolean {
+  if (!isCompleteRange(from, to)) return false;
+  const bounds = rangeBoundsOf(preset.range());
+  if (!bounds) return false;
+  if (from !== toStore(bounds.from)) return false;
+  return to === toStore(bounds.to);
+}
+
 const PRESET_GROUPS: { label: string; presets: Preset[] }[] = [
   {
     label: 'Relative',
@@ -76,24 +150,9 @@ export function DateRangePicker({
 
   const fromDate = parseStored(from);
   const toDate = parseStored(to);
-  const selected: DateRange | undefined =
-    fromDate || toDate ? { from: fromDate, to: toDate } : undefined;
-  const hasRange = !!(fromDate || toDate);
-
-  const label =
-    fromDate && toDate
-      ? `${fmtDisplay(fromDate)} – ${fmtDisplay(toDate)}`
-      : fromDate
-        ? `From ${fmtDisplay(fromDate)}`
-        : toDate
-          ? `Until ${fmtDisplay(toDate)}`
-          : '';
-
-  function isActivePreset(preset: Preset): boolean {
-    if (!from || !to) return false;
-    const r = preset.range();
-    return !!(r.from && r.to && from === toStore(r.from) && to === toStore(r.to));
-  }
+  const selected = selectedRangeOf(fromDate, toDate);
+  const hasRange = selected !== undefined;
+  const label = rangeLabelOf(fromDate, toDate);
 
   function applyPreset(preset: Preset) {
     const r = preset.range();
@@ -109,17 +168,7 @@ export function DateRangePicker({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            'flex h-8 min-w-0 items-center gap-1.5 rounded-md px-2.5 text-sm transition-colors',
-            'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50',
-            hasRange
-              ? 'border border-[var(--primary)]/30 bg-primary/5 text-primary hover:bg-primary/10'
-              : 'border border-input bg-background text-muted-foreground/60 hover:border-input hover:text-foreground',
-            className,
-          )}
-        >
+        <button type="button" className={triggerButtonClassName(hasRange, className)}>
           <CalendarIcon className="size-3 shrink-0 opacity-60" />
           <span className="truncate">{label || placeholder}</span>
           {hasRange && (
@@ -146,7 +195,7 @@ export function DateRangePicker({
                   {group.label}
                 </p>
                 {group.presets.map((p) => {
-                  const active = isActivePreset(p);
+                  const active = isActivePreset(p, from, to);
                   return (
                     <button
                       key={p.label}
@@ -191,13 +240,7 @@ export function DateRangePicker({
           <DayPicker
             mode="range"
             selected={selected}
-            onSelect={(r) => {
-              const f = r?.from ? toStore(r.from) : '';
-              const sameDay = r?.from && r?.to && r.from.toDateString() === r.to.toDateString();
-              const t = r?.to && !sameDay ? toStore(r.to) : '';
-              onChange(f, t);
-              if (f && t) setOpen(false);
-            }}
+            onSelect={(r) => handleRangeSelect(r, onChange, () => setOpen(false))}
             showOutsideDays
             className="p-3 select-none"
             classNames={{

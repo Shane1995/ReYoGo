@@ -20,20 +20,22 @@ const sortByLastCaptured = (a: ItemGroup, b: ItemGroup) => {
   return aDate - bDate;
 };
 
-const sortByLastUnitPrice = (a: ItemGroup, b: ItemGroup) => {
-  const aPrice = a.entries[a.entries.length - 1]?.unitPriceInclVat ?? 0;
-  const bPrice = b.entries[b.entries.length - 1]?.unitPriceInclVat ?? 0;
-  return aPrice - bPrice;
-};
+function lastUnitPriceOf(group: ItemGroup): number {
+  const last = group.entries[group.entries.length - 1];
+  if (!last) return 0;
+  return last.unitPriceInclVat;
+}
 
-const sortByOverallChange = (a: ItemGroup, b: ItemGroup) => {
-  const aChange = overallChangePct(a);
-  const bChange = overallChangePct(b);
-  if (aChange == null && bChange == null) return 0;
-  if (aChange == null) return 1;
-  if (bChange == null) return -1;
-  return aChange - bChange;
-};
+const sortByLastUnitPrice = (a: ItemGroup, b: ItemGroup) => lastUnitPriceOf(a) - lastUnitPriceOf(b);
+
+function compareNullableAsc(a: number | null, b: number | null): number {
+  if (a === null) return b === null ? 0 : 1;
+  if (b === null) return -1;
+  return a - b;
+}
+
+const sortByOverallChange = (a: ItemGroup, b: ItemGroup) =>
+  compareNullableAsc(overallChangePct(a), overallChangePct(b));
 
 type ToggleFn = (id: string) => void;
 type NavigateFn = ReturnType<typeof useNavigate>;
@@ -90,6 +92,39 @@ function PriceCell({ last }: { last: ItemGroup['entries'][number] }) {
   );
 }
 
+function groupRowClassName(isExpanded: boolean, index: number): string {
+  return cn(
+    'border-[var(--nav-border)] transition-colors hover:bg-muted/20 group',
+    !isExpanded && index % 2 !== 0 && 'bg-black/[0.025]',
+  );
+}
+
+function chevronClassName(isExpanded: boolean): string {
+  if (isExpanded) return 'size-3.5 mx-auto transition-all rotate-90 text-primary';
+  return 'size-3.5 mx-auto transition-all text-muted-foreground/30 group-hover:text-muted-foreground';
+}
+
+function ChangeCell({ change }: { change: number | null }) {
+  return (
+    <TableCell
+      className={cn('py-2.5 text-right font-mono text-sm tabular-nums', changeCls(change, true))}
+    >
+      {change === null ? <span className="text-muted-foreground/30">—</span> : fmtPct(change)}
+    </TableCell>
+  );
+}
+
+function ExpandedRow({ group }: { group: ItemGroup }) {
+  return (
+    <TableRow className="border-[var(--nav-border)] hover:bg-transparent">
+      <TableCell />
+      <TableCell colSpan={4} className="py-3 bg-[var(--nav-accent)]/20">
+        <ExpandedEntries entries={group.entries} />
+      </TableCell>
+    </TableRow>
+  );
+}
+
 function renderGroupRow(
   group: ItemGroup,
   i: number,
@@ -97,26 +132,15 @@ function renderGroupRow(
   toggle: ToggleFn,
   navigate: NavigateFn,
 ) {
-  const last = group.entries[group.entries.length - 1]!;
+  const last = group.entries[group.entries.length - 1];
+  if (!last) return null;
   const change = overallChangePct(group);
   const isExpanded = expanded.has(group.itemId);
   return (
     <Fragment key={group.itemId}>
-      <TableRow
-        className={cn(
-          'border-[var(--nav-border)] transition-colors hover:bg-muted/20 group',
-          !isExpanded && i % 2 !== 0 && 'bg-black/[0.025]',
-        )}
-      >
+      <TableRow className={groupRowClassName(isExpanded, i)}>
         <TableCell className="w-10 cursor-pointer text-center" onClick={() => toggle(group.itemId)}>
-          <ChevronRightIcon
-            className={cn(
-              'size-3.5 mx-auto transition-all',
-              isExpanded
-                ? 'rotate-90 text-primary'
-                : 'text-muted-foreground/30 group-hover:text-muted-foreground',
-            )}
-          />
+          <ChevronRightIcon className={chevronClassName(isExpanded)} />
         </TableCell>
         <TableCell
           className="py-2.5 font-medium text-foreground cursor-pointer hover:text-primary transition-colors"
@@ -126,23 +150,9 @@ function renderGroupRow(
         </TableCell>
         <TableCell className="py-2.5 text-sm text-muted-foreground">{fmtDate(last.date)}</TableCell>
         <PriceCell last={last} />
-        <TableCell
-          className={cn(
-            'py-2.5 text-right font-mono text-sm tabular-nums',
-            changeCls(change, true),
-          )}
-        >
-          {change === null ? <span className="text-muted-foreground/30">—</span> : fmtPct(change)}
-        </TableCell>
+        <ChangeCell change={change} />
       </TableRow>
-      {isExpanded && (
-        <TableRow className="border-[var(--nav-border)] hover:bg-transparent">
-          <TableCell />
-          <TableCell colSpan={4} className="py-3 bg-[var(--nav-accent)]/20">
-            <ExpandedEntries entries={group.entries} />
-          </TableCell>
-        </TableRow>
-      )}
+      {isExpanded && <ExpandedRow group={group} />}
     </Fragment>
   );
 }

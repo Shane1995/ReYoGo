@@ -49,6 +49,19 @@ function DateRangeFilter({
   );
 }
 
+function categoryRowKey(row: COGSSummary['byCategory'][number], i: number): string | number {
+  return row.categoryId ?? i;
+}
+
+function categoryNameOf(row: COGSSummary['byCategory'][number]): string {
+  return row.categoryName ?? 'Uncategorised';
+}
+
+function cogsSharePctOf(rowTotal: number, total: number): string {
+  if (total <= 0) return '—';
+  return `${((rowTotal / total) * 100).toFixed(1)}%`;
+}
+
 function CogsCategoryTable({ cogs }: { cogs: COGSSummary }) {
   if (cogs.byCategory.length === 0) return null;
   return (
@@ -63,21 +76,56 @@ function CogsCategoryTable({ cogs }: { cogs: COGSSummary }) {
         </thead>
         <tbody>
           {cogs.byCategory.map((row, i) => (
-            <tr key={row.categoryId ?? i} className={cn(i % 2 !== 0 && 'bg-black/[0.025]')}>
-              <td className="px-4 py-2.5 text-muted-foreground">
-                {row.categoryName ?? 'Uncategorised'}
-              </td>
+            <tr key={categoryRowKey(row, i)} className={cn(i % 2 !== 0 && 'bg-black/[0.025]')}>
+              <td className="px-4 py-2.5 text-muted-foreground">{categoryNameOf(row)}</td>
               <td className="px-4 py-2.5 text-right font-mono font-medium text-foreground">
                 {fmt(row.total)}
               </td>
               <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">
-                {cogs.total > 0 ? `${((row.total / cogs.total) * 100).toFixed(1)}%` : '—'}
+                {cogsSharePctOf(row.total, cogs.total)}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
     </div>
+  );
+}
+
+function cogsTotalLabel(cogs: COGSSummary | null): string {
+  if (!cogs) return '—';
+  return fmt(cogs.total);
+}
+
+function CogsTotalHint({ cogs }: { cogs: COGSSummary | null }) {
+  if (cogs?.total) return null;
+  return (
+    <p className="mt-1 text-xs text-muted-foreground">
+      COGS populates when stock OUT movements are recorded.
+    </p>
+  );
+}
+
+function CogsTotalCard({ cogs }: { cogs: COGSSummary | null }) {
+  return (
+    <div className="rounded-lg border border-border bg-background p-4">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        Total COGS
+      </p>
+      <p className="mt-1 font-mono text-2xl font-semibold text-foreground">
+        {cogsTotalLabel(cogs)}
+      </p>
+      <CogsTotalHint cogs={cogs} />
+    </div>
+  );
+}
+
+function CogsContent({ cogs }: { cogs: COGSSummary | null }) {
+  return (
+    <>
+      <CogsTotalCard cogs={cogs} />
+      {cogs && <CogsCategoryTable cogs={cogs} />}
+    </>
   );
 }
 
@@ -113,22 +161,7 @@ export default function CostingDashboard() {
         {loading ? (
           <p className="text-muted-foreground text-sm">Loading…</p>
         ) : (
-          <>
-            <div className="rounded-lg border border-border bg-background p-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Total COGS
-              </p>
-              <p className="mt-1 font-mono text-2xl font-semibold text-foreground">
-                {cogs ? fmt(cogs.total) : '—'}
-              </p>
-              {!cogs?.total && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  COGS populates when stock OUT movements are recorded.
-                </p>
-              )}
-            </div>
-            {cogs && <CogsCategoryTable cogs={cogs} />}
-          </>
+          <CogsContent cogs={cogs} />
         )}
       </div>
     </div>
