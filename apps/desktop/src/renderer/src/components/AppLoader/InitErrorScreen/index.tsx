@@ -1,19 +1,32 @@
 type Props = { error: string };
 
-export function InitErrorScreen({ error }: Props) {
-  const isMigrationError =
-    /cannot add a not null column/i.test(error) ||
-    /NOT NULL constraint/i.test(error) ||
-    /migration/i.test(error);
-  const isCloudError =
-    /onedrive|dropbox|icloud|google drive|synced/i.test(error) ||
-    /readonly|read-only|EROFS|EPERM/i.test(error);
+const MIGRATION_ERROR_PATTERNS = [
+  /cannot add a not null column/i,
+  /NOT NULL constraint/i,
+  /migration/i,
+];
 
-  const hint = isMigrationError
-    ? 'A database schema update failed. If you are upgrading from an older version, try deleting the app data folder and relaunching.'
-    : isCloudError
-      ? 'If this app is installed inside a OneDrive or cloud-synced folder, try moving it to a local folder (e.g. Desktop or C:\\Program Files).'
-      : 'Try relaunching the app. If the problem persists, reinstall or contact support.';
+const CLOUD_ERROR_PATTERNS = [
+  /onedrive|dropbox|icloud|google drive|synced/i,
+  /readonly|read-only|EROFS|EPERM/i,
+];
+
+function matchesAny(error: string, patterns: RegExp[]): boolean {
+  return patterns.some((pattern) => pattern.test(error));
+}
+
+function hintFor(error: string): string {
+  if (matchesAny(error, MIGRATION_ERROR_PATTERNS)) {
+    return 'A database schema update failed. If you are upgrading from an older version, try deleting the app data folder and relaunching.';
+  }
+  if (matchesAny(error, CLOUD_ERROR_PATTERNS)) {
+    return 'If this app is installed inside a OneDrive or cloud-synced folder, try moving it to a local folder (e.g. Desktop or C:\\Program Files).';
+  }
+  return 'Try relaunching the app. If the problem persists, reinstall or contact support.';
+}
+
+export function InitErrorScreen({ error }: Props) {
+  const hint = hintFor(error);
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center gap-4 bg-background p-8">

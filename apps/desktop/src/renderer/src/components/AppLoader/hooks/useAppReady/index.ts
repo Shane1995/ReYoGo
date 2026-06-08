@@ -4,7 +4,7 @@ import { entitiesService } from '@/services/entities';
 import { cloudSyncService } from '@/services/cloudSync';
 import { CloudSyncEventType } from '@shared/types/cloudSync';
 
-type AppPhase = 'loading' | 'fresh-replica' | 'setup' | 'ready' | 'auth-error';
+export type AppPhase = 'loading' | 'fresh-replica' | 'setup' | 'ready' | 'auth-error';
 
 export function useAppReady() {
   const [phase, setPhase] = useState<AppPhase>('loading');

@@ -185,6 +185,12 @@ function AnalysisTabs({
   );
 }
 
+function TabView({ analysisTab, groups }: { analysisTab: AnalysisTab; groups: ItemGroup[] }) {
+  if (analysisTab === 'all') return <TableView groups={groups} />;
+  if (analysisTab === 'by-type') return <SummaryTableView groups={groups} />;
+  return <ByCategoryView groups={groups} />;
+}
+
 function AnalysisContent({
   loading,
   lines,
@@ -206,9 +212,7 @@ function AnalysisContent({
       </div>
     );
   }
-  if (analysisTab === 'all') return <TableView groups={groups} />;
-  if (analysisTab === 'by-type') return <SummaryTableView groups={groups} />;
-  return <ByCategoryView groups={groups} />;
+  return <TabView analysisTab={analysisTab} groups={groups} />;
 }
 
 export default function InventoryAnalysis() {

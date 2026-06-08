@@ -137,15 +137,46 @@ function DialogHeader({ isEdit, onClose }: { isEdit: boolean; onClose: () => voi
   );
 }
 
+type ItemFieldDefaults = { name: string; categoryId: string; unitOfMeasureId: string };
+
+function itemFieldDefaults(item: InventoryItem | null): ItemFieldDefaults {
+  if (!item) return { name: '', categoryId: '', unitOfMeasureId: '' };
+  return {
+    name: item.name,
+    categoryId: item.categoryId,
+    unitOfMeasureId: item.unitOfMeasureId ?? '',
+  };
+}
+
 function useItemDialogState(item: InventoryItem | null) {
-  const [name, setName] = useState(item?.name ?? '');
-  const [categoryId, setCategoryId] = useState(item?.categoryId ?? '');
-  const [unitOfMeasureId, setUnitOfMeasureId] = useState(item?.unitOfMeasureId ?? '');
+  const defaults = itemFieldDefaults(item);
+  const [name, setName] = useState(defaults.name);
+  const [categoryId, setCategoryId] = useState(defaults.categoryId);
+  const [unitOfMeasureId, setUnitOfMeasureId] = useState(defaults.unitOfMeasureId);
   const nameRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     nameRef.current?.focus();
   }, []);
   return { name, setName, categoryId, setCategoryId, unitOfMeasureId, setUnitOfMeasureId, nameRef };
+}
+
+function itemIdOf(item: InventoryItem | null): string | null {
+  if (!item) return null;
+  return item.id;
+}
+
+function saveValuesOf(
+  name: string,
+  categoryId: string,
+  selectedCategory: InventoryCategory | undefined,
+  unitOfMeasureId: string,
+): Omit<InventoryItem, 'id'> {
+  return {
+    name: name.trim(),
+    categoryId,
+    type: selectedCategory?.type ?? '',
+    unitOfMeasureId: unitOfMeasureId || null,
+  };
 }
 
 export function EditItemDialog({ item, categories, unitOptions, onSave, onClose }: Props) {
@@ -158,12 +189,7 @@ export function EditItemDialog({ item, categories, unitOptions, onSave, onClose 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !categoryId) return;
-    onSave(item?.id ?? null, {
-      name: name.trim(),
-      categoryId,
-      type: selectedCategory?.type ?? '',
-      unitOfMeasureId: unitOfMeasureId || null,
-    });
+    onSave(itemIdOf(item), saveValuesOf(name, categoryId, selectedCategory, unitOfMeasureId));
   };
 
   return (

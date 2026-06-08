@@ -6,6 +6,19 @@ type Props = {
   entries: ItemGroup['entries'];
 };
 
+function prevPriceOf(entries: ItemGroup['entries'], index: number): number | null {
+  if (index <= 0) return null;
+  const prev = entries[index - 1];
+  if (!prev) return null;
+  return prev.unitPrice;
+}
+
+function pctChangeOf(current: number, prev: number | null): number | null {
+  if (prev === null) return null;
+  if (prev <= 0) return null;
+  return ((current - prev) / prev) * 100;
+}
+
 export function TrendHistoryTable({ entries }: Props) {
   return (
     <div className="rounded-lg border border-[var(--nav-border)] overflow-hidden">
@@ -28,8 +41,7 @@ export function TrendHistoryTable({ entries }: Props) {
         </thead>
         <tbody>
           {entries.map((e, i) => {
-            const prev = i > 0 ? entries[i - 1]!.unitPrice : null;
-            const diff = prev !== null && prev > 0 ? ((e.unitPrice - prev) / prev) * 100 : null;
+            const diff = pctChangeOf(e.unitPrice, prevPriceOf(entries, i));
             return (
               <tr
                 key={`${e.invoiceId}-${i}`}

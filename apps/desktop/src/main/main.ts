@@ -68,19 +68,26 @@ function initDbState() {
   };
 }
 
+function dbErrorSignal(state: ReturnType<typeof initDbState>): [string, string] | null {
+  if (state.dbAuthError !== null) return [DB_AUTH_ERROR_CHANNEL, state.dbAuthError];
+  if (state.dbError !== null) return [DB_INIT_ERROR_CHANNEL, state.dbError];
+  return null;
+}
+
+function dbStatusSignal(state: ReturnType<typeof initDbState>): [string] | null {
+  if (state.dbReady) return [getDbReadyChannel()];
+  if (state.dbSetupNeeded) return [DB_SETUP_NEEDED_CHANNEL];
+  return null;
+}
+
+function dbReadySignal(state: ReturnType<typeof initDbState>): [string, string?] | null {
+  return dbErrorSignal(state) ?? dbStatusSignal(state);
+}
+
 function buildTrySendDbReady(state: ReturnType<typeof initDbState>) {
   return () => {
     if (!state.pendingSender || state.pendingSender.isDestroyed()) return;
-    const signal: [string, string?] | null =
-      state.dbAuthError !== null
-        ? [DB_AUTH_ERROR_CHANNEL, state.dbAuthError]
-        : state.dbError !== null
-          ? [DB_INIT_ERROR_CHANNEL, state.dbError]
-          : state.dbReady
-            ? [getDbReadyChannel()]
-            : state.dbSetupNeeded
-              ? [DB_SETUP_NEEDED_CHANNEL]
-              : null;
+    const signal = dbReadySignal(state);
     if (!signal) return;
     state.pendingSender.send(...signal);
     state.pendingSender = null;

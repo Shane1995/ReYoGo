@@ -8,14 +8,17 @@ type SyncCredentials = {
 
 type SyncResult = { success: true } | { success: false; error: string };
 
+const REQUIRED_CREDENTIAL_FIELDS = ['replicaPath', 'syncUrl', 'authToken'] as const;
+
+function hasStringField(record: Record<string, unknown>, key: string): boolean {
+  return typeof record[key] === 'string';
+}
+
 function isCredentials(data: unknown): data is SyncCredentials {
-  if (typeof data !== 'object' || data === null) return false;
+  if (typeof data !== 'object') return false;
+  if (data === null) return false;
   const record = data as Record<string, unknown>;
-  return (
-    typeof record.replicaPath === 'string' &&
-    typeof record.syncUrl === 'string' &&
-    typeof record.authToken === 'string'
-  );
+  return REQUIRED_CREDENTIAL_FIELDS.every((key) => hasStringField(record, key));
 }
 
 process.parentPort.once('message', ({ data }: Electron.MessageEvent) => {

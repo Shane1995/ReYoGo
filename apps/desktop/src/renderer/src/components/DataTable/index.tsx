@@ -50,25 +50,45 @@ function TableHeadRow<T>({
             alignClass(col.align),
           )}
         >
-          {col.sortable && col.sortFn ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="-mx-2 h-auto py-0 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 hover:text-foreground hover:bg-transparent inline-flex items-center"
-              onClick={() => toggleSort(col.key)}
-            >
-              {col.header}
-              <SortIndicator
-                active={sortKey === col.key}
-                dir={sortKey === col.key ? sortDir : null}
-              />
-            </Button>
-          ) : (
-            col.header
-          )}
+          <ColumnHeaderContent
+            col={col}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            toggleSort={toggleSort}
+          />
         </TableHead>
       ))}
     </TableRow>
+  );
+}
+
+function isSortableColumn<T>(col: ColumnDef<T>): boolean {
+  return Boolean(col.sortable && col.sortFn);
+}
+
+function ColumnHeaderContent<T>({
+  col,
+  sortKey,
+  sortDir,
+  toggleSort,
+}: {
+  col: ColumnDef<T>;
+  sortKey: string | null;
+  sortDir: 'asc' | 'desc' | null;
+  toggleSort: (key: string) => void;
+}) {
+  if (!isSortableColumn(col)) return <>{col.header}</>;
+  const isActive = sortKey === col.key;
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="-mx-2 h-auto py-0 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 hover:text-foreground hover:bg-transparent inline-flex items-center"
+      onClick={() => toggleSort(col.key)}
+    >
+      {col.header}
+      <SortIndicator active={isActive} dir={isActive ? sortDir : null} />
+    </Button>
   );
 }
 
@@ -116,6 +136,36 @@ function TableBodyRows<T>({
   );
 }
 
+function shouldRenderFilters(hideFilters: boolean, filterCount: number): boolean {
+  if (hideFilters) return false;
+  return filterCount > 0;
+}
+
+function FilterBarSection({
+  hideFilters,
+  filters,
+  filterValues,
+  onFilterChange,
+  onClearFilters,
+}: {
+  hideFilters: boolean;
+  filters: FilterField[];
+  filterValues: FilterValues;
+  onFilterChange: ((key: string, value: string | string[]) => void) | undefined;
+  onClearFilters: (() => void) | undefined;
+}) {
+  if (!shouldRenderFilters(hideFilters, filters.length)) return null;
+  if (!onFilterChange || !onClearFilters) return null;
+  return (
+    <FilterBar
+      filters={filters}
+      values={filterValues}
+      onChange={onFilterChange}
+      onClearAll={onClearFilters}
+    />
+  );
+}
+
 export function DataTable<T>({
   columns,
   data,
@@ -141,14 +191,13 @@ export function DataTable<T>({
 
   return (
     <div className="rounded-lg border border-[var(--nav-border)] overflow-hidden">
-      {!hideFilters && filters.length > 0 && onFilterChange && onClearFilters && (
-        <FilterBar
-          filters={filters}
-          values={filterValues}
-          onChange={onFilterChange}
-          onClearAll={onClearFilters}
-        />
-      )}
+      <FilterBarSection
+        hideFilters={hideFilters}
+        filters={filters}
+        filterValues={filterValues}
+        onFilterChange={onFilterChange}
+        onClearFilters={onClearFilters}
+      />
       <Table>
         <TableHeader>
           <TableHeadRow

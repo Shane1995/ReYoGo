@@ -87,56 +87,77 @@ async function getSessionById(db: DbClient, id: string): Promise<StocktakeSessio
   return { ...toSession(sessionRows[0]), lines: lineRows.map(toLine) };
 }
 
+async function assertSessionCompletable(tx: TxClient, sessionId: string): Promise<void> {
+  const sessionRows = await tx
+    .select()
+    .from(schema.stockCountSessions)
+    .where(eq(schema.stockCountSessions.id, sessionId))
+    .limit(1);
+  if (!sessionRows[0]) throw new Error(`Stocktake session not found: ${sessionId}`);
+  if (sessionRows[0].status === 'complete')
+    throw new Error(`Session already completed: ${sessionId}`);
+}
+
+async function replaceCountedLines(
+  tx: TxClient,
+  sessionId: string,
+  lines: CompleteStocktakePayload['lines'],
+): Promise<void> {
+  await tx.delete(schema.stockCountLines).where(eq(schema.stockCountLines.sessionId, sessionId));
+  if (lines.length === 0) return;
+  await tx.insert(schema.stockCountLines).values(
+    lines.map((l) => ({
+      id: l.id,
+      sessionId,
+      inventoryItemId: l.inventoryItemId,
+      countedQty: l.countedQty,
+      notes: l.notes ?? null,
+    })),
+  );
+}
+
+async function recordVarianceMovement(
+  tx: TxClient,
+  line: CompleteStocktakePayload['lines'][number],
+  sessionId: string,
+  completedAt: Date,
+): Promise<void> {
+  const bookQty = await getLatestStockQty(tx, line.inventoryItemId);
+  const variance = line.countedQty - bookQty;
+  if (variance === 0) return;
+
+  await tx.insert(schema.stockMovements).values({
+    id: generateId(),
+    accountId: 'default',
+    entityId: 'default',
+    inventoryItemId: line.inventoryItemId,
+    movementType: 'ADJUSTMENT' as MovementType,
+    qty: variance,
+    stockQtyAfter: bookQty + variance,
+    referenceType: ReferenceType.Adjustment,
+    referenceId: sessionId,
+    notes: line.notes ?? null,
+    occurredAt: completedAt,
+    createdAt: completedAt,
+  });
+}
+
+async function recordVarianceMovements(
+  tx: TxClient,
+  payload: CompleteStocktakePayload,
+  completedAt: Date,
+): Promise<void> {
+  for (const line of payload.lines) {
+    await recordVarianceMovement(tx, line, payload.sessionId, completedAt);
+  }
+}
+
 async function completeSession(db: DbClient, payload: CompleteStocktakePayload): Promise<void> {
   const completedAt = now();
   await db.transaction(async (tx) => {
-    const sessionRows = await tx
-      .select()
-      .from(schema.stockCountSessions)
-      .where(eq(schema.stockCountSessions.id, payload.sessionId))
-      .limit(1);
-    if (!sessionRows[0]) throw new Error(`Stocktake session not found: ${payload.sessionId}`);
-    if (sessionRows[0].status === 'complete')
-      throw new Error(`Session already completed: ${payload.sessionId}`);
-
-    await tx
-      .delete(schema.stockCountLines)
-      .where(eq(schema.stockCountLines.sessionId, payload.sessionId));
-
-    if (payload.lines.length > 0) {
-      await tx.insert(schema.stockCountLines).values(
-        payload.lines.map((l) => ({
-          id: l.id,
-          sessionId: payload.sessionId,
-          inventoryItemId: l.inventoryItemId,
-          countedQty: l.countedQty,
-          notes: l.notes ?? null,
-        })),
-      );
-    }
-
-    for (const line of payload.lines) {
-      const bookQty = await getLatestStockQty(tx, line.inventoryItemId);
-      const variance = line.countedQty - bookQty;
-      if (variance === 0) continue;
-
-      const newQty = bookQty + variance;
-      await tx.insert(schema.stockMovements).values({
-        id: generateId(),
-        accountId: 'default',
-        entityId: 'default',
-        inventoryItemId: line.inventoryItemId,
-        movementType: 'ADJUSTMENT' as MovementType,
-        qty: variance,
-        stockQtyAfter: newQty,
-        referenceType: ReferenceType.Adjustment,
-        referenceId: payload.sessionId,
-        notes: line.notes ?? null,
-        occurredAt: completedAt,
-        createdAt: completedAt,
-      });
-    }
-
+    await assertSessionCompletable(tx, payload.sessionId);
+    await replaceCountedLines(tx, payload.sessionId, payload.lines);
+    await recordVarianceMovements(tx, payload, completedAt);
     await tx
       .update(schema.stockCountSessions)
       .set({ status: 'complete', completedAt })

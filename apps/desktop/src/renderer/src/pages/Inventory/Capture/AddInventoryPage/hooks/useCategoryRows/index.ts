@@ -12,22 +12,33 @@ type Params = {
   addCategory: (cat: { name: string; type: string }) => void;
 };
 
+function markDupe(
+  dupes: Set<string>,
+  seen: Map<string, string>,
+  existing: Set<string>,
+  row: CategoryRow,
+): void {
+  const key = row.name.trim().toLowerCase();
+  if (!key) return;
+  if (existing.has(key)) {
+    dupes.add(row.id);
+    return;
+  }
+  const seenId = seen.get(key);
+  if (seenId) {
+    dupes.add(row.id);
+    dupes.add(seenId);
+    return;
+  }
+  seen.set(key, row.id);
+}
+
 function computeDupes(catRows: CategoryRow[], categories: InventoryCategory[]): Set<string> {
   const existing = new Set(categories.map((c) => c.name.trim().toLowerCase()));
   const seen = new Map<string, string>();
   const dupes = new Set<string>();
   for (const row of catRows) {
-    const key = row.name.trim().toLowerCase();
-    if (!key) continue;
-    if (existing.has(key)) {
-      dupes.add(row.id);
-    } else if (seen.has(key)) {
-      dupes.add(row.id);
-      const seenId = seen.get(key);
-      if (seenId) dupes.add(seenId);
-    } else {
-      seen.set(key, row.id);
-    }
+    markDupe(dupes, seen, existing, row);
   }
   return dupes;
 }

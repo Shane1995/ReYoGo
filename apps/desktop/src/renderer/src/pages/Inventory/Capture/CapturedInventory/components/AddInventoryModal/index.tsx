@@ -95,6 +95,41 @@ function CategorySelect({
   );
 }
 
+type ItemSavePayload = {
+  name: string;
+  categoryId: string;
+  type: string;
+  unitOfMeasureId: string | null;
+  entityId: string;
+};
+
+function orNull(value: string): string | null {
+  if (!value) return null;
+  return value;
+}
+
+function isValidItemInput(trimmed: string, categoryId: string): boolean {
+  return Boolean(trimmed) && Boolean(categoryId);
+}
+
+function itemSavePayload(
+  trimmed: string,
+  categoryId: string,
+  category: { type: string } | undefined,
+  unitOfMeasureId: string,
+  entityId: string | null,
+): ItemSavePayload | null {
+  if (!category || !entityId) return null;
+  if (!isValidItemInput(trimmed, categoryId)) return null;
+  return {
+    name: trimmed,
+    categoryId,
+    type: category.type,
+    unitOfMeasureId: orNull(unitOfMeasureId),
+    entityId,
+  };
+}
+
 function ItemForm({ onDone }: { onDone: () => void }) {
   const { categories, unitOptions, addItem, inventoryTypes } = useInventory();
   const { selectedEntityId: entityId } = useEntities();
@@ -105,15 +140,9 @@ function ItemForm({ onDone }: { onDone: () => void }) {
   const category = categories.find((c) => c.id === categoryId);
 
   function handleSave() {
-    const trimmed = name.trim();
-    if (!trimmed || !categoryId || !category || !entityId) return;
-    addItem({
-      name: trimmed,
-      categoryId,
-      type: category.type,
-      unitOfMeasureId: unitOfMeasureId || null,
-      entityId,
-    });
+    const payload = itemSavePayload(name.trim(), categoryId, category, unitOfMeasureId, entityId);
+    if (!payload) return;
+    addItem(payload);
     setName('');
     setCategoryId('');
     setUnitOfMeasureId('');
@@ -173,6 +202,12 @@ function ModalTabBar({ activeTab, onSelect }: { activeTab: Tab; onSelect: (t: Ta
   );
 }
 
+function ActiveTabForm({ activeTab, onDone }: { activeTab: Tab; onDone: (label: string) => void }) {
+  if (activeTab === Tab.ITEM) return <ItemForm onDone={() => onDone(Tab.ITEM)} />;
+  if (activeTab === Tab.CATEGORY) return <CategoryForm onDone={() => onDone(Tab.CATEGORY)} />;
+  return null;
+}
+
 export function AddInventoryModal({ open, onClose }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.ITEM);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -200,8 +235,7 @@ export function AddInventoryModal({ open, onClose }: Props) {
               {successMsg}
             </div>
           )}
-          {activeTab === Tab.ITEM && <ItemForm onDone={() => handleDone(Tab.ITEM)} />}
-          {activeTab === Tab.CATEGORY && <CategoryForm onDone={() => handleDone(Tab.CATEGORY)} />}
+          <ActiveTabForm activeTab={activeTab} onDone={handleDone} />
         </div>
         <div className="flex justify-end border-t border-border px-6 py-4">
           <Button type="button" variant="outline" onClick={onClose}>

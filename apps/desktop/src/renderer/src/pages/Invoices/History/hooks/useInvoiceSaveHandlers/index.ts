@@ -13,6 +13,37 @@ type SaveHandlerDeps = {
   setMode: (id: string, mode: RowMode) => void;
 };
 
+function itemNameSnapshotOf(
+  itemId: string,
+  invoiceId: string,
+  items: { id: string; name: string }[],
+  detailCache: Record<string, ICapturedInvoiceWithLines>,
+): string {
+  const fromItems = items.find((i) => i.id === itemId);
+  if (fromItems) return fromItems.name;
+  const fromDetail = detailCache[invoiceId]?.lines.find((l) => l.itemId === itemId);
+  if (fromDetail) return fromDetail.itemNameSnapshot;
+  return 'Unknown';
+}
+
+function buildSaveLine(
+  line: ProcessReceiptLine,
+  invoice: ICapturedInvoice,
+  items: { id: string; name: string }[],
+  detailCache: Record<string, ICapturedInvoiceWithLines>,
+) {
+  const computed = getProcessLineComputed(line, invoice.vatMode, invoice.vatRate);
+  return {
+    id: line.id,
+    itemId: line.itemId,
+    itemNameSnapshot: itemNameSnapshotOf(line.itemId, invoice.id, items, detailCache),
+    quantity: Number(line.quantity) || 0,
+    unitPrice: computed.netUnitPrice,
+    isVatable: line.isVatable,
+    totalVatExclude: computed.netTotal,
+  };
+}
+
 function buildSaveEditPayload(
   invoice: ICapturedInvoice,
   editLines: ProcessReceiptLine[],
@@ -25,21 +56,7 @@ function buildSaveEditPayload(
     note: note || undefined,
     vatMode: invoice.vatMode,
     vatRate: invoice.vatRate,
-    lines: editLines.map((line) => {
-      const computed = getProcessLineComputed(line, invoice.vatMode, invoice.vatRate);
-      return {
-        id: line.id,
-        itemId: line.itemId,
-        itemNameSnapshot:
-          items.find((i) => i.id === line.itemId)?.name ??
-          detailCache[invoice.id]?.lines.find((l) => l.itemId === line.itemId)?.itemNameSnapshot ??
-          'Unknown',
-        quantity: Number(line.quantity) || 0,
-        unitPrice: computed.netUnitPrice,
-        isVatable: line.isVatable,
-        totalVatExclude: computed.netTotal,
-      };
-    }),
+    lines: editLines.map((line) => buildSaveLine(line, invoice, items, detailCache)),
   };
 }
 

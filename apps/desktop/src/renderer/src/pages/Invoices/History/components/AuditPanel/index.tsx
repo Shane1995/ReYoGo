@@ -20,6 +20,28 @@ function MetaRow({ label, value }: { label: string; value: string | null | undef
   );
 }
 
+function supplierNameOf(supplierId: string | null, suppliers: Supplier[]): string | null {
+  if (!supplierId) return null;
+  const found = suppliers.find((s) => s.id === supplierId);
+  if (found) return found.name;
+  return supplierId;
+}
+
+function invoiceDateLabelOf(invoiceDate: Date | null | undefined): string | null {
+  if (!invoiceDate) return null;
+  return formatDate(invoiceDate);
+}
+
+function ChevronIcon({ isOpen }: { isOpen: boolean }) {
+  if (isOpen) return <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground" />;
+  return <ChevronRightIcon className="size-3.5 shrink-0 text-muted-foreground" />;
+}
+
+function NoteLabel({ note }: { note: string | null | undefined }) {
+  if (!note) return null;
+  return <span className="text-muted-foreground truncate">— {note}</span>;
+}
+
 function AuditEntry({
   entry,
   suppliers,
@@ -32,9 +54,7 @@ function AuditEntry({
   onToggle: () => void;
 }) {
   const snap = entry.snapshot;
-  const supplierName = snap.supplierId
-    ? (suppliers.find((s) => s.id === snap.supplierId)?.name ?? snap.supplierId)
-    : null;
+  const supplierName = supplierNameOf(snap.supplierId, suppliers);
   return (
     <div className="rounded-md border border-[var(--nav-border)] overflow-hidden">
       <button
@@ -42,13 +62,9 @@ function AuditEntry({
         onClick={onToggle}
         className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/30"
       >
-        {isOpen ? (
-          <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
-        ) : (
-          <ChevronRightIcon className="size-3.5 shrink-0 text-muted-foreground" />
-        )}
+        <ChevronIcon isOpen={isOpen} />
         <span className="font-medium">{formatDate(entry.editedAt)}</span>
-        {entry.note && <span className="text-muted-foreground truncate">— {entry.note}</span>}
+        <NoteLabel note={entry.note} />
       </button>
       {isOpen && (
         <div className="border-t border-[var(--nav-border)]/60 bg-muted/10 px-3 py-2.5 space-y-1.5">
@@ -57,10 +73,7 @@ function AuditEntry({
           </p>
           <MetaRow label="Supplier" value={supplierName} />
           <MetaRow label="Invoice number" value={snap.invoiceNumber} />
-          <MetaRow
-            label="Invoice date"
-            value={snap.invoiceDate ? formatDate(snap.invoiceDate) : null}
-          />
+          <MetaRow label="Invoice date" value={invoiceDateLabelOf(snap.invoiceDate)} />
         </div>
       )}
     </div>

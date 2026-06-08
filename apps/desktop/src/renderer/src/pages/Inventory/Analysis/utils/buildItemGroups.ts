@@ -10,9 +10,19 @@ function buildDateWindow(fromDate: string, toDate: string): { from: Date | null;
   };
 }
 
+function isBeforeWindow(date: Date, from: Date | null): boolean {
+  if (!from) return false;
+  return date < from;
+}
+
+function isAfterWindow(date: Date, to: Date | null): boolean {
+  if (!to) return false;
+  return date > to;
+}
+
 function isInWindow(date: Date, from: Date | null, to: Date | null): boolean {
-  if (from && date < from) return false;
-  if (to && date > to) return false;
+  if (isBeforeWindow(date, from)) return false;
+  if (isAfterWindow(date, to)) return false;
   return true;
 }
 
@@ -33,26 +43,49 @@ function buildEntry(
   };
 }
 
+function categoryNameOf(categoryName: string | null): string | undefined {
+  if (categoryName === null) return undefined;
+  return categoryName;
+}
+
+function createGroup(line: InvoiceLineWithDate, item: ItemLookup | undefined): ItemGroup {
+  let name = line.inventoryItemId;
+  if (item) name = item.name;
+  let categoryType = 'other';
+  if (line.categoryType !== null) categoryType = line.categoryType;
+  return {
+    itemId: line.inventoryItemId,
+    name,
+    categoryType,
+    categoryName: categoryNameOf(line.categoryName),
+    entries: [],
+  };
+}
+
+function applyItemFields(group: ItemGroup, item: ItemLookup | undefined): void {
+  if (!item) return;
+  group.name = item.name;
+  group.uom = item.unitOfMeasure;
+}
+
+function applyLineFields(group: ItemGroup, line: InvoiceLineWithDate): void {
+  if (line.categoryType !== null) group.categoryType = line.categoryType;
+  if (line.categoryName !== null) group.categoryName = line.categoryName;
+}
+
 function upsertGroup(
   map: Map<string, ItemGroup>,
   line: InvoiceLineWithDate,
   item: ItemLookup | undefined,
   entry: ItemEntry,
 ): void {
-  if (!map.has(line.inventoryItemId)) {
-    map.set(line.inventoryItemId, {
-      itemId: line.inventoryItemId,
-      name: item?.name ?? line.inventoryItemId,
-      categoryType: line.categoryType ?? 'other',
-      categoryName: line.categoryName === null ? undefined : line.categoryName,
-      entries: [],
-    });
+  let group = map.get(line.inventoryItemId);
+  if (!group) {
+    group = createGroup(line, item);
+    map.set(line.inventoryItemId, group);
   }
-  const group = map.get(line.inventoryItemId)!;
-  group.name = item?.name ?? group.name;
-  group.uom = item?.unitOfMeasure ?? group.uom;
-  group.categoryType = line.categoryType ?? group.categoryType;
-  group.categoryName = line.categoryName ?? group.categoryName;
+  applyItemFields(group, item);
+  applyLineFields(group, line);
   group.entries.push(entry);
 }
 

@@ -19,37 +19,67 @@ export type InvoiceFiltersState = {
   ) => ICapturedInvoice[];
 };
 
+function matchesSearchQuery(
+  inv: ICapturedInvoice,
+  detail: ICapturedInvoiceWithLines | undefined,
+  q: string,
+): boolean {
+  if (inv.invoiceNumber?.toLowerCase().includes(q)) return true;
+  if (!detail) return false;
+  return detail.lines.some((l) => l.itemNameSnapshot.toLowerCase().includes(q));
+}
+
+function isAfterFromDate(d: string, fromDate: string): boolean {
+  if (!fromDate) return true;
+  return d >= fromDate;
+}
+
+function isBeforeToDate(d: string, toDate: string): boolean {
+  if (!toDate) return true;
+  return d <= toDate;
+}
+
+function isInDateRange(inv: ICapturedInvoice, fromDate: string, toDate: string): boolean {
+  const d = toDateStr(inv.invoiceDate ?? inv.createdAt);
+  if (!isAfterFromDate(d, fromDate)) return false;
+  return isBeforeToDate(d, toDate);
+}
+
+function filterBySearch(
+  invoices: ICapturedInvoice[],
+  detailCache: Record<string, ICapturedInvoiceWithLines>,
+  search: string,
+): ICapturedInvoice[] {
+  const q = search.trim().toLowerCase();
+  if (!q) return invoices;
+  return invoices.filter((inv) => matchesSearchQuery(inv, detailCache[inv.id], q));
+}
+
+function filterByDateRange(
+  invoices: ICapturedInvoice[],
+  fromDate: string,
+  toDate: string,
+): ICapturedInvoice[] {
+  if (!fromDate && !toDate) return invoices;
+  return invoices.filter((inv) => isInDateRange(inv, fromDate, toDate));
+}
+
+function filterBySupplier(
+  invoices: ICapturedInvoice[],
+  supplierFilter: string,
+): ICapturedInvoice[] {
+  if (!supplierFilter) return invoices;
+  return invoices.filter((inv) => inv.supplierId === supplierFilter);
+}
+
 function applyInvoiceFilters(
   invoices: ICapturedInvoice[],
   detailCache: Record<string, ICapturedInvoiceWithLines>,
   filters: { search: string; fromDate: string; toDate: string; supplierFilter: string },
 ): ICapturedInvoice[] {
-  let result = invoices;
-
-  const q = filters.search.trim().toLowerCase();
-  if (q) {
-    result = result.filter((inv) => {
-      const detail = detailCache[inv.id];
-      const matchesItem = detail?.lines.some((l) => l.itemNameSnapshot.toLowerCase().includes(q));
-      const matchesNumber = inv.invoiceNumber?.toLowerCase().includes(q);
-      return matchesItem || matchesNumber;
-    });
-  }
-
-  if (filters.fromDate || filters.toDate) {
-    result = result.filter((inv) => {
-      const d = toDateStr(inv.invoiceDate ?? inv.createdAt);
-      if (filters.fromDate && d < filters.fromDate) return false;
-      if (filters.toDate && d > filters.toDate) return false;
-      return true;
-    });
-  }
-
-  if (filters.supplierFilter) {
-    result = result.filter((inv) => inv.supplierId === filters.supplierFilter);
-  }
-
-  return result;
+  const searched = filterBySearch(invoices, detailCache, filters.search);
+  const dateFiltered = filterByDateRange(searched, filters.fromDate, filters.toDate);
+  return filterBySupplier(dateFiltered, filters.supplierFilter);
 }
 
 export function useInvoiceFilters(): InvoiceFiltersState {

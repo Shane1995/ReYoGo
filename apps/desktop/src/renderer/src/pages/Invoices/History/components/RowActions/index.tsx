@@ -22,6 +22,65 @@ type Props = {
 const item =
   'flex w-full items-center gap-2.5 rounded px-2.5 py-1.5 text-sm text-left transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40';
 
+function editTitleOf(isPosted: boolean): string {
+  if (isPosted) return 'Edit supplier, date and invoice number';
+  return 'Edit lines';
+}
+
+function postLabelOf(isPosting: boolean): string {
+  if (isPosting) return 'Posting…';
+  return 'Post';
+}
+
+function PostButton({
+  isPosted,
+  isPosting,
+  onPost,
+}: {
+  isPosted: boolean;
+  isPosting: boolean;
+  onPost: () => void;
+}) {
+  if (isPosted) return null;
+  return (
+    <>
+      <div className="my-1 h-px bg-border" />
+      <button
+        type="button"
+        className={`${item} text-emerald-600 hover:text-emerald-700 dark:text-emerald-400`}
+        disabled={isPosting}
+        onClick={onPost}
+      >
+        <CheckCircleIcon className="size-3.5 shrink-0" />
+        {postLabelOf(isPosting)}
+      </button>
+    </>
+  );
+}
+
+function RaiseCreditNoteButton({
+  isPosted,
+  onRaiseCreditNote,
+}: {
+  isPosted: boolean;
+  onRaiseCreditNote: () => void;
+}) {
+  if (!isPosted) return null;
+  return (
+    <>
+      <div className="my-1 h-px bg-border" />
+      <button
+        type="button"
+        className={`${item} text-rose-600 hover:text-rose-700 dark:text-rose-400`}
+        onClick={onRaiseCreditNote}
+      >
+        <ReceiptIcon className="size-3.5 shrink-0" />
+        Raise credit note
+      </button>
+    </>
+  );
+}
+
 function InvoiceMenuItems({
   isPosted,
   isPosting,
@@ -37,47 +96,17 @@ function InvoiceMenuItems({
         <CopyIcon className="size-3.5 shrink-0" />
         Reuse
       </button>
-      <button
-        type="button"
-        className={item}
-        title={isPosted ? 'Edit supplier, date and invoice number' : 'Edit lines'}
-        onClick={onEdit}
-      >
+      <button type="button" className={item} title={editTitleOf(isPosted)} onClick={onEdit}>
         <PencilIcon className="size-3.5 shrink-0" />
         Edit
       </button>
-      {!isPosted && (
-        <>
-          <div className="my-1 h-px bg-border" />
-          <button
-            type="button"
-            className={`${item} text-emerald-600 hover:text-emerald-700 dark:text-emerald-400`}
-            disabled={isPosting}
-            onClick={onPost}
-          >
-            <CheckCircleIcon className="size-3.5 shrink-0" />
-            {isPosting ? 'Posting…' : 'Post'}
-          </button>
-        </>
-      )}
+      <PostButton isPosted={isPosted} isPosting={isPosting} onPost={onPost} />
       <div className="my-1 h-px bg-border" />
       <button type="button" className={item} onClick={onAudit}>
         <ClockIcon className="size-3.5 shrink-0" />
         Audit log
       </button>
-      {isPosted && (
-        <>
-          <div className="my-1 h-px bg-border" />
-          <button
-            type="button"
-            className={`${item} text-rose-600 hover:text-rose-700 dark:text-rose-400`}
-            onClick={onRaiseCreditNote}
-          >
-            <ReceiptIcon className="size-3.5 shrink-0" />
-            Raise credit note
-          </button>
-        </>
-      )}
+      <RaiseCreditNoteButton isPosted={isPosted} onRaiseCreditNote={onRaiseCreditNote} />
     </>
   );
 }

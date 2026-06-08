@@ -9,6 +9,63 @@ import type { DbClient } from '../../client';
 import * as schema from '../../schema';
 import { now } from '../../utils/timestamps';
 
+function orNull<T>(value: T | null | undefined): T | null {
+  if (value == null) return null;
+  return value;
+}
+
+type StockEntry = { stockQtyAfter: number; weightedAvgCostAfter: number | null } | undefined;
+
+function stockQtyOf(stock: StockEntry): number {
+  if (!stock) return 0;
+  return stock.stockQtyAfter;
+}
+
+function weightedAvgCostOf(stock: StockEntry): number | null {
+  if (!stock) return null;
+  return stock.weightedAvgCostAfter;
+}
+
+function countOf(row: { n: number } | undefined): number {
+  if (!row) return 0;
+  return row.n;
+}
+
+function entityFilter(entityId: string | undefined) {
+  if (!entityId) return undefined;
+  return eq(schema.inventoryItems.entityId, entityId);
+}
+
+function toInventoryItem(row: schema.InventoryItemRow, stock: StockEntry): InventoryItem {
+  return {
+    id: row.id,
+    entityId: row.entityId,
+    name: row.name,
+    categoryId: row.categoryId,
+    unitOfMeasureId: orNull(row.unitOfMeasureId),
+    sku: orNull(row.sku),
+    currentStockQty: stockQtyOf(stock),
+    currentWeightedAvgCost: weightedAvgCostOf(stock),
+    reorderPoint: orNull(row.reorderPoint),
+    reorderQty: orNull(row.reorderQty),
+  };
+}
+
+function toArchivedItem(row: schema.InventoryItemRow): InventoryItem {
+  return {
+    id: row.id,
+    entityId: row.entityId,
+    name: row.name,
+    categoryId: row.categoryId,
+    unitOfMeasureId: orNull(row.unitOfMeasureId),
+    sku: orNull(row.sku),
+    currentStockQty: 0,
+    currentWeightedAvgCost: null,
+    reorderPoint: orNull(row.reorderPoint),
+    reorderQty: orNull(row.reorderQty),
+  };
+}
+
 async function getCategories(db: DbClient): Promise<Category[]> {
   const rows = await db
     .select()
@@ -22,12 +79,7 @@ async function getItems(db: DbClient, entityId?: string): Promise<InventoryItem[
   const itemRows = await db
     .select()
     .from(schema.inventoryItems)
-    .where(
-      and(
-        isNull(schema.inventoryItems.archivedAt),
-        entityId ? eq(schema.inventoryItems.entityId, entityId) : undefined,
-      ),
-    )
+    .where(and(isNull(schema.inventoryItems.archivedAt), entityFilter(entityId)))
     .orderBy(asc(schema.inventoryItems.name));
 
   const movementRows = await db
@@ -44,29 +96,14 @@ async function getItems(db: DbClient, entityId?: string): Promise<InventoryItem[
     { stockQtyAfter: number; weightedAvgCostAfter: number | null }
   >();
   for (const m of movementRows) {
-    if (!stockMap.has(m.inventoryItemId)) {
-      stockMap.set(m.inventoryItemId, {
-        stockQtyAfter: m.stockQtyAfter,
-        weightedAvgCostAfter: m.weightedAvgCostAfter ?? null,
-      });
-    }
+    if (stockMap.has(m.inventoryItemId)) continue;
+    stockMap.set(m.inventoryItemId, {
+      stockQtyAfter: m.stockQtyAfter,
+      weightedAvgCostAfter: orNull(m.weightedAvgCostAfter),
+    });
   }
 
-  return itemRows.map((row) => {
-    const stock = stockMap.get(row.id);
-    return {
-      id: row.id,
-      entityId: row.entityId,
-      name: row.name,
-      categoryId: row.categoryId,
-      unitOfMeasureId: row.unitOfMeasureId ?? null,
-      sku: row.sku ?? null,
-      currentStockQty: stock?.stockQtyAfter ?? 0,
-      currentWeightedAvgCost: stock?.weightedAvgCostAfter ?? null,
-      reorderPoint: row.reorderPoint ?? null,
-      reorderQty: row.reorderQty ?? null,
-    };
-  });
+  return itemRows.map((row) => toInventoryItem(row, stockMap.get(row.id)));
 }
 
 async function upsertCategory(db: DbClient, category: Category, accountId: string): Promise<void> {
@@ -87,34 +124,64 @@ async function upsertCategory(db: DbClient, category: Category, accountId: strin
     });
 }
 
+function normalizedItemFields(item: InventoryItemInput) {
+  return {
+    name: item.name,
+    categoryId: item.categoryId,
+    unitOfMeasureId: orNull(item.unitOfMeasureId),
+    sku: orNull(item.sku),
+    reorderPoint: orNull(item.reorderPoint),
+    reorderQty: orNull(item.reorderQty),
+  };
+}
+
 async function upsertItem(db: DbClient, item: InventoryItemInput, entityId: string): Promise<void> {
   const ts = now();
+  const fields = normalizedItemFields(item);
   await db
     .insert(schema.inventoryItems)
     .values({
       id: item.id,
       entityId,
-      name: item.name,
-      categoryId: item.categoryId,
-      unitOfMeasureId: item.unitOfMeasureId ?? null,
-      sku: item.sku ?? null,
-      reorderPoint: item.reorderPoint ?? null,
-      reorderQty: item.reorderQty ?? null,
+      ...fields,
       createdAt: ts,
       updatedAt: ts,
     })
     .onConflictDoUpdate({
       target: schema.inventoryItems.id,
       set: {
-        name: item.name,
-        categoryId: item.categoryId,
-        unitOfMeasureId: item.unitOfMeasureId ?? null,
-        sku: item.sku ?? null,
-        reorderPoint: item.reorderPoint ?? null,
-        reorderQty: item.reorderQty ?? null,
+        ...fields,
         updatedAt: ts,
       },
     });
+}
+
+async function upsertCategories(
+  db: DbClient,
+  categories: Category[],
+  accountId: string,
+): Promise<void> {
+  for (const cat of categories) await upsertCategory(db, cat, accountId);
+}
+
+async function upsertItems(
+  db: DbClient,
+  items: InventoryItemInput[],
+  entityId: string,
+): Promise<void> {
+  for (const item of items) await upsertItem(db, item, entityId);
+}
+
+async function deleteCategoriesByIds(db: DbClient, ids: string[]): Promise<void> {
+  for (const id of ids) {
+    await db.delete(schema.inventoryCategories).where(eq(schema.inventoryCategories.id, id));
+  }
+}
+
+async function deleteItemsByIds(db: DbClient, ids: string[]): Promise<void> {
+  for (const id of ids) {
+    await db.delete(schema.inventoryItems).where(eq(schema.inventoryItems.id, id));
+  }
 }
 
 async function submitInventory(
@@ -123,14 +190,12 @@ async function submitInventory(
   accountId: string,
   entityId: string,
 ): Promise<void> {
-  for (const cat of payload.addedCategories) await upsertCategory(db, cat, accountId);
-  for (const cat of payload.updatedCategories) await upsertCategory(db, cat, accountId);
-  for (const item of payload.addedItems) await upsertItem(db, item, entityId);
-  for (const item of payload.updatedItems) await upsertItem(db, item, entityId);
-  for (const id of payload.deletedCategoryIds)
-    await db.delete(schema.inventoryCategories).where(eq(schema.inventoryCategories.id, id));
-  for (const id of payload.deletedItemIds)
-    await db.delete(schema.inventoryItems).where(eq(schema.inventoryItems.id, id));
+  await upsertCategories(db, payload.addedCategories, accountId);
+  await upsertCategories(db, payload.updatedCategories, accountId);
+  await upsertItems(db, payload.addedItems, entityId);
+  await upsertItems(db, payload.updatedItems, entityId);
+  await deleteCategoriesByIds(db, payload.deletedCategoryIds);
+  await deleteItemsByIds(db, payload.deletedItemIds);
 }
 
 async function deleteCategory(db: DbClient, id: string): Promise<void> {
@@ -147,18 +212,7 @@ async function getArchivedItems(db: DbClient): Promise<InventoryItem[]> {
     .from(schema.inventoryItems)
     .where(isNotNull(schema.inventoryItems.archivedAt))
     .orderBy(asc(schema.inventoryItems.name));
-  return rows.map((row) => ({
-    id: row.id,
-    entityId: row.entityId,
-    name: row.name,
-    categoryId: row.categoryId,
-    unitOfMeasureId: row.unitOfMeasureId ?? null,
-    sku: row.sku ?? null,
-    currentStockQty: 0,
-    currentWeightedAvgCost: null,
-    reorderPoint: row.reorderPoint ?? null,
-    reorderQty: row.reorderQty ?? null,
-  }));
+  return rows.map((row) => toArchivedItem(row));
 }
 
 async function getItemUsageCount(db: DbClient, id: string): Promise<number> {
@@ -170,7 +224,7 @@ async function getItemUsageCount(db: DbClient, id: string): Promise<number> {
     .select({ n: count() })
     .from(schema.stockMovements)
     .where(eq(schema.stockMovements.inventoryItemId, id));
-  return (lines?.n ?? 0) + (movements?.n ?? 0);
+  return countOf(lines) + countOf(movements);
 }
 
 async function archiveItem(db: DbClient, id: string): Promise<void> {

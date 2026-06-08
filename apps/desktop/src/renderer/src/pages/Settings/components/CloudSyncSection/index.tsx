@@ -10,6 +10,59 @@ import { ActivationForm } from './components/ActivationForm';
 import { ActiveStatus } from './components/ActiveStatus';
 import { EditConnectionModal } from './components/EditConnectionModal';
 
+type SyncEventDeps = {
+  refreshStatus: () => Promise<void>;
+  setActivating: (v: boolean) => void;
+  setProgressLabel: (v: string) => void;
+  setProgressDetail: (v: string) => void;
+};
+
+type SyncEventHandler = (event: CloudSyncEvent, deps: SyncEventDeps) => void;
+
+function clearProgress(deps: SyncEventDeps): void {
+  deps.setActivating(false);
+  deps.setProgressLabel('');
+  deps.setProgressDetail('');
+}
+
+function handleProgressEvent(event: CloudSyncEvent, deps: SyncEventDeps): void {
+  if (event.type !== CloudSyncEventType.Progress) return;
+  deps.setProgressLabel(STAGE_LABEL[event.stage] ?? event.stage);
+  deps.setProgressDetail(`${event.done}/${event.total}`);
+}
+
+function handleSuccessEvent(event: CloudSyncEvent, deps: SyncEventDeps): void {
+  if (event.type !== CloudSyncEventType.Success) return;
+  clearProgress(deps);
+  deps.refreshStatus();
+  toast.success('Cloud sync activated');
+}
+
+function handleBackgroundSyncEvent(event: CloudSyncEvent, deps: SyncEventDeps): void {
+  if (event.type !== CloudSyncEventType.BackgroundSync) return;
+  deps.refreshStatus();
+}
+
+function handleSyncingEvent(): void {}
+
+function handleErrorEvent(event: CloudSyncEvent, deps: SyncEventDeps): void {
+  if (event.type !== CloudSyncEventType.Error) return;
+  clearProgress(deps);
+  toast.error(event.message, event.retryable ? { description: 'You can try again.' } : undefined);
+}
+
+const SYNC_EVENT_HANDLERS: Record<CloudSyncEventType, SyncEventHandler> = {
+  [CloudSyncEventType.Progress]: handleProgressEvent,
+  [CloudSyncEventType.Success]: handleSuccessEvent,
+  [CloudSyncEventType.Syncing]: handleSyncingEvent,
+  [CloudSyncEventType.BackgroundSync]: handleBackgroundSyncEvent,
+  [CloudSyncEventType.Error]: handleErrorEvent,
+};
+
+function dispatchSyncEvent(event: CloudSyncEvent, deps: SyncEventDeps): void {
+  SYNC_EVENT_HANDLERS[event.type](event, deps);
+}
+
 function useSyncEvents(
   refreshStatus: () => Promise<void>,
   setActivating: (v: boolean) => void,
@@ -19,28 +72,15 @@ function useSyncEvents(
   useEffect(() => {
     let mounted = true;
     refreshStatus();
+    const deps: SyncEventDeps = {
+      refreshStatus,
+      setActivating,
+      setProgressLabel,
+      setProgressDetail,
+    };
     const off = cloudSyncService.onSyncEvent((event: CloudSyncEvent) => {
       if (!mounted) return;
-      if (event.type === CloudSyncEventType.Progress) {
-        setProgressLabel(STAGE_LABEL[event.stage] ?? event.stage);
-        setProgressDetail(`${event.done}/${event.total}`);
-      } else if (event.type === CloudSyncEventType.Success) {
-        setActivating(false);
-        setProgressLabel('');
-        setProgressDetail('');
-        refreshStatus();
-        toast.success('Cloud sync activated');
-      } else if (event.type === CloudSyncEventType.BackgroundSync) {
-        refreshStatus();
-      } else if (event.type === CloudSyncEventType.Error) {
-        setActivating(false);
-        setProgressLabel('');
-        setProgressDetail('');
-        toast.error(
-          event.message,
-          event.retryable ? { description: 'You can try again.' } : undefined,
-        );
-      }
+      dispatchSyncEvent(event, deps);
     });
     return () => {
       mounted = false;
@@ -49,13 +89,22 @@ function useSyncEvents(
   }, [refreshStatus, setActivating, setProgressLabel, setProgressDetail]);
 }
 
+function isBlank(value: string): boolean {
+  return !value.trim();
+}
+
+function connectionErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return 'Failed to update connection';
+}
+
 function makeHandleSaveConnection(
   editUrl: string,
   editToken: string,
   setConnecting: (v: boolean) => void,
 ) {
   return async function handleSaveConnection() {
-    if (!editUrl.trim() || !editToken.trim()) {
+    if (isBlank(editUrl) || isBlank(editToken)) {
       toast.error('Both URL and auth token are required.');
       return;
     }
@@ -65,7 +114,7 @@ function makeHandleSaveConnection(
       toast.success('Connection updated — reloading…');
       window.location.reload();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update connection');
+      toast.error(connectionErrorMessage(err));
     } finally {
       setConnecting(false);
     }
@@ -124,12 +173,76 @@ function useCloudSyncHandlers(
       handleActivate(tursoUrl, authToken, setActivating, setProgressLabel, setProgressDetail),
     handleManualSync: () => handleManualSync(refreshStatus),
     openEditModal: () => {
-      setEditUrl(credentials?.tursoUrl ?? '');
+      setEditUrl(tursoUrlOf(credentials) ?? '');
       setEditToken('');
       setShowEditModal(true);
     },
     handleSaveConnection: makeHandleSaveConnection(editUrl, editToken, setConnecting),
   };
+}
+
+function lastSyncedLabelOf(status: CloudSyncStatus | null): string | null {
+  if (!status?.lastSyncedAt) return null;
+  return new Date(status.lastSyncedAt).toLocaleString();
+}
+
+function tursoUrlOf(credentials: { tursoUrl: string } | null): string | null {
+  if (!credentials) return null;
+  return credentials.tursoUrl;
+}
+
+function CloudSyncBody({
+  status,
+  tursoUrl,
+  authToken,
+  activating,
+  progressLabel,
+  progressDetail,
+  credentials,
+  lastSynced,
+  onChangeTursoUrl,
+  onChangeAuthToken,
+  onActivate,
+  onManualSync,
+  onEditConnection,
+}: {
+  status: CloudSyncStatus | null;
+  tursoUrl: string;
+  authToken: string;
+  activating: boolean;
+  progressLabel: string;
+  progressDetail: string;
+  credentials: { tursoUrl: string } | null;
+  lastSynced: string | null;
+  onChangeTursoUrl: (v: string) => void;
+  onChangeAuthToken: (v: string) => void;
+  onActivate: () => void;
+  onManualSync: () => void;
+  onEditConnection: () => void;
+}) {
+  if (!status?.isActive) {
+    return (
+      <ActivationForm
+        tursoUrl={tursoUrl}
+        authToken={authToken}
+        activating={activating}
+        progressLabel={progressLabel}
+        progressDetail={progressDetail}
+        onChangeTursoUrl={onChangeTursoUrl}
+        onChangeAuthToken={onChangeAuthToken}
+        onActivate={onActivate}
+      />
+    );
+  }
+  return (
+    <ActiveStatus
+      status={status}
+      tursoUrl={tursoUrlOf(credentials)}
+      lastSynced={lastSynced}
+      onManualSync={onManualSync}
+      onEditConnection={onEditConnection}
+    />
+  );
 }
 
 export function CloudSyncSection() {
@@ -173,31 +286,26 @@ export function CloudSyncSection() {
       setConnecting,
     );
 
-  const lastSynced = status?.lastSyncedAt ? new Date(status.lastSyncedAt).toLocaleString() : null;
+  const lastSynced = lastSyncedLabelOf(status);
 
   return (
     <div className="flex flex-col gap-4">
       <SectionHeader label="Cloud Sync" />
-      {!status?.isActive ? (
-        <ActivationForm
-          tursoUrl={tursoUrl}
-          authToken={authToken}
-          activating={activating}
-          progressLabel={progressLabel}
-          progressDetail={progressDetail}
-          onChangeTursoUrl={setTursoUrl}
-          onChangeAuthToken={setAuthToken}
-          onActivate={handleActivate}
-        />
-      ) : (
-        <ActiveStatus
-          status={status}
-          tursoUrl={credentials?.tursoUrl ?? null}
-          lastSynced={lastSynced}
-          onManualSync={handleManualSync}
-          onEditConnection={openEditModal}
-        />
-      )}
+      <CloudSyncBody
+        status={status}
+        tursoUrl={tursoUrl}
+        authToken={authToken}
+        activating={activating}
+        progressLabel={progressLabel}
+        progressDetail={progressDetail}
+        credentials={credentials}
+        lastSynced={lastSynced}
+        onChangeTursoUrl={setTursoUrl}
+        onChangeAuthToken={setAuthToken}
+        onActivate={handleActivate}
+        onManualSync={handleManualSync}
+        onEditConnection={openEditModal}
+      />
       <EditConnectionModal
         open={showEditModal}
         editUrl={editUrl}

@@ -152,57 +152,89 @@ function AccountButton() {
   );
 }
 
+function selectedEntityOf(entities: Entity[], selectedEntityId: string | undefined): Entity | null {
+  const found = entities.find((e) => e.id === selectedEntityId);
+  if (found) return found;
+  return entities[0] ?? null;
+}
+
+function GroupLabel({ name }: { name: string | undefined }) {
+  if (!name) return null;
+  return (
+    <>
+      <span className="text-white/15 text-xs">·</span>
+      <span className="text-xs font-medium text-white/45 max-w-[160px] truncate">{name}</span>
+    </>
+  );
+}
+
+function EntitySection({
+  entity,
+  hasMultiple,
+  entities,
+  selectedEntityId,
+  open,
+  onOpenChange,
+  onSelect,
+}: {
+  entity: Entity | null;
+  hasMultiple: boolean;
+  entities: Entity[];
+  selectedEntityId: string | undefined;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSelect: (id: string) => void;
+}) {
+  if (!entity) return null;
+  if (hasMultiple) {
+    return (
+      <EntitySwitcherPopover
+        entities={entities}
+        selectedEntityId={selectedEntityId}
+        open={open}
+        onOpenChange={onOpenChange}
+        onSelect={onSelect}
+      />
+    );
+  }
+  return (
+    <div className="flex h-7 items-center gap-2 px-2">
+      <EntityAvatar id={entity.id} name={entity.name} />
+      <span className="text-xs font-medium text-white/60">{entity.name}</span>
+    </div>
+  );
+}
+
 export function EntityTopBar() {
   const { group, entities, selectedEntityId, setSelectedEntityId } = useEntities();
   const [open, setOpen] = useState(false);
 
-  const selectedEntity = entities.find((e) => e.id === selectedEntityId) ?? entities[0];
+  const selectedEntity = selectedEntityOf(entities, selectedEntityId);
   const hasMultiple = entities.length > 1;
-  const color = selectedEntity ? entityColor(selectedEntity.id) : ENTITY_COLORS[0]!;
+
+  const handleSelect = (id: string) => {
+    setSelectedEntityId(id);
+    setOpen(false);
+  };
 
   return (
     <div className="shrink-0 flex items-center h-[52px] px-3 gap-3" style={barStyle}>
       <div className="flex items-center gap-2.5 shrink-0">
         <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="ReYoGo" className="size-6 shrink-0" />
         <span className="text-sm font-semibold leading-none text-white">ReYoGo</span>
-        {group?.name && (
-          <>
-            <span className="text-white/15 text-xs">·</span>
-            <span className="text-xs font-medium text-white/45 max-w-[160px] truncate">
-              {group.name}
-            </span>
-          </>
-        )}
+        <GroupLabel name={group?.name} />
       </div>
       <div className="flex-1" />
       <div className="flex items-center gap-1.5">
-        {selectedEntity &&
-          (hasMultiple ? (
-            <EntitySwitcherPopover
-              entities={entities}
-              selectedEntityId={selectedEntityId}
-              open={open}
-              onOpenChange={setOpen}
-              onSelect={(id) => {
-                setSelectedEntityId(id);
-                setOpen(false);
-              }}
-            />
-          ) : (
-            <div className="flex h-7 items-center gap-2 px-2">
-              <span
-                className={cn(
-                  'flex size-5 shrink-0 items-center justify-center rounded-md text-[10px] font-semibold ring-1',
-                  color.bg,
-                  color.text,
-                  color.ring,
-                )}
-              >
-                {entityInitials(selectedEntity.name)}
-              </span>
-              <span className="text-xs font-medium text-white/60">{selectedEntity.name}</span>
-            </div>
-          ))}
+        <EntitySection
+          entity={selectedEntity}
+          hasMultiple={hasMultiple}
+          entities={entities}
+          selectedEntityId={selectedEntityId}
+          open={open}
+          onOpenChange={setOpen}
+          onSelect={handleSelect}
+        />
         <div className="mx-0.5 h-4 w-px bg-white/10" />
         <AccountButton />
       </div>

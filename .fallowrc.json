@@ -15,6 +15,10 @@
       "lib/*"
     ]
   },
+  "ignoreDependencies": [
+    "@fontsource/dm-mono",
+    "@fontsource/dm-sans"
+  ],
   "ignorePatterns": [
     "apps/desktop/src/main/db/migrations/**",
     "dist/**",

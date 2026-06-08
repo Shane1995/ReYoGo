@@ -2,6 +2,23 @@ import { useCallback, useState } from 'react';
 import { cloudSyncService } from '@/services/cloudSync';
 import { entitiesService } from '@/services/entities';
 
+function isBlank(value: string): boolean {
+  return !value.trim();
+}
+
+function connectErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return 'Connection failed. Please try again.';
+}
+
+function finishConnect(setupComplete: boolean, onConnected: () => void): void {
+  if (setupComplete) {
+    window.location.reload();
+    return;
+  }
+  onConnected();
+}
+
 function useCloudConnect(onConnected: () => void) {
   const [tursoUrl, setTursoUrl] = useState('');
   const [authToken, setAuthToken] = useState('');
@@ -9,19 +26,15 @@ function useCloudConnect(onConnected: () => void) {
   const [connectError, setConnectError] = useState<string | null>(null);
 
   const connect = useCallback(async () => {
-    if (!tursoUrl.trim() || !authToken.trim()) return;
+    if (isBlank(tursoUrl) || isBlank(authToken)) return;
     setConnecting(true);
     setConnectError(null);
     try {
       await cloudSyncService.connect(tursoUrl, authToken);
       const { setupComplete } = await entitiesService.getSetupState();
-      if (setupComplete) {
-        window.location.reload();
-      } else {
-        onConnected();
-      }
+      finishConnect(setupComplete, onConnected);
     } catch (err) {
-      setConnectError(err instanceof Error ? err.message : 'Connection failed. Please try again.');
+      setConnectError(connectErrorMessage(err));
     } finally {
       setConnecting(false);
     }

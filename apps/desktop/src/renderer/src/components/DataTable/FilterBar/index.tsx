@@ -177,6 +177,22 @@ function SingleSelectOption({
   );
 }
 
+function selectedOptionLabel(selected: string, options: FilterOption[], fallback: string): string {
+  if (!selected) return fallback;
+  const match = options.find((o) => o.value === selected);
+  if (!match) return fallback;
+  return match.label;
+}
+
+function singleSelectTriggerClassName(selected: string): string {
+  return cn(
+    'flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-medium transition-colors',
+    selected
+      ? 'border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]'
+      : 'border-[var(--border)] bg-[var(--background)] text-[var(--muted-foreground)] hover:border-[var(--input)] hover:text-[var(--foreground)]',
+  );
+}
+
 function SingleSelect({
   field,
   values,
@@ -188,22 +204,12 @@ function SingleSelect({
 }) {
   const selected = (values[field.key] as string) ?? '';
   const options = resolveOptions(field, values);
-  const label = selected
-    ? (options.find((o) => o.value === selected)?.label ?? field.label)
-    : field.label;
+  const label = selectedOptionLabel(selected, options, field.label);
 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            'flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-medium transition-colors',
-            selected
-              ? 'border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]'
-              : 'border-[var(--border)] bg-[var(--background)] text-[var(--muted-foreground)] hover:border-[var(--input)] hover:text-[var(--foreground)]',
-          )}
-        >
+        <button type="button" className={singleSelectTriggerClassName(selected)}>
           {label}
           <ChevronDownIcon className="size-3 opacity-60" />
         </button>
@@ -232,31 +238,63 @@ function SingleSelect({
   );
 }
 
+function searchPlaceholderOf(field: FilterField): string {
+  if (field.placeholder) return field.placeholder;
+  return `Search ${field.label}…`;
+}
+
+function searchValueOf(values: FilterValues, key: string): string {
+  const value = values[key];
+  if (typeof value !== 'string') return '';
+  return value;
+}
+
+function SearchFilter({
+  field,
+  values,
+  onChange,
+}: {
+  field: FilterField;
+  values: FilterValues;
+  onChange: (key: string, value: string) => void;
+}) {
+  return (
+    <div className="relative">
+      <SearchIcon className="absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground/50" />
+      <Input
+        type="text"
+        placeholder={searchPlaceholderOf(field)}
+        value={searchValueOf(values, field.key)}
+        onChange={(e) => onChange(field.key, e.target.value)}
+        className="h-8 w-72 pl-8 text-xs placeholder:text-muted-foreground/40"
+      />
+    </div>
+  );
+}
+
+function FilterFieldView({
+  field,
+  values,
+  onChange,
+}: {
+  field: FilterField;
+  values: FilterValues;
+  onChange: (key: string, value: string | string[]) => void;
+}) {
+  if (field.type === 'search')
+    return <SearchFilter field={field} values={values} onChange={onChange} />;
+  if (field.multi) return <MultiSelect field={field} values={values} onChange={onChange} />;
+  return <SingleSelect field={field} values={values} onChange={onChange} />;
+}
+
 export function FilterBar({ filters, values, onChange, onClearAll }: Props) {
   const active = hasActiveFilters(values);
 
   return (
     <div className="flex flex-wrap items-center gap-2 bg-background">
-      {filters.map((field) => {
-        if (field.type === 'search') {
-          return (
-            <div key={field.key} className="relative">
-              <SearchIcon className="absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground/50" />
-              <Input
-                type="text"
-                placeholder={field.placeholder ?? `Search ${field.label}…`}
-                value={(values[field.key] as string) ?? ''}
-                onChange={(e) => onChange(field.key, e.target.value)}
-                className="h-8 w-72 pl-8 text-xs placeholder:text-muted-foreground/40"
-              />
-            </div>
-          );
-        }
-        if (field.multi) {
-          return <MultiSelect key={field.key} field={field} values={values} onChange={onChange} />;
-        }
-        return <SingleSelect key={field.key} field={field} values={values} onChange={onChange} />;
-      })}
+      {filters.map((field) => (
+        <FilterFieldView key={field.key} field={field} values={values} onChange={onChange} />
+      ))}
 
       {active && (
         <button

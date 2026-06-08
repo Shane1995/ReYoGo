@@ -114,18 +114,10 @@ jobs:
           comment: true
           review-comments: true
           dead-code-baseline: fallow-baselines/baseline.json
-          # Advisory for now: this is the PR that turns the gate on, and its
-          # diff-based attribution misattributes pre-existing functions as
-          # "introduced" whenever a file is moved/renamed (e.g. our
-          # <Name>/index.ts restructuring), surfacing a large backlog of
-          # pre-existing complexity debt that this PR didn't create. That
-          # backlog is tracked in Trello (test coverage, hotspots, remaining
-          # large functions). Once it's paid down, flip this back to true to
-          # hard-block on genuinely new complexity regressions.
-          fail-on-issues: false
+          fail-on-issues: true
 
   build-desktop:
-    needs: [ lint, test, typecheck ]
+    needs: [ lint, test, typecheck, fallow ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -142,7 +134,7 @@ jobs:
       - run: pnpm exec turbo run electron:build --filter=@reyogo/desktop --affected
 
   build-web:
-    needs: [ lint, test, typecheck ]
+    needs: [ lint, test, typecheck, fallow ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -159,7 +151,7 @@ jobs:
       - run: pnpm exec turbo run build --filter=@reyogo/web --affected
 
   build-lambdas:
-    needs: [ lint, test, typecheck ]
+    needs: [ lint, test, typecheck, fallow ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

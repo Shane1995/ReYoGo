@@ -8,6 +8,17 @@ interface TaxSectionProps {
   onSaved: () => Promise<void>;
 }
 
+function isInvalidRate(rate: number): boolean {
+  if (isNaN(rate)) return true;
+  return rate < 0;
+}
+
+function saveLabelOf(saved: boolean, saving: boolean): string {
+  if (saved) return '✓ Saved';
+  if (saving) return '…';
+  return 'Save';
+}
+
 export function TaxSection({ entities, onSaved }: TaxSectionProps) {
   const currentRate = entities[0]?.defaultVatRate ?? 15;
   const [vatRate, setVatRate] = useState(String(currentRate));
@@ -19,7 +30,7 @@ export function TaxSection({ entities, onSaved }: TaxSectionProps) {
 
   const handleSave = async () => {
     const rate = parseFloat(vatRate);
-    if (isNaN(rate) || rate < 0) return;
+    if (isInvalidRate(rate)) return;
     setSaving(true);
     try {
       await Promise.all(
@@ -56,7 +67,7 @@ export function TaxSection({ entities, onSaved }: TaxSectionProps) {
             className="h-8 px-3 rounded-lg text-xs font-semibold shrink-0 transition-all disabled:opacity-40"
             style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
           >
-            {saved ? '✓ Saved' : saving ? '…' : 'Save'}
+            {saveLabelOf(saved, saving)}
           </button>
         </div>
       </div>

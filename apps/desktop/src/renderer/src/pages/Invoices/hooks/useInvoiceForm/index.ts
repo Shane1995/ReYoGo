@@ -6,6 +6,7 @@ import type { InventoryItem } from '@/pages/Inventory/Capture/CapturedInventory/
 import { useEntities } from '@/Context/EntityContext';
 import { invoiceService } from '@/services/invoice';
 import { VatMode } from '@reyogo/types';
+import type { IEntity } from '@reyogo/types';
 import type { ProcessReceiptLine } from '../../types';
 import { getProcessLineComputed } from '../../types';
 import { createEmptyLine } from '../../utils/createEmptyLine';
@@ -31,6 +32,83 @@ function buildSaveLines(
       totalVatExclude: computed.netTotal,
     };
   });
+}
+
+function getInitialLines(templateLines: ProcessReceiptLine[] | undefined): ProcessReceiptLine[] {
+  if (templateLines && templateLines.length > 0) return templateLines;
+  const draft = loadDraft();
+  if (draft?.lines.length) return draft.lines;
+  return [createEmptyLine()];
+}
+
+function getInitialInvoiceNumber(isReused: boolean): string {
+  if (isReused) return '';
+  return loadDraft()?.invoiceNumber ?? '';
+}
+
+function getInitialInvoiceDate(isReused: boolean): string {
+  if (isReused) return '';
+  return loadDraft()?.invoiceDate ?? '';
+}
+
+function getInitialVatMode(isReused: boolean): VatMode {
+  if (isReused) return VatMode.Exclusive;
+  return loadDraft()?.vatMode ?? VatMode.Exclusive;
+}
+
+function isLineComplete(line: ProcessReceiptLine): boolean {
+  if (line.itemId) return Number(line.quantity) > 0;
+  return Number(line.quantity) <= 0;
+}
+
+function computeCanSave(
+  invoiceNumber: string,
+  validLines: ProcessReceiptLine[],
+  lines: ProcessReceiptLine[],
+): boolean {
+  if (!invoiceNumber.trim()) return false;
+  if (validLines.length === 0) return false;
+  return lines.every(isLineComplete);
+}
+
+function computeIsDirty(
+  lines: ProcessReceiptLine[],
+  invoiceNumber: string,
+  invoiceDate: string,
+  supplierId: string,
+): boolean {
+  if (lines.some((l) => l.itemId)) return true;
+  if (invoiceNumber.trim()) return true;
+  if (invoiceDate) return true;
+  return !!supplierId;
+}
+
+function errorMessage(e: unknown, fallback: string): string {
+  if (e instanceof Error) return e.message;
+  return fallback;
+}
+
+type LocationState = { templateLines?: ProcessReceiptLine[]; isReuse?: boolean };
+
+function getLocationState(state: unknown): LocationState | null {
+  if (!state) return null;
+  return state as LocationState;
+}
+
+function findSelectedEntity(entities: IEntity[], entityId: string): IEntity | null {
+  const found = entities.find((e) => e.id === entityId);
+  if (found) return found;
+  return null;
+}
+
+function filterEntityItems(items: InventoryItem[], entityId: string): InventoryItem[] {
+  if (!entityId) return [];
+  return items.filter((item) => item.entityId === entityId);
+}
+
+function defaultVatRateOf(entity: IEntity | null): number {
+  if (!entity) return 0;
+  return entity.defaultVatRate;
 }
 
 function buildInvoiceInput(params: {
@@ -61,27 +139,18 @@ export function useInvoiceForm() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const locationState =
-    (location.state as { templateLines?: ProcessReceiptLine[]; isReuse?: boolean } | null) ?? null;
+  const locationState = getLocationState(location.state);
   const templateLines = locationState?.templateLines;
   const isReused = locationState?.isReuse === true;
 
-  const initialLines = (() => {
-    if (templateLines && templateLines.length > 0) return templateLines;
-    const draft = loadDraft();
-    return draft?.lines.length ? draft.lines : [createEmptyLine()];
-  })();
+  const initialLines = getInitialLines(templateLines);
 
   const [invoiceNumber, setInvoiceNumber] = useState<string>(() =>
-    isReused ? '' : (loadDraft()?.invoiceNumber ?? ''),
+    getInitialInvoiceNumber(isReused),
   );
-  const [invoiceDate, setInvoiceDate] = useState<string>(() =>
-    isReused ? '' : (loadDraft()?.invoiceDate ?? ''),
-  );
+  const [invoiceDate, setInvoiceDate] = useState<string>(() => getInitialInvoiceDate(isReused));
   const [supplierId, setSupplierId] = useState<string>('');
-  const [vatMode, setVatModeState] = useState<VatMode>(() =>
-    isReused ? VatMode.Exclusive : (loadDraft()?.vatMode ?? VatMode.Exclusive),
-  );
+  const [vatMode, setVatModeState] = useState<VatMode>(() => getInitialVatMode(isReused));
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -130,30 +199,22 @@ export function useInvoiceForm() {
     [addItem, entityId],
   );
 
-  const selectedEntity = entities.find((e) => e.id === entityId) ?? null;
+  const selectedEntity = findSelectedEntity(entities, entityId);
 
   const { clearDraft } = useDraftPersistence(lines, invoiceNumber, invoiceDate, vatMode, isReused);
 
-  const entityItems = useMemo(
-    () => (entityId ? items.filter((item) => item.entityId === entityId) : []),
-    [items, entityId],
-  );
+  const entityItems = useMemo(() => filterEntityItems(items, entityId), [items, entityId]);
 
   const { invoiceSummary, validLines, itemsWithCategory, itemMetaMap } = useInvoiceSummary(
     lines,
     entityItems,
     categories,
     vatMode,
-    selectedEntity?.defaultVatRate ?? 0,
+    defaultVatRateOf(selectedEntity),
     lastUnitCosts,
   );
 
-  const canSave =
-    !!invoiceNumber.trim() &&
-    validLines.length > 0 &&
-    !lines.some(
-      (l) => (l.itemId && Number(l.quantity) <= 0) || (!l.itemId && Number(l.quantity) > 0),
-    );
+  const canSave = computeCanSave(invoiceNumber, validLines, lines);
 
   const toggleResultRow = useCallback((lineId: string) => {
     setExpandedResultLineIds((prev) => {
@@ -177,8 +238,7 @@ export function useInvoiceForm() {
     navigate(location.pathname, { replace: true, state: null });
   }, [clearDraft, setLines, navigate, location.pathname]);
 
-  const isDirty =
-    lines.some((l) => l.itemId) || !!invoiceNumber.trim() || !!invoiceDate || !!supplierId;
+  const isDirty = computeIsDirty(lines, invoiceNumber, invoiceDate, supplierId);
 
   const validateBeforeSave = useCallback((): boolean => {
     if (!selectedEntity) {
@@ -198,7 +258,8 @@ export function useInvoiceForm() {
   }, [selectedEntity, canSave, invoiceNumber]);
 
   const handleSave = useCallback(async () => {
-    if (!validateBeforeSave() || !selectedEntity) return;
+    if (!validateBeforeSave()) return;
+    if (!selectedEntity) return;
     setIsSaving(true);
     try {
       await invoiceService.saveAndPostInvoice(
@@ -216,7 +277,7 @@ export function useInvoiceForm() {
       clearForm();
       toast.success('Invoice posted');
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : 'Failed to save invoice');
+      setSaveError(errorMessage(e, 'Failed to save invoice'));
     } finally {
       setIsSaving(false);
     }
@@ -234,7 +295,8 @@ export function useInvoiceForm() {
   ]);
 
   const handleSaveDraft = useCallback(async () => {
-    if (!validateBeforeSave() || !selectedEntity) return;
+    if (!validateBeforeSave()) return;
+    if (!selectedEntity) return;
     setIsSavingDraft(true);
     try {
       await invoiceService.saveInvoice(
@@ -252,7 +314,7 @@ export function useInvoiceForm() {
       clearForm();
       toast.success('Draft saved');
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : 'Failed to save draft');
+      setSaveError(errorMessage(e, 'Failed to save draft'));
     } finally {
       setIsSavingDraft(false);
     }

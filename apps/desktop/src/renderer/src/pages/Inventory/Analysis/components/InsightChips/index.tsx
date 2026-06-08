@@ -3,11 +3,15 @@ import { fmtPct } from '../../utils/format';
 import { changeCls } from '../../utils/styles';
 import type { GroupStats } from '../../utils/stats';
 
+function pluralSuffix(count: number): string {
+  return count === 1 ? '' : 's';
+}
+
 export function InsightChips({ stats }: { stats: GroupStats }) {
   return (
     <div className="flex items-center gap-1.5 text-xs">
       <span className="text-muted-foreground">
-        {stats.count} item{stats.count !== 1 ? 's' : ''}
+        {stats.count} item{pluralSuffix(stats.count)}
       </span>
       {stats.avgChange !== null && (
         <span className={cn('font-mono font-medium', changeCls(stats.avgChange))}>
