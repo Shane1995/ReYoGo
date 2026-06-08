@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { appConfig } from '@/config/app.config';
 
-export const iconRegistry: Readonly<Record<string, LucideIcon>> = {
+const iconRegistry: Readonly<Record<string, LucideIcon>> = {
   LayoutDashboard: LayoutDashboardIcon,
   Package: PackageIcon,
   Receipt: ReceiptIcon,

@@ -3,7 +3,7 @@ import { Button } from '@reyogo/ui';
 import type { TypeValue, InventoryCategory, InventoryItem } from '../../types';
 import type { UnitOption } from '../ItemsTable/types';
 import { cn } from '@reyogo/ui';
-import { modalInputClass, NameField, UnitOfMeasureField } from '../formField';
+import { modalInputClass, NameField, UnitOfMeasureField } from '../SharedFormFields';
 
 type AddItemModalProps = {
   open: boolean;

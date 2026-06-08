@@ -158,6 +158,28 @@ export function syncViaUtilityProcess(
   });
 }
 
+function openReplicaClient(
+  replicaPath: string,
+  syncUrl: string,
+  authToken: string,
+): ReturnType<typeof createReplicaClient> {
+  try {
+    return createReplicaClient(replicaPath, syncUrl, authToken);
+  } catch {
+    wipeReplicaFiles(replicaPath);
+    return createReplicaClient(replicaPath, syncUrl, authToken);
+  }
+}
+
+async function activateHandle(handle: ReturnType<typeof createReplicaClient>): Promise<void> {
+  await migrate(handle.db, { migrationsFolder: getMigrationsFolder() });
+  await ensureDefaultAccount(handle.db);
+  if (_handle) _handle.close();
+  _handle = handle;
+  _db = handle.db;
+  _repos = buildRepos(handle.db);
+}
+
 export async function reinitialiseNoSync(
   replicaPath: string,
   syncUrl: string,
@@ -166,18 +188,8 @@ export async function reinitialiseNoSync(
   _reinitialising = true;
   let handle: ReturnType<typeof createReplicaClient> | undefined;
   try {
-    try {
-      handle = createReplicaClient(replicaPath, syncUrl, authToken);
-    } catch {
-      wipeReplicaFiles(replicaPath);
-      handle = createReplicaClient(replicaPath, syncUrl, authToken);
-    }
-    await migrate(handle.db, { migrationsFolder: getMigrationsFolder() });
-    await ensureDefaultAccount(handle.db);
-    if (_handle) _handle.close();
-    _handle = handle;
-    _db = handle.db;
-    _repos = buildRepos(handle.db);
+    handle = openReplicaClient(replicaPath, syncUrl, authToken);
+    await activateHandle(handle);
   } catch (err) {
     handle?.close();
     throw err;
@@ -298,44 +310,30 @@ export function _setDbStateForTest(
   _db = db;
 }
 
-async function bootWithReplica(
-  credentials: { tursoUrl: string; authToken: string },
-  migrationsFolder: string,
-): Promise<void> {
+async function bootWithReplica(credentials: {
+  tursoUrl: string;
+  authToken: string;
+}): Promise<void> {
   const replicaPath = getReplicaPath();
   const hadExistingReplica = existsSync(replicaPath);
   const canBootOffline = hadExistingReplica && hasEverSynced();
 
-  const activate = async (h: ReplicaHandle) => {
-    await migrate(h.db, { migrationsFolder });
-    await ensureDefaultAccount(h.db);
-    _handle = h;
-    _db = h.db;
-    _repos = buildRepos(h.db);
-  };
-
   const bootFresh = async (h: ReplicaHandle) => {
     await withSyncTimeout(h.sync());
-    await activate(h);
+    await activateHandle(h);
   };
 
-  let handle: ReplicaHandle;
-  try {
-    handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
-  } catch {
-    wipeReplicaFiles(replicaPath);
-    handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
-  }
+  let handle = openReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
 
   if (canBootOffline) {
     try {
-      await activate(handle);
+      await activateHandle(handle);
       return;
     } catch (bootErr) {
       if (isCorruptedReplicaError(bootErr)) {
         handle.close();
         wipeReplicaFiles(replicaPath);
-        handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
+        handle = openReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
         await bootFresh(handle);
         return;
       }
@@ -356,7 +354,7 @@ async function bootWithReplica(
     } else if (isCorruptedReplicaError(bootErr)) {
       handle.close();
       wipeReplicaFiles(replicaPath);
-      handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
+      handle = openReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
       await bootFresh(handle);
     } else {
       handle.close();
@@ -372,11 +370,10 @@ export async function initDatabase(): Promise<void> {
   if (_db !== null || _initialising) return;
   _initialising = true;
   try {
-    const migrationsFolder = getMigrationsFolder();
     if (hasCloudCredentials()) {
       const credentials = getStoredCredentials();
       if (credentials) {
-        await bootWithReplica(credentials, migrationsFolder);
+        await bootWithReplica(credentials);
         return;
       }
     }
@@ -394,19 +391,9 @@ export async function reinitialise(
   _reinitialising = true;
   let handle: ReturnType<typeof createReplicaClient> | undefined;
   try {
-    try {
-      handle = createReplicaClient(replicaPath, syncUrl, authToken);
-    } catch {
-      wipeReplicaFiles(replicaPath);
-      handle = createReplicaClient(replicaPath, syncUrl, authToken);
-    }
+    handle = openReplicaClient(replicaPath, syncUrl, authToken);
     await handle.sync();
-    await migrate(handle.db, { migrationsFolder: getMigrationsFolder() });
-    await ensureDefaultAccount(handle.db);
-    if (_handle) _handle.close();
-    _handle = handle;
-    _db = handle.db;
-    _repos = buildRepos(handle.db);
+    await activateHandle(handle);
   } catch (err) {
     handle?.close();
     throw err;

@@ -1,8 +1,6 @@
 import { CloudSyncIPC } from '@shared/types/ipc';
 import type { CloudSyncEvent } from '@shared/types/cloudSync';
 
-export type { CloudSyncEvent };
-
 const invoke = () => window.electronAPI.ipcRenderer.invoke;
 
 export const cloudSyncService = {

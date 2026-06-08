@@ -72,6 +72,38 @@ function makeHandleSaveConnection(
   };
 }
 
+async function handleActivate(
+  tursoUrl: string,
+  authToken: string,
+  setActivating: (v: boolean) => void,
+  setProgressLabel: (v: string) => void,
+  setProgressDetail: (v: string) => void,
+) {
+  if (!tursoUrl.trim() || !authToken.trim()) {
+    toast.error('Both Turso URL and auth token are required.');
+    return;
+  }
+  setActivating(true);
+  setProgressLabel('Starting…');
+  try {
+    await cloudSyncService.activate(tursoUrl.trim(), authToken.trim());
+  } catch {
+    setActivating(false);
+    setProgressLabel('');
+    setProgressDetail('');
+  }
+}
+
+async function handleManualSync(refreshStatus: () => Promise<void>) {
+  try {
+    await cloudSyncService.manualSync();
+    await refreshStatus();
+    toast.success('Synced');
+  } catch (err) {
+    toast.error(err instanceof Error ? err.message : 'Sync failed');
+  }
+}
+
 function useCloudSyncHandlers(
   tursoUrl: string,
   authToken: string,
@@ -87,42 +119,15 @@ function useCloudSyncHandlers(
   setEditToken: (v: string) => void,
   setConnecting: (v: boolean) => void,
 ) {
-  async function handleActivate() {
-    if (!tursoUrl.trim() || !authToken.trim()) {
-      toast.error('Both Turso URL and auth token are required.');
-      return;
-    }
-    setActivating(true);
-    setProgressLabel('Starting…');
-    try {
-      await cloudSyncService.activate(tursoUrl.trim(), authToken.trim());
-    } catch {
-      setActivating(false);
-      setProgressLabel('');
-      setProgressDetail('');
-    }
-  }
-
-  async function handleManualSync() {
-    try {
-      await cloudSyncService.manualSync();
-      await refreshStatus();
-      toast.success('Synced');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Sync failed');
-    }
-  }
-
-  function openEditModal() {
-    setEditUrl(credentials?.tursoUrl ?? '');
-    setEditToken('');
-    setShowEditModal(true);
-  }
-
   return {
-    handleActivate,
-    handleManualSync,
-    openEditModal,
+    handleActivate: () =>
+      handleActivate(tursoUrl, authToken, setActivating, setProgressLabel, setProgressDetail),
+    handleManualSync: () => handleManualSync(refreshStatus),
+    openEditModal: () => {
+      setEditUrl(credentials?.tursoUrl ?? '');
+      setEditToken('');
+      setShowEditModal(true);
+    },
     handleSaveConnection: makeHandleSaveConnection(editUrl, editToken, setConnecting),
   };
 }

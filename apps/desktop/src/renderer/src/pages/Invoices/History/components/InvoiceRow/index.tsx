@@ -24,6 +24,132 @@ import type { ProcessReceiptLine } from '../../../types';
 
 const COLUMN_COUNT = 10;
 
+type DateCellProps = {
+  inv: ICapturedInvoice;
+  isCreditNote: boolean;
+  suppliers: Supplier[];
+  detailCache: Record<string, ICapturedInvoiceWithLines>;
+};
+
+function InvoiceDateCell({ inv, isCreditNote, suppliers, detailCache }: DateCellProps) {
+  return (
+    <TableCell className="text-sm text-muted-foreground">
+      {inv.invoiceDate ? formatDate(inv.invoiceDate) : formatDate(inv.createdAt)}
+      {inv.supplierId && suppliers.length > 0 && (
+        <p className="text-[11px] text-muted-foreground/50 mt-0.5">
+          {suppliers.find((s) => s.id === inv.supplierId)?.name}
+        </p>
+      )}
+      {isCreditNote && inv.sourceInvoiceId && (
+        <p className="text-[11px] text-rose-500/70 mt-0.5">
+          CN of {detailCache[inv.sourceInvoiceId]?.invoiceNumber ?? inv.sourceInvoiceId}
+        </p>
+      )}
+    </TableCell>
+  );
+}
+
+type AmountCellsProps = {
+  detail: ICapturedInvoiceWithLines | undefined;
+};
+
+function InvoiceAmountCells({ detail }: AmountCellsProps) {
+  const totals = detail ? invoiceTotals(detail) : null;
+  return (
+    <>
+      <TableCell className="text-right text-sm text-muted-foreground tabular-nums">
+        {detail ? detail.lines.length : '—'}
+      </TableCell>
+      <TableCell className="text-right font-mono text-sm tabular-nums">
+        {totals ? formatMoney(totals.excl) : '—'}
+      </TableCell>
+      <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground">
+        {totals ? formatMoney(totals.vat) : '—'}
+      </TableCell>
+      <TableCell className="text-right font-mono text-sm tabular-nums font-semibold">
+        {totals ? formatMoney(totals.total) : '—'}
+      </TableCell>
+    </>
+  );
+}
+
+type ExpansionPanelProps = {
+  modeKind: RowModeKind;
+  inv: ICapturedInvoice;
+  detail: ICapturedInvoiceWithLines | undefined;
+  suppliers: Supplier[];
+  onSaveEdit: Props['onSaveEdit'];
+  onMetadataSave: Props['onMetadataSave'];
+  onSaveCreditNote: Props['onSaveCreditNote'];
+  cancelView: () => void;
+};
+
+function ExpansionPanels({
+  modeKind,
+  inv,
+  detail,
+  suppliers,
+  onSaveEdit,
+  onMetadataSave,
+  onSaveCreditNote,
+  cancelView,
+}: ExpansionPanelProps) {
+  return (
+    <>
+      {modeKind === RowModeKind.Detail && detail && (
+        <TableRow className="hover:bg-transparent">
+          <TableCell colSpan={COLUMN_COUNT} className="p-0">
+            <div className="border-t border-[var(--nav-border)] bg-[var(--nav-accent)]/30 px-6 py-4">
+              <InvoiceDetailLines invoice={detail} />
+            </div>
+          </TableCell>
+        </TableRow>
+      )}
+      {modeKind === RowModeKind.Edit && detail && (
+        <TableRow className="hover:bg-transparent">
+          <TableCell colSpan={COLUMN_COUNT} className="p-0">
+            <EditPanel
+              invoice={detail}
+              onSave={(lines, note) => onSaveEdit(inv, lines, note)}
+              onCancel={cancelView}
+            />
+          </TableCell>
+        </TableRow>
+      )}
+      {modeKind === RowModeKind.MetadataEdit && detail && (
+        <TableRow className="hover:bg-transparent">
+          <TableCell colSpan={COLUMN_COUNT} className="p-0">
+            <MetadataEditPanel
+              invoice={detail}
+              suppliers={suppliers}
+              onSave={(fields) => onMetadataSave(inv.id, fields)}
+              onCancel={cancelView}
+            />
+          </TableCell>
+        </TableRow>
+      )}
+      {modeKind === RowModeKind.Audit && (
+        <TableRow className="hover:bg-transparent">
+          <TableCell colSpan={COLUMN_COUNT} className="p-0">
+            <AuditPanel invoiceId={inv.id} suppliers={suppliers} onClose={cancelView} />
+          </TableCell>
+        </TableRow>
+      )}
+      {modeKind === RowModeKind.CreditNote && detail && (
+        <TableRow className="hover:bg-transparent">
+          <TableCell colSpan={COLUMN_COUNT} className="p-0">
+            <RaiseCreditNotePanel
+              invoice={detail}
+              onConfirm={onSaveCreditNote}
+              onCancel={cancelView}
+            />
+          </TableCell>
+        </TableRow>
+      )}
+    </>
+  );
+}
+
 type Props = {
   inv: ICapturedInvoice;
   rowIndex: number;
@@ -71,7 +197,6 @@ export function InvoiceRow({
   onSaveCreditNote,
   onSetMode,
 }: Props) {
-  const totals = detail ? invoiceTotals(detail) : null;
   const modeKind = mode?.kind ?? RowModeKind.View;
   const isDraft = inv.status === InvoiceStatus.Draft;
   const isPosted = inv.status === InvoiceStatus.Posted;
@@ -115,31 +240,13 @@ export function InvoiceRow({
           )}
         </TableCell>
         <TableCell className="font-mono text-sm">{inv.invoiceNumber}</TableCell>
-        <TableCell className="text-sm text-muted-foreground">
-          {inv.invoiceDate ? formatDate(inv.invoiceDate) : formatDate(inv.createdAt)}
-          {inv.supplierId && suppliers.length > 0 && (
-            <p className="text-[11px] text-muted-foreground/50 mt-0.5">
-              {suppliers.find((s) => s.id === inv.supplierId)?.name}
-            </p>
-          )}
-          {isCreditNote && inv.sourceInvoiceId && (
-            <p className="text-[11px] text-rose-500/70 mt-0.5">
-              CN of {detailCache[inv.sourceInvoiceId]?.invoiceNumber ?? inv.sourceInvoiceId}
-            </p>
-          )}
-        </TableCell>
-        <TableCell className="text-right text-sm text-muted-foreground tabular-nums">
-          {detail ? detail.lines.length : '—'}
-        </TableCell>
-        <TableCell className="text-right font-mono text-sm tabular-nums">
-          {totals ? formatMoney(totals.excl) : '—'}
-        </TableCell>
-        <TableCell className="text-right font-mono text-sm tabular-nums text-muted-foreground">
-          {totals ? formatMoney(totals.vat) : '—'}
-        </TableCell>
-        <TableCell className="text-right font-mono text-sm tabular-nums font-semibold">
-          {totals ? formatMoney(totals.total) : '—'}
-        </TableCell>
+        <InvoiceDateCell
+          inv={inv}
+          isCreditNote={isCreditNote}
+          suppliers={suppliers}
+          detailCache={detailCache}
+        />
+        <InvoiceAmountCells detail={detail} />
         <TableCell>
           <StatusBadge status={inv.status} />
         </TableCell>
@@ -163,61 +270,16 @@ export function InvoiceRow({
           />
         </TableCell>
       </TableRow>
-
-      {modeKind === RowModeKind.Detail && detail && (
-        <TableRow className="hover:bg-transparent">
-          <TableCell colSpan={COLUMN_COUNT} className="p-0">
-            <div className="border-t border-[var(--nav-border)] bg-[var(--nav-accent)]/30 px-6 py-4">
-              <InvoiceDetailLines invoice={detail} />
-            </div>
-          </TableCell>
-        </TableRow>
-      )}
-
-      {modeKind === RowModeKind.Edit && detail && (
-        <TableRow className="hover:bg-transparent">
-          <TableCell colSpan={COLUMN_COUNT} className="p-0">
-            <EditPanel
-              invoice={detail}
-              onSave={(lines, note) => onSaveEdit(inv, lines, note)}
-              onCancel={cancelView}
-            />
-          </TableCell>
-        </TableRow>
-      )}
-
-      {modeKind === RowModeKind.MetadataEdit && detail && (
-        <TableRow className="hover:bg-transparent">
-          <TableCell colSpan={COLUMN_COUNT} className="p-0">
-            <MetadataEditPanel
-              invoice={detail}
-              suppliers={suppliers}
-              onSave={(fields) => onMetadataSave(inv.id, fields)}
-              onCancel={cancelView}
-            />
-          </TableCell>
-        </TableRow>
-      )}
-
-      {modeKind === RowModeKind.Audit && (
-        <TableRow className="hover:bg-transparent">
-          <TableCell colSpan={COLUMN_COUNT} className="p-0">
-            <AuditPanel invoiceId={inv.id} suppliers={suppliers} onClose={cancelView} />
-          </TableCell>
-        </TableRow>
-      )}
-
-      {modeKind === RowModeKind.CreditNote && detail && (
-        <TableRow className="hover:bg-transparent">
-          <TableCell colSpan={COLUMN_COUNT} className="p-0">
-            <RaiseCreditNotePanel
-              invoice={detail}
-              onConfirm={onSaveCreditNote}
-              onCancel={cancelView}
-            />
-          </TableCell>
-        </TableRow>
-      )}
+      <ExpansionPanels
+        modeKind={modeKind}
+        inv={inv}
+        detail={detail}
+        suppliers={suppliers}
+        onSaveEdit={onSaveEdit}
+        onMetadataSave={onMetadataSave}
+        onSaveCreditNote={onSaveCreditNote}
+        cancelView={cancelView}
+      />
     </Fragment>
   );
 }

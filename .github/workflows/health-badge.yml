@@ -1,0 +1,31 @@
+name: Health Badge
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'lib/**'
+      - '.fallowrc.json'
+      - 'fallow-baselines/**'
+
+jobs:
+  health-badge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Generate health badge
+        run: |
+          mkdir -p .github/badges
+          npx fallow@2.89.0 health --format badge > .github/badges/health.svg
+      - name: Commit badge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet && git diff --staged --quiet || (
+            git add .github/badges/health.svg &&
+            git commit -m "chore: update fallow health badge [skip ci]" &&
+            git push
+          )

@@ -3,7 +3,7 @@ import { cn } from '@reyogo/ui';
 import { typeGroupLabel } from '../../../CapturedInventory/utils/typeConfig';
 import type { TypeValue } from '../../../CapturedInventory/types';
 import type { InventoryCategory } from '../../../CapturedInventory/types';
-import { inputClass, NameCell, RemoveCell } from '../tableCell';
+import { inputClass, NameCell, RemoveCell } from '../SharedTableCells';
 
 export type ItemRow = {
   id: string;

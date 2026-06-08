@@ -5,7 +5,7 @@ export function createEmptyLine(): ProcessReceiptLine {
     id: window.crypto.randomUUID(),
     itemId: '',
     quantity: 0,
-    isVatable: true,
+    isVatable: false,
     totalVatExclude: 0,
   };
 }

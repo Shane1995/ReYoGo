@@ -1,4 +1,4 @@
-import { Router } from '@main/lib/electron-router-dom';
+import { Router } from '@/lib/electron-router-dom';
 import AppLoader from '../AppLoader';
 import { Route } from 'react-router-dom';
 import { Toaster } from '@reyogo/ui';

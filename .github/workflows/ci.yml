@@ -15,6 +15,8 @@ on:
       - 'README.md'
       - 'CLAUDE.md'
       - 'docs/**'
+      - '.fallowrc.json'
+      - 'fallow-baselines/**'
   workflow_call:
 
 concurrency:
@@ -93,6 +95,25 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm exec turbo run typecheck --affected
+
+  fallow:
+    needs: install
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: fallow-rs/fallow@v2
+        with:
+          command: audit
+          gate: new-only
+          production: true
+          comment: true
+          review-comments: true
+          baseline: fallow-baselines/baseline.json
 
   build-desktop:
     needs: [ lint, test, typecheck ]

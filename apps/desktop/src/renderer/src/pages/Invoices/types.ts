@@ -42,5 +42,3 @@ export function getProcessLineComputed(
   const grossUnitPrice = qty > 0 ? grossTotal / qty : 0;
   return { netUnitPrice, grossUnitPrice, netTotal, grossTotal, vatAmount };
 }
-
-export const DEFAULT_VAT_RATE = 15;

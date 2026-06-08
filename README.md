@@ -4,6 +4,8 @@
 
 # ReYoGo
 
+![fallow health](.github/badges/health.svg)
+
 Inventory and invoice management — Electron desktop app and React web app built with TypeScript and Vite.
 
 This repo is a **pnpm monorepo** orchestrated by Turborepo.

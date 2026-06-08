@@ -1,0 +1,60 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": [
+    "apps/desktop/src/main/main.ts",
+    "apps/desktop/src/main/preload.ts",
+    "apps/desktop/src/renderer/src/main.tsx",
+    "apps/web/src/main.tsx",
+    "lib/db/index.ts",
+    "lib/types/index.ts",
+    "lib/ui/index.ts"
+  ],
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "lib/*"
+    ]
+  },
+  "ignorePatterns": [
+    "apps/desktop/src/main/db/migrations/**",
+    "dist/**",
+    "dist-electron/**",
+    "**/*.generated.ts",
+    "**/node_modules/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/vitest.setup.ts",
+    "**/__mocks__/**"
+  ],
+  "boundaries": {
+    "zones": [
+      {
+        "name": "shared",
+        "patterns": ["apps/desktop/src/shared/**"]
+      },
+      {
+        "name": "main",
+        "patterns": ["apps/desktop/src/main/**"]
+      },
+      {
+        "name": "renderer",
+        "patterns": ["apps/desktop/src/renderer/src/**"]
+      }
+    ],
+    "rules": [
+      { "from": "shared", "allow": [] },
+      { "from": "main", "allow": ["shared"] },
+      { "from": "renderer", "allow": ["shared"] }
+    ]
+  },
+  "duplicates": {
+    "minOccurrences": 3
+  },
+  "rules": {
+    "unused-files": "error",
+    "unused-exports": "error",
+    "boundary-violation": "warn"
+  }
+}

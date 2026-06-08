@@ -16,7 +16,6 @@ export enum CloudSyncStage {
 
 export enum SyncState {
   Idle = 'idle',
-  Syncing = 'syncing',
   Error = 'error',
 }
 

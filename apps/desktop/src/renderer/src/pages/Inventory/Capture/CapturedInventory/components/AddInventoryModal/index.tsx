@@ -5,7 +5,7 @@ import { useInventory } from '../../Context/InventoryContext';
 import { typeGroupLabel } from '../../utils/typeConfig';
 import { useEntities } from '@/Context/EntityContext';
 import { cn } from '@reyogo/ui';
-import { modalInputClass, NameField, UnitOfMeasureField } from '../formField';
+import { modalInputClass, NameField, UnitOfMeasureField } from '../SharedFormFields';
 
 enum Tab {
   ITEM = 'item',

@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigateToInvoice } from '@/pages/Invoices/hooks/useNavigateToInvoice';
 import { Badge, cn } from '@reyogo/ui';
 import { DataTable } from '@/components/DataTable';
 import type { ColumnDef } from '@/components/DataTable';
@@ -7,7 +7,6 @@ import { Checkbox } from '@/components/Checkbox';
 import { getTypeConfig } from '../../utils/typeConfig';
 import { EditItemDialog } from '../EditItemDialog';
 import type { InventoryItem } from '../../types';
-import { InvoiceRoutes } from '@/components/AppRoutes/routes';
 import type { FlatItem, ItemsTableProps } from './types';
 import { useItemSelection } from './hooks/useItemSelection';
 import { SelectionBar } from './SelectionBar';
@@ -44,7 +43,7 @@ export function ItemsTable({
   onDelete,
   onViewInsights,
 }: ItemsTableProps) {
-  const navigate = useNavigate();
+  const { navigateToInvoice, conflictModal } = useNavigateToInvoice();
   const [editingItem, setEditingItem] = useState<InventoryItem | null | undefined>(undefined);
 
   const filteredIds = useMemo(() => filteredItems.map((i) => i.id), [filteredItems]);
@@ -81,8 +80,8 @@ export function ItemsTable({
       isVatable: false,
       totalVatExclude: 0,
     }));
-    navigate(InvoiceRoutes.Base, { state: { templateLines } });
-  }, [selectedIds, navigate]);
+    navigateToInvoice(templateLines);
+  }, [selectedIds, navigateToInvoice]);
 
   const columns = useMemo<ColumnDef<FlatItem>[]>(
     () => [
@@ -275,6 +274,7 @@ export function ItemsTable({
           onClose={() => setEditingItem(undefined)}
         />
       )}
+      {conflictModal}
     </>
   );
 }

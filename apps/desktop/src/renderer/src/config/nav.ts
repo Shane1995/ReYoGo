@@ -3,7 +3,7 @@ import type { NavItemConfig } from './app.config';
 import { resolveIcon, resolvePath } from './resolvers';
 import { useAppConfig } from '@/Context';
 
-export interface ResolvedNavItem {
+interface ResolvedNavItem {
   label: string;
   path: string;
   icon: LucideIcon;
