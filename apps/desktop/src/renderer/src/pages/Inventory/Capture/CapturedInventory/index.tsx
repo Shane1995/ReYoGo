@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
-import { PlusIcon } from 'lucide-react';
+import { PlusIcon, UploadIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button, PageHeader } from '@reyogo/ui';
-import { itemTrendPath } from '@/components/AppRoutes/routePaths';
+import { itemTrendPath, StockRoutes } from '@/components/AppRoutes/routePaths';
 import { FilterBar } from '@/components/DataTable';
 import { useEntities } from '@/Context/EntityContext';
 import { useInventory } from './Context/InventoryContext';
@@ -56,6 +56,8 @@ function useInventoryPage() {
     [navigate],
   );
 
+  const handleImport = useCallback(() => navigate(StockRoutes.Import), [navigate]);
+
   const handleUpdate = useCallback(
     (id: string, values: Omit<InventoryItem, 'id'>) => updateItem(id, values),
     [updateItem],
@@ -73,6 +75,7 @@ function useInventoryPage() {
     handleFilterChange,
     clearFilters,
     handleViewInsights,
+    handleImport,
     handleUpdate,
   };
 }
@@ -91,6 +94,7 @@ export default function InventoryIndex() {
     handleFilterChange,
     clearFilters,
     handleViewInsights,
+    handleImport,
     handleUpdate,
   } = useInventoryPage();
 
@@ -99,10 +103,16 @@ export default function InventoryIndex() {
       <PageHeader
         title="Captured Inventory"
         actions={
-          <Button size="sm" variant="outline" onClick={() => setAddModalOpen(true)}>
-            <PlusIcon className="size-3.5" />
-            Add
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="ghost" onClick={handleImport}>
+              <UploadIcon className="size-3.5" />
+              Import
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setAddModalOpen(true)}>
+              <PlusIcon className="size-3.5" />
+              Add
+            </Button>
+          </div>
         }
       >
         <FilterBar
