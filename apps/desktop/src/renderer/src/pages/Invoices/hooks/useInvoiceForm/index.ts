@@ -1,59 +1,22 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
 import type { InventoryItem } from '@/pages/Inventory/Capture/CapturedInventory/types';
 import { useEntities } from '@/Context/EntityContext';
-import { invoiceService } from '@/services/invoice';
-import { VatMode } from '@reyogo/types';
 import type { IEntity } from '@reyogo/types';
 import type { ProcessReceiptLine } from '../../types';
-import { getProcessLineComputed } from '../../types';
 import { createEmptyLine } from '../../utils/createEmptyLine';
 import { loadDraft, useDraftPersistence } from '../useDraftPersistence';
-import { useLineManager } from '../useLineManager';
 import { useInvoiceSummary } from '../useInvoiceSummary';
-
-function buildSaveLines(
-  validLines: ProcessReceiptLine[],
-  itemMetaMap: Map<string, { name: string }>,
-  vatMode: VatMode,
-  vatRate: number,
-) {
-  return validLines.map((line) => {
-    const computed = getProcessLineComputed(line, vatMode, vatRate);
-    return {
-      id: line.id,
-      itemId: line.itemId,
-      itemNameSnapshot: itemMetaMap.get(line.itemId)?.name ?? '',
-      quantity: Number(line.quantity),
-      unitPrice: computed.netUnitPrice,
-      isVatable: line.isVatable,
-      totalVatExclude: computed.netTotal,
-    };
-  });
-}
+import { useInvoiceFormFields } from '../useInvoiceFormFields';
+import { useInvoiceSubmission } from '../useInvoiceSubmission';
+import { useLastUnitCosts } from '../useLastUnitCosts';
 
 function getInitialLines(templateLines: ProcessReceiptLine[] | undefined): ProcessReceiptLine[] {
   if (templateLines && templateLines.length > 0) return templateLines;
   const draft = loadDraft();
   if (draft?.lines.length) return draft.lines;
   return [createEmptyLine()];
-}
-
-function getInitialInvoiceNumber(isReused: boolean): string {
-  if (isReused) return '';
-  return loadDraft()?.invoiceNumber ?? '';
-}
-
-function getInitialInvoiceDate(isReused: boolean): string {
-  if (isReused) return '';
-  return loadDraft()?.invoiceDate ?? '';
-}
-
-function getInitialVatMode(isReused: boolean): VatMode {
-  if (isReused) return VatMode.Exclusive;
-  return loadDraft()?.vatMode ?? VatMode.Exclusive;
 }
 
 function isLineComplete(line: ProcessReceiptLine): boolean {
@@ -83,11 +46,6 @@ function computeIsDirty(
   return !!supplierId;
 }
 
-function errorMessage(e: unknown, fallback: string): string {
-  if (e instanceof Error) return e.message;
-  return fallback;
-}
-
 type LocationState = { templateLines?: ProcessReceiptLine[]; isReuse?: boolean };
 
 function getLocationState(state: unknown): LocationState | null {
@@ -111,25 +69,56 @@ function defaultVatRateOf(entity: IEntity | null): number {
   return entity.defaultVatRate;
 }
 
-function buildInvoiceInput(params: {
+type FormSummaryParams = {
+  entities: IEntity[];
+  items: InventoryItem[];
+  categories: Parameters<typeof useInvoiceSummary>[2];
   entityId: string;
-  supplierId: string;
-  invoiceNumber: string;
-  invoiceDate: string;
-  vatMode: VatMode;
-  vatRate: number;
-  validLines: ProcessReceiptLine[];
-  itemMetaMap: Map<string, { name: string }>;
-}) {
+  isReused: boolean;
+  lastUnitCosts: Record<string, number>;
+  fields: Pick<
+    ReturnType<typeof useInvoiceFormFields>,
+    'lines' | 'invoiceNumber' | 'invoiceDate' | 'supplierId' | 'vatMode'
+  >;
+};
+
+function useInvoiceFormSummary(params: FormSummaryParams) {
+  const { lines, invoiceNumber, invoiceDate, supplierId, vatMode } = params.fields;
+
+  const selectedEntity = findSelectedEntity(params.entities, params.entityId);
+  const { clearDraft } = useDraftPersistence(
+    lines,
+    invoiceNumber,
+    invoiceDate,
+    vatMode,
+    params.isReused,
+  );
+  const entityItems = useMemo(
+    () => filterEntityItems(params.items, params.entityId),
+    [params.items, params.entityId],
+  );
+
+  const { invoiceSummary, validLines, itemsWithCategory, itemMetaMap } = useInvoiceSummary(
+    lines,
+    entityItems,
+    params.categories,
+    vatMode,
+    defaultVatRateOf(selectedEntity),
+    params.lastUnitCosts,
+  );
+
+  const canSave = computeCanSave(invoiceNumber, validLines, lines);
+  const isDirty = computeIsDirty(lines, invoiceNumber, invoiceDate, supplierId);
+
   return {
-    id: window.crypto.randomUUID(),
-    entityId: params.entityId,
-    supplierId: params.supplierId || null,
-    invoiceNumber: params.invoiceNumber.trim(),
-    invoiceDate: params.invoiceDate ? new Date(params.invoiceDate) : null,
-    vatMode: params.vatMode,
-    vatRate: params.vatRate,
-    lines: buildSaveLines(params.validLines, params.itemMetaMap, params.vatMode, params.vatRate),
+    selectedEntity,
+    clearDraft,
+    invoiceSummary,
+    validLines,
+    itemsWithCategory,
+    itemMetaMap,
+    canSave,
+    isDirty,
   };
 }
 
@@ -142,230 +131,73 @@ export function useInvoiceForm() {
   const locationState = getLocationState(location.state);
   const templateLines = locationState?.templateLines;
   const isReused = locationState?.isReuse === true;
-
   const initialLines = getInitialLines(templateLines);
 
-  const [invoiceNumber, setInvoiceNumber] = useState<string>(() =>
-    getInitialInvoiceNumber(isReused),
-  );
-  const [invoiceDate, setInvoiceDate] = useState<string>(() => getInitialInvoiceDate(isReused));
-  const [supplierId, setSupplierId] = useState<string>('');
-  const [vatMode, setVatModeState] = useState<VatMode>(() => getInitialVatMode(isReused));
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSavingDraft, setIsSavingDraft] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [expandedResultLineIds, setExpandedResultLineIds] = useState<Set<string>>(new Set());
-  const [reuseNoticeDismissed, setReuseNoticeDismissed] = useState(false);
-  const [lastUnitCosts, setLastUnitCosts] = useState<Record<string, number>>({});
-
-  const { lines, setLines, addLine, removeLine, updateLine } = useLineManager(
-    initialLines,
-    vatMode,
-  );
-
-  // When navigating here from inventory the component stays mounted (same route), so useState
-  // initialisers don't re-run. Re-sync on location.key — a stable string that only changes on
-  // actual navigation, never on local state updates — so clearForm can't accidentally retrigger it.
-  useEffect(() => {
-    if (!templateLines || templateLines.length === 0) return;
-    setLines(templateLines);
-    setInvoiceNumber('');
-    setInvoiceDate('');
-    setSupplierId('');
-    setVatModeState(VatMode.Exclusive);
-    setReuseNoticeDismissed(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.key]);
-
-  useEffect(() => {
-    invoiceService
-      .getLastUnitPrices()
-      .then((prices) => {
-        setLastUnitCosts(
-          Object.fromEntries(Object.entries(prices).map(([id, p]) => [id, p.inclVat])),
-        );
-      })
-      .catch((err: unknown) => {
-        console.error('Failed to load last unit prices', err);
-      });
-  }, []);
-
-  const setVatMode = useCallback((mode: VatMode) => {
-    setVatModeState(mode);
-  }, []);
+  const lastUnitCosts = useLastUnitCosts();
+  const fields = useInvoiceFormFields(initialLines, isReused, templateLines, location.key);
+  const { resetFields } = fields;
 
   const addItemForEntity = useCallback(
     (item: Omit<InventoryItem, 'id'>) => addItem({ ...item, entityId }),
     [addItem, entityId],
   );
 
-  const selectedEntity = findSelectedEntity(entities, entityId);
-
-  const { clearDraft } = useDraftPersistence(lines, invoiceNumber, invoiceDate, vatMode, isReused);
-
-  const entityItems = useMemo(() => filterEntityItems(items, entityId), [items, entityId]);
-
-  const { invoiceSummary, validLines, itemsWithCategory, itemMetaMap } = useInvoiceSummary(
-    lines,
-    entityItems,
+  const {
+    selectedEntity,
+    clearDraft,
+    invoiceSummary,
+    validLines,
+    itemsWithCategory,
+    itemMetaMap,
+    canSave,
+    isDirty,
+  } = useInvoiceFormSummary({
+    entities,
+    items,
     categories,
-    vatMode,
-    defaultVatRateOf(selectedEntity),
+    entityId,
+    isReused,
     lastUnitCosts,
-  );
-
-  const canSave = computeCanSave(invoiceNumber, validLines, lines);
-
-  const toggleResultRow = useCallback((lineId: string) => {
-    setExpandedResultLineIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(lineId)) next.delete(lineId);
-      else next.add(lineId);
-      return next;
-    });
-  }, []);
+    fields,
+  });
 
   const clearForm = useCallback(() => {
-    setLines([createEmptyLine()]);
-    setInvoiceNumber('');
-    setInvoiceDate('');
-    setSupplierId('');
-    setVatModeState(VatMode.Exclusive);
-    setExpandedResultLineIds(new Set());
+    resetFields();
     clearDraft();
     // Replace the current history entry with no state so that location.state.templateLines
     // doesn't survive a page reload (createHashRouter persists history state across Cmd+R).
     navigate(location.pathname, { replace: true, state: null });
-  }, [clearDraft, setLines, navigate, location.pathname]);
+  }, [resetFields, clearDraft, navigate, location.pathname]);
 
-  const isDirty = computeIsDirty(lines, invoiceNumber, invoiceDate, supplierId);
-
-  const validateBeforeSave = useCallback((): boolean => {
-    if (!selectedEntity) {
-      setSaveError('No entity selected. Please select a business in the top bar.');
-      return false;
-    }
-    if (!canSave) {
-      setSaveError(
-        !invoiceNumber.trim()
-          ? 'Invoice number is required.'
-          : 'Complete all rows before saving — each row needs an item and quantity.',
-      );
-      return false;
-    }
-    setSaveError(null);
-    return true;
-  }, [selectedEntity, canSave, invoiceNumber]);
-
-  const handleSave = useCallback(async () => {
-    if (!validateBeforeSave()) return;
-    if (!selectedEntity) return;
-    setIsSaving(true);
-    try {
-      await invoiceService.saveAndPostInvoice(
-        buildInvoiceInput({
-          entityId,
-          supplierId,
-          invoiceNumber,
-          invoiceDate,
-          vatMode,
-          vatRate: selectedEntity.defaultVatRate,
-          validLines,
-          itemMetaMap,
-        }),
-      );
-      clearForm();
-      toast.success('Invoice posted');
-    } catch (e) {
-      setSaveError(errorMessage(e, 'Failed to save invoice'));
-    } finally {
-      setIsSaving(false);
-    }
-  }, [
-    validateBeforeSave,
+  const submission = useInvoiceSubmission({
     selectedEntity,
-    validLines,
     entityId,
-    invoiceNumber,
-    invoiceDate,
-    supplierId,
-    vatMode,
-    itemMetaMap,
-    clearForm,
-  ]);
-
-  const handleSaveDraft = useCallback(async () => {
-    if (!validateBeforeSave()) return;
-    if (!selectedEntity) return;
-    setIsSavingDraft(true);
-    try {
-      await invoiceService.saveInvoice(
-        buildInvoiceInput({
-          entityId,
-          supplierId,
-          invoiceNumber,
-          invoiceDate,
-          vatMode,
-          vatRate: selectedEntity.defaultVatRate,
-          validLines,
-          itemMetaMap,
-        }),
-      );
-      clearForm();
-      toast.success('Draft saved');
-    } catch (e) {
-      setSaveError(errorMessage(e, 'Failed to save draft'));
-    } finally {
-      setIsSavingDraft(false);
-    }
-  }, [
-    validateBeforeSave,
-    selectedEntity,
+    supplierId: fields.supplierId,
+    invoiceNumber: fields.invoiceNumber,
+    invoiceDate: fields.invoiceDate,
+    vatMode: fields.vatMode,
     validLines,
-    entityId,
-    invoiceNumber,
-    invoiceDate,
-    supplierId,
-    vatMode,
     itemMetaMap,
-    clearForm,
-  ]);
+    canSave,
+    onSaved: clearForm,
+  });
 
   return {
     unitOptions,
     categories,
     addCategory,
     addItem: addItemForEntity,
-    lines,
-    invoiceNumber,
-    setInvoiceNumber,
-    invoiceDate,
-    setInvoiceDate,
-    supplierId,
-    setSupplierId,
-    vatMode,
-    setVatMode,
     selectedEntity,
     entityId,
-    expandedResultLineIds,
     isReused,
-    reuseNoticeDismissed,
-    setReuseNoticeDismissed,
-    isSaving,
-    isSavingDraft,
-    saveError,
-    toggleResultRow,
-    addLine,
-    removeLine,
-    updateLine,
-    clearForm,
     isDirty,
     canSave,
     itemsWithCategory,
     itemMetaMap,
     invoiceSummary,
     validLines,
-    handleSave,
-    handleSaveDraft,
+    clearForm,
+    ...fields,
+    ...submission,
   };
 }

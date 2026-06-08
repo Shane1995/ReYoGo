@@ -1,9 +1,8 @@
-import { Fragment, useRef, useState } from 'react';
+import { Fragment } from 'react';
 import { TableRow, cn } from '@reyogo/ui';
 import { type ItemOption } from '../ItemAutocomplete';
 import { VatMode } from '@reyogo/types';
 import type { ProcessReceiptLine } from '../../types';
-import { getProcessLineComputed } from '../../types';
 import { type ItemMeta } from './ItemMetaHint';
 import { ExpandToggleCell } from './ExpandToggleCell';
 import { LineDetailRow } from './LineDetailRow';
@@ -11,7 +10,7 @@ import { LineItemCell } from './LineItemCell';
 import { LineNumberCell } from './LineNumberCell';
 import { RemoveLineCell } from './RemoveLineCell';
 import { VatToggleCell } from './VatToggleCell';
-import type { FieldKeyDownContext } from './handleFieldKeyDown';
+import { useLineRowState } from './useLineRowState';
 
 type Props = {
   line: ProcessReceiptLine;
@@ -31,17 +30,6 @@ type Props = {
   onNavigatePrev: (field: string) => void;
   onNavigateToNextRowItem: () => void;
 };
-
-function isLineEmpty(line: ProcessReceiptLine): boolean {
-  return !line.itemId && !line.quantity && !line.totalVatExclude;
-}
-
-function shouldResetConfirmingDelete(
-  e: React.FocusEvent,
-  rowRef: React.RefObject<HTMLTableRowElement | null>,
-): boolean {
-  return !rowRef.current?.contains(e.relatedTarget as Node);
-}
 
 function rowBackgroundClass(confirmingDelete: boolean, isExpanded: boolean): string {
   if (confirmingDelete) return 'bg-destructive/5';
@@ -77,29 +65,19 @@ export function InvoiceLineRow({
   onNavigatePrev,
   onNavigateToNextRowItem,
 }: Props) {
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const rowRef = useRef<HTMLTableRowElement>(null);
-  const computed = getProcessLineComputed(line, vatMode, vatRate);
-  const isRowEmpty = isLineEmpty(line);
-  const isOnlyRow = index === 0 && isLast;
-
-  const keyDownCtx: Omit<FieldKeyDownContext, 'field'> = {
-    lineId: line.id,
-    confirmingDelete,
-    isOnlyRow,
-    isRowEmpty,
+  const { confirmingDelete, rowRef, computed, keyDownCtx, handleBlurRow } = useLineRowState({
+    line,
+    index,
+    isLast,
+    isExpanded,
+    vatMode,
+    vatRate,
     onRemove,
+    onAddLine,
     onNavigateNext,
     onNavigatePrev,
     onNavigateToNextRowItem,
-    onAddLine,
-    setConfirmingDelete,
-  };
-
-  function handleBlurRow(e: React.FocusEvent) {
-    if (!confirmingDelete) return;
-    if (shouldResetConfirmingDelete(e, rowRef)) setConfirmingDelete(false);
-  }
+  });
 
   return (
     <Fragment>
