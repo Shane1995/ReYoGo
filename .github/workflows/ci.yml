@@ -113,7 +113,7 @@ jobs:
           production: true
           comment: true
           review-comments: true
-          baseline: fallow-baselines/baseline.json
+          dead-code-baseline: fallow-baselines/baseline.json
 
   build-desktop:
     needs: [ lint, test, typecheck ]
