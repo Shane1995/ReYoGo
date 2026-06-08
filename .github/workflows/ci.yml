@@ -114,6 +114,15 @@ jobs:
           comment: true
           review-comments: true
           dead-code-baseline: fallow-baselines/baseline.json
+          # Advisory for now: this is the PR that turns the gate on, and its
+          # diff-based attribution misattributes pre-existing functions as
+          # "introduced" whenever a file is moved/renamed (e.g. our
+          # <Name>/index.ts restructuring), surfacing a large backlog of
+          # pre-existing complexity debt that this PR didn't create. That
+          # backlog is tracked in Trello (test coverage, hotspots, remaining
+          # large functions). Once it's paid down, flip this back to true to
+          # hard-block on genuinely new complexity regressions.
+          fail-on-issues: false
 
   build-desktop:
     needs: [ lint, test, typecheck ]
