@@ -1,10 +1,5 @@
 import type { ReviewResult } from '@/components/CsvImport/review';
-
-export const LOADING_LABEL = {
-  ReadingFile: 'Reading file…',
-  CheckingDatabase: 'Checking against database…',
-  SavingToDatabase: 'Saving to database…',
-} as const;
+import { LOADING_LABEL } from './constants';
 
 export type LoadingLabel = (typeof LOADING_LABEL)[keyof typeof LOADING_LABEL];
 

@@ -1,3 +1,5 @@
+import { FORMAT_GUIDE_SHEETS } from './constants';
+
 export function FormatGuide() {
   return (
     <div className="rounded-lg border border-[var(--nav-border)] bg-muted/20 p-4 space-y-3 text-sm">
@@ -9,24 +11,7 @@ export function FormatGuide() {
         committing).
       </p>
       <div className="space-y-2">
-        {[
-          {
-            sheet: 'Units',
-            cols: [{ name: 'name', note: 'e.g. litres, kgs, pieces' }],
-          },
-          {
-            sheet: 'Categories',
-            cols: [{ name: 'name' }, { name: 'type', note: 'food · beverage · non-food' }],
-          },
-          {
-            sheet: 'Items',
-            cols: [
-              { name: 'name' },
-              { name: 'category_name', note: 'must match a category name' },
-              { name: 'unit', note: 'optional' },
-            ],
-          },
-        ].map((s) => (
+        {FORMAT_GUIDE_SHEETS.map((s) => (
           <div key={s.sheet} className="flex items-start gap-3">
             <code className="shrink-0 bg-background border border-[var(--nav-border)] rounded px-2 py-0.5 text-xs font-mono">
               {s.sheet}

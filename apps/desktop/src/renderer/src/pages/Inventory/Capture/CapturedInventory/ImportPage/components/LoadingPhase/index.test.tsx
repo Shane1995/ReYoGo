@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { LoadingPhase } from '.';
-import { LOADING_LABEL } from '../../types';
+import { LOADING_LABEL } from '../../constants';
 
 describe('LoadingPhase', () => {
   it('renders nothing outside the loading phase', () => {
