@@ -31,7 +31,17 @@ process.parentPort.once('message', ({ data }: Electron.MessageEvent) => {
   }
 
   const { replicaPath, syncUrl, authToken } = data;
-  const handle = createReplicaClient(replicaPath, syncUrl, authToken);
+
+  let handle: ReturnType<typeof createReplicaClient>;
+  try {
+    handle = createReplicaClient(replicaPath, syncUrl, authToken);
+  } catch (err: unknown) {
+    process.parentPort.postMessage({
+      success: false,
+      error: err instanceof Error ? err.message : String(err),
+    } satisfies SyncResult);
+    return;
+  }
 
   handle
     .sync()
