@@ -1,13 +1,7 @@
 import { PackageIcon, UtensilsIcon, GlassWaterIcon } from 'lucide-react';
+import type { TypeConfig } from './types';
 
-export type TypeConfig = {
-  color: string;
-  badgeClass: string;
-  treeLine: string;
-  icon: React.FC<{ className?: string }>;
-};
-
-const KNOWN_TYPE_CONFIG: Record<string, TypeConfig> = {
+export const KNOWN_TYPE_CONFIG: Record<string, TypeConfig> = {
   food: {
     color: 'text-emerald-700 dark:text-emerald-400',
     badgeClass:
@@ -30,7 +24,7 @@ const KNOWN_TYPE_CONFIG: Record<string, TypeConfig> = {
   },
 };
 
-const FALLBACK_PALETTE: TypeConfig[] = [
+export const FALLBACK_PALETTE: TypeConfig[] = [
   {
     color: 'text-violet-700 dark:text-violet-400',
     badgeClass:
@@ -61,19 +55,8 @@ const FALLBACK_PALETTE: TypeConfig[] = [
   },
 ];
 
-const TYPE_EMOJI: Record<string, string> = {
+export const TYPE_EMOJI: Record<string, string> = {
   food: '🍴',
   beverage: '🥤',
   'non-food': '📦',
 };
-
-export function typeGroupLabel(type: string): string {
-  const label = type.replace(/-/g, '‑').replace(/^\w/, (c) => c.toUpperCase());
-  return TYPE_EMOJI[type] ? `${TYPE_EMOJI[type]} ${label}` : label;
-}
-
-export function getTypeConfig(type: string, allTypes: string[]): TypeConfig {
-  if (KNOWN_TYPE_CONFIG[type]) return KNOWN_TYPE_CONFIG[type];
-  const idx = allTypes.indexOf(type);
-  return FALLBACK_PALETTE[idx % FALLBACK_PALETTE.length] ?? FALLBACK_PALETTE[0]!;
-}

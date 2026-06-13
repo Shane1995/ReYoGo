@@ -2,15 +2,9 @@ import { useState, useCallback, useEffect } from 'react';
 import { invoiceService } from '@/services/invoice';
 import { stockMovementsService } from '@/services/stockMovements';
 import type { InvoiceLineWithDate } from '@reyogo/types';
+import type { ItemCostEntry, WacRecord } from './types';
 
-export type ItemCostEntry = {
-  lastUnitCost: number | null;
-  lastCostDate: Date | null;
-  weightedAvgCost: number | null;
-  lastUnitCostInclVat: number | null;
-};
-
-type WacRecord = Record<string, number | null>;
+export type { ItemCostEntry } from './types';
 
 function isNewerCostEntry(existing: ItemCostEntry | undefined, date: Date): boolean {
   if (!existing) return true;

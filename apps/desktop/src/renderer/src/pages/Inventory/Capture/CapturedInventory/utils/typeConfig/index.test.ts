@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { typeGroupLabel, getTypeConfig } from './typeConfig';
+import { typeGroupLabel, getTypeConfig } from '.';
 
 describe('typeGroupLabel', () => {
   it('returns emoji + capitalised label for food', () => {
