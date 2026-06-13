@@ -1,11 +1,7 @@
 import { useState } from 'react';
+import type { UseItemSelectionProps } from './types';
 
-type Props = {
-  filteredIds: string[];
-  onDelete: (id: string) => void;
-};
-
-export function useItemSelection({ filteredIds, onDelete }: Props) {
+export function useItemSelection({ filteredIds, onDelete }: UseItemSelectionProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
