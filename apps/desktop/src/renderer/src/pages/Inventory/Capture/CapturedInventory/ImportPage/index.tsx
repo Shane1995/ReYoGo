@@ -18,6 +18,10 @@ import type { PageState } from './types';
 const FILE_READ_ERROR = 'Could not read the file. Make sure it is a valid .xlsx or .csv file.';
 const SAVE_ERROR = 'Something went wrong while saving. Please try again.';
 
+function getSelectedFile(e: React.ChangeEvent<HTMLInputElement>): File | undefined {
+  return e.target.files?.[0];
+}
+
 export default function ImportPage() {
   const { entities, selectedEntityId } = useEntities();
   const { categories: existingCats, items: existingItems, addCategory, addItem } = useInventory();
@@ -29,7 +33,7 @@ export default function ImportPage() {
 
   const handleFile = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
+      const file = getSelectedFile(e);
       if (!file || !selectedEntity) return;
       e.target.value = '';
       setState({ phase: 'loading', label: LOADING_LABEL.ReadingFile });

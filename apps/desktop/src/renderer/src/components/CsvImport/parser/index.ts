@@ -34,8 +34,7 @@ function firstValue(row: Record<string, unknown>, key: string): unknown {
 
 function col(row: Record<string, unknown>, ...keys: string[]): string {
   for (const key of keys) {
-    const value = firstValue(row, key);
-    const text = value === undefined || value === null ? '' : String(value).trim();
+    const text = String(firstValue(row, key) ?? '').trim();
     if (text) return text;
   }
   return '';
