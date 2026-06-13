@@ -1,49 +1,12 @@
 import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
-import type { IPCChannel } from '@shared/types/ipc';
-import { InventoryIPC } from '@shared/types/ipc';
+import { InventoryIPC, SetupIPC } from '@shared/types/ipc';
 import { INVENTORY_TYPES } from '@reyogo/types';
 import type { InventoryCategory, InventoryItem } from '../../types';
 import type { UnitOption } from '../../components/ItemsTable/types';
-
-function invokeInventory(channel: IPCChannel, ...args: unknown[]): Promise<unknown> {
-  if (typeof window === 'undefined' || !window.electronAPI?.ipcRenderer?.invoke) {
-    return Promise.resolve();
-  }
-  const invoke = window.electronAPI.ipcRenderer.invoke as (
-    ch: string,
-    ...a: unknown[]
-  ) => Promise<unknown>;
-  return invoke(channel, ...args);
-}
-
-type InventoryContextValue = {
-  categories: InventoryCategory[];
-  items: InventoryItem[];
-  unitOptions: UnitOption[];
-  inventoryTypes: string[];
-  addCategory: (category: Omit<InventoryCategory, 'id'>) => string;
-  updateCategory: (id: string, updates: Partial<InventoryCategory>) => void;
-  addItem: (item: Omit<InventoryItem, 'id'>) => string;
-  updateItem: (id: string, updates: Partial<InventoryItem>) => void;
-  removeItem: (id: string) => void;
-  deleteCategoryFromBackend: (id: string) => Promise<void>;
-  deleteItemFromBackend: (id: string) => Promise<void>;
-  archiveItemInBackend: (id: string) => Promise<void>;
-};
-
-function enrichedTypeOf(item: InventoryItem, categoryTypeMap: Map<string, string>): string {
-  if (item.type) return item.type;
-  return categoryTypeMap.get(item.categoryId) ?? '';
-}
-
-function enrichedUnitOfMeasureOf(
-  item: InventoryItem,
-  unitMap: Map<string, string>,
-): string | undefined {
-  if (item.unitOfMeasure) return item.unitOfMeasure;
-  if (!item.unitOfMeasureId) return undefined;
-  return unitMap.get(item.unitOfMeasureId);
-}
+import { invokeInventory } from './utils/invokeInventory';
+import { enrichedTypeOf } from './utils/enrichedTypeOf';
+import { enrichedUnitOfMeasureOf } from './utils/enrichedUnitOfMeasureOf';
+import type { InventoryContextValue } from './types';
 
 const InventoryContext = createContext<InventoryContextValue | null>(null);
 
@@ -54,7 +17,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const [unitMap, setUnitMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
-    (invokeInventory('setup:get-units') as Promise<UnitOption[]>)
+    (invokeInventory(SetupIPC.GET_UNITS) as Promise<UnitOption[]>)
       .then((data) => {
         if (!Array.isArray(data)) return;
         setUnitOptions(data);
