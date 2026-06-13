@@ -1,21 +1,11 @@
 import { cn } from '@reyogo/ui';
-import { ReviewStatus } from '../review';
-import type { ReviewItem } from '../review';
-import { ReviewRow } from '../components/ReviewRow';
-import { StatusBadge } from '../components/StatusBadge';
-import { SelectInput } from '../components/SelectInput';
+import { ReviewStatus } from '../../../review';
+import { ReviewRow } from '../../../components/ReviewRow';
+import { StatusBadge } from '../../../components/StatusBadge';
+import { SelectInput } from '../../../components/SelectInput';
+import type { ItemRowProps } from './types';
 
-export function ItemRow({
-  item,
-  availableCategories,
-  onToggle,
-  onAssignCategory,
-}: {
-  item: ReviewItem;
-  availableCategories: { name: string }[];
-  onToggle: (name: string) => void;
-  onAssignCategory: (itemName: string, categoryName: string) => void;
-}) {
+export function ItemRow({ item, availableCategories, onToggle, onAssignCategory }: ItemRowProps) {
   const isUnresolved = item.status === ReviewStatus.Unresolved;
   const disabled = item.status === ReviewStatus.Exists || isUnresolved;
 

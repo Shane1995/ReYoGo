@@ -1,17 +1,9 @@
-import { ReviewStatus } from '../review';
-import type { ReviewCategory, InventoryType } from '../review';
-import { Section } from '../components/Section';
+import { ReviewStatus } from '../../../review';
+import { Section } from '../../../components/Section';
 import { CategoryRow } from '../CategoryRow';
+import type { CategoriesSectionProps } from './types';
 
-export function CategoriesSection({
-  categories,
-  onToggle,
-  onFixType,
-}: {
-  categories: ReviewCategory[];
-  onToggle: (id: string) => void;
-  onFixType: (id: string, type: InventoryType) => void;
-}) {
+export function CategoriesSection({ categories, onToggle, onFixType }: CategoriesSectionProps) {
   if (categories.length === 0) return null;
 
   return (

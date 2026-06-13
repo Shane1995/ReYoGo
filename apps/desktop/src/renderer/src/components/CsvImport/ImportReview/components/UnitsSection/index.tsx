@@ -1,15 +1,9 @@
-import { ReviewStatus } from '../review';
-import type { ReviewUnit } from '../review';
-import { Section } from '../components/Section';
+import { ReviewStatus } from '../../../review';
+import { Section } from '../../../components/Section';
 import { UnitRow } from '../UnitRow';
+import type { UnitsSectionProps } from './types';
 
-export function UnitsSection({
-  units,
-  onToggle,
-}: {
-  units: ReviewUnit[];
-  onToggle: (name: string) => void;
-}) {
+export function UnitsSection({ units, onToggle }: UnitsSectionProps) {
   if (units.length === 0) return null;
 
   return (

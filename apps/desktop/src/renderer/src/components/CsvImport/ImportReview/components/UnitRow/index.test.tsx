@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { UnitRow } from '.';
-import { ReviewStatus } from '../review';
+import { ReviewStatus } from '../../../review';
 
 describe('UnitRow', () => {
   it('renders a new unit as selectable', () => {

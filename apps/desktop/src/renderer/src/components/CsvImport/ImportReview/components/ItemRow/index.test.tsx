@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ItemRow } from '.';
-import { ReviewStatus } from '../review';
+import { ReviewStatus } from '../../../review';
 
 const baseItem = {
   name: 'Milk',

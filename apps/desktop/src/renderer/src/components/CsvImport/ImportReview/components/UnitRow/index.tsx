@@ -1,16 +1,10 @@
 import { cn } from '@reyogo/ui';
-import { ReviewStatus } from '../review';
-import type { ReviewUnit } from '../review';
-import { ReviewRow } from '../components/ReviewRow';
-import { StatusBadge } from '../components/StatusBadge';
+import { ReviewStatus } from '../../../review';
+import { ReviewRow } from '../../../components/ReviewRow';
+import { StatusBadge } from '../../../components/StatusBadge';
+import type { UnitRowProps } from './types';
 
-export function UnitRow({
-  unit,
-  onToggle,
-}: {
-  unit: ReviewUnit;
-  onToggle: (name: string) => void;
-}) {
+export function UnitRow({ unit, onToggle }: UnitRowProps) {
   const disabled = unit.status === ReviewStatus.Exists;
 
   return (

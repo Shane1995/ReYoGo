@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { CategoriesSection } from '.';
-import { ReviewStatus } from '../review';
+import { ReviewStatus } from '../../../review';
 import { InventoryType } from '@reyogo/types';
 
 describe('CategoriesSection', () => {

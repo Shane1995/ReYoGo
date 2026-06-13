@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { AlertTriangleIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
+import type { ParseWarningsProps } from './types';
 
-export function ParseWarnings({ errors }: { errors: string[] }) {
+export function ParseWarnings({ errors }: ParseWarningsProps) {
   const [open, setOpen] = useState(false);
 
   const groups = errors.reduce<Map<string, number>>((acc, err) => {

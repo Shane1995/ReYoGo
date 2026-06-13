@@ -1,12 +1,12 @@
 import type { ReviewResult } from '../review';
 import { useImportReviewState } from '../hooks/useImportReviewState';
-import { SummaryCards } from '../SummaryCards';
-import { WarningBanner } from '../WarningBanner';
-import { ParseWarnings } from '../ParseWarnings';
-import { UnitsSection } from '../UnitsSection';
-import { CategoriesSection } from '../CategoriesSection';
-import { ItemsSection } from '../ItemsSection';
-import { ImportFooter } from '../ImportFooter';
+import { SummaryCards } from './components/SummaryCards';
+import { WarningBanner } from './components/WarningBanner';
+import { ParseWarnings } from './components/ParseWarnings';
+import { UnitsSection } from './components/UnitsSection';
+import { CategoriesSection } from './components/CategoriesSection';
+import { ItemsSection } from './components/ItemsSection';
+import { ImportFooter } from './components/ImportFooter';
 
 export interface ImportReviewProps {
   review: ReviewResult;

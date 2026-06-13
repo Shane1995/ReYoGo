@@ -1,19 +1,14 @@
-import { ReviewStatus } from '../review';
-import type { ReviewItem } from '../review';
-import { Section } from '../components/Section';
+import { ReviewStatus } from '../../../review';
+import { Section } from '../../../components/Section';
 import { ItemRow } from '../ItemRow';
+import type { ItemsSectionProps } from './types';
 
 export function ItemsSection({
   items,
   availableCategories,
   onToggle,
   onAssignCategory,
-}: {
-  items: ReviewItem[];
-  availableCategories: { name: string }[];
-  onToggle: (name: string) => void;
-  onAssignCategory: (itemName: string, categoryName: string) => void;
-}) {
+}: ItemsSectionProps) {
   if (items.length === 0) return null;
 
   return (

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { UnitsSection } from '.';
-import { ReviewStatus } from '../review';
+import { ReviewStatus } from '../../../review';
 
 describe('UnitsSection', () => {
   it('renders nothing when there are no units', () => {

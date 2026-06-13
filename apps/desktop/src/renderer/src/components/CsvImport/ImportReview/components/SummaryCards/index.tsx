@@ -1,15 +1,8 @@
 import { CheckCircle2Icon, InfoIcon, XCircleIcon } from 'lucide-react';
-import { SummaryCard } from '../components/SummaryCard';
+import { SummaryCard } from '../../../components/SummaryCard';
+import type { SummaryCardsProps } from './types';
 
-export function SummaryCards({
-  selectedNew,
-  existsCount,
-  unresolvedCount,
-}: {
-  selectedNew: number;
-  existsCount: number;
-  unresolvedCount: number;
-}) {
+export function SummaryCards({ selectedNew, existsCount, unresolvedCount }: SummaryCardsProps) {
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
       <SummaryCard

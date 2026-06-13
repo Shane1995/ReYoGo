@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CategoryRow } from '.';
-import { ReviewStatus } from '../review';
-import type { ReviewCategory } from '../review';
+import { ReviewStatus } from '../../../review';
+import type { ReviewCategory } from '../../../review';
 import { InventoryType } from '@reyogo/types';
 
 const baseCategory: ReviewCategory = {

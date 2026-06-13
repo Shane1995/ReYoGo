@@ -1,20 +1,13 @@
 import { cn } from '@reyogo/ui';
 import { INVENTORY_TYPES } from '@reyogo/types';
-import { ReviewStatus } from '../review';
-import type { ReviewCategory, InventoryType } from '../review';
-import { ReviewRow } from '../components/ReviewRow';
-import { StatusBadge } from '../components/StatusBadge';
-import { SelectInput } from '../components/SelectInput';
+import type { InventoryType } from '@reyogo/types';
+import { ReviewStatus } from '../../../review';
+import { ReviewRow } from '../../../components/ReviewRow';
+import { StatusBadge } from '../../../components/StatusBadge';
+import { SelectInput } from '../../../components/SelectInput';
+import type { CategoryRowProps } from './types';
 
-export function CategoryRow({
-  category,
-  onToggle,
-  onFixType,
-}: {
-  category: ReviewCategory;
-  onToggle: (id: string) => void;
-  onFixType: (id: string, type: InventoryType) => void;
-}) {
+export function CategoryRow({ category, onToggle, onFixType }: CategoryRowProps) {
   const disabled = category.status === ReviewStatus.Exists;
   const showTypeSelect = category.typeWarning && !disabled;
 
