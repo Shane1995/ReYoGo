@@ -2,29 +2,10 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import AppLoader from './index';
 import { useAppReady } from './hooks/useAppReady';
-import { setupWizardStepOf } from './utils/setupWizardStepOf';
 import type { AppPhase } from './hooks/useAppReady/types';
 
 vi.mock('./hooks/useAppReady', () => ({
   useAppReady: vi.fn(),
-}));
-
-vi.mock('./utils/setupWizardStepOf', () => ({
-  setupWizardStepOf: vi.fn(() => 1),
-}));
-
-vi.mock('@/pages/SetupWizard', () => ({
-  default: ({ initialStep }: { initialStep: number }) => (
-    <div data-testid="setup-wizard">{initialStep}</div>
-  ),
-}));
-
-vi.mock('./LoadingSpinner', () => ({
-  LoadingSpinner: () => <div data-testid="loading-spinner" />,
-}));
-
-vi.mock('./FreshReplicaScreen', () => ({
-  FreshReplicaScreen: () => <div data-testid="fresh-replica" />,
 }));
 
 vi.mock('./InitErrorScreen', () => ({
@@ -41,6 +22,10 @@ vi.mock('./components/AppShell', () => ({
   AppShell: ({ children }: { children?: React.ReactNode }) => (
     <div data-testid="app-shell">{children}</div>
   ),
+}));
+
+vi.mock('./components/AppContent', () => ({
+  AppContent: () => <div data-testid="app-content" />,
 }));
 
 function mockUseAppReady(overrides: {
@@ -74,29 +59,9 @@ describe('AppLoader', () => {
     expect(screen.getByTestId('reconnect-modal')).toHaveTextContent('unauthorized');
   });
 
-  it('renders LoadingSpinner when phase is loading', () => {
-    mockUseAppReady({ phase: 'loading' });
-    render(<AppLoader />);
-    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
-  });
-
-  it('renders FreshReplicaScreen when phase is fresh-replica', () => {
-    mockUseAppReady({ phase: 'fresh-replica' });
-    render(<AppLoader />);
-    expect(screen.getByTestId('fresh-replica')).toBeInTheDocument();
-  });
-
-  it('renders SetupWizard with the resolved step when setup is incomplete', () => {
-    vi.mocked(setupWizardStepOf).mockReturnValue(2);
-    mockUseAppReady({ phase: 'setup', setupComplete: false, cloudConnected: true });
-    render(<AppLoader />);
-    expect(screen.getByTestId('setup-wizard')).toHaveTextContent('2');
-    expect(setupWizardStepOf).toHaveBeenCalledWith(true);
-  });
-
-  it('renders AppShell when setup is complete', () => {
+  it('delegates to AppContent for other phases', () => {
     mockUseAppReady({ phase: 'ready', setupComplete: true });
     render(<AppLoader />);
-    expect(screen.getByTestId('app-shell')).toBeInTheDocument();
+    expect(screen.getByTestId('app-content')).toBeInTheDocument();
   });
 });

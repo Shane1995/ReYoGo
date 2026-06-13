@@ -1,11 +1,8 @@
-import SetupWizard from '@/pages/SetupWizard';
-import { LoadingSpinner } from './LoadingSpinner';
-import { FreshReplicaScreen } from './FreshReplicaScreen';
 import { InitErrorScreen } from './InitErrorScreen';
 import { ReconnectModal } from './ReconnectModal';
 import { useAppReady } from './hooks/useAppReady';
 import { AppShell } from './components/AppShell';
-import { setupWizardStepOf } from './utils/setupWizardStepOf';
+import { AppContent } from './components/AppContent';
 
 const AppLoader = () => {
   const { setupComplete, initError, authError, phase, cloudConnected } = useAppReady();
@@ -20,12 +17,7 @@ const AppLoader = () => {
     );
   }
 
-  if (phase === 'loading') return <LoadingSpinner />;
-  if (phase === 'fresh-replica') return <FreshReplicaScreen />;
-
-  if (!setupComplete) return <SetupWizard initialStep={setupWizardStepOf(cloudConnected)} />;
-
-  return <AppShell />;
+  return <AppContent phase={phase} setupComplete={setupComplete} cloudConnected={cloudConnected} />;
 };
 
 export default AppLoader;
