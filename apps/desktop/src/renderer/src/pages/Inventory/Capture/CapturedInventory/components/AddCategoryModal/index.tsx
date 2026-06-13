@@ -1,64 +1,9 @@
 import { useState, useCallback } from 'react';
 import { Button } from '@reyogo/ui';
-import { INVENTORY_TYPES, InventoryType } from '@reyogo/types';
-import type { TypeValue, InventoryCategory } from '../../types';
-import { cn } from '@reyogo/ui';
-
-const inputClass = cn(
-  'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm',
-  'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0',
-);
-
-type AddCategoryModalProps = {
-  open: boolean;
-  onClose: () => void;
-  onSave: (category: Omit<InventoryCategory, 'id'>) => void;
-};
-
-function CategoryFields({
-  name,
-  type,
-  onNameChange,
-  onTypeChange,
-  onSave,
-}: {
-  name: string;
-  type: TypeValue;
-  onNameChange: (v: string) => void;
-  onTypeChange: (v: TypeValue) => void;
-  onSave: () => void;
-}) {
-  return (
-    <div className="mt-4 space-y-4">
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-foreground">Name</label>
-        <input
-          value={name}
-          onChange={(e) => onNameChange(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && onSave()}
-          className={inputClass}
-          placeholder="Category name"
-          autoFocus
-        />
-      </div>
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-foreground">Type</label>
-        <select
-          value={type}
-          onChange={(e) => onTypeChange(e.target.value as TypeValue)}
-          className={cn(inputClass, 'cursor-pointer')}
-        >
-          {!type && <option value="">Select type</option>}
-          {INVENTORY_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
-  );
-}
+import { InventoryType } from '@reyogo/types';
+import type { TypeValue } from '../../types';
+import { CategoryFields } from './components/CategoryFields';
+import type { AddCategoryModalProps } from './types';
 
 export function AddCategoryModal({ open, onClose, onSave }: AddCategoryModalProps) {
   const [name, setName] = useState('');

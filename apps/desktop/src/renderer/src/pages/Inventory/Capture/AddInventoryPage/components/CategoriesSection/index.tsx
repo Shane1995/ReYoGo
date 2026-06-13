@@ -1,18 +1,8 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { INVENTORY_TYPES } from '@reyogo/types';
 import { cn } from '@reyogo/ui';
-import type { TypeValue } from '../../../CapturedInventory/types';
 import { inputClass, NameCell, RemoveCell } from '../SharedTableCells';
-
-export type CategoryRow = { id: string; name: string; type: TypeValue };
-
-type Props = {
-  catRows: CategoryRow[];
-  catDupes: Set<string>;
-  onUpdateRow: (id: string, u: Partial<CategoryRow>) => void;
-  onRemoveRow: (id: string) => void;
-  onAddRow: () => void;
-};
+import type { CategoriesSectionProps } from './types';
 
 export function CategoriesSection({
   catRows,
@@ -20,7 +10,7 @@ export function CategoriesSection({
   onUpdateRow,
   onRemoveRow,
   onAddRow,
-}: Props) {
+}: CategoriesSectionProps) {
   return (
     <Table>
       <TableHeader>
@@ -46,7 +36,7 @@ export function CategoriesSection({
               <TableCell className="py-2 px-3">
                 <select
                   value={row.type}
-                  onChange={(e) => onUpdateRow(row.id, { type: e.target.value as TypeValue })}
+                  onChange={(e) => onUpdateRow(row.id, { type: e.target.value })}
                   onKeyDown={(e) => {
                     if (e.key === 'Tab') {
                       e.preventDefault();

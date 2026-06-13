@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import type { ItemRow } from '../../components/ItemsSection';
+import type { ItemRow } from '../../components/ItemsSection/types';
 import type { InventoryItem } from '../../../CapturedInventory/types';
 
 function emptyItemRow(): ItemRow {

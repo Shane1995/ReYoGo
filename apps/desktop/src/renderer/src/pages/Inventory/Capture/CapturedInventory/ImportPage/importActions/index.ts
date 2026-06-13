@@ -1,40 +1,40 @@
+import { InventoryType } from '@reyogo/types';
+import { SetupIPC } from '@shared/types/ipc';
 import { ReviewStatus } from '@/components/CsvImport/review';
 import type {
   ReviewResult,
   ReviewUnit,
   ReviewCategory,
   ExistingInventory,
-  InventoryType,
 } from '@/components/CsvImport/review';
 import type { InventoryCategory, InventoryItem } from '../../types';
+import { isInventoryType } from '../utils/isInventoryType';
 
 export async function loadExistingInventory(
   existingCats: InventoryCategory[],
   existingItems: InventoryItem[],
 ): Promise<ExistingInventory> {
-  const units = (await window.electronAPI.ipcRenderer.invoke('setup:get-units')) as {
-    name: string;
-  }[];
+  const units = await window.electronAPI.ipcRenderer.invoke(SetupIPC.GET_UNITS);
   return {
     categoryNames: new Set(existingCats.map((c) => c.name.toLowerCase())),
     itemNames: new Set(existingItems.map((i) => i.name.toLowerCase())),
     unitNames: new Set(units.map((u) => u.name.toLowerCase())),
-    categoryList: existingCats.map((c) => ({ name: c.name, type: c.type as InventoryType })),
+    categoryList: existingCats.map((c) => ({
+      name: c.name,
+      type: isInventoryType(c.type) ? c.type : InventoryType.Food,
+    })),
   };
 }
 
 async function upsertNewUnits(units: ReviewUnit[]): Promise<Map<string, string>> {
-  const existingUnits = (await window.electronAPI.ipcRenderer.invoke('setup:get-units')) as {
-    id: string;
-    name: string;
-  }[];
+  const existingUnits = await window.electronAPI.ipcRenderer.invoke(SetupIPC.GET_UNITS);
   const unitNameToId = new Map<string, string>(
     existingUnits.map((u) => [u.name.toLowerCase(), u.id]),
   );
 
   for (const u of units.filter((u) => u.selected && u.status === ReviewStatus.New)) {
     const id = crypto.randomUUID();
-    await window.electronAPI.ipcRenderer.invoke('setup:upsert-unit', { id, name: u.name });
+    await window.electronAPI.ipcRenderer.invoke(SetupIPC.UPSERT_UNIT, { id, name: u.name });
     unitNameToId.set(u.name.toLowerCase(), id);
   }
   return unitNameToId;
@@ -64,7 +64,7 @@ function resolveUnitOfMeasureId(
 }
 
 function resolveItemType(cat: { type: string } | undefined): string {
-  if (!cat) return 'food';
+  if (!cat) return InventoryType.Food;
   return cat.type;
 }
 

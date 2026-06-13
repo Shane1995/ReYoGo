@@ -1,10 +1,6 @@
 import { UploadIcon } from 'lucide-react';
 import { cn } from '@reyogo/ui';
-
-type DropZoneProps = {
-  onClick: () => void;
-  disabled?: boolean;
-};
+import type { DropZoneProps } from './types';
 
 export function DropZone({ onClick, disabled }: DropZoneProps) {
   return (

@@ -1,26 +1,14 @@
 import { UploadIcon, DownloadIcon, FileSpreadsheetIcon } from 'lucide-react';
 import { Button } from '@reyogo/ui';
-import type { PageState } from '../../types';
-
-function buildDescription(phase: PageState['phase'], entityName?: string): string {
-  if (phase === 'review') {
-    return `Review what will be added to ${entityName ?? 'your business'}, then click commit.`;
-  }
-  const suffix = entityName ? ` for ${entityName}` : '';
-  return `Upload an Excel or CSV file to bulk-add units, categories and items${suffix}.`;
-}
+import { buildDescription } from './utils/buildDescription';
+import type { ImportHeaderProps } from './types';
 
 export function ImportHeader({
   phase,
   entityName,
   onDownloadTemplate,
   onChooseDifferentFile,
-}: {
-  phase: PageState['phase'];
-  entityName?: string;
-  onDownloadTemplate: () => void;
-  onChooseDifferentFile: () => void;
-}) {
+}: ImportHeaderProps) {
   const description = buildDescription(phase, entityName);
 
   return (

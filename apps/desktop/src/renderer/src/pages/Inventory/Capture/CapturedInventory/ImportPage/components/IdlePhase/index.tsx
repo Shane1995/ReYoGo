@@ -1,8 +1,8 @@
 import { FormatGuide } from '../FormatGuide';
 import { DropZone } from '../DropZone';
-import type { PageState } from '../../types';
+import type { IdlePhaseProps } from './types';
 
-export function IdlePhase({ state, onChoose }: { state: PageState; onChoose: () => void }) {
+export function IdlePhase({ state, onChoose }: IdlePhaseProps) {
   if (state.phase !== 'idle') return null;
   return (
     <div className="space-y-4">

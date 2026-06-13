@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { InventoryType } from '@reyogo/types';
-import type { CategoryRow } from '../../components/CategoriesSection';
+import type { CategoryRow } from '../../components/CategoriesSection/types';
 import type { InventoryCategory } from '../../../CapturedInventory/types';
 
 function emptyCategoryRow(): CategoryRow {

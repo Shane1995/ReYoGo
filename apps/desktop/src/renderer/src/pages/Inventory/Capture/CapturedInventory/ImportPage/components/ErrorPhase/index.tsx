@@ -1,7 +1,7 @@
 import { Button } from '@reyogo/ui';
-import type { PageState } from '../../types';
+import type { ErrorPhaseProps } from './types';
 
-export function ErrorPhase({ state, onRetry }: { state: PageState; onRetry: () => void }) {
+export function ErrorPhase({ state, onRetry }: ErrorPhaseProps) {
   if (state.phase !== 'error') return null;
   return (
     <div className="space-y-4">

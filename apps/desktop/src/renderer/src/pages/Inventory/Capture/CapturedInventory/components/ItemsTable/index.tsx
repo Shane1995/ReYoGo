@@ -9,23 +9,15 @@ import { EditItemDialog } from '../EditItemDialog';
 import type { InventoryItem } from '../../types';
 import type { FlatItem, ItemsTableProps } from './types';
 import { useItemSelection } from './hooks/useItemSelection';
-import { SelectionBar } from './SelectionBar';
-import { ItemRowActions } from './ItemRowActions';
-
-function compareNullableAsc(a: number | null | undefined, b: number | null | undefined): number {
-  if (a == null) return b == null ? 0 : 1;
-  if (b == null) return -1;
-  return a - b;
-}
-
-const sortByName = (a: FlatItem, b: FlatItem) => a.name.localeCompare(b.name);
-const sortByCategory = (a: FlatItem, b: FlatItem) => a.categoryName.localeCompare(b.categoryName);
-const sortByStock = (a: FlatItem, b: FlatItem) =>
-  compareNullableAsc(a.currentStock, b.currentStock);
-const sortByLastCost = (a: FlatItem, b: FlatItem) =>
-  compareNullableAsc(a.lastCostPerUnitInclVat, b.lastCostPerUnitInclVat);
-const sortByAvgCost = (a: FlatItem, b: FlatItem) =>
-  compareNullableAsc(a.weightedAvgCost, b.weightedAvgCost);
+import { SelectionBar } from './components/SelectionBar';
+import { ItemRowActions } from './components/ItemRowActions';
+import {
+  sortByName,
+  sortByCategory,
+  sortByStock,
+  sortByLastCost,
+  sortByAvgCost,
+} from './utils/itemComparators';
 
 export function ItemsTable({
   items,

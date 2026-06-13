@@ -4,8 +4,7 @@ import { typeGroupLabel } from '../../../../utils/typeConfig';
 import type { InventoryCategory, InventoryItem } from '../../../../types';
 import type { ItemCostEntry } from '../../../../hooks/useInventoryCosts';
 import type { FlatItem } from '../../types';
-
-type ParsedFilters = { search: string; type: string; categories: string[]; units: string[] };
+import type { ParsedFilters, UseItemFiltersProps } from './types';
 
 function stringFilter(value: unknown): string {
   if (typeof value === 'string') return value;
@@ -89,15 +88,13 @@ function buildFlatItem(
   };
 }
 
-type Props = {
-  items: InventoryItem[];
-  categories: InventoryCategory[];
-  costMap: Map<string, ItemCostEntry>;
-  stockMap: Map<string, number>;
-  inventoryTypes: string[];
-};
-
-export function useItemFilters({ items, categories, costMap, stockMap, inventoryTypes }: Props) {
+export function useItemFilters({
+  items,
+  categories,
+  costMap,
+  stockMap,
+  inventoryTypes,
+}: UseItemFiltersProps) {
   const [filterValues, setFilterValues] = useState<FilterValues>({});
 
   const flatItems = useMemo<FlatItem[]>(() => {
