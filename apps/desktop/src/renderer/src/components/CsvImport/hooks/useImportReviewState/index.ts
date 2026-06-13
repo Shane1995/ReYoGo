@@ -3,6 +3,27 @@ import { InventoryType } from '@reyogo/types';
 import type { ReviewResult, ReviewUnit, ReviewCategory, ReviewItem } from '../../review';
 import { UNIT_STATUS, CATEGORY_STATUS, ITEM_STATUS } from '../../review';
 
+function clearCategoryAssignment(item: ReviewItem, originalItems: ReviewItem[]): ReviewItem {
+  const original = originalItems.find((i) => i.name === item.name);
+  const categoryName = original
+    ? (original.unresolvedReason ?? item.categoryName)
+    : item.categoryName;
+  return { ...item, categoryName, status: ITEM_STATUS.Unresolved, selected: false };
+}
+
+function resolveCategoryAssignment(
+  item: ReviewItem,
+  itemName: string,
+  catName: string,
+  originalItems: ReviewItem[],
+): ReviewItem {
+  if (item.name !== itemName) return item;
+  if (catName) {
+    return { ...item, categoryName: catName, status: ITEM_STATUS.New, selected: true };
+  }
+  return clearCategoryAssignment(item, originalItems);
+}
+
 export function useImportReviewState(initial: ReviewResult) {
   const [units, setUnits] = useState<ReviewUnit[]>(initial.units);
   const [categories, setCategories] = useState<ReviewCategory[]>(initial.categories);
@@ -46,19 +67,7 @@ export function useImportReviewState(initial: ReviewResult) {
   const assignCategory = useCallback(
     (itemName: string, catName: string) => {
       setItems((prev) =>
-        prev.map((i) => {
-          if (i.name !== itemName) return i;
-          if (catName) {
-            return { ...i, categoryName: catName, status: ITEM_STATUS.New, selected: true };
-          }
-          const original = initial.items.find((ii) => ii.name === itemName);
-          return {
-            ...i,
-            categoryName: original?.unresolvedReason ?? i.categoryName,
-            status: ITEM_STATUS.Unresolved,
-            selected: false,
-          };
-        }),
+        prev.map((i) => resolveCategoryAssignment(i, itemName, catName, initial.items)),
       );
     },
     [initial.items],

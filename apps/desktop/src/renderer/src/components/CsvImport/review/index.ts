@@ -1,4 +1,4 @@
-import type { ParseResult, ParsedCategory } from '../parser';
+import type { ParseResult, ParsedCategory, ParsedItem } from '../parser';
 import { InventoryType, INVENTORY_TYPES } from '@reyogo/types';
 
 export type { InventoryType };
@@ -58,6 +58,58 @@ export interface ExistingInventory {
   categoryList?: { name: string; type: InventoryType }[];
 }
 
+function resolveItemStatus(
+  item: ParsedItem,
+  itemNames: Set<string>,
+  willExistCatLower: Set<string>,
+): ReviewItem {
+  if (itemNames.has(item.name.toLowerCase())) {
+    return { ...item, status: ITEM_STATUS.Exists, selected: false };
+  }
+  if (!item.unit) {
+    return {
+      ...item,
+      status: ITEM_STATUS.Unresolved,
+      selected: false,
+      unresolvedReason: 'No unit of measure — add a Unit column to your spreadsheet',
+    };
+  }
+  if (willExistCatLower.has(item.categoryName.toLowerCase())) {
+    return { ...item, status: ITEM_STATUS.New, selected: true };
+  }
+  return {
+    ...item,
+    status: ITEM_STATUS.Unresolved,
+    selected: false,
+    unresolvedReason: `Category not found: ${item.categoryName}`,
+  };
+}
+
+type AvailableCategory = { name: string; type: InventoryType };
+
+function addUniqueCategory(
+  acc: AvailableCategory[],
+  seen: Set<string>,
+  category: AvailableCategory,
+) {
+  const key = category.name.toLowerCase();
+  if (seen.has(key)) return;
+  seen.add(key);
+  acc.push(category);
+}
+
+function buildAvailableCategories(
+  categoryList: AvailableCategory[],
+  imported: ParsedCategory[],
+): AvailableCategory[] {
+  const seen = new Set<string>();
+  const result: AvailableCategory[] = [];
+  for (const c of categoryList) addUniqueCategory(result, seen, c);
+  for (const c of imported) addUniqueCategory(result, seen, { name: c.name, type: c.type });
+  result.sort((a, b) => a.name.localeCompare(b.name));
+  return result;
+}
+
 export function enrichParseResult(result: ParseResult, existing: ExistingInventory): ReviewResult {
   const { categoryNames, itemNames, unitNames } = existing;
 
@@ -89,50 +141,14 @@ export function enrichParseResult(result: ParseResult, existing: ExistingInvento
 
   const willExistCatLower = new Set<string>([...categoryNames, ...importedCatLower.keys()]);
 
-  const items: ReviewItem[] = result.items.map((item) => {
-    const catKey = item.categoryName.toLowerCase();
-    const alreadyExists = itemNames.has(item.name.toLowerCase());
+  const items: ReviewItem[] = result.items.map((item) =>
+    resolveItemStatus(item, itemNames, willExistCatLower),
+  );
 
-    if (alreadyExists) {
-      return { ...item, status: ITEM_STATUS.Exists, selected: false };
-    }
-    if (!item.unit) {
-      return {
-        ...item,
-        status: ITEM_STATUS.Unresolved,
-        selected: false,
-        unresolvedReason: 'No unit of measure — add a Unit column to your spreadsheet',
-      };
-    }
-    if (willExistCatLower.has(catKey)) {
-      return { ...item, status: ITEM_STATUS.New, selected: true };
-    }
-    return {
-      ...item,
-      status: ITEM_STATUS.Unresolved,
-      selected: false,
-      unresolvedReason: `Category not found: ${item.categoryName}`,
-    };
-  });
-
-  const seenCatNames = new Set<string>();
-  const availableCategories: { name: string; type: InventoryType }[] = [];
-
-  for (const c of existing.categoryList ?? []) {
-    const key = c.name.toLowerCase();
-    if (!seenCatNames.has(key)) {
-      seenCatNames.add(key);
-      availableCategories.push(c);
-    }
-  }
-  for (const c of result.categories) {
-    const key = c.name.toLowerCase();
-    if (!seenCatNames.has(key)) {
-      seenCatNames.add(key);
-      availableCategories.push({ name: c.name, type: c.type });
-    }
-  }
-  availableCategories.sort((a, b) => a.name.localeCompare(b.name));
+  const availableCategories = buildAvailableCategories(
+    existing.categoryList ?? [],
+    result.categories,
+  );
 
   const counts = {
     newTotal:

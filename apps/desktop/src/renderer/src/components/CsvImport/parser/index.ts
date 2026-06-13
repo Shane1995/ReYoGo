@@ -2,8 +2,6 @@ import * as XLSX from 'xlsx';
 import { InventoryType } from '@reyogo/types';
 import type { IEntity } from '@reyogo/types';
 
-export type { IEntity };
-
 export interface ParsedUnit {
   name: string;
 }
@@ -28,10 +26,17 @@ export interface ParseResult {
   errors: string[];
 }
 
+type ParsingEntity = Pick<IEntity, 'id' | 'name'>;
+
+function firstValue(row: Record<string, unknown>, key: string): unknown {
+  return row[key] ?? row[key.toLowerCase()] ?? row[key.toUpperCase()];
+}
+
 function col(row: Record<string, unknown>, ...keys: string[]): string {
   for (const key of keys) {
-    const v = row[key] ?? row[key.toLowerCase()] ?? row[key.toUpperCase()];
-    if (v !== undefined && v !== null && String(v).trim()) return String(v).trim();
+    const value = firstValue(row, key);
+    const text = value === undefined || value === null ? '' : String(value).trim();
+    if (text) return text;
   }
   return '';
 }
@@ -44,6 +49,12 @@ function dedupe<T>(arr: T[], key: (item: T) => string): T[] {
     seen.add(k);
     return true;
   });
+}
+
+function normaliseCategoryType(rawType: string): InventoryType {
+  if (rawType === InventoryType.Beverage) return InventoryType.Beverage;
+  if (rawType === InventoryType.NonFood) return InventoryType.NonFood;
+  return InventoryType.Food;
 }
 
 function parseUnitsSheet(sheet: XLSX.WorkSheet, result: ParseResult) {
@@ -66,24 +77,13 @@ function parseCategoriesSheet(sheet: XLSX.WorkSheet, result: ParseResult) {
       result.errors.push(`Categories row ${i + 2}: missing name`);
       return;
     }
-    const rawType =
-      col(row, 'type', 'Type', 'category_type', 'Category Type').toLowerCase() ||
-      InventoryType.Food;
-    const type: InventoryType =
-      rawType === InventoryType.Beverage
-        ? InventoryType.Beverage
-        : rawType === InventoryType.NonFood
-          ? InventoryType.NonFood
-          : InventoryType.Food;
+    const rawType = col(row, 'type', 'Type', 'category_type', 'Category Type').toLowerCase();
+    const type = normaliseCategoryType(rawType || InventoryType.Food);
     result.categories.push({ name, type });
   });
 }
 
-function parseItemsSheet(
-  sheet: XLSX.WorkSheet,
-  result: ParseResult,
-  entity: Pick<IEntity, 'id' | 'name'>,
-) {
+function parseItemsSheet(sheet: XLSX.WorkSheet, result: ParseResult, entity: ParsingEntity) {
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
   rows.forEach((row, i) => {
     const name = col(row, 'name', 'Name', 'item', 'Item');
@@ -101,49 +101,62 @@ function parseItemsSheet(
   });
 }
 
-export function parseFile(file: File, entity: Pick<IEntity, 'id' | 'name'>): Promise<ParseResult> {
+type SheetParser = (sheet: XLSX.WorkSheet, result: ParseResult, entity: ParsingEntity) => void;
+
+const SHEET_PARSERS: Record<string, SheetParser> = {
+  units: (sheet, result) => parseUnitsSheet(sheet, result),
+  unit: (sheet, result) => parseUnitsSheet(sheet, result),
+  categories: (sheet, result) => parseCategoriesSheet(sheet, result),
+  category: (sheet, result) => parseCategoriesSheet(sheet, result),
+  items: parseItemsSheet,
+  item: parseItemsSheet,
+};
+
+function routeSheet(
+  name: string,
+  sheet: XLSX.WorkSheet,
+  result: ParseResult,
+  entity: ParsingEntity,
+) {
+  const parse = SHEET_PARSERS[name.toLowerCase()];
+  if (parse) parse(sheet, result, entity);
+}
+
+function readArrayBuffer(file: File): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
-      try {
-        const data = e.target?.result;
-        if (!(data instanceof ArrayBuffer)) {
-          reject(new Error('Unexpected result type'));
-          return;
-        }
-        const wb = XLSX.read(data, { type: 'array' });
-        const result: ParseResult = { units: [], categories: [], items: [], errors: [] };
-
-        wb.SheetNames.forEach((name) => {
-          const sheet = wb.Sheets[name]!;
-          const key = name.toLowerCase();
-          if (key === 'units' || key === 'unit') parseUnitsSheet(sheet, result);
-          else if (key === 'categories' || key === 'category') parseCategoriesSheet(sheet, result);
-          else if (key === 'items' || key === 'item') parseItemsSheet(sheet, result, entity);
-        });
-
-        if (
-          result.units.length === 0 &&
-          result.categories.length === 0 &&
-          result.items.length === 0
-        ) {
-          result.errors.push(
-            'No recognised sheets found. Expected sheets named "Units", "Categories", and/or "Items".',
-          );
-        }
-
-        result.units = dedupe(result.units, (u) => u.name.toLowerCase());
-        result.categories = dedupe(result.categories, (c) => c.name.toLowerCase());
-        result.items = dedupe(result.items, (i) => i.name.toLowerCase());
-
-        resolve(result);
-      } catch (err) {
-        reject(err);
-      }
+      const data = e.target?.result;
+      if (data instanceof ArrayBuffer) resolve(data);
+      else reject(new Error('Unexpected result type'));
     };
     reader.onerror = () => reject(new Error('Failed to read file'));
     reader.readAsArrayBuffer(file);
   });
+}
+
+function buildParseResult(wb: XLSX.WorkBook, entity: ParsingEntity): ParseResult {
+  const result: ParseResult = { units: [], categories: [], items: [], errors: [] };
+
+  wb.SheetNames.forEach((name) => routeSheet(name, wb.Sheets[name]!, result, entity));
+
+  if (result.units.length === 0 && result.categories.length === 0 && result.items.length === 0) {
+    result.errors.push(
+      'No recognised sheets found. Expected sheets named "Units", "Categories", and/or "Items".',
+    );
+  }
+
+  result.units = dedupe(result.units, (u) => u.name.toLowerCase());
+  result.categories = dedupe(result.categories, (c) => c.name.toLowerCase());
+  result.items = dedupe(result.items, (i) => i.name.toLowerCase());
+
+  return result;
+}
+
+export async function parseFile(file: File, entity: ParsingEntity): Promise<ParseResult> {
+  const data = await readArrayBuffer(file);
+  const wb = XLSX.read(data, { type: 'array' });
+  return buildParseResult(wb, entity);
 }
 
 export function downloadTemplate(): void {
