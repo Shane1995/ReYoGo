@@ -1,5 +1,5 @@
 import { cn } from '@reyogo/ui';
-import { ITEM_STATUS } from '../review';
+import { ReviewStatus } from '../review';
 import type { ReviewItem } from '../review';
 import { ReviewRow } from '../ReviewRow';
 import { StatusBadge } from '../StatusBadge';
@@ -16,8 +16,8 @@ export function ItemRow({
   onToggle: (name: string) => void;
   onAssignCategory: (itemName: string, categoryName: string) => void;
 }) {
-  const isUnresolved = item.status === ITEM_STATUS.Unresolved;
-  const disabled = item.status === ITEM_STATUS.Exists || isUnresolved;
+  const isUnresolved = item.status === ReviewStatus.Unresolved;
+  const disabled = item.status === ReviewStatus.Exists || isUnresolved;
 
   return (
     <ReviewRow selected={item.selected} onToggle={() => onToggle(item.name)} disabled={disabled}>

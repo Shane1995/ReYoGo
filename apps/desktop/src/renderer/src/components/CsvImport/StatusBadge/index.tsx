@@ -1,20 +1,20 @@
 import { CheckCircle2Icon, InfoIcon, XCircleIcon } from 'lucide-react';
 import { cn } from '@reyogo/ui';
-import { ITEM_STATUS } from '../review';
+import { ReviewStatus } from '../review';
 import type { ItemStatus } from '../review';
 
 const STATUS_CONFIG = {
-  [ITEM_STATUS.New]: {
+  [ReviewStatus.New]: {
     label: 'New',
     className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     icon: CheckCircle2Icon,
   },
-  [ITEM_STATUS.Exists]: {
+  [ReviewStatus.Exists]: {
     label: 'Already exists',
     className: 'bg-muted text-muted-foreground border-[var(--nav-border)]',
     icon: InfoIcon,
   },
-  [ITEM_STATUS.Unresolved]: {
+  [ReviewStatus.Unresolved]: {
     label: 'No category',
     className: 'bg-red-50 text-red-700 border-red-200',
     icon: XCircleIcon,

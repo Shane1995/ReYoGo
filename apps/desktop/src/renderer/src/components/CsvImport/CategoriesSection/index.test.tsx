@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { CategoriesSection } from '.';
-import { CATEGORY_STATUS } from '../review';
+import { ReviewStatus } from '../review';
 import { InventoryType } from '@reyogo/types';
 
 describe('CategoriesSection', () => {
@@ -20,14 +20,14 @@ describe('CategoriesSection', () => {
             id: 'cat-1',
             name: 'Dairy',
             type: InventoryType.Food,
-            status: CATEGORY_STATUS.New,
+            status: ReviewStatus.New,
             selected: true,
           },
           {
             id: 'cat-2',
             name: 'Beverages',
             type: InventoryType.Beverage,
-            status: CATEGORY_STATUS.Exists,
+            status: ReviewStatus.Exists,
             selected: false,
           },
         ]}

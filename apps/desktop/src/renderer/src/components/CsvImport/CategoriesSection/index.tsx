@@ -1,4 +1,4 @@
-import { CATEGORY_STATUS } from '../review';
+import { ReviewStatus } from '../review';
 import type { ReviewCategory, InventoryType } from '../review';
 import { Section } from '../Section';
 import { CategoryRow } from '../CategoryRow';
@@ -18,7 +18,7 @@ export function CategoriesSection({
     <Section
       title="Categories"
       count={categories.length}
-      defaultOpen={categories.some((c) => c.status === CATEGORY_STATUS.New)}
+      defaultOpen={categories.some((c) => c.status === ReviewStatus.New)}
     >
       {categories.map((cat) => (
         <CategoryRow key={cat.id} category={cat} onToggle={onToggle} onFixType={onFixType} />

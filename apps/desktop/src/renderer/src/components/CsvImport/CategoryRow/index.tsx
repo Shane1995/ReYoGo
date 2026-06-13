@@ -1,6 +1,6 @@
 import { cn } from '@reyogo/ui';
 import { INVENTORY_TYPES } from '@reyogo/types';
-import { CATEGORY_STATUS } from '../review';
+import { ReviewStatus } from '../review';
 import type { ReviewCategory, InventoryType } from '../review';
 import { ReviewRow } from '../ReviewRow';
 import { StatusBadge } from '../StatusBadge';
@@ -15,7 +15,7 @@ export function CategoryRow({
   onToggle: (id: string) => void;
   onFixType: (id: string, type: InventoryType) => void;
 }) {
-  const disabled = category.status === CATEGORY_STATUS.Exists;
+  const disabled = category.status === ReviewStatus.Exists;
   const showTypeSelect = category.typeWarning && !disabled;
 
   return (

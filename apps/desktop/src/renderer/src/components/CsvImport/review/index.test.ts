@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { enrichParseResult, UNIT_STATUS, CATEGORY_STATUS, ITEM_STATUS } from '.';
+import { enrichParseResult, ReviewStatus } from '.';
 import type { ExistingInventory } from '.';
 import type { ParseResult } from '../parser';
 import { InventoryType } from '@reyogo/types';
@@ -21,7 +21,7 @@ describe('enrichParseResult', () => {
         errors: [],
       };
       const { units } = enrichParseResult(result, emptyExisting);
-      expect(units[0]).toMatchObject({ name: 'litres', status: UNIT_STATUS.New, selected: true });
+      expect(units[0]).toMatchObject({ name: 'litres', status: ReviewStatus.New, selected: true });
     });
 
     it('marks an existing unit as exists and deselected', () => {
@@ -33,7 +33,7 @@ describe('enrichParseResult', () => {
       };
       const existing: ExistingInventory = { ...emptyExisting, unitNames: new Set(['kgs']) };
       const { units } = enrichParseResult(result, existing);
-      expect(units).toMatchObject([{ status: UNIT_STATUS.Exists, selected: false }]);
+      expect(units).toMatchObject([{ status: ReviewStatus.Exists, selected: false }]);
     });
 
     it('matches existing units case-insensitively', () => {
@@ -45,7 +45,7 @@ describe('enrichParseResult', () => {
       };
       const existing: ExistingInventory = { ...emptyExisting, unitNames: new Set(['kgs']) };
       const { units } = enrichParseResult(result, existing);
-      expect(units).toMatchObject([{ status: UNIT_STATUS.Exists }]);
+      expect(units).toMatchObject([{ status: ReviewStatus.Exists }]);
     });
   });
 
@@ -59,7 +59,7 @@ describe('enrichParseResult', () => {
       };
       const { categories } = enrichParseResult(result, emptyExisting);
       expect(categories[0]).toMatchObject({
-        status: CATEGORY_STATUS.New,
+        status: ReviewStatus.New,
         selected: true,
         typeWarning: false,
       });
@@ -78,7 +78,7 @@ describe('enrichParseResult', () => {
         categoryList: [{ name: 'Dairy', type: InventoryType.Food }],
       };
       const { categories } = enrichParseResult(result, existing);
-      expect(categories).toMatchObject([{ status: CATEGORY_STATUS.Exists, selected: false }]);
+      expect(categories).toMatchObject([{ status: ReviewStatus.Exists, selected: false }]);
     });
 
     it('sets typeWarning on a new category with an unrecognised type', () => {
@@ -122,7 +122,7 @@ describe('enrichParseResult', () => {
         categoryNames: new Set(['dairy']),
       };
       const { items } = enrichParseResult(result, existing);
-      expect(items[0]).toMatchObject({ status: ITEM_STATUS.Exists, selected: false });
+      expect(items[0]).toMatchObject({ status: ReviewStatus.Exists, selected: false });
     });
 
     it('marks an item without a unit as unresolved', () => {
@@ -134,7 +134,7 @@ describe('enrichParseResult', () => {
       };
       const { items } = enrichParseResult(result, emptyExisting);
       expect(items[0]).toMatchObject({
-        status: ITEM_STATUS.Unresolved,
+        status: ReviewStatus.Unresolved,
         selected: false,
         unresolvedReason: expect.stringContaining('No unit of measure'),
       });
@@ -149,7 +149,7 @@ describe('enrichParseResult', () => {
       };
       const { items } = enrichParseResult(result, emptyExisting);
       expect(items[0]).toMatchObject({
-        status: ITEM_STATUS.Unresolved,
+        status: ReviewStatus.Unresolved,
         unresolvedReason: expect.stringContaining('Category not found: Dairy'),
       });
     });
@@ -162,7 +162,7 @@ describe('enrichParseResult', () => {
         errors: [],
       };
       const { items } = enrichParseResult(result, emptyExisting);
-      expect(items[0]).toMatchObject({ status: ITEM_STATUS.New, selected: true });
+      expect(items[0]).toMatchObject({ status: ReviewStatus.New, selected: true });
     });
 
     it('marks a new item with a category from the existing DB as new and selected', () => {
@@ -178,7 +178,7 @@ describe('enrichParseResult', () => {
         categoryList: [{ name: 'Dairy', type: InventoryType.Food }],
       };
       const { items } = enrichParseResult(result, existing);
-      expect(items[0]).toMatchObject({ status: ITEM_STATUS.New, selected: true });
+      expect(items[0]).toMatchObject({ status: ReviewStatus.New, selected: true });
     });
   });
 

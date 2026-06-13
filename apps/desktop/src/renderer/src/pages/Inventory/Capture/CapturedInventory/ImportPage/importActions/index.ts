@@ -1,4 +1,4 @@
-import { UNIT_STATUS, CATEGORY_STATUS, ITEM_STATUS } from '@/components/CsvImport/review';
+import { ReviewStatus } from '@/components/CsvImport/review';
 import type {
   ReviewResult,
   ReviewUnit,
@@ -32,7 +32,7 @@ async function upsertNewUnits(units: ReviewUnit[]): Promise<Map<string, string>>
     existingUnits.map((u) => [u.name.toLowerCase(), u.id]),
   );
 
-  for (const u of units.filter((u) => u.selected && u.status === UNIT_STATUS.New)) {
+  for (const u of units.filter((u) => u.selected && u.status === ReviewStatus.New)) {
     const id = crypto.randomUUID();
     await window.electronAPI.ipcRenderer.invoke('setup:upsert-unit', { id, name: u.name });
     unitNameToId.set(u.name.toLowerCase(), id);
@@ -48,7 +48,7 @@ function addNewCategories(
   const catNameToId = new Map<string, string>(
     existingCats.map((c) => [c.name.toLowerCase(), c.id]),
   );
-  for (const c of categories.filter((c) => c.selected && c.status !== CATEGORY_STATUS.Exists)) {
+  for (const c of categories.filter((c) => c.selected && c.status !== ReviewStatus.Exists)) {
     const id = addCategory({ name: c.name, type: c.type });
     catNameToId.set(c.name.toLowerCase(), id);
   }
@@ -77,7 +77,7 @@ function addNewItems(
   entityId: string | undefined,
   addItem: (item: Omit<InventoryItem, 'id'>) => string,
 ): void {
-  for (const item of items.filter((i) => i.selected && i.status === ITEM_STATUS.New)) {
+  for (const item of items.filter((i) => i.selected && i.status === ReviewStatus.New)) {
     const catId = catNameToId.get(item.categoryName.toLowerCase());
     if (!catId) continue;
     const cat = [...existingCats, ...categories].find(

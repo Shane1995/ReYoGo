@@ -1,5 +1,5 @@
 import { cn } from '@reyogo/ui';
-import { UNIT_STATUS } from '../review';
+import { ReviewStatus } from '../review';
 import type { ReviewUnit } from '../review';
 import { ReviewRow } from '../ReviewRow';
 import { StatusBadge } from '../StatusBadge';
@@ -11,7 +11,7 @@ export function UnitRow({
   unit: ReviewUnit;
   onToggle: (name: string) => void;
 }) {
-  const disabled = unit.status === UNIT_STATUS.Exists;
+  const disabled = unit.status === ReviewStatus.Exists;
 
   return (
     <ReviewRow selected={unit.selected} onToggle={() => onToggle(unit.name)} disabled={disabled}>

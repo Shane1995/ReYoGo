@@ -1,13 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ItemRow } from '.';
-import { ITEM_STATUS } from '../review';
+import { ReviewStatus } from '../review';
 
 const baseItem = {
   name: 'Milk',
   categoryName: 'Dairy',
   unit: 'litres',
-  status: ITEM_STATUS.New,
+  status: ReviewStatus.New,
   selected: true,
 };
 
@@ -31,7 +31,7 @@ describe('ItemRow', () => {
   it('disables an existing item', () => {
     render(
       <ItemRow
-        item={{ ...baseItem, status: ITEM_STATUS.Exists, selected: false }}
+        item={{ ...baseItem, status: ReviewStatus.Exists, selected: false }}
         availableCategories={[]}
         onToggle={vi.fn()}
         onAssignCategory={vi.fn()}
@@ -45,7 +45,7 @@ describe('ItemRow', () => {
     const onAssignCategory = vi.fn();
     render(
       <ItemRow
-        item={{ ...baseItem, status: ITEM_STATUS.Unresolved, selected: false, unit: undefined }}
+        item={{ ...baseItem, status: ReviewStatus.Unresolved, selected: false, unit: undefined }}
         availableCategories={[{ name: 'Dairy' }, { name: 'Beverages' }]}
         onToggle={vi.fn()}
         onAssignCategory={onAssignCategory}

@@ -1,14 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { UnitRow } from '.';
-import { UNIT_STATUS } from '../review';
+import { ReviewStatus } from '../review';
 
 describe('UnitRow', () => {
   it('renders a new unit as selectable', () => {
     const onToggle = vi.fn();
     render(
       <UnitRow
-        unit={{ name: 'litres', status: UNIT_STATUS.New, selected: true }}
+        unit={{ name: 'litres', status: ReviewStatus.New, selected: true }}
         onToggle={onToggle}
       />,
     );
@@ -20,7 +20,7 @@ describe('UnitRow', () => {
   it('disables an existing unit', () => {
     render(
       <UnitRow
-        unit={{ name: 'kgs', status: UNIT_STATUS.Exists, selected: false }}
+        unit={{ name: 'kgs', status: ReviewStatus.Exists, selected: false }}
         onToggle={vi.fn()}
       />,
     );

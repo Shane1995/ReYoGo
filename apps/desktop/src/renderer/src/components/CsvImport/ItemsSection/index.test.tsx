@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ItemsSection } from '.';
-import { ITEM_STATUS } from '../review';
+import { ReviewStatus } from '../review';
 
 describe('ItemsSection', () => {
   it('renders nothing when there are no items', () => {
@@ -24,14 +24,14 @@ describe('ItemsSection', () => {
             name: 'Milk',
             categoryName: 'Dairy',
             unit: 'litres',
-            status: ITEM_STATUS.New,
+            status: ReviewStatus.New,
             selected: true,
           },
           {
             name: 'Cola',
             categoryName: 'Beverages',
             unit: 'litres',
-            status: ITEM_STATUS.Exists,
+            status: ReviewStatus.Exists,
             selected: false,
           },
         ]}

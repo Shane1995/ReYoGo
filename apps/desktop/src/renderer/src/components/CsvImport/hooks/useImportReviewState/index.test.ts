@@ -2,21 +2,21 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { InventoryType } from '@reyogo/types';
 import { useImportReviewState } from '.';
-import { UNIT_STATUS, CATEGORY_STATUS, ITEM_STATUS } from '../../review';
+import { ReviewStatus } from '../../review';
 import type { ReviewResult } from '../../review';
 
 function makeInitial(overrides: Partial<ReviewResult> = {}): ReviewResult {
   return {
     units: [
-      { name: 'litres', status: UNIT_STATUS.New, selected: true },
-      { name: 'kgs', status: UNIT_STATUS.Exists, selected: false },
+      { name: 'litres', status: ReviewStatus.New, selected: true },
+      { name: 'kgs', status: ReviewStatus.Exists, selected: false },
     ],
     categories: [
       {
         id: 'cat-new',
         name: 'Dairy',
         type: InventoryType.Food,
-        status: CATEGORY_STATUS.New,
+        status: ReviewStatus.New,
         selected: true,
         typeWarning: false,
       },
@@ -24,14 +24,14 @@ function makeInitial(overrides: Partial<ReviewResult> = {}): ReviewResult {
         id: 'cat-exists',
         name: 'Beverages',
         type: InventoryType.Beverage,
-        status: CATEGORY_STATUS.Exists,
+        status: ReviewStatus.Exists,
         selected: false,
       },
       {
         id: 'cat-warn',
         name: 'Misc',
         type: 'unknown' as InventoryType,
-        status: CATEGORY_STATUS.New,
+        status: ReviewStatus.New,
         selected: true,
         typeWarning: true,
       },
@@ -41,20 +41,20 @@ function makeInitial(overrides: Partial<ReviewResult> = {}): ReviewResult {
         name: 'Milk',
         categoryName: 'Dairy',
         unit: 'litres',
-        status: ITEM_STATUS.New,
+        status: ReviewStatus.New,
         selected: true,
       },
       {
         name: 'Cola',
         categoryName: 'Beverages',
         unit: 'litres',
-        status: ITEM_STATUS.Exists,
+        status: ReviewStatus.Exists,
         selected: false,
       },
       {
         name: 'Bleach',
         categoryName: 'Cleaning',
-        status: ITEM_STATUS.Unresolved,
+        status: ReviewStatus.Unresolved,
         selected: false,
         unresolvedReason: 'Category not found: Cleaning',
       },
@@ -130,7 +130,7 @@ describe('useImportReviewState', () => {
     act(() => result.current.assignCategory('Bleach', 'Cleaning Supplies'));
     expect(result.current.items.find((i) => i.name === 'Bleach')).toMatchObject({
       categoryName: 'Cleaning Supplies',
-      status: ITEM_STATUS.New,
+      status: ReviewStatus.New,
       selected: true,
     });
   });
@@ -141,7 +141,7 @@ describe('useImportReviewState', () => {
     act(() => result.current.assignCategory('Bleach', ''));
     expect(result.current.items.find((i) => i.name === 'Bleach')).toMatchObject({
       categoryName: 'Category not found: Cleaning',
-      status: ITEM_STATUS.Unresolved,
+      status: ReviewStatus.Unresolved,
       selected: false,
     });
   });

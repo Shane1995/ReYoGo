@@ -1,14 +1,15 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CategoryRow } from '.';
-import { CATEGORY_STATUS } from '../review';
+import { ReviewStatus } from '../review';
+import type { ReviewCategory } from '../review';
 import { InventoryType } from '@reyogo/types';
 
-const baseCategory = {
+const baseCategory: ReviewCategory = {
   id: 'cat-1',
   name: 'Dairy',
   type: InventoryType.Food,
-  status: CATEGORY_STATUS.New,
+  status: ReviewStatus.New,
   selected: true,
 };
 
@@ -24,7 +25,7 @@ describe('CategoryRow', () => {
   it('disables an existing category', () => {
     render(
       <CategoryRow
-        category={{ ...baseCategory, status: CATEGORY_STATUS.Exists, selected: false }}
+        category={{ ...baseCategory, status: ReviewStatus.Exists, selected: false }}
         onToggle={vi.fn()}
         onFixType={vi.fn()}
       />,

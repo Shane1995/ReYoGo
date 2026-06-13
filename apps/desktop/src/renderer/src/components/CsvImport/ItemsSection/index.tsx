@@ -1,4 +1,4 @@
-import { ITEM_STATUS } from '../review';
+import { ReviewStatus } from '../review';
 import type { ReviewItem } from '../review';
 import { Section } from '../Section';
 import { ItemRow } from '../ItemRow';
@@ -20,7 +20,7 @@ export function ItemsSection({
     <Section
       title="Items"
       count={items.length}
-      defaultOpen={items.some((i) => i.status !== ITEM_STATUS.Exists)}
+      defaultOpen={items.some((i) => i.status !== ReviewStatus.Exists)}
     >
       {items.map((item) => (
         <ItemRow

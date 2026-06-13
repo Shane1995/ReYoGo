@@ -1,4 +1,4 @@
-import { UNIT_STATUS } from '../review';
+import { ReviewStatus } from '../review';
 import type { ReviewUnit } from '../review';
 import { Section } from '../Section';
 import { UnitRow } from '../UnitRow';
@@ -16,7 +16,7 @@ export function UnitsSection({
     <Section
       title="Units of measure"
       count={units.length}
-      defaultOpen={units.some((u) => u.status === UNIT_STATUS.New)}
+      defaultOpen={units.some((u) => u.status === ReviewStatus.New)}
     >
       {units.map((u) => (
         <UnitRow key={u.name} unit={u} onToggle={onToggle} />
