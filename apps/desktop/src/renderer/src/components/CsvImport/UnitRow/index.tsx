@@ -1,8 +1,8 @@
 import { cn } from '@reyogo/ui';
 import { ReviewStatus } from '../review';
 import type { ReviewUnit } from '../review';
-import { ReviewRow } from '../ReviewRow';
-import { StatusBadge } from '../StatusBadge';
+import { ReviewRow } from '../components/ReviewRow';
+import { StatusBadge } from '../components/StatusBadge';
 
 export function UnitRow({
   unit,

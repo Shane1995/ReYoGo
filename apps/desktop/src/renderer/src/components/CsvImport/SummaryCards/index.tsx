@@ -1,5 +1,5 @@
 import { CheckCircle2Icon, InfoIcon, XCircleIcon } from 'lucide-react';
-import { SummaryCard } from '../SummaryCard';
+import { SummaryCard } from '../components/SummaryCard';
 
 export function SummaryCards({
   selectedNew,

@@ -1,17 +1,8 @@
 import { useState } from 'react';
 import { ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
+import type { SectionProps } from './types';
 
-export function Section({
-  title,
-  count,
-  defaultOpen = true,
-  children,
-}: {
-  title: string;
-  count: number;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-}) {
+export function Section({ title, count, defaultOpen = true, children }: SectionProps) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="rounded-lg border border-[var(--nav-border)] overflow-hidden">

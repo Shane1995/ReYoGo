@@ -1,9 +1,9 @@
 import { cn } from '@reyogo/ui';
 import { ReviewStatus } from '../review';
 import type { ReviewItem } from '../review';
-import { ReviewRow } from '../ReviewRow';
-import { StatusBadge } from '../StatusBadge';
-import { SelectInput } from '../SelectInput';
+import { ReviewRow } from '../components/ReviewRow';
+import { StatusBadge } from '../components/StatusBadge';
+import { SelectInput } from '../components/SelectInput';
 
 export function ItemRow({
   item,

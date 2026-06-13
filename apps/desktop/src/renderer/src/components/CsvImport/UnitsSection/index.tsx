@@ -1,6 +1,6 @@
 import { ReviewStatus } from '../review';
 import type { ReviewUnit } from '../review';
-import { Section } from '../Section';
+import { Section } from '../components/Section';
 import { UnitRow } from '../UnitRow';
 
 export function UnitsSection({

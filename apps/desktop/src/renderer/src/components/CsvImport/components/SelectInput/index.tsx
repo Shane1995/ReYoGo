@@ -1,16 +1,7 @@
 import { cn } from '@reyogo/ui';
+import type { SelectInputProps } from './types';
 
-export function SelectInput({
-  value,
-  onChange,
-  className,
-  children,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  className?: string;
-  children: React.ReactNode;
-}) {
+export function SelectInput({ value, onChange, className, children }: SelectInputProps) {
   return (
     <select
       value={value}

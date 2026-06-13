@@ -1,16 +1,7 @@
 import { cn } from '@reyogo/ui';
+import type { ReviewRowProps } from './types';
 
-export function ReviewRow({
-  selected,
-  onToggle,
-  disabled,
-  children,
-}: {
-  selected: boolean;
-  onToggle: () => void;
-  disabled?: boolean;
-  children: React.ReactNode;
-}) {
+export function ReviewRow({ selected, onToggle, disabled, children }: ReviewRowProps) {
   return (
     <div
       className={cn(

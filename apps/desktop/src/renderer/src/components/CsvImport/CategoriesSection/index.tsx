@@ -1,6 +1,6 @@
 import { ReviewStatus } from '../review';
 import type { ReviewCategory, InventoryType } from '../review';
-import { Section } from '../Section';
+import { Section } from '../components/Section';
 import { CategoryRow } from '../CategoryRow';
 
 export function CategoriesSection({

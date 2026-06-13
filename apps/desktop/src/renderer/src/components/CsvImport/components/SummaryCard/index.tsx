@@ -1,16 +1,7 @@
 import { cn } from '@reyogo/ui';
+import type { SummaryCardProps } from './types';
 
-export function SummaryCard({
-  icon,
-  value,
-  label,
-  color,
-}: {
-  icon: React.ReactNode;
-  value: number;
-  label: string;
-  color: 'emerald' | 'muted' | 'amber' | 'red';
-}) {
+export function SummaryCard({ icon, value, label, color }: SummaryCardProps) {
   const bg = {
     emerald: 'bg-emerald-500/10 border-emerald-500/30',
     muted: 'bg-muted/40 border-[var(--nav-border)]',
