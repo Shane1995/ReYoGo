@@ -1,0 +1,36 @@
+import { cn } from '@reyogo/ui';
+import { ReviewStatus } from '../../../review';
+import { ReviewRow } from '../../../components/ReviewRow';
+import { StatusBadge } from '../../../components/StatusBadge';
+import { SelectInput } from '../../../components/SelectInput';
+import type { ItemRowProps } from './types';
+
+export function ItemRow({ item, availableCategories, onToggle, onAssignCategory }: ItemRowProps) {
+  const isUnresolved = item.status === ReviewStatus.Unresolved;
+  const disabled = item.status === ReviewStatus.Exists || isUnresolved;
+
+  return (
+    <ReviewRow selected={item.selected} onToggle={() => onToggle(item.name)} disabled={disabled}>
+      <div className="flex flex-1 items-center gap-3 min-w-0 flex-wrap">
+        <span className={cn('font-medium truncate', disabled && 'text-muted-foreground')}>
+          {item.name}
+        </span>
+        {isUnresolved ? (
+          <SelectInput value="" onChange={(value) => onAssignCategory(item.name, value)}>
+            <option value="">Assign category…</option>
+            {availableCategories.map((c) => (
+              <option key={c.name} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+          </SelectInput>
+        ) : (
+          <span className="text-xs text-muted-foreground shrink-0 hidden sm:inline">
+            {[item.categoryName, item.unit].filter(Boolean).join(' · ')}
+          </span>
+        )}
+      </div>
+      <StatusBadge status={item.status} />
+    </ReviewRow>
+  );
+}

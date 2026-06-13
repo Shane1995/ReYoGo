@@ -2,18 +2,18 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { InventoryType } from '@reyogo/types';
 import { ImportReview } from '.';
-import { UNIT_STATUS, CATEGORY_STATUS, ITEM_STATUS } from '../review';
+import { ReviewStatus } from '../review';
 import type { ReviewResult } from '../review';
 
 function makeReview(overrides: Partial<ReviewResult> = {}): ReviewResult {
   return {
-    units: [{ name: 'litres', status: UNIT_STATUS.New, selected: true }],
+    units: [{ name: 'litres', status: ReviewStatus.New, selected: true }],
     categories: [
       {
         id: 'cat-1',
         name: 'Dairy',
         type: InventoryType.Food,
-        status: CATEGORY_STATUS.New,
+        status: ReviewStatus.New,
         selected: true,
       },
     ],
@@ -22,7 +22,7 @@ function makeReview(overrides: Partial<ReviewResult> = {}): ReviewResult {
         name: 'Milk',
         categoryName: 'Dairy',
         unit: 'litres',
-        status: ITEM_STATUS.New,
+        status: ReviewStatus.New,
         selected: true,
       },
     ],
@@ -49,7 +49,7 @@ describe('ImportReview', () => {
             {
               name: 'Bleach',
               categoryName: 'Cleaning',
-              status: ITEM_STATUS.Unresolved,
+              status: ReviewStatus.Unresolved,
               selected: false,
               unresolvedReason: 'Category not found: Cleaning',
             },
@@ -71,7 +71,7 @@ describe('ImportReview', () => {
               id: 'cat-1',
               name: 'Misc',
               type: 'unknown' as InventoryType,
-              status: CATEGORY_STATUS.New,
+              status: ReviewStatus.New,
               selected: true,
               typeWarning: true,
             },

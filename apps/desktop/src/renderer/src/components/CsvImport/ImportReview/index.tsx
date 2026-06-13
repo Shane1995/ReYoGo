@@ -1,27 +1,14 @@
-import type { ReviewResult } from '../review';
 import { useImportReviewState } from '../hooks/useImportReviewState';
-import { SummaryCards } from '../SummaryCards';
-import { WarningBanner } from '../WarningBanner';
-import { ParseWarnings } from '../ParseWarnings';
-import { UnitsSection } from '../UnitsSection';
-import { CategoriesSection } from '../CategoriesSection';
-import { ItemsSection } from '../ItemsSection';
-import { ImportFooter } from '../ImportFooter';
-
-export interface ImportReviewProps {
-  review: ReviewResult;
-  onCommit: (review: ReviewResult) => void;
-  onCancel: () => void;
-  commitLabel?: string;
-}
-
-function unresolvedItemsMessage(count: number): string {
-  return `${count} item${count !== 1 ? 's have' : ' has'} a category that wasn't found.`;
-}
-
-function typeWarningMessage(count: number): string {
-  return `${count} categor${count !== 1 ? 'ies have' : 'y has'} an unrecognised type.`;
-}
+import { SummaryCards } from './components/SummaryCards';
+import { WarningBanner } from './components/WarningBanner';
+import { ParseWarnings } from './components/ParseWarnings';
+import { UnitsSection } from './components/UnitsSection';
+import { CategoriesSection } from './components/CategoriesSection';
+import { ItemsSection } from './components/ItemsSection';
+import { ImportFooter } from './components/ImportFooter';
+import { unresolvedItemsMessage } from './utils/unresolvedItemsMessage';
+import { typeWarningMessage } from './utils/typeWarningMessage';
+import type { ImportReviewProps } from './types';
 
 export function ImportReview({
   review: initial,

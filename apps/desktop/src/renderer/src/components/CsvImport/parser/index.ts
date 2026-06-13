@@ -1,30 +1,9 @@
 import * as XLSX from 'xlsx';
 import { InventoryType } from '@reyogo/types';
 import type { IEntity } from '@reyogo/types';
+import type { ParsedCategory, ParsedItem, ParseResult } from './types';
 
-export interface ParsedUnit {
-  name: string;
-}
-
-export interface ParsedCategory {
-  name: string;
-  type: InventoryType;
-}
-
-export interface ParsedItem {
-  name: string;
-  categoryName: string;
-  unit?: string;
-  entityId?: string;
-  entityName?: string;
-}
-
-export interface ParseResult {
-  units: ParsedUnit[];
-  categories: ParsedCategory[];
-  items: ParsedItem[];
-  errors: string[];
-}
+export type { ParsedCategory, ParsedItem, ParseResult };
 
 type ParsingEntity = Pick<IEntity, 'id' | 'name'>;
 

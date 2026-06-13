@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { InventoryType } from '@reyogo/types';
-import { UNIT_STATUS, CATEGORY_STATUS, ITEM_STATUS } from '@/components/CsvImport/review';
+import { ReviewStatus } from '@/components/CsvImport/review';
 import type { ReviewResult } from '@/components/CsvImport/review';
 import type { InventoryCategory, InventoryItem } from '../../types';
 import { loadExistingInventory, commitReview } from '.';
@@ -24,22 +24,22 @@ const existingItems: InventoryItem[] = [
 function makeReview(overrides: Partial<ReviewResult> = {}): ReviewResult {
   return {
     units: [
-      { name: 'litres', status: UNIT_STATUS.New, selected: true },
-      { name: 'kgs', status: UNIT_STATUS.Exists, selected: false },
+      { name: 'litres', status: ReviewStatus.New, selected: true },
+      { name: 'kgs', status: ReviewStatus.Exists, selected: false },
     ],
     categories: [
       {
         id: 'cat-1',
         name: 'Dairy',
         type: InventoryType.Food,
-        status: CATEGORY_STATUS.New,
+        status: ReviewStatus.New,
         selected: true,
       },
       {
         id: 'cat-bev',
         name: 'Beverages',
         type: InventoryType.Beverage,
-        status: CATEGORY_STATUS.Exists,
+        status: ReviewStatus.Exists,
         selected: false,
       },
     ],
@@ -48,14 +48,14 @@ function makeReview(overrides: Partial<ReviewResult> = {}): ReviewResult {
         name: 'Milk',
         categoryName: 'Dairy',
         unit: 'litres',
-        status: ITEM_STATUS.New,
+        status: ReviewStatus.New,
         selected: true,
       },
       {
         name: 'Cola',
         categoryName: 'Beverages',
         unit: 'litres',
-        status: ITEM_STATUS.Exists,
+        status: ReviewStatus.Exists,
         selected: false,
       },
     ],
@@ -114,7 +114,7 @@ describe('commitReview', () => {
 
     const review = makeReview({
       items: [
-        { name: 'Mystery', categoryName: 'Unknown', status: ITEM_STATUS.New, selected: true },
+        { name: 'Mystery', categoryName: 'Unknown', status: ReviewStatus.New, selected: true },
       ],
     });
 
@@ -134,11 +134,11 @@ describe('commitReview', () => {
           id: 'cat-1',
           name: 'Dairy',
           type: InventoryType.Food,
-          status: CATEGORY_STATUS.New,
+          status: ReviewStatus.New,
           selected: true,
         },
       ],
-      items: [{ name: 'Butter', categoryName: 'Dairy', status: ITEM_STATUS.New, selected: true }],
+      items: [{ name: 'Butter', categoryName: 'Dairy', status: ReviewStatus.New, selected: true }],
     });
 
     await commitReview(review, existingCats, 'entity-1', addCategory, addItem);

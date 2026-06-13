@@ -1,28 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { InventoryType } from '@reyogo/types';
 import type { ReviewResult, ReviewUnit, ReviewCategory, ReviewItem } from '../../review';
-import { UNIT_STATUS, CATEGORY_STATUS, ITEM_STATUS } from '../../review';
-
-function clearCategoryAssignment(item: ReviewItem, originalItems: ReviewItem[]): ReviewItem {
-  const original = originalItems.find((i) => i.name === item.name);
-  const categoryName = original
-    ? (original.unresolvedReason ?? item.categoryName)
-    : item.categoryName;
-  return { ...item, categoryName, status: ITEM_STATUS.Unresolved, selected: false };
-}
-
-function resolveCategoryAssignment(
-  item: ReviewItem,
-  itemName: string,
-  catName: string,
-  originalItems: ReviewItem[],
-): ReviewItem {
-  if (item.name !== itemName) return item;
-  if (catName) {
-    return { ...item, categoryName: catName, status: ITEM_STATUS.New, selected: true };
-  }
-  return clearCategoryAssignment(item, originalItems);
-}
+import { ReviewStatus } from '../../review';
+import { resolveCategoryAssignment } from '../../utils/resolveCategoryAssignment';
 
 export function useImportReviewState(initial: ReviewResult) {
   const [units, setUnits] = useState<ReviewUnit[]>(initial.units);
@@ -30,7 +10,7 @@ export function useImportReviewState(initial: ReviewResult) {
   const [items, setItems] = useState<ReviewItem[]>(initial.items);
 
   const typeWarningCount = useMemo(
-    () => categories.filter((c) => c.typeWarning && c.status !== CATEGORY_STATUS.Exists).length,
+    () => categories.filter((c) => c.typeWarning && c.status !== ReviewStatus.Exists).length,
     [categories],
   );
 
@@ -43,7 +23,7 @@ export function useImportReviewState(initial: ReviewResult) {
   const toggleUnit = useCallback((name: string) => {
     setUnits((prev) =>
       prev.map((u) =>
-        u.name === name && u.status !== UNIT_STATUS.Exists ? { ...u, selected: !u.selected } : u,
+        u.name === name && u.status !== ReviewStatus.Exists ? { ...u, selected: !u.selected } : u,
       ),
     );
   }, []);
@@ -51,7 +31,7 @@ export function useImportReviewState(initial: ReviewResult) {
   const toggleCategory = useCallback((id: string) => {
     setCategories((prev) =>
       prev.map((c) =>
-        c.id === id && c.status !== CATEGORY_STATUS.Exists ? { ...c, selected: !c.selected } : c,
+        c.id === id && c.status !== ReviewStatus.Exists ? { ...c, selected: !c.selected } : c,
       ),
     );
   }, []);
@@ -59,7 +39,7 @@ export function useImportReviewState(initial: ReviewResult) {
   const toggleItem = useCallback((name: string) => {
     setItems((prev) =>
       prev.map((i) =>
-        i.name === name && i.status === ITEM_STATUS.New ? { ...i, selected: !i.selected } : i,
+        i.name === name && i.status === ReviewStatus.New ? { ...i, selected: !i.selected } : i,
       ),
     );
   }, []);
@@ -74,16 +54,16 @@ export function useImportReviewState(initial: ReviewResult) {
   );
 
   const selectedNew =
-    units.filter((u) => u.selected && u.status === UNIT_STATUS.New).length +
-    categories.filter((c) => c.selected && c.status === CATEGORY_STATUS.New).length +
-    items.filter((i) => i.selected && i.status === ITEM_STATUS.New).length;
+    units.filter((u) => u.selected && u.status === ReviewStatus.New).length +
+    categories.filter((c) => c.selected && c.status === ReviewStatus.New).length +
+    items.filter((i) => i.selected && i.status === ReviewStatus.New).length;
 
   const existsCount =
-    units.filter((u) => u.status === UNIT_STATUS.Exists).length +
-    categories.filter((c) => c.status === CATEGORY_STATUS.Exists).length +
-    items.filter((i) => i.status === ITEM_STATUS.Exists).length;
+    units.filter((u) => u.status === ReviewStatus.Exists).length +
+    categories.filter((c) => c.status === ReviewStatus.Exists).length +
+    items.filter((i) => i.status === ReviewStatus.Exists).length;
 
-  const unresolvedCount = items.filter((i) => i.status === ITEM_STATUS.Unresolved).length;
+  const unresolvedCount = items.filter((i) => i.status === ReviewStatus.Unresolved).length;
 
   const buildResult = useCallback(
     (): ReviewResult => ({

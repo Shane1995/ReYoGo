@@ -2,18 +2,18 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { InventoryType } from '@reyogo/types';
 import { ReviewPhase } from '.';
-import { UNIT_STATUS, CATEGORY_STATUS, ITEM_STATUS } from '@/components/CsvImport/review';
+import { ReviewStatus } from '@/components/CsvImport/review';
 import type { ReviewResult } from '@/components/CsvImport/review';
 
 function makeReview(): ReviewResult {
   return {
-    units: [{ name: 'litres', status: UNIT_STATUS.New, selected: true }],
+    units: [{ name: 'litres', status: ReviewStatus.New, selected: true }],
     categories: [
       {
         id: 'cat-1',
         name: 'Dairy',
         type: InventoryType.Food,
-        status: CATEGORY_STATUS.New,
+        status: ReviewStatus.New,
         selected: true,
       },
     ],
@@ -22,7 +22,7 @@ function makeReview(): ReviewResult {
         name: 'Milk',
         categoryName: 'Dairy',
         unit: 'litres',
-        status: ITEM_STATUS.New,
+        status: ReviewStatus.New,
         selected: true,
       },
     ],

@@ -1,62 +1,20 @@
 import type { ParseResult, ParsedCategory, ParsedItem } from '../parser';
-import { InventoryType, INVENTORY_TYPES } from '@reyogo/types';
+import { INVENTORY_TYPES } from '@reyogo/types';
+import { ReviewStatus } from './constants';
+import type { ItemStatus } from './constants';
+import type {
+  InventoryType,
+  ReviewUnit,
+  ReviewCategory,
+  ReviewItem,
+  ReviewResult,
+  ExistingInventory,
+  AvailableCategory,
+} from './types';
 
-export type { InventoryType };
-
-export const UNIT_STATUS = { New: 'new', Exists: 'exists' } as const;
-export type UnitStatus = (typeof UNIT_STATUS)[keyof typeof UNIT_STATUS];
-
-export const CATEGORY_STATUS = { New: 'new', Exists: 'exists' } as const;
-export type CategoryStatus = (typeof CATEGORY_STATUS)[keyof typeof CATEGORY_STATUS];
-
-export const ITEM_STATUS = { New: 'new', Exists: 'exists', Unresolved: 'unresolved' } as const;
-export type ItemStatus = (typeof ITEM_STATUS)[keyof typeof ITEM_STATUS];
-
-export interface ReviewUnit {
-  name: string;
-  status: UnitStatus;
-  selected: boolean;
-}
-
-export interface ReviewCategory {
-  id: string;
-  name: string;
-  type: InventoryType;
-  status: CategoryStatus;
-  selected: boolean;
-  typeWarning?: boolean;
-}
-
-export interface ReviewItem {
-  name: string;
-  categoryName: string;
-  unit?: string;
-  entityId?: string;
-  entityName?: string;
-  status: ItemStatus;
-  selected: boolean;
-  unresolvedReason?: string;
-}
-
-export interface ReviewResult {
-  units: ReviewUnit[];
-  categories: ReviewCategory[];
-  items: ReviewItem[];
-  parseErrors: string[];
-  availableCategories: { name: string; type: InventoryType }[];
-  counts: {
-    newTotal: number;
-    existsTotal: number;
-    unresolvedTotal: number;
-  };
-}
-
-export interface ExistingInventory {
-  categoryNames: Set<string>;
-  itemNames: Set<string>;
-  unitNames: Set<string>;
-  categoryList?: { name: string; type: InventoryType }[];
-}
+export { ReviewStatus };
+export type { ItemStatus, InventoryType };
+export type { ReviewUnit, ReviewCategory, ReviewItem, ReviewResult, ExistingInventory };
 
 function resolveItemStatus(
   item: ParsedItem,
@@ -64,28 +22,26 @@ function resolveItemStatus(
   willExistCatLower: Set<string>,
 ): ReviewItem {
   if (itemNames.has(item.name.toLowerCase())) {
-    return { ...item, status: ITEM_STATUS.Exists, selected: false };
+    return { ...item, status: ReviewStatus.Exists, selected: false };
   }
   if (!item.unit) {
     return {
       ...item,
-      status: ITEM_STATUS.Unresolved,
+      status: ReviewStatus.Unresolved,
       selected: false,
       unresolvedReason: 'No unit of measure — add a Unit column to your spreadsheet',
     };
   }
   if (willExistCatLower.has(item.categoryName.toLowerCase())) {
-    return { ...item, status: ITEM_STATUS.New, selected: true };
+    return { ...item, status: ReviewStatus.New, selected: true };
   }
   return {
     ...item,
-    status: ITEM_STATUS.Unresolved,
+    status: ReviewStatus.Unresolved,
     selected: false,
     unresolvedReason: `Category not found: ${item.categoryName}`,
   };
 }
-
-type AvailableCategory = { name: string; type: InventoryType };
 
 function addUniqueCategory(
   acc: AvailableCategory[],
@@ -117,7 +73,7 @@ export function enrichParseResult(result: ParseResult, existing: ExistingInvento
     const exists = unitNames.has(u.name.toLowerCase());
     return {
       name: u.name,
-      status: exists ? UNIT_STATUS.Exists : UNIT_STATUS.New,
+      status: exists ? ReviewStatus.Exists : ReviewStatus.New,
       selected: !exists,
     };
   });
@@ -133,7 +89,7 @@ export function enrichParseResult(result: ParseResult, existing: ExistingInvento
       id: crypto.randomUUID(),
       name: c.name,
       type: c.type,
-      status: exists ? CATEGORY_STATUS.Exists : CATEGORY_STATUS.New,
+      status: exists ? ReviewStatus.Exists : ReviewStatus.New,
       selected: !exists,
       typeWarning,
     };
@@ -152,14 +108,14 @@ export function enrichParseResult(result: ParseResult, existing: ExistingInvento
 
   const counts = {
     newTotal:
-      units.filter((u) => u.status === UNIT_STATUS.New).length +
-      categories.filter((c) => c.status === CATEGORY_STATUS.New).length +
-      items.filter((i) => i.status === ITEM_STATUS.New).length,
+      units.filter((u) => u.status === ReviewStatus.New).length +
+      categories.filter((c) => c.status === ReviewStatus.New).length +
+      items.filter((i) => i.status === ReviewStatus.New).length,
     existsTotal:
-      units.filter((u) => u.status === UNIT_STATUS.Exists).length +
-      categories.filter((c) => c.status === CATEGORY_STATUS.Exists).length +
-      items.filter((i) => i.status === ITEM_STATUS.Exists).length,
-    unresolvedTotal: items.filter((i) => i.status === ITEM_STATUS.Unresolved).length,
+      units.filter((u) => u.status === ReviewStatus.Exists).length +
+      categories.filter((c) => c.status === ReviewStatus.Exists).length +
+      items.filter((i) => i.status === ReviewStatus.Exists).length,
+    unresolvedTotal: items.filter((i) => i.status === ReviewStatus.Unresolved).length,
   };
 
   return {
