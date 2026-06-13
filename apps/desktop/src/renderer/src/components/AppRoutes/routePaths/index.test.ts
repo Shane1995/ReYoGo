@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   UserRoutes,
+  StockRoutes,
   InvoiceRoutes,
   StockRouteSegments,
   InvoiceRouteSegments,
@@ -26,6 +27,16 @@ describe('UserRoutes', () => {
   });
 });
 
+describe('StockRoutes', () => {
+  it('Base is /stock', () => {
+    expect(StockRoutes.Base).toBe('/stock');
+  });
+
+  it('Import is /stock/import', () => {
+    expect(StockRoutes.Import).toBe('/stock/import');
+  });
+});
+
 describe('InvoiceRoutes', () => {
   it('Base is /invoices', () => {
     expect(InvoiceRoutes.Base).toBe('/invoices');
@@ -39,6 +50,10 @@ describe('InvoiceRoutes', () => {
 describe('StockRouteSegments', () => {
   it('root is stock', () => {
     expect(StockRouteSegments.root).toBe('stock');
+  });
+
+  it('import is import', () => {
+    expect(StockRouteSegments.import).toBe('import');
   });
 });
 

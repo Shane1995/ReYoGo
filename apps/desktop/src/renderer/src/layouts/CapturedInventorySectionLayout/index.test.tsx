@@ -22,11 +22,10 @@ describe('CapturedInventorySectionLayout', () => {
     expect(screen.getByText('Captured Inventory')).toBeInTheDocument();
   });
 
-  it('renders all five stock section nav items', async () => {
+  it('renders all four stock section nav items', async () => {
     await renderLayout();
     expect(screen.getByText('Captured Inventory')).toBeInTheDocument();
     expect(screen.getByText('Add')).toBeInTheDocument();
-    expect(screen.getByText('Import')).toBeInTheDocument();
     expect(screen.getByText('Analysis')).toBeInTheDocument();
     expect(screen.getByText('Archive')).toBeInTheDocument();
   });

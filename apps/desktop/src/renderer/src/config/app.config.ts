@@ -81,7 +81,6 @@ export const appConfig: AppConfig = {
     stock: [
       { label: 'Captured Inventory', pathKey: 'stock', icon: 'PackagePlus', end: true },
       { label: 'Add', pathKey: 'stock.addItems', icon: 'ListPlus', end: true },
-      { label: 'Import', pathKey: 'stock.import', icon: 'Upload', end: false },
       { label: 'Analysis', pathKey: 'stock.analysis', icon: 'TrendingUp', end: false },
       { label: 'Archive', pathKey: 'stock.manage', icon: 'Archive', end: false },
     ],

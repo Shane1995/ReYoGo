@@ -7,6 +7,11 @@ export const UserRoutes = {
   Home: r.home,
 } as const;
 
+export const StockRoutes = {
+  Base: r.stock,
+  Import: r['stock.import'],
+} as const;
+
 export function itemTrendPath(itemId: string) {
   return `${r['stock.analysis']}/item/${itemId}`;
 }
@@ -23,6 +28,7 @@ export const AnalysisRoutes = {
 
 export const StockRouteSegments = {
   root: lastSeg(r.stock),
+  import: lastSeg(r['stock.import']),
   addItems: lastSeg(r['stock.addItems']),
   categories: lastSeg(r['stock.categories']),
   analysis: lastSeg(r['stock.analysis']),
