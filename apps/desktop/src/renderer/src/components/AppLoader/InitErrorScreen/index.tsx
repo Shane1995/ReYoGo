@@ -1,31 +1,7 @@
-type Props = { error: string };
+import { hintFor } from './utils/hintFor';
+import type { InitErrorScreenProps } from './types';
 
-const MIGRATION_ERROR_PATTERNS = [
-  /cannot add a not null column/i,
-  /NOT NULL constraint/i,
-  /migration/i,
-];
-
-const CLOUD_ERROR_PATTERNS = [
-  /onedrive|dropbox|icloud|google drive|synced/i,
-  /readonly|read-only|EROFS|EPERM/i,
-];
-
-function matchesAny(error: string, patterns: RegExp[]): boolean {
-  return patterns.some((pattern) => pattern.test(error));
-}
-
-function hintFor(error: string): string {
-  if (matchesAny(error, MIGRATION_ERROR_PATTERNS)) {
-    return 'A database schema update failed. If you are upgrading from an older version, try deleting the app data folder and relaunching.';
-  }
-  if (matchesAny(error, CLOUD_ERROR_PATTERNS)) {
-    return 'If this app is installed inside a OneDrive or cloud-synced folder, try moving it to a local folder (e.g. Desktop or C:\\Program Files).';
-  }
-  return 'Try relaunching the app. If the problem persists, reinstall or contact support.';
-}
-
-export function InitErrorScreen({ error }: Props) {
+export function InitErrorScreen({ error }: InitErrorScreenProps) {
   const hint = hintFor(error);
 
   return (

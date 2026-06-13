@@ -1,15 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Button } from '@reyogo/ui';
-
-type Props = {
-  children: ReactNode;
-  fallback?: ReactNode;
-};
-
-type State = {
-  hasError: boolean;
-  error: Error | null;
-};
+import type { Props, State } from './types';
 
 export class ErrorBoundary extends Component<Props, State> {
   state: State = {

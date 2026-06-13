@@ -1,10 +1,12 @@
 import type { ReactNode } from 'react';
 
+export type Align = 'left' | 'right' | 'center';
+
 export interface ColumnDef<T> {
   key: string;
   header: ReactNode;
   cell: (row: T) => ReactNode;
-  align?: 'left' | 'right' | 'center';
+  align?: Align;
   width?: string;
   sortable?: boolean;
   sortFn?: (a: T, b: T) => number;
@@ -22,3 +24,16 @@ export interface FilterField {
 }
 
 export type FilterValues = Record<string, string | string[]>;
+
+export type DataTableProps<T> = {
+  columns: ColumnDef<T>[];
+  data: T[];
+  compareFns?: Record<string, (a: T, b: T) => number>;
+  filters?: FilterField[];
+  filterValues?: FilterValues;
+  onFilterChange?: (key: string, value: string | string[]) => void;
+  onClearFilters?: () => void;
+  hideFilters?: boolean;
+  emptyMessage?: string;
+  rowKey: (row: T) => string;
+};
