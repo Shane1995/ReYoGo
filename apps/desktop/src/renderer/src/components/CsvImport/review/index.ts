@@ -9,6 +9,7 @@ import type {
   ReviewItem,
   ReviewResult,
   ExistingInventory,
+  AvailableCategory,
 } from './types';
 
 export { ReviewStatus };
@@ -41,8 +42,6 @@ function resolveItemStatus(
     unresolvedReason: `Category not found: ${item.categoryName}`,
   };
 }
-
-type AvailableCategory = { name: string; type: InventoryType };
 
 function addUniqueCategory(
   acc: AvailableCategory[],

@@ -29,12 +29,17 @@ export interface ReviewItem {
   unresolvedReason?: string;
 }
 
+export interface AvailableCategory {
+  name: string;
+  type: InventoryType;
+}
+
 export interface ReviewResult {
   units: ReviewUnit[];
   categories: ReviewCategory[];
   items: ReviewItem[];
   parseErrors: string[];
-  availableCategories: { name: string; type: InventoryType }[];
+  availableCategories: AvailableCategory[];
   counts: {
     newTotal: number;
     existsTotal: number;
@@ -46,5 +51,5 @@ export interface ExistingInventory {
   categoryNames: Set<string>;
   itemNames: Set<string>;
   unitNames: Set<string>;
-  categoryList?: { name: string; type: InventoryType }[];
+  categoryList?: AvailableCategory[];
 }
