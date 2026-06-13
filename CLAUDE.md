@@ -103,3 +103,48 @@ Path aliases (within `packages/desktop`): `@/*` → `src/renderer/src/*`, `@main
 - Lucide React icons
 - Recharts for data visualisation
 - No global state library — React Context where needed, `useState` otherwise
+
+## File Organization Conventions
+
+These conventions apply across the renderer codebase. The `CsvImport` feature
+(`apps/desktop/src/renderer/src/components/CsvImport/`) is the reference
+example — refer to it when in doubt.
+
+1. **No inline types/interfaces in `index.ts(x)` files.** Extract them to a
+   co-located `types.ts`. Desktop-local types use unprefixed names (e.g.
+   `ReviewItem`, `CategoryRowProps`) — the `I`-prefix convention is reserved
+   for types re-exported from `@reyogo/types`. If a type is consumed outside
+   its own directory, re-export it from `index.ts`.
+2. **No inline constants or magic strings.** Extract them to a co-located
+   `constants.ts` (e.g. `STATUS_CONFIG` in
+   `components/StatusBadge/constants.ts`).
+3. **Prefer a real TS `enum` over an `as const` object literal** for a fixed
+   set of values (e.g. `ReviewStatus` in `review/constants.ts`), *except* IPC
+   channel name objects, which must stay `as const` for `TypedInvoke`
+   inference. Before converting a value set to an enum, check whether it is
+   persisted to SQLite or sent across the IPC boundary — if so, keep it as a
+   string union/`as const` object instead.
+4. **No `as` type assertions in anything you touch.** Fix the underlying
+   types instead — e.g. add an explicit type annotation so enum members
+   aren't widened, or give IPC enums an `as const` object so `TypedInvoke`
+   infers correctly.
+5. **One function per component file.** Extract helper functions to `hooks/`
+   (stateful) or `utils/` (pure) alongside the component.
+6. **Naming/layout:** every unit of code lives at
+   `<dir>/<Name>/index.ts(x)`, with tests at `<dir>/<Name>/index.test.ts(x)`,
+   inline types in `<dir>/<Name>/types.ts`, and inline constants in
+   `<dir>/<Name>/constants.ts`.
+7. **Every extracted hook or util keeps (or gains) `index.test.ts` coverage**
+   — e.g. `utils/resolveCategoryAssignment`,
+   `ImportReview/utils/unresolvedItemsMessage`.
+8. **Prefer `const` over `let`; avoid in-place mutation** — build new
+   arrays/objects rather than mutating existing ones.
+9. **Sub-components extracted from a component live in a co-located
+   `components/` directory:**
+   - If used by only one parent, place it at
+     `<Parent>/components/<Name>/`.
+   - If shared by multiple siblings, place it at the lowest common ancestor's
+     `components/<Name>/` — e.g. `CsvImport/components/StatusBadge/` (used by
+     `CategoryRow`, `ItemRow`, and `UnitRow`) vs.
+     `CsvImport/ImportReview/components/CategoryRow/` (used only within
+     `ImportReview`).
