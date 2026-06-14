@@ -5,33 +5,11 @@ import { itemTrendPath } from '@/components/AppRoutes/routePaths';
 import { AnalysisTableHeader } from '../shared/AnalysisTableHeader';
 import { AnalysisCategoryRow } from '../shared/AnalysisCategoryRow';
 import { AnalysisItemRow } from '../shared/AnalysisItemRow';
-import type { ItemGroup } from '../../types';
+import { toggleSetMember } from '../../utils/toggleSetMember';
+import { groupByCategoryName } from '../../utils/groupByCategoryName';
+import type { ByCategoryViewProps } from './types';
 
-function toggleSetMember(prev: Set<string>, key: string): Set<string> {
-  const next = new Set(prev);
-  if (next.has(key)) {
-    next.delete(key);
-  } else {
-    next.add(key);
-  }
-  return next;
-}
-
-function groupByCategoryName(groups: ItemGroup[]): [string, ItemGroup[]][] {
-  const catMap = new Map<string, ItemGroup[]>();
-  for (const g of groups) {
-    const key = g.categoryName ?? '';
-    const existing = catMap.get(key);
-    if (existing) {
-      existing.push(g);
-    } else {
-      catMap.set(key, [g]);
-    }
-  }
-  return Array.from(catMap.entries()).sort(([a], [b]) => a.localeCompare(b));
-}
-
-export function ByCategoryView({ groups }: { groups: ItemGroup[] }) {
+export function ByCategoryView({ groups }: ByCategoryViewProps) {
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
 

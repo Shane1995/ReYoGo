@@ -2,16 +2,14 @@ import { ChevronRightIcon } from 'lucide-react';
 import { cn, TableCell, TableRow } from '@reyogo/ui';
 import { InsightChips } from '../../InsightChips';
 import { groupStats } from '../../../utils/stats';
-import type { ItemGroup } from '../../../types';
+import type { AnalysisCategoryRowProps } from './types';
 
-type Props = {
-  catName: string;
-  catGroups: ItemGroup[];
-  isExpanded: boolean;
-  onToggle: () => void;
-};
-
-export function AnalysisCategoryRow({ catName, catGroups, isExpanded, onToggle }: Props) {
+export function AnalysisCategoryRow({
+  catName,
+  catGroups,
+  isExpanded,
+  onToggle,
+}: AnalysisCategoryRowProps) {
   const stats = groupStats(catGroups);
   return (
     <TableRow

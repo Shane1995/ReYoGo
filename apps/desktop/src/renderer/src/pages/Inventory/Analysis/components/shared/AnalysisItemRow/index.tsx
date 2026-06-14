@@ -2,15 +2,9 @@ import { cn, TableCell, TableRow } from '@reyogo/ui';
 import { fmt, fmtDate, fmtPct } from '../../../utils/format';
 import { overallChangePct } from '../../../utils/stats';
 import { changeCls } from '../../../utils/styles';
-import type { ItemGroup } from '../../../types';
+import type { AnalysisItemRowProps } from './types';
 
-type Props = {
-  group: ItemGroup;
-  rowIndex?: number;
-  onNavigate: (itemId: string) => void;
-};
-
-export function AnalysisItemRow({ group, rowIndex = 0, onNavigate }: Props) {
+export function AnalysisItemRow({ group, rowIndex = 0, onNavigate }: AnalysisItemRowProps) {
   const last = group.entries[group.entries.length - 1]!;
   const change = overallChangePct(group);
   const minPrice = Math.min(...group.entries.map((e) => e.unitPrice));
