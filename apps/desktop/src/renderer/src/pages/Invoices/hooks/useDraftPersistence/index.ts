@@ -1,20 +1,27 @@
 import { useCallback, useEffect } from 'react';
 import type { ProcessReceiptLine, VatMode } from '../../types';
+import { DRAFT_KEY } from './constants';
+import type { DraftState } from './types';
 
-export type DraftState = {
-  lines: ProcessReceiptLine[];
-  invoiceNumber: string;
-  invoiceDate: string;
-  vatMode: VatMode;
-};
+export type { DraftState } from './types';
 
-const DRAFT_KEY = 'reyogo:invoice-draft';
+function isDraftState(value: unknown): value is DraftState {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'lines' in value &&
+    'invoiceNumber' in value &&
+    'invoiceDate' in value &&
+    'vatMode' in value
+  );
+}
 
 export function loadDraft(): DraftState | null {
   try {
     const raw = localStorage.getItem(DRAFT_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as DraftState;
+    const parsed = JSON.parse(raw);
+    return isDraftState(parsed) ? parsed : null;
   } catch {
     return null;
   }

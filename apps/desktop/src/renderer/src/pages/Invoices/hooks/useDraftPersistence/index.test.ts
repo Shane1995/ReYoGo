@@ -2,8 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { VatMode } from '@reyogo/types';
 import { loadDraft, saveDraft, useDraftPersistence } from './index';
-
-const DRAFT_KEY = 'reyogo:invoice-draft';
+import { DRAFT_KEY } from './constants';
 
 describe('loadDraft', () => {
   beforeEach(() => localStorage.clear());
