@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { invoiceService } from '@/services/invoice';
-import { VatMode } from '@reyogo/types';
-import type { IEntity } from '@reyogo/types';
+import type { VatMode } from '@reyogo/types';
 import type { ProcessReceiptLine } from '../../types';
 import { getProcessLineComputed } from '../../types';
+import { SAVE_MESSAGES, DRAFT_MESSAGES } from './constants';
+import type { SubmitMessages, UseInvoiceSubmissionParams } from './types';
 
 function buildSaveLines(
   validLines: ProcessReceiptLine[],
@@ -53,14 +54,6 @@ function errorMessage(e: unknown, fallback: string): string {
   return fallback;
 }
 
-type SubmitMessages = { success: string; failure: string };
-
-const SAVE_MESSAGES: SubmitMessages = {
-  success: 'Invoice posted',
-  failure: 'Failed to save invoice',
-};
-const DRAFT_MESSAGES: SubmitMessages = { success: 'Draft saved', failure: 'Failed to save draft' };
-
 async function runInvoiceSubmit(
   input: ReturnType<typeof buildInvoiceInput>,
   save: (input: ReturnType<typeof buildInvoiceInput>) => Promise<unknown>,
@@ -83,20 +76,7 @@ async function runInvoiceSubmit(
   }
 }
 
-type SubmissionParams = {
-  selectedEntity: IEntity | null;
-  entityId: string;
-  supplierId: string;
-  invoiceNumber: string;
-  invoiceDate: string;
-  vatMode: VatMode;
-  validLines: ProcessReceiptLine[];
-  itemMetaMap: Map<string, { name: string }>;
-  canSave: boolean;
-  onSaved: () => void;
-};
-
-export function useInvoiceSubmission(params: SubmissionParams) {
+export function useInvoiceSubmission(params: UseInvoiceSubmissionParams) {
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
