@@ -2,30 +2,11 @@ import { Button, PageHeader, DatePicker } from '@reyogo/ui';
 import { Link } from 'react-router-dom';
 import { RotateCcwIcon } from 'lucide-react';
 import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
-import type { Supplier } from '@reyogo/types';
 import { VatMode } from '@reyogo/types';
 import { inputClass } from '../../utils/inputClass';
 import { cn } from '@reyogo/ui';
-
-type Props = {
-  invoiceNumber: string;
-  onInvoiceNumberChange: (v: string) => void;
-  invoiceDate: string;
-  onInvoiceDateChange: (v: string) => void;
-  supplierId: string;
-  onSupplierChange: (id: string) => void;
-  suppliers: Supplier[];
-  vatMode: VatMode;
-  onVatModeChange: (mode: VatMode) => void;
-  onAddCategory: () => void;
-  onAddItem: () => void;
-  isDirty: boolean;
-  onClear: () => void;
-};
-
-const fieldLabel =
-  'text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70 mb-1';
-const fieldGroup = 'flex flex-col';
+import { FIELD_LABEL_CLASS, FIELD_GROUP_CLASS } from './constants';
+import type { InvoiceHeaderProps } from './types';
 
 export function InvoiceHeader({
   invoiceNumber,
@@ -41,7 +22,7 @@ export function InvoiceHeader({
   onAddItem,
   isDirty,
   onClear,
-}: Props) {
+}: InvoiceHeaderProps) {
   return (
     <PageHeader
       title="Capture Invoice"
@@ -74,8 +55,8 @@ export function InvoiceHeader({
       }
     >
       <div className="flex flex-wrap items-end gap-x-5 gap-y-3 pb-1">
-        <div className={fieldGroup}>
-          <label className={fieldLabel}>Invoice #</label>
+        <div className={FIELD_GROUP_CLASS}>
+          <label className={FIELD_LABEL_CLASS}>Invoice #</label>
           <input
             type="text"
             value={invoiceNumber}
@@ -88,13 +69,13 @@ export function InvoiceHeader({
           />
         </div>
 
-        <div className={fieldGroup}>
-          <label className={fieldLabel}>Date</label>
+        <div className={FIELD_GROUP_CLASS}>
+          <label className={FIELD_LABEL_CLASS}>Date</label>
           <DatePicker value={invoiceDate} onChange={onInvoiceDateChange} />
         </div>
 
-        <div className={fieldGroup}>
-          <label className={fieldLabel}>Supplier</label>
+        <div className={FIELD_GROUP_CLASS}>
+          <label className={FIELD_LABEL_CLASS}>Supplier</label>
           <select
             value={supplierId}
             onChange={(e) => onSupplierChange(e.target.value)}
@@ -111,8 +92,8 @@ export function InvoiceHeader({
 
         <div className="h-8 w-px bg-border/60 self-end mb-0.5 hidden sm:block" />
 
-        <div className={fieldGroup}>
-          <label className={fieldLabel}>VAT treatment</label>
+        <div className={FIELD_GROUP_CLASS}>
+          <label className={FIELD_LABEL_CLASS}>VAT treatment</label>
           <select
             value={vatMode}
             onChange={(e) => {
@@ -121,8 +102,8 @@ export function InvoiceHeader({
             }}
             className={cn(inputClass, 'w-40')}
           >
-            <option value="exclusive">+ VAT (exclusive)</option>
-            <option value="inclusive">VAT included</option>
+            <option value={VatMode.Exclusive}>+ VAT (exclusive)</option>
+            <option value={VatMode.Inclusive}>VAT included</option>
           </select>
         </div>
       </div>
