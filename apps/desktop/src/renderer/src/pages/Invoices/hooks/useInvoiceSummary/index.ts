@@ -1,9 +1,7 @@
 import { useMemo } from 'react';
 import type { ProcessReceiptLine, VatMode } from '../../types';
 import { getProcessLineComputed } from '../../types';
-
-type ItemLike = { id: string; name: string; categoryId: string };
-type CategoryLike = { id: string; name: string; type: string };
+import type { ItemLike, CategoryLike } from './types';
 
 function categoryOf(categories: CategoryLike[], categoryId: string): CategoryLike | undefined {
   return categories.find((c) => c.id === categoryId);
