@@ -1,13 +1,10 @@
 import { cn } from '@reyogo/ui';
 import { fmtPct } from '../../utils/format';
 import { changeCls } from '../../utils/styles';
-import type { GroupStats } from '../../utils/stats';
+import { pluralSuffix } from './utils/pluralSuffix';
+import type { InsightChipsProps } from './types';
 
-function pluralSuffix(count: number): string {
-  return count === 1 ? '' : 's';
-}
-
-export function InsightChips({ stats }: { stats: GroupStats }) {
+export function InsightChips({ stats }: InsightChipsProps) {
   return (
     <div className="flex items-center gap-1.5 text-xs">
       <span className="text-muted-foreground">

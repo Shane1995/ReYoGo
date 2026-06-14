@@ -1,11 +1,7 @@
-import type { ItemGroup } from '../types';
+import type { ItemGroup } from '../../types';
+import type { GroupStats } from './types';
 
-export type GroupStats = {
-  count: number;
-  avgChange: number | null;
-  increased: number;
-  decreased: number;
-};
+export type { GroupStats } from './types';
 
 export function overallChangePct(group: ItemGroup): number | null {
   const first = group.entries[0]!.unitPriceInclVat;

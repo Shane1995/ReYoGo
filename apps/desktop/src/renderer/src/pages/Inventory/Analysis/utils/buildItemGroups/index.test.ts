@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildItemGroups } from './buildItemGroups';
+import { buildItemGroups } from './index';
 import type { InvoiceLineWithDate } from '@reyogo/types';
 
 function makeLine(overrides: Partial<InvoiceLineWithDate> = {}): InvoiceLineWithDate {

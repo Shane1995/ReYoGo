@@ -74,9 +74,10 @@ export function useInvoiceHistory() {
     setMode,
   });
 
+  const { filterInvoices } = filters;
   const filteredInvoices = useMemo(
-    () => filters.filterInvoices(invoices, detailCache),
-    [filters.filterInvoices, invoices, detailCache],
+    () => filterInvoices(invoices, detailCache),
+    [filterInvoices, invoices, detailCache],
   );
 
   return {

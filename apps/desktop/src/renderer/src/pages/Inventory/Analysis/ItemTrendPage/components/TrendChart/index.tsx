@@ -9,52 +9,10 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { fmt } from '../../../utils/format';
+import { PriceTip } from './components/PriceTip';
+import type { TrendChartProps } from './types';
 
-type ChartEntry = { date: string; fullDate: string; price: number; qty: number };
-
-type TipEntry = { fullDate: string; price: number; qty: number };
-
-function tipEntryOf(payload?: { payload: TipEntry }[]): TipEntry | null {
-  if (!payload || payload.length === 0) return null;
-  const first = payload[0];
-  if (!first) return null;
-  return first.payload;
-}
-
-function PriceTip({
-  active,
-  payload,
-  uom,
-}: {
-  active?: boolean;
-  payload?: { payload: TipEntry }[];
-  uom?: string;
-}) {
-  if (!active) return null;
-  const entry = tipEntryOf(payload);
-  if (!entry) return null;
-  const { fullDate, price, qty } = entry;
-  return (
-    <div className="rounded-lg border border-[var(--nav-border)] bg-background px-3 py-2 text-sm shadow-md">
-      <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60 mb-1">
-        {fullDate}
-      </p>
-      <p className="font-mono font-semibold tabular-nums text-foreground">
-        {fmt(price)}
-        {uom ? <span className="text-muted-foreground/60"> / {uom}</span> : ''}
-      </p>
-      <p className="text-[11px] text-muted-foreground/60 mt-0.5">qty {qty}</p>
-    </div>
-  );
-}
-
-type Props = {
-  chartData: ChartEntry[];
-  avgPrice: number;
-  uom?: string;
-};
-
-export function TrendChart({ chartData, avgPrice, uom }: Props) {
+export function TrendChart({ chartData, avgPrice, uom }: TrendChartProps) {
   if (chartData.length < 2) {
     return (
       <div className="rounded-lg border border-[var(--nav-border)] bg-muted/10 p-10 text-center text-sm text-muted-foreground/60">

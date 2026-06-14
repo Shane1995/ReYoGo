@@ -1,25 +1,10 @@
 import { fmt, fmtDate, fmtPct } from '../../../utils/format';
 import { changeCls } from '../../../utils/styles';
-import type { ItemGroup } from '../../../types';
+import { pctChangeOf } from '../../../utils/pctChangeOf';
+import { prevPriceOf } from './utils/prevPriceOf';
+import type { TrendHistoryTableProps } from './types';
 
-type Props = {
-  entries: ItemGroup['entries'];
-};
-
-function prevPriceOf(entries: ItemGroup['entries'], index: number): number | null {
-  if (index <= 0) return null;
-  const prev = entries[index - 1];
-  if (!prev) return null;
-  return prev.unitPrice;
-}
-
-function pctChangeOf(current: number, prev: number | null): number | null {
-  if (prev === null) return null;
-  if (prev <= 0) return null;
-  return ((current - prev) / prev) * 100;
-}
-
-export function TrendHistoryTable({ entries }: Props) {
+export function TrendHistoryTable({ entries }: TrendHistoryTableProps) {
   return (
     <div className="rounded-lg border border-[var(--nav-border)] overflow-hidden">
       <table className="w-full text-sm">

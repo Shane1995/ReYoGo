@@ -1,5 +1,5 @@
 import type { InvoiceLineWithDate } from '@reyogo/types';
-import type { ItemGroup, ItemEntry } from '../types';
+import type { ItemGroup, ItemEntry } from '../../types';
 
 type ItemLookup = { id: string; name: string; unitOfMeasure?: string };
 
@@ -49,28 +49,35 @@ function categoryNameOf(categoryName: string | null): string | undefined {
 }
 
 function createGroup(line: InvoiceLineWithDate, item: ItemLookup | undefined): ItemGroup {
-  let name = line.inventoryItemId;
-  if (item) name = item.name;
-  let categoryType = 'other';
-  if (line.categoryType !== null) categoryType = line.categoryType;
   return {
     itemId: line.inventoryItemId,
-    name,
-    categoryType,
+    name: item ? item.name : line.inventoryItemId,
+    categoryType: line.categoryType !== null ? line.categoryType : 'other',
     categoryName: categoryNameOf(line.categoryName),
     entries: [],
   };
 }
 
-function applyItemFields(group: ItemGroup, item: ItemLookup | undefined): void {
-  if (!item) return;
-  group.name = item.name;
-  group.uom = item.unitOfMeasure;
+function resolveItemFields(
+  item: ItemLookup | undefined,
+  fallback: { name: string; uom?: string },
+): { name: string; uom?: string } {
+  return item ? { name: item.name, uom: item.unitOfMeasure } : fallback;
 }
 
-function applyLineFields(group: ItemGroup, line: InvoiceLineWithDate): void {
-  if (line.categoryType !== null) group.categoryType = line.categoryType;
-  if (line.categoryName !== null) group.categoryName = line.categoryName;
+function mergeGroupFields(
+  group: ItemGroup,
+  line: InvoiceLineWithDate,
+  item: ItemLookup | undefined,
+): ItemGroup {
+  const { name, uom } = resolveItemFields(item, { name: group.name, uom: group.uom });
+  return {
+    ...group,
+    name,
+    uom,
+    categoryType: line.categoryType !== null ? line.categoryType : group.categoryType,
+    categoryName: line.categoryName !== null ? line.categoryName : group.categoryName,
+  };
 }
 
 function upsertGroup(
@@ -79,14 +86,9 @@ function upsertGroup(
   item: ItemLookup | undefined,
   entry: ItemEntry,
 ): void {
-  let group = map.get(line.inventoryItemId);
-  if (!group) {
-    group = createGroup(line, item);
-    map.set(line.inventoryItemId, group);
-  }
-  applyItemFields(group, item);
-  applyLineFields(group, line);
-  group.entries.push(entry);
+  const existing = map.get(line.inventoryItemId) ?? createGroup(line, item);
+  const merged = mergeGroupFields(existing, line, item);
+  map.set(line.inventoryItemId, { ...merged, entries: [...merged.entries, entry] });
 }
 
 export function buildItemGroups(

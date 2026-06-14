@@ -1,26 +1,11 @@
 import { cn } from '@reyogo/ui';
 import { fmt, fmtDate, fmtPct } from '../../../../utils/format';
 import { changeCls } from '../../../../utils/styles';
-import type { ItemGroup } from '../../../../types';
+import { pctChangeOf } from '../../../../utils/pctChangeOf';
+import { prevInclVatOf } from './utils/prevInclVatOf';
+import type { ExpandedEntriesProps } from './types';
 
-type Props = {
-  entries: ItemGroup['entries'];
-};
-
-function prevInclVatOf(entries: ItemGroup['entries'], index: number): number | null {
-  if (index <= 0) return null;
-  const prev = entries[index - 1];
-  if (!prev) return null;
-  return prev.unitPriceInclVat;
-}
-
-function pctChangeOf(current: number, prev: number | null): number | null {
-  if (prev === null) return null;
-  if (prev <= 0) return null;
-  return ((current - prev) / prev) * 100;
-}
-
-export function ExpandedEntries({ entries }: Props) {
+export function ExpandedEntries({ entries }: ExpandedEntriesProps) {
   return (
     <table className="w-full text-xs">
       <thead>
