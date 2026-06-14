@@ -1,4 +1,4 @@
-import type { ProcessReceiptLine } from '../types';
+import type { ProcessReceiptLine } from '../../types';
 
 export function createEmptyLine(): ProcessReceiptLine {
   return {
