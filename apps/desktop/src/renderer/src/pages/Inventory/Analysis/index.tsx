@@ -5,7 +5,7 @@ import type { AnalysisTab } from './hooks/useAnalysisData';
 import { SummaryTableView } from './components/SummaryTableView';
 import { TableView } from './components/TableView';
 import { ByCategoryView } from './components/ByCategoryView';
-import { typeLabel } from './types';
+import { typeLabel } from './utils/typeLabel';
 import type { ItemGroup } from './types';
 
 const fieldBase =

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useAnalysisLines } from '../useAnalysisLines';
 import { buildItemGroups } from '../../utils/buildItemGroups';
-import { TYPE_ORDER } from '../../types';
+import { TYPE_ORDER } from '../../constants';
 import type { ItemGroup } from '../../types';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
 

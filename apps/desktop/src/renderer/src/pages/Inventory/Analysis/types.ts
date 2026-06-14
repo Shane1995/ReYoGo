@@ -15,15 +15,3 @@ export type ItemGroup = {
   categoryName?: string;
   entries: ItemEntry[];
 };
-
-export const TYPE_ORDER = ['food', 'beverage', 'non-food'];
-
-const TYPE_LABELS: Record<string, string> = {
-  food: 'Foods',
-  beverage: 'Beverages',
-  'non-food': 'Non-food',
-};
-
-export function typeLabel(t: string) {
-  return TYPE_LABELS[t] ?? t.charAt(0).toUpperCase() + t.slice(1);
-}
