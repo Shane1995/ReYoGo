@@ -1,22 +1,8 @@
 import { useRef, useState } from 'react';
-import { VatMode } from '@reyogo/types';
 import type { ProcessReceiptLine } from '../../../types';
 import { getProcessLineComputed } from '../../../types';
-import type { FieldKeyDownContext } from '../handleFieldKeyDown';
-
-type Params = {
-  line: ProcessReceiptLine;
-  index: number;
-  isLast: boolean;
-  isExpanded: boolean;
-  vatMode: VatMode;
-  vatRate: number;
-  onRemove: () => void;
-  onAddLine: (focusField?: string) => void;
-  onNavigateNext: (field: string) => void;
-  onNavigatePrev: (field: string) => void;
-  onNavigateToNextRowItem: () => void;
-};
+import type { FieldKeyDownContext } from '../utils/handleFieldKeyDown';
+import type { UseLineRowStateParams } from './types';
 
 function isLineEmpty(line: ProcessReceiptLine): boolean {
   return !line.itemId && !line.quantity && !line.totalVatExclude;
@@ -26,10 +12,11 @@ function shouldResetConfirmingDelete(
   e: React.FocusEvent,
   rowRef: React.RefObject<HTMLTableRowElement | null>,
 ): boolean {
-  return !rowRef.current?.contains(e.relatedTarget as Node);
+  const relatedTarget = e.relatedTarget instanceof Node ? e.relatedTarget : null;
+  return !rowRef.current?.contains(relatedTarget);
 }
 
-export function useLineRowState(params: Params) {
+export function useLineRowState(params: UseLineRowStateParams) {
   const { line, index, isLast, isExpanded, vatMode, vatRate } = params;
 
   const [confirmingDelete, setConfirmingDelete] = useState(false);

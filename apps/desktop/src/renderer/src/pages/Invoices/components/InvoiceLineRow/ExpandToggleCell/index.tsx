@@ -1,13 +1,8 @@
 import { ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
 import { TableCell, cn } from '@reyogo/ui';
+import type { ExpandToggleCellProps } from './types';
 
-export function ExpandToggleCell({
-  isExpanded,
-  onToggle,
-}: {
-  isExpanded: boolean;
-  onToggle: () => void;
-}) {
+export function ExpandToggleCell({ isExpanded, onToggle }: ExpandToggleCellProps) {
   return (
     <TableCell className="w-8 p-2 align-middle">
       <button

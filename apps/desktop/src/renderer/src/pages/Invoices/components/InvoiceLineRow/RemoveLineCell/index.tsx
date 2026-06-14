@@ -1,13 +1,8 @@
 import { XIcon } from 'lucide-react';
 import { TableCell } from '@reyogo/ui';
+import type { RemoveLineCellProps } from './types';
 
-export function RemoveLineCell({
-  confirmingDelete,
-  onRemove,
-}: {
-  confirmingDelete: boolean;
-  onRemove: () => void;
-}) {
+export function RemoveLineCell({ confirmingDelete, onRemove }: RemoveLineCellProps) {
   return (
     <TableCell className="py-2 px-2 text-right">
       {confirmingDelete ? (

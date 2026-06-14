@@ -1,11 +1,8 @@
 import { TableCell, cn } from '@reyogo/ui';
 import { inputClass } from '../../../utils/inputClass';
-import { handleFieldKeyDown, type FieldKeyDownContext } from '../handleFieldKeyDown';
-
-const FIELD_CONFIG = {
-  qty: { width: 'w-20', step: 1, placeholder: '0' },
-  total: { width: 'w-28', step: 1, placeholder: '0.00' },
-} as const;
+import { handleFieldKeyDown } from '../utils/handleFieldKeyDown';
+import { FIELD_CONFIG } from './constants';
+import type { LineNumberCellProps } from './types';
 
 export function LineNumberCell({
   field,
@@ -14,14 +11,7 @@ export function LineNumberCell({
   onChange,
   onBlur,
   keyDownCtx,
-}: {
-  field: 'qty' | 'total';
-  lineId: string;
-  value: number;
-  onChange: (value: number) => void;
-  onBlur: (e: React.FocusEvent) => void;
-  keyDownCtx: Omit<FieldKeyDownContext, 'field'>;
-}) {
+}: LineNumberCellProps) {
   const { width, step, placeholder } = FIELD_CONFIG[field];
   const inputId = field === 'qty' ? `invoice-qty-${lineId}` : `invoice-total-${lineId}`;
 
