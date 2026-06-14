@@ -1,14 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import type { ItemOption } from '../index';
-
-type Params = {
-  items: ItemOption[];
-  value: string;
-  entityId: string;
-  onChange: (itemId: string) => void;
-  onSelectComplete?: () => void;
-  onNavigateRight?: () => void;
-};
+import type { ItemOption } from '../types';
+import { OPEN_LIST_KEYS, PREVENT_DEFAULT_KEYS } from './constants';
+import type { UseItemAutocompleteParams, OpenKeyActions } from './types';
 
 function entityFilteredItemsOf(items: ItemOption[], entityId: string): ItemOption[] {
   if (!entityId) return items;
@@ -43,8 +36,6 @@ function moveHighlightUp(current: number, length: number): number {
   return current - 1;
 }
 
-const OPEN_LIST_KEYS = ['Enter', ' ', 'ArrowDown'];
-
 function shouldOpenOnKey(key: string): boolean {
   return OPEN_LIST_KEYS.includes(key);
 }
@@ -63,10 +54,6 @@ function handleKeyDownClosed(
   }
 }
 
-const PREVENT_DEFAULT_KEYS = new Set(['ArrowDown', 'ArrowUp', 'Enter']);
-
-type OpenKeyActions = Record<string, (() => void) | undefined>;
-
 function handleKeyDownOpen(e: React.KeyboardEvent, actions: OpenKeyActions): void {
   const action = actions[e.key];
   if (!action) return;
@@ -74,7 +61,7 @@ function handleKeyDownOpen(e: React.KeyboardEvent, actions: OpenKeyActions): voi
   action();
 }
 
-export function useItemAutocomplete(params: Params) {
+export function useItemAutocomplete(params: UseItemAutocompleteParams) {
   const { items, value, entityId, onChange, onSelectComplete, onNavigateRight } = params;
   const entityFilteredItems = entityFilteredItemsOf(items, entityId);
 
