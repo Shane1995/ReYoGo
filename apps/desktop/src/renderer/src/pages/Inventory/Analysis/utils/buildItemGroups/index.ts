@@ -58,15 +58,23 @@ function createGroup(line: InvoiceLineWithDate, item: ItemLookup | undefined): I
   };
 }
 
+function resolveItemFields(
+  item: ItemLookup | undefined,
+  fallback: { name: string; uom?: string },
+): { name: string; uom?: string } {
+  return item ? { name: item.name, uom: item.unitOfMeasure } : fallback;
+}
+
 function mergeGroupFields(
   group: ItemGroup,
   line: InvoiceLineWithDate,
   item: ItemLookup | undefined,
 ): ItemGroup {
+  const { name, uom } = resolveItemFields(item, { name: group.name, uom: group.uom });
   return {
     ...group,
-    name: item ? item.name : group.name,
-    uom: item ? item.unitOfMeasure : group.uom,
+    name,
+    uom,
     categoryType: line.categoryType !== null ? line.categoryType : group.categoryType,
     categoryName: line.categoryName !== null ? line.categoryName : group.categoryName,
   };
