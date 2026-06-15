@@ -1,49 +1,14 @@
 import { CopyIcon, PlusIcon, RotateCcwIcon, XIcon } from 'lucide-react';
-import { cn } from '@reyogo/ui';
+import { ActionButton } from './components/ActionButton';
+import type { DraftConflictModalProps } from './types';
 
-type Props = {
-  open: boolean;
-  draftItemCount: number;
-  onAppend: () => void;
-  onFresh: () => void;
-  onCancel: () => void;
-};
-
-const actionBtn = cn(
-  'flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm font-medium transition-colors',
-);
-
-function ActionButton({
-  onClick,
-  className,
-  icon,
-  iconClass,
-  label,
-  sublabel,
-}: {
-  onClick: () => void;
-  className: string;
-  icon: React.ReactNode;
-  iconClass: string;
-  label: string;
-  sublabel: string;
-}) {
-  return (
-    <button type="button" onClick={onClick} className={cn(actionBtn, className)}>
-      <span
-        className={cn('flex size-8 shrink-0 items-center justify-center rounded-lg', iconClass)}
-      >
-        {icon}
-      </span>
-      <span>
-        <span className="block font-semibold">{label}</span>
-        <span className="block text-xs font-normal opacity-80">{sublabel}</span>
-      </span>
-    </button>
-  );
-}
-
-export function DraftConflictModal({ open, draftItemCount, onAppend, onFresh, onCancel }: Props) {
+export function DraftConflictModal({
+  open,
+  draftItemCount,
+  onAppend,
+  onFresh,
+  onCancel,
+}: DraftConflictModalProps) {
   if (!open) return null;
 
   const itemLabel = `${draftItemCount} ${draftItemCount === 1 ? 'item' : 'items'}`;

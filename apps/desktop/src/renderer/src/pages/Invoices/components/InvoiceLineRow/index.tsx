@@ -1,9 +1,5 @@
 import { Fragment } from 'react';
 import { TableRow, cn } from '@reyogo/ui';
-import { type ItemOption } from '../ItemAutocomplete';
-import { VatMode } from '@reyogo/types';
-import type { ProcessReceiptLine } from '../../types';
-import { type ItemMeta } from './ItemMetaHint';
 import { ExpandToggleCell } from './ExpandToggleCell';
 import { LineDetailRow } from './LineDetailRow';
 import { LineItemCell } from './LineItemCell';
@@ -11,25 +7,7 @@ import { LineNumberCell } from './LineNumberCell';
 import { RemoveLineCell } from './RemoveLineCell';
 import { VatToggleCell } from './VatToggleCell';
 import { useLineRowState } from './useLineRowState';
-
-type Props = {
-  line: ProcessReceiptLine;
-  index: number;
-  vatMode: VatMode;
-  vatRate: number;
-  isExpanded: boolean;
-  isLast: boolean;
-  sortedItems: ItemOption[];
-  entityId: string;
-  itemMeta: ItemMeta | undefined;
-  onToggleExpand: () => void;
-  onUpdate: (updates: Partial<ProcessReceiptLine>) => void;
-  onRemove: () => void;
-  onAddLine: (focusField?: string) => void;
-  onNavigateNext: (field: string) => void;
-  onNavigatePrev: (field: string) => void;
-  onNavigateToNextRowItem: () => void;
-};
+import type { InvoiceLineRowProps } from './types';
 
 function rowBackgroundClass(confirmingDelete: boolean, isExpanded: boolean): string {
   if (confirmingDelete) return 'bg-destructive/5';
@@ -64,7 +42,7 @@ export function InvoiceLineRow({
   onNavigateNext,
   onNavigatePrev,
   onNavigateToNextRowItem,
-}: Props) {
+}: InvoiceLineRowProps) {
   const { confirmingDelete, rowRef, computed, keyDownCtx, handleBlurRow } = useLineRowState({
     line,
     index,

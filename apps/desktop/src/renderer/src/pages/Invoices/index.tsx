@@ -1,97 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
-import { AddCategoryModal } from '@/pages/Inventory/Capture/CapturedInventory/components/AddCategoryModal';
-import { AddItemModal } from '@/pages/Inventory/Capture/CapturedInventory/components/AddItemModal';
+import { useMemo, useState } from 'react';
 import { useInvoiceForm } from './hooks/useInvoiceForm';
+import { useSuppliers } from './hooks/useSuppliers';
 import { InvoiceHeader } from './components/InvoiceHeader';
 import { ReuseNotice } from './components/ReuseNotice';
-import { InvoiceLinesTable } from './components/InvoiceLinesTable';
+import { InvoiceBody } from './components/InvoiceBody';
 import { InvoiceSummaryFooter } from './components/InvoiceSummaryFooter';
-import { suppliersService } from '@/services/suppliers';
-import type { Supplier } from '@reyogo/types';
-import type {
-  InventoryCategory,
-  InventoryItem,
-} from '@/pages/Inventory/Capture/CapturedInventory/types';
-import type { UnitOption } from '@/pages/Inventory/Capture/CapturedInventory/components/ItemsTable/types';
-import type { ItemOption } from './components/ItemAutocomplete';
-
-type InvoiceModalsProps = {
-  categoryModalOpen: boolean;
-  itemModalOpen: boolean;
-  categories: InventoryCategory[];
-  unitOptions: UnitOption[];
-  onCloseCategory: () => void;
-  onCloseItem: () => void;
-  onSaveCategory: (category: Omit<InventoryCategory, 'id'>) => void;
-  onSaveItem: (item: Omit<InventoryItem, 'id'>) => void;
-};
-
-function InvoiceModals({
-  categoryModalOpen,
-  itemModalOpen,
-  categories,
-  unitOptions,
-  onCloseCategory,
-  onCloseItem,
-  onSaveCategory,
-  onSaveItem,
-}: InvoiceModalsProps) {
-  return (
-    <>
-      <AddCategoryModal
-        open={categoryModalOpen}
-        onClose={onCloseCategory}
-        onSave={onSaveCategory}
-      />
-      <AddItemModal
-        open={itemModalOpen}
-        onClose={onCloseItem}
-        categories={categories}
-        unitOptions={unitOptions}
-        onSave={onSaveItem}
-      />
-    </>
-  );
-}
-
-function useSuppliers(entityId: string | null): Supplier[] {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  useEffect(() => {
-    if (!entityId) return;
-    suppliersService.getSuppliers(entityId).then((s) => setSuppliers(s ?? []));
-  }, [entityId]);
-  return suppliers;
-}
-
-type InvoiceFormReturn = ReturnType<typeof useInvoiceForm>;
-
-function InvoiceBody({
-  form,
-  sortedItems,
-}: {
-  form: InvoiceFormReturn;
-  sortedItems: ItemOption[];
-}) {
-  return (
-    <div className="min-h-0 flex-1 overflow-auto">
-      <div className="mx-4 my-4">
-        <InvoiceLinesTable
-          lines={form.lines}
-          vatMode={form.vatMode}
-          vatRate={form.selectedEntity?.defaultVatRate ?? 0}
-          expandedLineIds={form.expandedResultLineIds}
-          sortedItems={sortedItems}
-          entityId={form.entityId}
-          itemMetaMap={form.itemMetaMap}
-          onToggleExpand={form.toggleResultRow}
-          onUpdateLine={form.updateLine}
-          onRemoveLine={form.removeLine}
-          onAddLine={form.addLine}
-        />
-      </div>
-    </div>
-  );
-}
+import { InvoiceModals } from './components/InvoiceModals';
 
 export default function InvoicePage() {
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);

@@ -6,10 +6,7 @@ import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
 import { loadDraft, saveDraft } from '../useDraftPersistence';
 import { DraftConflictModal } from '../../components/DraftConflictModal';
 import type { ProcessReceiptLine } from '../../types';
-
-type NavigateOptions = { reuse?: boolean };
-type Draft = ReturnType<typeof loadDraft>;
-type Pending = { lines: ProcessReceiptLine[]; reuse: boolean };
+import type { NavigateOptions, Draft, Pending } from './types';
 
 function loadPendingDraft(pending: Pending | null): Draft | null {
   if (pending === null) return null;

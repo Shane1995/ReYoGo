@@ -11,6 +11,7 @@ import { useInvoiceSummary } from '../useInvoiceSummary';
 import { useInvoiceFormFields } from '../useInvoiceFormFields';
 import { useInvoiceSubmission } from '../useInvoiceSubmission';
 import { useLastUnitCosts } from '../useLastUnitCosts';
+import type { LocationState, UseInvoiceFormSummaryParams } from './types';
 
 function getInitialLines(templateLines: ProcessReceiptLine[] | undefined): ProcessReceiptLine[] {
   if (templateLines && templateLines.length > 0) return templateLines;
@@ -46,11 +47,13 @@ function computeIsDirty(
   return !!supplierId;
 }
 
-type LocationState = { templateLines?: ProcessReceiptLine[]; isReuse?: boolean };
+function isLocationState(value: unknown): value is LocationState {
+  return typeof value === 'object' && value !== null;
+}
 
 function getLocationState(state: unknown): LocationState | null {
   if (!state) return null;
-  return state as LocationState;
+  return isLocationState(state) ? state : null;
 }
 
 function findSelectedEntity(entities: IEntity[], entityId: string): IEntity | null {
@@ -69,20 +72,7 @@ function defaultVatRateOf(entity: IEntity | null): number {
   return entity.defaultVatRate;
 }
 
-type FormSummaryParams = {
-  entities: IEntity[];
-  items: InventoryItem[];
-  categories: Parameters<typeof useInvoiceSummary>[2];
-  entityId: string;
-  isReused: boolean;
-  lastUnitCosts: Record<string, number>;
-  fields: Pick<
-    ReturnType<typeof useInvoiceFormFields>,
-    'lines' | 'invoiceNumber' | 'invoiceDate' | 'supplierId' | 'vatMode'
-  >;
-};
-
-function useInvoiceFormSummary(params: FormSummaryParams) {
+function useInvoiceFormSummary(params: UseInvoiceFormSummaryParams) {
   const { lines, invoiceNumber, invoiceDate, supplierId, vatMode } = params.fields;
 
   const selectedEntity = findSelectedEntity(params.entities, params.entityId);

@@ -1,8 +1,7 @@
 import { TableCell } from '@reyogo/ui';
-import { ItemAutocomplete, type ItemOption } from '../../ItemAutocomplete';
-import { VatMode } from '@reyogo/types';
-import type { getProcessLineComputed } from '../../../types';
-import { ItemMetaHint, type ItemMeta } from '../ItemMetaHint';
+import { ItemAutocomplete } from '../../ItemAutocomplete';
+import { ItemMetaHint } from '../ItemMetaHint';
+import type { LineItemCellProps } from './types';
 
 export function LineItemCell({
   lineId,
@@ -15,18 +14,7 @@ export function LineItemCell({
   computed,
   onChange,
   onAddLine,
-}: {
-  lineId: string;
-  itemId: string;
-  sortedItems: ItemOption[];
-  entityId: string;
-  isLast: boolean;
-  itemMeta: ItemMeta | undefined;
-  vatMode: VatMode;
-  computed: ReturnType<typeof getProcessLineComputed>;
-  onChange: (itemId: string) => void;
-  onAddLine: (focusField?: string) => void;
-}) {
+}: LineItemCellProps) {
   return (
     <TableCell className="py-2 px-3">
       <ItemAutocomplete

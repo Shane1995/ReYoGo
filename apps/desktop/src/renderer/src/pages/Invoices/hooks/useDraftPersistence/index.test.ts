@@ -2,8 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { VatMode } from '@reyogo/types';
 import { loadDraft, saveDraft, useDraftPersistence } from './index';
-
-const DRAFT_KEY = 'reyogo:invoice-draft';
+import { DRAFT_KEY } from './constants';
 
 describe('loadDraft', () => {
   beforeEach(() => localStorage.clear());
@@ -25,6 +24,16 @@ describe('loadDraft', () => {
 
   it('returns null on malformed JSON', () => {
     localStorage.setItem(DRAFT_KEY, 'not-json{{{');
+    expect(loadDraft()).toBeNull();
+  });
+
+  it('returns null when the stored value is not an object', () => {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify('a string'));
+    expect(loadDraft()).toBeNull();
+  });
+
+  it('returns null when the stored object is missing required fields', () => {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ lines: [] }));
     expect(loadDraft()).toBeNull();
   });
 });

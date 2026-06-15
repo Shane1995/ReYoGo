@@ -1,14 +1,7 @@
 import { TableCell, cn } from '@reyogo/ui';
+import type { VatToggleCellProps } from './types';
 
-export function VatToggleCell({
-  lineId,
-  isVatable,
-  onToggle,
-}: {
-  lineId: string;
-  isVatable: boolean;
-  onToggle: () => void;
-}) {
+export function VatToggleCell({ lineId, isVatable, onToggle }: VatToggleCellProps) {
   return (
     <TableCell className="py-2 px-3 text-center">
       <button

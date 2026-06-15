@@ -1,12 +1,8 @@
 import { TableCell, TableRow } from '@reyogo/ui';
-import type { getProcessLineComputed } from '../../../types';
 import { formatMoney } from '../../../utils/formatMoney';
+import type { LineDetailRowProps } from './types';
 
-export function LineDetailRow({
-  computed,
-}: {
-  computed: ReturnType<typeof getProcessLineComputed>;
-}) {
+export function LineDetailRow({ computed }: LineDetailRowProps) {
   const fields = [
     { label: 'Net unit', value: computed.netUnitPrice },
     { label: 'Gross unit', value: computed.grossUnitPrice },

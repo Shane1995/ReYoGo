@@ -1,10 +1,7 @@
 import { CopyIcon, XIcon } from 'lucide-react';
+import type { ReuseNoticeProps } from './types';
 
-type Props = {
-  onDismiss: () => void;
-};
-
-export function ReuseNotice({ onDismiss }: Props) {
+export function ReuseNotice({ onDismiss }: ReuseNoticeProps) {
   return (
     <div className="shrink-0 flex items-center gap-2 border-b border-[var(--nav-border)] bg-muted/40 px-4 py-2 text-sm text-muted-foreground">
       <CopyIcon className="size-3.5 shrink-0" />

@@ -1,95 +1,11 @@
 import { createPortal } from 'react-dom';
 import { cn } from '@reyogo/ui';
-import { formatMoney } from '../../utils/formatMoney';
+import { inputClass } from '../../utils/inputClass';
 import { useItemAutocomplete } from './useItemAutocomplete';
+import { AutocompleteOptionsList } from './components/AutocompleteOptionsList';
+import type { ItemAutocompleteProps } from './types';
 
-export type ItemOption = {
-  id: string;
-  name: string;
-  entityId?: string;
-  categoryName?: string;
-  typeLabel?: string;
-  lastUnitCostInclVat?: number;
-};
-
-type Props = {
-  items: ItemOption[];
-  value: string;
-  onChange: (itemId: string) => void;
-  entityId: string;
-  placeholder?: string;
-  className?: string;
-  disabled?: boolean;
-  inputId?: string;
-  onSelectComplete?: () => void;
-  onNavigateRight?: () => void;
-};
-
-function OptionCost({ cost }: { cost: number | undefined }) {
-  if (cost == null) return null;
-  return (
-    <span className="shrink-0 font-mono text-xs tabular-nums opacity-60">{formatMoney(cost)}</span>
-  );
-}
-
-function OptionRow({
-  item,
-  isHighlighted,
-  onSelect,
-}: {
-  item: ItemOption;
-  isHighlighted: boolean;
-  onSelect: (item: ItemOption) => void;
-}) {
-  return (
-    <li
-      id={`item-option-${item.id}`}
-      role="option"
-      aria-selected={isHighlighted}
-      className={cn(
-        'cursor-pointer px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground flex items-center justify-between gap-2',
-        isHighlighted && 'bg-accent text-accent-foreground',
-      )}
-      onMouseDown={(e) => {
-        e.preventDefault();
-        onSelect(item);
-      }}
-    >
-      <span className="truncate">{item.name}</span>
-      <OptionCost cost={item.lastUnitCostInclVat} />
-    </li>
-  );
-}
-
-function AutocompleteOptionsList({
-  items,
-  highlightIndex,
-  onSelect,
-}: {
-  items: ItemOption[];
-  highlightIndex: number;
-  onSelect: (item: ItemOption) => void;
-}) {
-  if (items.length === 0) {
-    return (
-      <li className="px-3 py-2 text-sm text-muted-foreground" role="option">
-        No items match
-      </li>
-    );
-  }
-  return (
-    <>
-      {items.map((item, index) => (
-        <OptionRow
-          key={item.id}
-          item={item}
-          isHighlighted={index === highlightIndex}
-          onSelect={onSelect}
-        />
-      ))}
-    </>
-  );
-}
+export type { ItemOption } from './types';
 
 export function ItemAutocomplete({
   items,
@@ -102,7 +18,7 @@ export function ItemAutocomplete({
   inputId,
   onSelectComplete,
   onNavigateRight,
-}: Props) {
+}: ItemAutocompleteProps) {
   const {
     isOpen,
     setQuery,
@@ -139,10 +55,7 @@ export function ItemAutocomplete({
         aria-expanded={isOpen}
         aria-autocomplete="list"
         aria-controls={listId}
-        className={cn(
-          'h-8 w-full rounded-md border border-input bg-background px-2.5 text-sm',
-          'focus:outline-none focus:ring-2 focus:ring-[var(--nav-active-border)]/50 focus:ring-offset-0',
-        )}
+        className={inputClass}
       />
       {isOpen &&
         createPortal(
