@@ -26,6 +26,16 @@ describe('loadDraft', () => {
     localStorage.setItem(DRAFT_KEY, 'not-json{{{');
     expect(loadDraft()).toBeNull();
   });
+
+  it('returns null when the stored value is not an object', () => {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify('a string'));
+    expect(loadDraft()).toBeNull();
+  });
+
+  it('returns null when the stored object is missing required fields', () => {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ lines: [] }));
+    expect(loadDraft()).toBeNull();
+  });
 });
 
 describe('saveDraft', () => {

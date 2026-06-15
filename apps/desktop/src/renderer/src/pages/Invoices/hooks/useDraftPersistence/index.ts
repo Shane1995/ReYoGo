@@ -1,19 +1,13 @@
 import { useCallback, useEffect } from 'react';
 import type { ProcessReceiptLine, VatMode } from '../../types';
-import { DRAFT_KEY } from './constants';
+import { DRAFT_KEY, DRAFT_STATE_KEYS } from './constants';
 import type { DraftState } from './types';
 
 export type { DraftState } from './types';
 
 function isDraftState(value: unknown): value is DraftState {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'lines' in value &&
-    'invoiceNumber' in value &&
-    'invoiceDate' in value &&
-    'vatMode' in value
-  );
+  if (typeof value !== 'object' || value === null) return false;
+  return DRAFT_STATE_KEYS.every((key) => key in value);
 }
 
 export function loadDraft(): DraftState | null {
