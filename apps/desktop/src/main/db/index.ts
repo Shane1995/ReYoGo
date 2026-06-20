@@ -306,9 +306,24 @@ export async function repairUomLinksIfNeeded(): Promise<void> {
 export function _setDbStateForTest(
   handle: DbHandle | ReplicaHandle | null,
   db: DbClient | null,
+  repos: Repos | null = null,
 ): void {
   _handle = handle;
   _db = db;
+  _repos = repos;
+}
+
+export function closeDb(): void {
+  if (_handle) {
+    try {
+      _handle.close();
+    } catch {
+      // Ignore close errors during shutdown
+    }
+    _handle = null;
+    _db = null;
+    _repos = null;
+  }
 }
 
 type ReplicaCredentials = { tursoUrl: string; authToken: string };

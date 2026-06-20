@@ -69,7 +69,13 @@ vi.mock('./cloudSync', () => ({
   withSyncTimeout: vi.fn((p: Promise<unknown>) => p),
 }));
 
-import { repairUomLinks, repairUomLinksIfNeeded, _setDbStateForTest } from './index';
+import {
+  repairUomLinks,
+  repairUomLinksIfNeeded,
+  _setDbStateForTest,
+  closeDb,
+  isDbInitialized,
+} from './index';
 import { hasUomRepairRun, markUomRepairDone } from './cloudSync';
 import { createDbClient } from '@reyogo/db';
 
@@ -197,5 +203,40 @@ describe('repairUomLinksIfNeeded', () => {
 
     expect(mockLocalDbHandle.close).toHaveBeenCalled();
     expect(markUomRepairDone).toHaveBeenCalledOnce();
+  });
+});
+
+describe('closeDb', () => {
+  beforeEach(() => {
+    resetMocks();
+    _setDbStateForTest(null, null, null);
+  });
+
+  it('does nothing and does not throw when db is not initialized', () => {
+    expect(() => closeDb()).not.toThrow();
+  });
+
+  it('calls close on the active handle and reports db as no longer initialized', () => {
+    const mockHandle = { close: vi.fn(), sync: vi.fn() };
+    _setDbStateForTest(mockHandle as never, {} as never, {} as never);
+
+    closeDb();
+
+    expect(mockHandle.close).toHaveBeenCalledOnce();
+    expect(isDbInitialized()).toBe(false);
+  });
+
+  it('resets state even if handle.close() throws', () => {
+    const mockHandle = {
+      close: vi.fn(() => {
+        throw new Error('close failed');
+      }),
+      sync: vi.fn(),
+    };
+    _setDbStateForTest(mockHandle as never, {} as never, {} as never);
+
+    closeDb();
+
+    expect(isDbInitialized()).toBe(false);
   });
 });

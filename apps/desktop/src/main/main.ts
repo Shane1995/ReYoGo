@@ -13,6 +13,7 @@ import {
   isDbInitialized,
   repairUomLinksIfNeeded,
   isReplicaMode,
+  closeDb,
 } from './db';
 import { hasCloudCredentials, markOffline } from './db/cloudSync';
 import { registerRoute } from './lib/electron-router-dom';
@@ -150,6 +151,10 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
+  });
+
+  app.on('before-quit', () => {
+    closeDb();
   });
 });
 
