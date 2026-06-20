@@ -162,8 +162,7 @@ describe('startConnectivityPoller', () => {
 
     mockIsOnline.mockReturnValue(true);
     vi.advanceTimersByTime(30_000);
-    vi.advanceTimersByTime(3_000);
-    await vi.runAllTimersAsync();
+    await vi.advanceTimersByTimeAsync(3_000);
 
     expect(mockSyncViaUtilityProcess).toHaveBeenCalledOnce();
   });
@@ -176,10 +175,28 @@ describe('startConnectivityPoller', () => {
     mockIsOnline.mockReturnValue(true);
     vi.advanceTimersByTime(30_000);
     vi.advanceTimersByTime(30_000);
-    vi.advanceTimersByTime(3_000);
-    await vi.runAllTimersAsync();
+    await vi.advanceTimersByTimeAsync(3_000);
 
     expect(mockSyncViaUtilityProcess).toHaveBeenCalledOnce();
+  });
+
+  it('triggers a debounced sync on each reconnect across multiple offline/online cycles', async () => {
+    mockIsOnline.mockReturnValue(false);
+    startConnectivityPoller();
+    vi.advanceTimersByTime(30_000);
+
+    mockIsOnline.mockReturnValue(true);
+    vi.advanceTimersByTime(30_000);
+    await vi.advanceTimersByTimeAsync(3_000);
+    expect(mockSyncViaUtilityProcess).toHaveBeenCalledOnce();
+
+    mockIsOnline.mockReturnValue(false);
+    vi.advanceTimersByTime(30_000);
+
+    mockIsOnline.mockReturnValue(true);
+    vi.advanceTimersByTime(30_000);
+    await vi.advanceTimersByTimeAsync(3_000);
+    expect(mockSyncViaUtilityProcess).toHaveBeenCalledTimes(2);
   });
 
   it('does not start a second poller when called twice', () => {

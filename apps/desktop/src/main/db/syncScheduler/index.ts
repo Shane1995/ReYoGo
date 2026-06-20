@@ -45,8 +45,6 @@ export function startConnectivityPoller(): void {
     }
     if (_wasOffline) {
       _wasOffline = false;
-      clearInterval(_poller!);
-      _poller = null;
       scheduleDebouncedSync();
     }
   }, CONNECTIVITY_POLL_MS);
