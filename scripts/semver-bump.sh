@@ -3,16 +3,14 @@ set -euo pipefail
 
 TAG_PREFIX="${1:?Usage: semver-bump.sh <tag-prefix>}"
 
-LATEST=$(git tag -l "${TAG_PREFIX}/v[0-9]*" --sort=-v:refname | head -1)
+LATEST=$(git tag -l "${TAG_PREFIX}/v[0-9]*" --sort=-v:refname | head -1 || true)
 if [ -z "$LATEST" ]; then
   BASE="0.0.0"
-  RANGE="HEAD"
+  COMMITS=$(git log --pretty=format:"%s" -1)
 else
   BASE=$(echo "$LATEST" | sed "s|^${TAG_PREFIX}/v||")
-  RANGE="${LATEST}..HEAD"
+  COMMITS=$(git log "${LATEST}..HEAD" --pretty=format:"%s" 2>/dev/null || true)
 fi
-
-COMMITS=$(git log "$RANGE" --pretty=format:"%s" 2>/dev/null || true)
 
 if [ -z "$COMMITS" ]; then
   echo "bump=skip" >> "$GITHUB_OUTPUT"
@@ -28,7 +26,7 @@ while IFS= read -r MSG; do
     break
   fi
 
-  TYPE=$(echo "$MSG" | grep -oE '^[a-z]+' | head -1)
+  TYPE=$(echo "$MSG" | grep -oE '^[a-z]+' | head -1 || true)
 
   case "$TYPE" in
     feat)
