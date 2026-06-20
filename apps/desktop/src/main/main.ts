@@ -7,14 +7,7 @@ import {
   DB_AUTH_ERROR_CHANNEL,
   DB_SETUP_NEEDED_CHANNEL,
 } from '@shared/ipc-events';
-import {
-  getDbReadyChannel,
-  initDatabase,
-  isDbInitialized,
-  repairUomLinksIfNeeded,
-  isReplicaMode,
-  closeDb,
-} from './db';
+import { getDbReadyChannel, initDatabase, isDbInitialized, isReplicaMode, closeDb } from './db';
 import { hasCloudCredentials, markOffline } from './db/cloudSync';
 import {
   startConnectivityPoller,
@@ -109,9 +102,6 @@ function setupDbLifecycle() {
     state.dbReady = true;
     state.dbSetupNeeded = false;
     trySendDbReady();
-    repairUomLinksIfNeeded().catch((err) => {
-      console.error('[ReYoGo] UoM repair failed:', err);
-    });
     if (isReplicaMode()) {
       startConnectivityPoller();
     }

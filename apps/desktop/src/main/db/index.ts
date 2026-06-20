@@ -3,7 +3,6 @@ import { existsSync, mkdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import {
-  createDbClient,
   createReplicaClient,
   createInventoryRepo,
   createSuppliersRepo,
@@ -16,15 +15,13 @@ import {
   type DbHandle,
   type ReplicaHandle,
 } from '@reyogo/db';
-import { and, eq, isNotNull, isNull } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { DB_READY_CHANNEL } from '@shared/ipc-events';
 import {
   hasCloudCredentials,
   getStoredCredentials,
   clearCredentials,
   hasEverSynced,
-  hasUomRepairRun,
-  markUomRepairDone,
   withSyncTimeout,
 } from './cloudSync';
 
@@ -290,45 +287,6 @@ export async function resolveCurrentIds(): Promise<{ groupId: string; entityId: 
   const entityId = firstIdOrThrow(entityRows, 'No entity found — setup not complete');
 
   return { groupId, entityId };
-}
-
-export async function repairUomLinks(sourceDb: DbClient, targetDb: DbClient): Promise<void> {
-  const sourceItems = await sourceDb
-    .select({
-      id: schema.inventoryItems.id,
-      unitOfMeasureId: schema.inventoryItems.unitOfMeasureId,
-    })
-    .from(schema.inventoryItems)
-    .where(isNotNull(schema.inventoryItems.unitOfMeasureId));
-
-  for (const item of sourceItems) {
-    if (!item.unitOfMeasureId) continue;
-    await targetDb
-      .update(schema.inventoryItems)
-      .set({ unitOfMeasureId: item.unitOfMeasureId })
-      .where(
-        and(eq(schema.inventoryItems.id, item.id), isNull(schema.inventoryItems.unitOfMeasureId)),
-      );
-  }
-}
-
-export async function repairUomLinksIfNeeded(): Promise<void> {
-  if (!isReplicaMode()) return;
-  if (hasUomRepairRun()) return;
-
-  const localPath = getDbPath();
-  if (!existsSync(localPath)) {
-    markUomRepairDone();
-    return;
-  }
-
-  const localHandle = createDbClient(`file:${localPath}`);
-  try {
-    await repairUomLinks(localHandle.db, getDb());
-  } finally {
-    localHandle.close();
-    markUomRepairDone();
-  }
 }
 
 export function _setDbStateForTest(
