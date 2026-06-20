@@ -44,7 +44,7 @@ jobs:
     needs: version
     if: needs.version.outputs.bump != 'skip'
     runs-on: ubuntu-latest
-    environment: promotion
+    environment: promote
     steps:
       - run: echo "Promoting desktop ${{ needs.version.outputs.tag }}"
 
@@ -76,6 +76,7 @@ jobs:
   build-win:
     needs: [version, tag]
     runs-on: windows-latest
+    environment: production
     steps:
       - uses: actions/checkout@v6
         with:
