@@ -11,6 +11,7 @@ on:
       - 'pnpm-workspace.yaml'
       - 'turbo.json'
       - 'tsconfig.base.json'
+      - 'scripts/**'
       - '.github/workflows/**'
       - 'README.md'
       - 'CLAUDE.md'
