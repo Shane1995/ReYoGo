@@ -37,7 +37,6 @@ export function startConnectivityPoller(): void {
   if (_poller !== null) return;
   _wasOffline = !net.isOnline();
   _poller = setInterval(() => {
-    if (!isReplicaMode()) return;
     const online = net.isOnline();
     if (!online) {
       _wasOffline = true;
