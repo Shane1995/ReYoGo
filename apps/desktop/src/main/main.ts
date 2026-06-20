@@ -16,6 +16,7 @@ import {
   closeDb,
 } from './db';
 import { hasCloudCredentials, markOffline } from './db/cloudSync';
+import { startConnectivityPoller, stopConnectivityPoller } from './db/syncScheduler';
 import { registerRoute } from './lib/electron-router-dom';
 import { registerIPC } from './ipc';
 
@@ -107,6 +108,9 @@ function setupDbLifecycle() {
     repairUomLinksIfNeeded().catch((err) => {
       console.error('[ReYoGo] UoM repair failed:', err);
     });
+    if (isReplicaMode()) {
+      startConnectivityPoller();
+    }
   };
 
   ipcMain.on(DB_REQUEST_READY_CHANNEL, (event) => {
@@ -154,6 +158,7 @@ app.whenReady().then(() => {
   });
 
   app.on('before-quit', () => {
+    stopConnectivityPoller();
     closeDb();
   });
 });
