@@ -4,23 +4,16 @@ on:
   push:
     branches: [main]
     paths:
-      - 'apps/**'
+      - 'apps/desktop/**'
       - 'lib/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - 'turbo.json'
       - 'tsconfig.base.json'
-  workflow_dispatch:
-    inputs:
-      bump:
-        description: Version bump type (push to main defaults to patch)
-        required: true
-        type: choice
-        options: [patch, minor, major]
 
 concurrency:
-  group: release
+  group: release-desktop
   cancel-in-progress: false
 
 env:
@@ -29,19 +22,35 @@ env:
   TURBO_TELEMETRY_DISABLED: "1"
 
 jobs:
-  promote:
+  version:
     if: github.actor == 'Shane1995'
+    runs-on: ubuntu-latest
+    outputs:
+      bump: ${{ steps.semver.outputs.bump }}
+      tag: ${{ steps.semver.outputs.tag }}
+      version: ${{ steps.semver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - id: semver
+        name: Determine version bump
+        run: |
+          git fetch --tags
+          bash scripts/semver-bump.sh desktop
+
+  promote:
+    needs: version
+    if: needs.version.outputs.bump != 'skip'
     runs-on: ubuntu-latest
     environment: promotion
     steps:
-      - run: echo "Promoted — proceeding with release"
+      - run: echo "Promoting desktop ${{ needs.version.outputs.tag }}"
 
-  version:
-    needs: promote
+  tag:
+    needs: [version, promote]
     runs-on: ubuntu-latest
-    outputs:
-      tag: ${{ steps.bump.outputs.tag }}
-      version: ${{ steps.bump.outputs.version }}
     steps:
       - name: Generate app token
         id: app-token
@@ -55,39 +64,17 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
-      - id: bump
-        name: Create version tag
+      - name: Create version tag
         run: |
           git fetch --tags
-
-          LATEST=$(git tag -l "v[0-9]*" --sort=-v:refname | grep -v beta | head -1)
-          if [ -z "$LATEST" ]; then
-            BASE="0.0.0"
-          else
-            BASE=$(echo "$LATEST" | sed 's/^v//')
-          fi
-
-          BUMP="${{ inputs.bump || 'patch' }}"
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
-          case "$BUMP" in
-            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
-            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
-            patch) PATCH=$((PATCH + 1)) ;;
-          esac
-
-          VERSION="$MAJOR.$MINOR.$PATCH"
-          TAG="v${VERSION}"
-
+          TAG="${{ needs.version.outputs.tag }}"
           git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
           git config user.email "${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
           git tag -a "$TAG" -m "Release ${TAG}"
           git push origin "$TAG"
 
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
   build-win:
-    needs: version
+    needs: [version, tag]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6

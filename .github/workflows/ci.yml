@@ -30,6 +30,22 @@ env:
   TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha || 'HEAD^1' }}
 
 jobs:
+  commit-lint:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Validate PR title
+        run: echo "${{ github.event.pull_request.title }}" | pnpm exec commitlint
+
   install:
     runs-on: ubuntu-latest
     steps:
