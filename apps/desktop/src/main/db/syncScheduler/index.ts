@@ -9,6 +9,13 @@ let _timer: ReturnType<typeof setTimeout> | null = null;
 let _poller: ReturnType<typeof setInterval> | null = null;
 let _wasOffline = false;
 
+export function withSync<T>(op: () => Promise<T>): Promise<T> {
+  return op().then((result) => {
+    scheduleDebouncedSync();
+    return result;
+  });
+}
+
 export function scheduleDebouncedSync(): void {
   if (!isReplicaMode()) return;
   if (_timer !== null) clearTimeout(_timer);

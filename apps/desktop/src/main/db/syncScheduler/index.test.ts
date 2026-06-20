@@ -35,6 +35,7 @@ vi.mock('electron', () => ({
 }));
 
 import {
+  withSync,
   scheduleDebouncedSync,
   cancelPendingSync,
   startConnectivityPoller,
@@ -235,6 +236,42 @@ describe('stopConnectivityPoller', () => {
     stopConnectivityPoller();
     mockIsOnline.mockReturnValue(true);
     vi.advanceTimersByTime(60_000);
+    expect(mockSyncViaUtilityProcess).not.toHaveBeenCalled();
+  });
+});
+
+describe('withSync', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    _resetForTest();
+    vi.clearAllMocks();
+    mockIsReplicaMode.mockReturnValue(true);
+    mockGetStoredCredentials.mockReturnValue({ tursoUrl: 'libsql://x.io', authToken: 'token' });
+    mockSyncViaUtilityProcess.mockReturnValue(Promise.resolve());
+  });
+
+  afterEach(() => {
+    _resetForTest();
+    vi.useRealTimers();
+  });
+
+  it('returns the result of the operation', async () => {
+    const result = await withSync(() => Promise.resolve(42));
+    expect(result).toBe(42);
+  });
+
+  it('schedules a sync after the operation resolves', async () => {
+    await withSync(() => Promise.resolve('ok'));
+    vi.advanceTimersByTime(3_000);
+    await vi.runAllTimersAsync();
+    expect(mockSyncViaUtilityProcess).toHaveBeenCalledOnce();
+  });
+
+  it('does not schedule a sync when the operation rejects', async () => {
+    await expect(withSync(() => Promise.reject(new Error('write failed')))).rejects.toThrow(
+      'write failed',
+    );
+    vi.advanceTimersByTime(3_000);
     expect(mockSyncViaUtilityProcess).not.toHaveBeenCalled();
   });
 });
