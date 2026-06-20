@@ -28,8 +28,9 @@ export function registerEntitiesHandlers(): void {
     const { groupId } = await resolveCurrentIds();
     const id = randomUUID();
     await getRepos().entities.createEntity({ id, groupId, name });
+    const result = await getRepos().entities.getEntities(ACCOUNT_ID);
     scheduleDebouncedSync();
-    return getRepos().entities.getEntities(ACCOUNT_ID);
+    return result;
   });
   ipcMain.handle(EntitiesIPC.RENAME_ENTITY, async (_e, entityId: string, name: string) => {
     const result = await getRepos().entities.renameEntity(entityId, name);
