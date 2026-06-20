@@ -16,7 +16,11 @@ import {
   closeDb,
 } from './db';
 import { hasCloudCredentials, markOffline } from './db/cloudSync';
-import { startConnectivityPoller, stopConnectivityPoller } from './db/syncScheduler';
+import {
+  startConnectivityPoller,
+  stopConnectivityPoller,
+  cancelPendingSync,
+} from './db/syncScheduler';
 import { registerRoute } from './lib/electron-router-dom';
 import { registerIPC } from './ipc';
 
@@ -159,6 +163,7 @@ app.whenReady().then(() => {
 
   app.on('before-quit', () => {
     stopConnectivityPoller();
+    cancelPendingSync();
     closeDb();
   });
 });
