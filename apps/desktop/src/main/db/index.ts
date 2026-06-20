@@ -216,6 +216,35 @@ function isCorruptedReplicaError(err: unknown): boolean {
 
 export const ACCOUNT_ID = 'default';
 
+type ReplicaCredentials = { tursoUrl: string; authToken: string };
+
+async function attemptPreRecoverySync(
+  replicaPath: string,
+  credentials: ReplicaCredentials,
+): Promise<void> {
+  if (!existsSync(replicaPath)) return;
+  let handle: ReturnType<typeof createReplicaClient> | undefined;
+  try {
+    handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
+    await withSyncTimeout(handle.sync());
+  } catch {
+    // Best effort — proceed to wipe regardless
+  } finally {
+    try {
+      handle?.close();
+    } catch {
+      // Ignore close errors
+    }
+  }
+}
+
+export async function _attemptPreRecoverySyncForTest(
+  replicaPath: string,
+  credentials: { tursoUrl: string; authToken: string },
+): Promise<void> {
+  return attemptPreRecoverySync(replicaPath, credentials);
+}
+
 async function ensureDefaultAccount(db: DbClient): Promise<void> {
   const existing = await db
     .select()
@@ -326,8 +355,6 @@ export function closeDb(): void {
   }
 }
 
-type ReplicaCredentials = { tursoUrl: string; authToken: string };
-
 async function bootFresh(handle: ReplicaHandle): Promise<void> {
   await withSyncTimeout(handle.sync());
   await activateHandle(handle);
@@ -337,6 +364,7 @@ async function recoverFromCorruption(
   replicaPath: string,
   credentials: ReplicaCredentials,
 ): Promise<void> {
+  await attemptPreRecoverySync(replicaPath, credentials);
   wipeReplicaFiles(replicaPath);
   const handle = openReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
   await bootFresh(handle);

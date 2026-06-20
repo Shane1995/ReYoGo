@@ -75,9 +75,10 @@ import {
   _setDbStateForTest,
   closeDb,
   isDbInitialized,
+  _attemptPreRecoverySyncForTest,
 } from './index';
 import { hasUomRepairRun, markUomRepairDone } from './cloudSync';
-import { createDbClient } from '@reyogo/db';
+import { createDbClient, createReplicaClient } from '@reyogo/db';
 
 function resetMocks() {
   vi.clearAllMocks();
@@ -238,5 +239,63 @@ describe('closeDb', () => {
     closeDb();
 
     expect(isDbInitialized()).toBe(false);
+  });
+});
+
+describe('_attemptPreRecoverySyncForTest', () => {
+  const credentials = { tursoUrl: 'libsql://x.io', authToken: 'token' };
+
+  beforeEach(() => {
+    resetMocks();
+    vi.mocked(createReplicaClient).mockReset();
+  });
+
+  it('does nothing when replica db file does not exist', async () => {
+    mockExistsSync.mockReturnValue(false);
+    await _attemptPreRecoverySyncForTest('/tmp/replica.db', credentials);
+    expect(createReplicaClient).not.toHaveBeenCalled();
+  });
+
+  it('opens a client and calls sync when replica db file exists', async () => {
+    const mockSync = vi.fn(() => Promise.resolve());
+    const mockClose = vi.fn();
+    vi.mocked(createReplicaClient).mockReturnValue({
+      sync: mockSync,
+      close: mockClose,
+      db: {},
+    } as never);
+    mockExistsSync.mockReturnValue(true);
+
+    await _attemptPreRecoverySyncForTest('/tmp/replica.db', credentials);
+
+    expect(createReplicaClient).toHaveBeenCalledWith('/tmp/replica.db', 'libsql://x.io', 'token');
+    expect(mockSync).toHaveBeenCalledOnce();
+    expect(mockClose).toHaveBeenCalledOnce();
+  });
+
+  it('closes handle and resolves without throwing when sync fails', async () => {
+    const mockClose = vi.fn();
+    vi.mocked(createReplicaClient).mockReturnValue({
+      sync: vi.fn(() => Promise.reject(new Error('sync failed'))),
+      close: mockClose,
+      db: {},
+    } as never);
+    mockExistsSync.mockReturnValue(true);
+
+    await expect(
+      _attemptPreRecoverySyncForTest('/tmp/replica.db', credentials),
+    ).resolves.toBeUndefined();
+    expect(mockClose).toHaveBeenCalledOnce();
+  });
+
+  it('resolves without throwing when createReplicaClient itself throws', async () => {
+    vi.mocked(createReplicaClient).mockImplementation(() => {
+      throw new Error('cannot open');
+    });
+    mockExistsSync.mockReturnValue(true);
+
+    await expect(
+      _attemptPreRecoverySyncForTest('/tmp/replica.db', credentials),
+    ).resolves.toBeUndefined();
   });
 });
