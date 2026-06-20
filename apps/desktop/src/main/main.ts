@@ -7,14 +7,13 @@ import {
   DB_AUTH_ERROR_CHANNEL,
   DB_SETUP_NEEDED_CHANNEL,
 } from '@shared/ipc-events';
-import {
-  getDbReadyChannel,
-  initDatabase,
-  isDbInitialized,
-  repairUomLinksIfNeeded,
-  isReplicaMode,
-} from './db';
+import { getDbReadyChannel, initDatabase, isDbInitialized, isReplicaMode, closeDb } from './db';
 import { hasCloudCredentials, markOffline } from './db/cloudSync';
+import {
+  startConnectivityPoller,
+  stopConnectivityPoller,
+  cancelPendingSync,
+} from './db/syncScheduler';
 import { registerRoute } from './lib/electron-router-dom';
 import { registerIPC } from './ipc';
 
@@ -103,9 +102,9 @@ function setupDbLifecycle() {
     state.dbReady = true;
     state.dbSetupNeeded = false;
     trySendDbReady();
-    repairUomLinksIfNeeded().catch((err) => {
-      console.error('[ReYoGo] UoM repair failed:', err);
-    });
+    if (isReplicaMode()) {
+      startConnectivityPoller();
+    }
   };
 
   ipcMain.on(DB_REQUEST_READY_CHANNEL, (event) => {
@@ -150,6 +149,12 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
+  });
+
+  app.on('before-quit', () => {
+    stopConnectivityPoller();
+    cancelPendingSync();
+    closeDb();
   });
 });
 

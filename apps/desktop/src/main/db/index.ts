@@ -3,7 +3,6 @@ import { existsSync, mkdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import {
-  createDbClient,
   createReplicaClient,
   createInventoryRepo,
   createSuppliersRepo,
@@ -16,15 +15,13 @@ import {
   type DbHandle,
   type ReplicaHandle,
 } from '@reyogo/db';
-import { and, eq, isNotNull, isNull } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { DB_READY_CHANNEL } from '@shared/ipc-events';
 import {
   hasCloudCredentials,
   getStoredCredentials,
   clearCredentials,
   hasEverSynced,
-  hasUomRepairRun,
-  markUomRepairDone,
   withSyncTimeout,
 } from './cloudSync';
 
@@ -216,6 +213,34 @@ function isCorruptedReplicaError(err: unknown): boolean {
 
 export const ACCOUNT_ID = 'default';
 
+type ReplicaCredentials = { tursoUrl: string; authToken: string };
+
+async function attemptPreRecoverySync(
+  replicaPath: string,
+  credentials: ReplicaCredentials,
+): Promise<void> {
+  if (!existsSync(replicaPath)) return;
+  let handle: ReturnType<typeof createReplicaClient> | undefined;
+  try {
+    handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
+    await withSyncTimeout(handle.sync());
+    console.log('[ReYoGo] Pre-recovery sync succeeded — unsynced writes flushed to Turso');
+  } catch (err) {
+    console.error('[ReYoGo] Pre-recovery sync failed, proceeding with wipe:', err);
+  } finally {
+    try {
+      handle?.close();
+    } catch {}
+  }
+}
+
+export async function _attemptPreRecoverySyncForTest(
+  replicaPath: string,
+  credentials: { tursoUrl: string; authToken: string },
+): Promise<void> {
+  return attemptPreRecoverySync(replicaPath, credentials);
+}
+
 async function ensureDefaultAccount(db: DbClient): Promise<void> {
   const existing = await db
     .select()
@@ -264,54 +289,27 @@ export async function resolveCurrentIds(): Promise<{ groupId: string; entityId: 
   return { groupId, entityId };
 }
 
-export async function repairUomLinks(sourceDb: DbClient, targetDb: DbClient): Promise<void> {
-  const sourceItems = await sourceDb
-    .select({
-      id: schema.inventoryItems.id,
-      unitOfMeasureId: schema.inventoryItems.unitOfMeasureId,
-    })
-    .from(schema.inventoryItems)
-    .where(isNotNull(schema.inventoryItems.unitOfMeasureId));
-
-  for (const item of sourceItems) {
-    if (!item.unitOfMeasureId) continue;
-    await targetDb
-      .update(schema.inventoryItems)
-      .set({ unitOfMeasureId: item.unitOfMeasureId })
-      .where(
-        and(eq(schema.inventoryItems.id, item.id), isNull(schema.inventoryItems.unitOfMeasureId)),
-      );
-  }
-}
-
-export async function repairUomLinksIfNeeded(): Promise<void> {
-  if (!isReplicaMode()) return;
-  if (hasUomRepairRun()) return;
-
-  const localPath = getDbPath();
-  if (!existsSync(localPath)) {
-    markUomRepairDone();
-    return;
-  }
-
-  const localHandle = createDbClient(`file:${localPath}`);
-  try {
-    await repairUomLinks(localHandle.db, getDb());
-  } finally {
-    localHandle.close();
-    markUomRepairDone();
-  }
-}
-
 export function _setDbStateForTest(
   handle: DbHandle | ReplicaHandle | null,
   db: DbClient | null,
+  repos: Repos | null = null,
 ): void {
   _handle = handle;
   _db = db;
+  _repos = repos;
 }
 
-type ReplicaCredentials = { tursoUrl: string; authToken: string };
+export function closeDb(): void {
+  if (!_handle) return;
+  try {
+    _handle.close();
+  } catch (err) {
+    console.error('[ReYoGo] Error closing DB handle on shutdown:', err);
+  }
+  _handle = null;
+  _db = null;
+  _repos = null;
+}
 
 async function bootFresh(handle: ReplicaHandle): Promise<void> {
   await withSyncTimeout(handle.sync());
@@ -322,6 +320,7 @@ async function recoverFromCorruption(
   replicaPath: string,
   credentials: ReplicaCredentials,
 ): Promise<void> {
+  await attemptPreRecoverySync(replicaPath, credentials);
   wipeReplicaFiles(replicaPath);
   const handle = openReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
   await bootFresh(handle);
