@@ -1,4 +1,4 @@
-name: Release Desktop to Staging
+name: Release Desktop
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
         options: [patch, minor, major]
 
 concurrency:
-  group: release-staging
+  group: release
   cancel-in-progress: false
 
 env:
@@ -22,8 +22,8 @@ jobs:
   version:
     runs-on: ubuntu-latest
     outputs:
-      beta_tag: ${{ steps.bump.outputs.beta_tag }}
-      new_version: ${{ steps.bump.outputs.new_version }}
+      tag: ${{ steps.bump.outputs.tag }}
+      version: ${{ steps.bump.outputs.version }}
     steps:
       - name: Generate app token
         id: app-token
@@ -38,15 +38,15 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - id: bump
-        name: Bump version and create beta tag
+        name: Bump version and create tag
         run: |
           git fetch --tags
 
-          LATEST=$(git tag -l "v[0-9]*" | sort -V | tail -1)
+          LATEST=$(git tag -l "v[0-9]*" --sort=-v:refname | grep -v beta | head -1)
           if [ -z "$LATEST" ]; then
             BASE="0.0.0"
           else
-            BASE=$(echo "$LATEST" | sed 's/^v//' | sed 's/-beta\.[0-9]*//')
+            BASE=$(echo "$LATEST" | sed 's/^v//')
           fi
 
           BUMP="${{ inputs.bump }}"
@@ -56,24 +56,15 @@ jobs:
             minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
             patch) PATCH=$((PATCH + 1)) ;;
           esac
-          NEW_BASE="$MAJOR.$MINOR.$PATCH"
 
-          EXISTING=$(git tag -l "v${NEW_BASE}-beta.*" | sort -V | tail -1)
-          if [ -z "$EXISTING" ]; then
-            BETA_N=1
-          else
-            LAST_N=$(echo "$EXISTING" | sed 's/.*-beta\.//')
-            BETA_N=$((LAST_N + 1))
-          fi
+          VERSION="$MAJOR.$MINOR.$PATCH"
+          TAG="v${VERSION}"
 
-          NEW_VERSION="${NEW_BASE}-beta.${BETA_N}"
-          BETA_TAG="v${NEW_VERSION}"
+          git tag "$TAG"
+          git push origin "$TAG"
 
-          git tag "$BETA_TAG"
-          git push origin "$BETA_TAG"
-
-          echo "beta_tag=$BETA_TAG" >> $GITHUB_OUTPUT
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
   ci:
     needs: version
@@ -82,11 +73,11 @@ jobs:
   build-win:
     needs: [version, ci]
     runs-on: windows-latest
-    environment: staging
+    environment: production
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ needs.version.outputs.beta_tag }}
+          ref: ${{ needs.version.outputs.tag }}
       - uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
@@ -98,10 +89,10 @@ jobs:
       - run: pnpm --filter @reyogo/desktop exec electron-builder install-app-deps
       - name: Build desktop
         env:
-          PRODUCT_NAME: ReYoGo Staging
-          RELEASE_VERSION: ${{ needs.version.outputs.new_version }}
+          PRODUCT_NAME: ReYoGo
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
           UPDATE_FEED_URL: ${{ vars.UPDATE_FEED_URL }}/win
-          VITE_APP_ENV: staging
+          VITE_APP_ENV: production
         run: |
           pnpm --filter @reyogo/desktop run clean
           pnpm --filter @reyogo/desktop run electron:build
@@ -112,16 +103,16 @@ jobs:
           path: apps/desktop/release/
           retention-days: 7
 
-  publish-staging:
-    name: Upload to staging
+  publish:
+    name: Publish to production
     needs: [version, build-win]
     runs-on: ubuntu-latest
-    environment: staging
+    environment: production
     permissions:
       id-token: write
-      contents: read
+      contents: write
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: dist-win
           path: artifacts/
@@ -129,41 +120,20 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: eu-west-2
-      - name: Upload to S3 staging
+      - name: Upload to S3
         run: |
-          TAG="${{ needs.version.outputs.beta_tag }}"
-          aws s3 sync artifacts/ "s3://reyogo-desktop/staging/win/${TAG}/" \
+          TAG="${{ needs.version.outputs.tag }}"
+          aws s3 sync artifacts/ "s3://reyogo-desktop/production/win/${TAG}/" \
             --exclude "win-unpacked/*" \
             --exclude "builder-debug.yml"
           YML=$(find artifacts/ -maxdepth 1 -name "*.yml" ! -name "builder-debug.yml" | head -1)
           sed "s|^path: |path: ${TAG}/|; s|- url: |- url: ${TAG}/|g" "$YML" > /tmp/manifest.yml
-          aws s3 cp /tmp/manifest.yml "s3://reyogo-desktop/staging/win/$(basename "$YML")"
-
-  promote:
-    name: Approve — promote to production
-    needs: [version, publish-staging]
-    runs-on: ubuntu-latest
-    environment: promote
-    permissions:
-      contents: write
-    steps:
-      - name: Generate app token
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          client-id: ${{ secrets.APP_CLIENT_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token }}
-
-      - name: Create production tag
+          aws s3 cp /tmp/manifest.yml "s3://reyogo-desktop/production/win/$(basename "$YML")"
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          BETA_TAG="${{ needs.version.outputs.beta_tag }}"
-          PROD_VERSION=$(echo "$BETA_TAG" | sed 's/^v//' | sed 's/-beta\.[0-9]*//')
-          PROD_TAG="v${PROD_VERSION}"
-          git fetch --tags origin
-          git tag "$PROD_TAG" "$BETA_TAG"
-          git push origin "$PROD_TAG"
+          gh release create ${{ needs.version.outputs.tag }} \
+            --repo ${{ github.repository }} \
+            --generate-notes \
+            --title "${{ needs.version.outputs.tag }}"
