@@ -227,14 +227,13 @@ async function attemptPreRecoverySync(
   try {
     handle = createReplicaClient(replicaPath, credentials.tursoUrl, credentials.authToken);
     await withSyncTimeout(handle.sync());
-  } catch {
-    // Best effort — proceed to wipe regardless
+    console.log('[ReYoGo] Pre-recovery sync succeeded — unsynced writes flushed to Turso');
+  } catch (err) {
+    console.error('[ReYoGo] Pre-recovery sync failed, proceeding with wipe:', err);
   } finally {
     try {
       handle?.close();
-    } catch {
-      // Ignore close errors
-    }
+    } catch {}
   }
 }
 
@@ -343,16 +342,15 @@ export function _setDbStateForTest(
 }
 
 export function closeDb(): void {
-  if (_handle) {
-    try {
-      _handle.close();
-    } catch {
-      // Ignore close errors during shutdown
-    }
-    _handle = null;
-    _db = null;
-    _repos = null;
+  if (!_handle) return;
+  try {
+    _handle.close();
+  } catch (err) {
+    console.error('[ReYoGo] Error closing DB handle on shutdown:', err);
   }
+  _handle = null;
+  _db = null;
+  _repos = null;
 }
 
 async function bootFresh(handle: ReplicaHandle): Promise<void> {
