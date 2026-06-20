@@ -125,12 +125,12 @@ jobs:
           aws-region: eu-west-2
       - name: Upload to S3
         run: |
-          TAG="${{ needs.version.outputs.tag }}"
-          aws s3 sync artifacts/ "s3://reyogo-desktop/production/win/${TAG}/" \
+          VERSION="v${{ needs.version.outputs.version }}"
+          aws s3 sync artifacts/ "s3://reyogo-desktop/production/win/${VERSION}/" \
             --exclude "win-unpacked/*" \
             --exclude "builder-debug.yml"
           YML=$(find artifacts/ -maxdepth 1 -name "*.yml" ! -name "builder-debug.yml" | head -1)
-          sed "s|^path: |path: ${TAG}/|; s|- url: |- url: ${TAG}/|g" "$YML" > /tmp/manifest.yml
+          sed "s|^path: |path: ${VERSION}/|; s|- url: |- url: ${VERSION}/|g" "$YML" > /tmp/manifest.yml
           aws s3 cp /tmp/manifest.yml "s3://reyogo-desktop/production/win/$(basename "$YML")"
       - name: Create GitHub Release
         env:
