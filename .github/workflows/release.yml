@@ -2,12 +2,18 @@ name: Release Desktop
 
 on:
   push:
-    tags:
-      - "v*"
-      - "!v*-beta.*"
+    branches: [main]
+    paths:
+      - 'apps/desktop/**'
+      - 'lib/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.json'
+      - 'tsconfig.base.json'
 
 concurrency:
-  group: release
+  group: release-desktop
   cancel-in-progress: false
 
 env:
@@ -16,60 +22,65 @@ env:
   TURBO_TELEMETRY_DISABLED: "1"
 
 jobs:
-  lint:
+  version:
+    if: github.actor == 'Shane1995'
     runs-on: ubuntu-latest
+    outputs:
+      bump: ${{ steps.semver.outputs.bump }}
+      tag: ${{ steps.semver.outputs.tag }}
+      version: ${{ steps.semver.outputs.version }}
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
         with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile --ignore-scripts
-      - run: pnpm exec turbo run lint
+          fetch-depth: 0
 
-  test:
+      - id: semver
+        name: Determine version bump
+        run: |
+          git fetch --tags
+          bash scripts/semver-bump.sh desktop
+
+  promote:
+    needs: version
+    if: needs.version.outputs.bump != 'skip'
+    runs-on: ubuntu-latest
+    environment: promote
+    steps:
+      - run: echo "Promoting desktop ${{ needs.version.outputs.tag }}"
+
+  tag:
+    needs: [version, promote]
     runs-on: ubuntu-latest
     steps:
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
         with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile --ignore-scripts
-      - run: pnpm exec turbo run test
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
-  typecheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile --ignore-scripts
-      - run: pnpm exec turbo run typecheck
-
-  approve:
-    needs: [lint, test, typecheck]
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - run: echo "Approved for production release ${{ github.ref_name }}"
+      - name: Create version tag
+        run: |
+          git fetch --tags
+          TAG="${{ needs.version.outputs.tag }}"
+          git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
+          git config user.email "${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release ${TAG}"
+          git push origin "$TAG"
 
   build-win:
-    needs: approve
+    needs: [version, tag]
     runs-on: windows-latest
+    environment: production
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.version.outputs.tag }}
       - uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
@@ -82,7 +93,7 @@ jobs:
       - name: Build desktop
         env:
           PRODUCT_NAME: ReYoGo
-          RELEASE_VERSION: ${{ github.ref_name }}
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
           UPDATE_FEED_URL: ${{ vars.UPDATE_FEED_URL }}/win
           VITE_APP_ENV: production
         run: |
@@ -97,8 +108,9 @@ jobs:
 
   publish:
     name: Publish to production
-    needs: build-win
+    needs: [version, build-win]
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       id-token: write
       contents: write
@@ -113,7 +125,7 @@ jobs:
           aws-region: eu-west-2
       - name: Upload to S3
         run: |
-          TAG="${{ github.ref_name }}"
+          TAG="${{ needs.version.outputs.tag }}"
           aws s3 sync artifacts/ "s3://reyogo-desktop/production/win/${TAG}/" \
             --exclude "win-unpacked/*" \
             --exclude "builder-debug.yml"
@@ -124,44 +136,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create ${{ github.ref_name }} \
+          gh release create ${{ needs.version.outputs.tag }} \
             --repo ${{ github.repository }} \
             --generate-notes \
-            --title "${{ github.ref_name }}"
-
-  health-badge:
-    needs: publish
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Generate app token
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          client-id: ${{ secrets.APP_CLIENT_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-      - uses: actions/checkout@v6
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-      - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile --ignore-scripts
-      - name: Generate health badge
-        run: |
-          mkdir -p .github/badges
-          pnpm dlx fallow@2.89.0 health --format badge --report-only > .github/badges/health.svg
-      - name: Commit badge
-        run: |
-          git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
-          git config user.email "${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
-          git add .github/badges/health.svg
-          git diff --staged --quiet || (
-            git commit -m "chore: update fallow health badge [skip ci]" &&
-            git push
-          )
+            --title "${{ needs.version.outputs.tag }}"

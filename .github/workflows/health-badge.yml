@@ -1,0 +1,51 @@
+name: Health Badge
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'lib/**'
+      - '.fallowrc.json'
+      - 'fallow-baselines/**'
+
+env:
+  NODE_VERSION: "24"
+  PNPM_VERSION: "9.15.0"
+
+jobs:
+  health-badge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Generate health badge
+        run: |
+          mkdir -p .github/badges
+          pnpm dlx fallow@2.89.0 health --format badge --report-only > .github/badges/health.svg
+      - name: Commit badge
+        run: |
+          git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
+          git config user.email "${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
+          git add .github/badges/health.svg
+          git diff --staged --quiet || (
+            git commit -m "chore: update fallow health badge [skip ci]" &&
+            git push
+          )
