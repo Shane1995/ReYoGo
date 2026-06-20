@@ -17,7 +17,7 @@ on:
       - 'CLAUDE.md'
       - 'docs/**'
       - '.fallowrc.json'
-      - 'fallow-baselines/**'
+      - '.fallow-baselines/**'
   workflow_call:
 
 concurrency:
@@ -130,7 +130,7 @@ jobs:
           production: true
           comment: true
           review-comments: true
-          dead-code-baseline: fallow-baselines/baseline.json
+          dead-code-baseline: .fallow-baselines/baseline.json
           fail-on-issues: true
 
   build-desktop:
