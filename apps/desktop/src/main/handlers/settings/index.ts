@@ -56,6 +56,7 @@ async function handleConnect(tursoUrl: string, authToken: string): Promise<void>
   saveCredentials(tursoUrl, authToken);
   try {
     await syncNewConnection(replicaPath, tursoUrl, authToken);
+    recordSyncSuccess();
   } catch (err) {
     handleConnectFailure(replicaPath, err);
   }
