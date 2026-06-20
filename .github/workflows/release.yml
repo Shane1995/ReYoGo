@@ -1,13 +1,10 @@
 name: Release Desktop
 
 on:
-  workflow_dispatch:
-    inputs:
-      bump:
-        description: Version bump type
-        required: true
-        type: choice
-        options: [patch, minor, major]
+  push:
+    tags:
+      - "v*"
+      - "!v*-beta.*"
 
 concurrency:
   group: release
@@ -19,60 +16,10 @@ env:
   TURBO_TELEMETRY_DISABLED: "1"
 
 jobs:
-  version:
-    runs-on: ubuntu-latest
-    outputs:
-      tag: ${{ steps.bump.outputs.tag }}
-      version: ${{ steps.bump.outputs.version }}
-    steps:
-      - name: Generate app token
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          client-id: ${{ secrets.APP_CLIENT_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token }}
-
-      - id: bump
-        name: Bump version and create tag
-        run: |
-          git fetch --tags
-
-          LATEST=$(git tag -l "v[0-9]*" --sort=-v:refname | grep -v beta | head -1)
-          if [ -z "$LATEST" ]; then
-            BASE="0.0.0"
-          else
-            BASE=$(echo "$LATEST" | sed 's/^v//')
-          fi
-
-          BUMP="${{ inputs.bump }}"
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
-          case "$BUMP" in
-            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
-            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
-            patch) PATCH=$((PATCH + 1)) ;;
-          esac
-
-          VERSION="$MAJOR.$MINOR.$PATCH"
-          TAG="v${VERSION}"
-
-          git tag "$TAG"
-          git push origin "$TAG"
-
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
   lint:
-    needs: version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.version.outputs.tag }}
       - uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
@@ -84,12 +31,9 @@ jobs:
       - run: pnpm exec turbo run lint
 
   test:
-    needs: version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.version.outputs.tag }}
       - uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
@@ -101,12 +45,9 @@ jobs:
       - run: pnpm exec turbo run test
 
   typecheck:
-    needs: version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.version.outputs.tag }}
       - uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
@@ -117,14 +58,18 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm exec turbo run typecheck
 
-  build-win:
-    needs: [version, lint, test, typecheck]
-    runs-on: windows-latest
+  approve:
+    needs: [lint, test, typecheck]
+    runs-on: ubuntu-latest
     environment: production
     steps:
+      - run: echo "Approved for production release ${{ github.ref_name }}"
+
+  build-win:
+    needs: approve
+    runs-on: windows-latest
+    steps:
       - uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.version.outputs.tag }}
       - uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
@@ -137,7 +82,7 @@ jobs:
       - name: Build desktop
         env:
           PRODUCT_NAME: ReYoGo
-          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+          RELEASE_VERSION: ${{ github.ref_name }}
           UPDATE_FEED_URL: ${{ vars.UPDATE_FEED_URL }}/win
           VITE_APP_ENV: production
         run: |
@@ -152,9 +97,8 @@ jobs:
 
   publish:
     name: Publish to production
-    needs: [version, build-win]
+    needs: build-win
     runs-on: ubuntu-latest
-    environment: production
     permissions:
       id-token: write
       contents: write
@@ -169,7 +113,7 @@ jobs:
           aws-region: eu-west-2
       - name: Upload to S3
         run: |
-          TAG="${{ needs.version.outputs.tag }}"
+          TAG="${{ github.ref_name }}"
           aws s3 sync artifacts/ "s3://reyogo-desktop/production/win/${TAG}/" \
             --exclude "win-unpacked/*" \
             --exclude "builder-debug.yml"
@@ -180,7 +124,44 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create ${{ needs.version.outputs.tag }} \
+          gh release create ${{ github.ref_name }} \
             --repo ${{ github.repository }} \
             --generate-notes \
-            --title "${{ needs.version.outputs.tag }}"
+            --title "${{ github.ref_name }}"
+
+  health-badge:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Generate health badge
+        run: |
+          mkdir -p .github/badges
+          pnpm dlx fallow@2.89.0 health --format badge --report-only > .github/badges/health.svg
+      - name: Commit badge
+        run: |
+          git config user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
+          git config user.email "${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
+          git add .github/badges/health.svg
+          git diff --staged --quiet || (
+            git commit -m "chore: update fallow health badge [skip ci]" &&
+            git push
+          )
