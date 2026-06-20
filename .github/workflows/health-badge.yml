@@ -3,11 +3,6 @@ name: Health Badge
 on:
   push:
     branches: [main]
-    paths:
-      - 'apps/**'
-      - 'lib/**'
-      - '.fallowrc.json'
-      - 'fallow-baselines/**'
 
 env:
   NODE_VERSION: "24"
