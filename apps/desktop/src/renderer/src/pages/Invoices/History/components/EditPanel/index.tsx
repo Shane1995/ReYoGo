@@ -9,7 +9,7 @@ import type { ProcessReceiptLine } from '../../../types';
 import { getProcessLineComputed } from '../../../types';
 import { inputClass } from '../../../utils/inputClass';
 import { formatMoney } from '../../../utils/formatMoney';
-import { createEmptyLine } from '../../../utils/createEmptyLine';
+import { newLine } from '../../../hooks/useLineManager';
 import { lineToEditLine } from '../../../utils/lineToEditLine';
 import { cn } from '@reyogo/ui';
 import { Checkbox } from '@/components/Checkbox';
@@ -153,7 +153,7 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
   const [lines, setLines] = useState<ProcessReceiptLine[]>(() =>
     invoice.lines.length > 0
       ? invoice.lines.map((l) => lineToEditLine(l, invoice.vatMode, invoice.vatRate))
-      : [createEmptyLine()],
+      : [newLine(invoice.vatMode)],
   );
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
@@ -170,12 +170,15 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
     setLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)));
   }, []);
 
-  const removeLine = useCallback((id: string) => {
-    setLines((prev) => {
-      const next = prev.filter((l) => l.id !== id);
-      return next.length > 0 ? next : [createEmptyLine()];
-    });
-  }, []);
+  const removeLine = useCallback(
+    (id: string) => {
+      setLines((prev) => {
+        const next = prev.filter((l) => l.id !== id);
+        return next.length > 0 ? next : [newLine(vatMode)];
+      });
+    },
+    [vatMode],
+  );
 
   const validLines = lines.filter(
     (l) => l.itemId && Number(l.quantity) >= 0 && (l.totalVatExclude ?? 0) >= 0,
@@ -256,7 +259,7 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
         </table>
         <button
           type="button"
-          onClick={() => setLines((prev) => [...prev, createEmptyLine()])}
+          onClick={() => setLines((prev) => [...prev, newLine(vatMode)])}
           className="mt-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
           + Add row

@@ -1,9 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { VatMode } from '@reyogo/types';
 import type { ProcessReceiptLine } from '../../types';
-import { createEmptyLine } from '../../utils/createEmptyLine';
 import { loadDraft } from '../useDraftPersistence';
-import { useLineManager } from '../useLineManager';
+import { newLine, useLineManager } from '../useLineManager';
 
 function getInitialInvoiceNumber(isReused: boolean): string {
   if (isReused) return '';
@@ -21,7 +20,7 @@ function getInitialVatMode(isReused: boolean): VatMode {
 }
 
 export function useInvoiceFormFields(
-  initialLines: ProcessReceiptLine[],
+  initialLines: ProcessReceiptLine[] | undefined,
   isReused: boolean,
   templateLines: ProcessReceiptLine[] | undefined,
   locationKey: string,
@@ -52,7 +51,7 @@ export function useInvoiceFormFields(
   }, []);
 
   const resetFields = useCallback(() => {
-    setLines([createEmptyLine()]);
+    setLines([newLine(VatMode.Exclusive)]);
     setInvoiceNumber('');
     setInvoiceDate('');
     setSupplierId('');

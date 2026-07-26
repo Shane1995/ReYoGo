@@ -33,8 +33,16 @@ vi.mock('../useDraftPersistence', () => ({
 }));
 
 vi.mock('../useLineManager', () => ({
-  useLineManager: (lines: unknown[]) => ({
-    lines,
+  useLineManager: (initialLines: { id: string }[] | undefined, vatMode?: string) => ({
+    lines: initialLines ?? [
+      {
+        id: 'mock-line',
+        itemId: '',
+        quantity: 0,
+        isVatable: vatMode === 'exclusive',
+        totalVatExclude: 0,
+      },
+    ],
     setLines: vi.fn(),
     addLine: vi.fn(),
     removeLine: vi.fn(),
@@ -56,6 +64,12 @@ describe('useInvoiceForm', () => {
     const { useInvoiceForm } = await import('./index');
     const { result } = renderHook(() => useInvoiceForm());
     expect(result.current.entityId).toBe('e1');
+  });
+
+  it('pre-selects Tax on the first line of a brand new invoice, matching the default vatMode (Exclusive)', async () => {
+    const { useInvoiceForm } = await import('./index');
+    const { result } = renderHook(() => useInvoiceForm());
+    expect(result.current.lines[0]!.isVatable).toBe(true);
   });
 
   it('addItem injects current entityId into item before forwarding to context', async () => {
@@ -88,8 +102,16 @@ describe('useInvoiceForm', () => {
       useDraftPersistence: () => ({ clearDraft: vi.fn() }),
     }));
     vi.doMock('../useLineManager', () => ({
-      useLineManager: (lines: unknown[]) => ({
-        lines,
+      useLineManager: (initialLines: { id: string }[] | undefined, vatMode?: string) => ({
+        lines: initialLines ?? [
+          {
+            id: 'mock-line',
+            itemId: '',
+            quantity: 0,
+            isVatable: vatMode === 'exclusive',
+            totalVatExclude: 0,
+          },
+        ],
         setLines: vi.fn(),
         addLine: vi.fn(),
         removeLine: vi.fn(),

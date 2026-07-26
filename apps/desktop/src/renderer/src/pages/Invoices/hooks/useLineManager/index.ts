@@ -3,7 +3,7 @@ import { VatMode } from '@reyogo/types';
 import type { ProcessReceiptLine } from '../../types';
 import { createEmptyLine } from '../../utils/createEmptyLine';
 
-function newLine(vatMode?: VatMode): ProcessReceiptLine {
+export function newLine(vatMode?: VatMode): ProcessReceiptLine {
   return { ...createEmptyLine(), isVatable: vatMode === VatMode.Exclusive };
 }
 
