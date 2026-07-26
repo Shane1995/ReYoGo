@@ -6,16 +6,12 @@ function isConfirmingDeleteDismissKey(e: React.KeyboardEvent<HTMLInputElement>):
   return e.key === 'Escape';
 }
 
-function isConfirmingDeleteAcceptKey(
-  e: React.KeyboardEvent<HTMLInputElement>,
-  val: string,
-): boolean {
-  return e.key === 'Enter' || (e.key === 'Backspace' && val === '');
+function isConfirmingDeleteAcceptKey(e: React.KeyboardEvent<HTMLInputElement>): boolean {
+  return e.key === 'Enter';
 }
 
 function handleConfirmingDeleteKey(
   e: React.KeyboardEvent<HTMLInputElement>,
-  val: string,
   ctx: FieldKeyDownContext,
 ): boolean {
   if (isConfirmingDeleteDismissKey(e)) {
@@ -23,7 +19,7 @@ function handleConfirmingDeleteKey(
     ctx.setConfirmingDelete(false);
     return true;
   }
-  if (isConfirmingDeleteAcceptKey(e, val)) {
+  if (isConfirmingDeleteAcceptKey(e)) {
     e.preventDefault();
     ctx.onRemove();
     return true;
@@ -51,7 +47,7 @@ function handleBackspaceKey(
   val: string,
   ctx: FieldKeyDownContext,
 ): boolean {
-  if (ctx.confirmingDelete) return handleConfirmingDeleteKey(e, val, ctx);
+  if (ctx.confirmingDelete) return handleConfirmingDeleteKey(e, ctx);
   if (val === '') return handleEmptyBackspace(e, ctx);
   return false;
 }
