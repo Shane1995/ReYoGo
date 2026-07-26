@@ -34,10 +34,7 @@ export function useInvoiceFormFields(
   const [expandedResultLineIds, setExpandedResultLineIds] = useState<Set<string>>(new Set());
   const [reuseNoticeDismissed, setReuseNoticeDismissed] = useState(false);
 
-  const { lines, setLines, addLine, removeLine, updateLine } = useLineManager(
-    initialLines,
-    vatMode,
-  );
+  const { lines, setLines, addLine, removeLine, updateLine } = useLineManager(initialLines);
 
   const setVatMode = useCallback((mode: VatMode) => setVatModeState(mode), []);
 
@@ -51,7 +48,7 @@ export function useInvoiceFormFields(
   }, []);
 
   const resetFields = useCallback(() => {
-    setLines([newLine(VatMode.Exclusive)]);
+    setLines([newLine()]);
     setInvoiceNumber('');
     setInvoiceDate('');
     setSupplierId('');

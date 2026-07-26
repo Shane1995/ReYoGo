@@ -153,7 +153,7 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
   const [lines, setLines] = useState<ProcessReceiptLine[]>(() =>
     invoice.lines.length > 0
       ? invoice.lines.map((l) => lineToEditLine(l, invoice.vatMode, invoice.vatRate))
-      : [newLine(invoice.vatMode)],
+      : [newLine()],
   );
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
@@ -170,15 +170,12 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
     setLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)));
   }, []);
 
-  const removeLine = useCallback(
-    (id: string) => {
-      setLines((prev) => {
-        const next = prev.filter((l) => l.id !== id);
-        return next.length > 0 ? next : [newLine(vatMode)];
-      });
-    },
-    [vatMode],
-  );
+  const removeLine = useCallback((id: string) => {
+    setLines((prev) => {
+      const next = prev.filter((l) => l.id !== id);
+      return next.length > 0 ? next : [newLine()];
+    });
+  }, []);
 
   const validLines = lines.filter(
     (l) => l.itemId && Number(l.quantity) >= 0 && (l.totalVatExclude ?? 0) >= 0,
@@ -259,7 +256,7 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
         </table>
         <button
           type="button"
-          onClick={() => setLines((prev) => [...prev, newLine(vatMode)])}
+          onClick={() => setLines((prev) => [...prev, newLine()])}
           className="mt-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
           + Add row

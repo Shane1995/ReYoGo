@@ -56,7 +56,7 @@ describe('EditPanel', () => {
     }
   });
 
-  it('does not pre-select Tax when the invoice VAT mode is Inclusive', () => {
+  it('pre-selects Tax on the fallback line even when the invoice VAT mode is Inclusive', () => {
     render(
       <EditPanel
         invoice={baseInvoice({ lines: [], vatMode: VatMode.Inclusive })}
@@ -64,6 +64,6 @@ describe('EditPanel', () => {
         onCancel={vi.fn()}
       />,
     );
-    expect(taxableCheckboxes()[0]).toHaveAttribute('aria-checked', 'false');
+    expect(taxableCheckboxes()[0]).toHaveAttribute('aria-checked', 'true');
   });
 });
