@@ -5,7 +5,6 @@ import type { InventoryItem } from '@/pages/Inventory/Capture/CapturedInventory/
 import { useEntities } from '@/Context/EntityContext';
 import type { IEntity } from '@reyogo/types';
 import type { ProcessReceiptLine } from '../../types';
-import { createEmptyLine } from '../../utils/createEmptyLine';
 import { loadDraft, useDraftPersistence } from '../useDraftPersistence';
 import { useInvoiceSummary } from '../useInvoiceSummary';
 import { useInvoiceFormFields } from '../useInvoiceFormFields';
@@ -13,11 +12,13 @@ import { useInvoiceSubmission } from '../useInvoiceSubmission';
 import { useLastUnitCosts } from '../useLastUnitCosts';
 import type { LocationState, UseInvoiceFormSummaryParams } from './types';
 
-function getInitialLines(templateLines: ProcessReceiptLine[] | undefined): ProcessReceiptLine[] {
+function getInitialLines(
+  templateLines: ProcessReceiptLine[] | undefined,
+): ProcessReceiptLine[] | undefined {
   if (templateLines && templateLines.length > 0) return templateLines;
   const draft = loadDraft();
   if (draft?.lines.length) return draft.lines;
-  return [createEmptyLine()];
+  return undefined;
 }
 
 function isLineComplete(line: ProcessReceiptLine): boolean {
