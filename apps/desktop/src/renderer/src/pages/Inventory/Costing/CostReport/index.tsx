@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { PageHeader } from '@reyogo/ui';
+import { useEntities } from '@/Context/EntityContext';
 import { DateRangeFilter } from '../components/DateRangeFilter';
 import { ReportTabs } from './components/ReportTabs';
+import { ItemCostHistoryView } from './components/ItemCostHistoryView';
 import type { ReportView } from './types';
 
 export default function CostReportPage() {
+  const { selectedEntityId } = useEntities();
   const [activeView, setActiveView] = useState<ReportView>('item-cost-history');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -22,7 +25,11 @@ export default function CostReportPage() {
       <ReportTabs activeView={activeView} setActiveView={setActiveView} />
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {activeView === 'item-cost-history' ? (
-          <p className="text-sm text-muted-foreground">Item Cost History — coming in Task 7.</p>
+          <ItemCostHistoryView
+            fromDate={fromDate}
+            toDate={toDate}
+            entityId={selectedEntityId || undefined}
+          />
         ) : (
           <p className="text-sm text-muted-foreground">Period Summary — coming in Task 10.</p>
         )}
