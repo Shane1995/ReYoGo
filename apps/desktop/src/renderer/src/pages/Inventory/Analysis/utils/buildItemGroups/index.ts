@@ -39,6 +39,7 @@ function buildEntry(
     unitPriceInclVat:
       line.unitCostInclVat ??
       (line.isVatable ? line.unitCost * (1 + line.vatRate / 100) : line.unitCost),
+    isVatable: line.isVatable,
     uom: item?.unitOfMeasure,
   };
 }

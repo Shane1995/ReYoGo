@@ -13,6 +13,7 @@ function makeGroup(unitPrices: number[]): ItemGroup {
       quantity: 1,
       unitPrice: unitPriceInclVat,
       unitPriceInclVat,
+      isVatable: true,
     })),
   };
 }

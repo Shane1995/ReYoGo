@@ -4,6 +4,7 @@ export type ItemEntry = {
   quantity: number;
   unitPrice: number;
   unitPriceInclVat: number;
+  isVatable: boolean;
   uom?: string;
 };
 

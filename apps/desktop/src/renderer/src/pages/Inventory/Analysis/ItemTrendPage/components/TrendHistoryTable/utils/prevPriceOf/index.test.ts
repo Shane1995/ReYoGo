@@ -9,6 +9,7 @@ const entries: ItemGroup['entries'] = [
     quantity: 2,
     unitPrice: 10,
     unitPriceInclVat: 10,
+    isVatable: true,
   },
   {
     invoiceId: 'inv-2',
@@ -16,6 +17,7 @@ const entries: ItemGroup['entries'] = [
     quantity: 3,
     unitPrice: 12,
     unitPriceInclVat: 12,
+    isVatable: true,
   },
 ];
 

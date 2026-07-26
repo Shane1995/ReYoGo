@@ -17,6 +17,7 @@ describe('TrendHistoryTable', () => {
         quantity: 2,
         unitPrice: 50,
         unitPriceInclVat: 57.5,
+        isVatable: true,
       },
     ];
     render(<TrendHistoryTable entries={entries} />);

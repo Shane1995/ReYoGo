@@ -9,6 +9,7 @@ function makeEntry(unitPriceInclVat: number): ItemEntry {
     quantity: 1,
     unitPrice: unitPriceInclVat - 1,
     unitPriceInclVat,
+    isVatable: true,
   };
 }
 
