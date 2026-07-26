@@ -16,3 +16,9 @@ export type ItemGroup = {
   categoryName?: string;
   entries: ItemEntry[];
 };
+
+export enum AnalysisTab {
+  All = 'all',
+  ByType = 'by-type',
+  ByCategory = 'by-category',
+}

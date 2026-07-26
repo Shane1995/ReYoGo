@@ -1,6 +1,5 @@
 import type { InvoiceLineWithDate } from '@reyogo/types';
-import type { AnalysisTab } from '../../hooks/useAnalysisData';
-import type { ItemGroup } from '../../types';
+import type { AnalysisTab, ItemGroup } from '../../types';
 
 export type AnalysisContentProps = {
   loading: boolean;

@@ -1,5 +1,4 @@
-import type { AnalysisTab } from '../../../../hooks/useAnalysisData';
-import type { ItemGroup } from '../../../../types';
+import type { AnalysisTab, ItemGroup } from '../../../../types';
 
 export type TabViewProps = {
   analysisTab: AnalysisTab;

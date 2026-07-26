@@ -1,7 +1,7 @@
-import type { AnalysisTab } from '../../hooks/useAnalysisData';
+import { AnalysisTab } from '../../types';
 
 export const TAB_LABELS: { key: AnalysisTab; label: string }[] = [
-  { key: 'all', label: 'All items' },
-  { key: 'by-type', label: 'By type' },
-  { key: 'by-category', label: 'By category' },
+  { key: AnalysisTab.All, label: 'All items' },
+  { key: AnalysisTab.ByType, label: 'By type' },
+  { key: AnalysisTab.ByCategory, label: 'By category' },
 ];
