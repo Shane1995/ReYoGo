@@ -3,7 +3,7 @@ import { PageHeader } from '@reyogo/ui';
 import { stockMovementsService } from '@/services/stockMovements';
 import { useEntities } from '@/Context/EntityContext';
 import type { COGSSummary } from '@reyogo/types';
-import { DateRangeFilter } from './components/DateRangeFilter';
+import { DateRangeFilter } from '../components/DateRangeFilter';
 import { CogsContent } from './components/CogsContent';
 
 export default function CostingDashboard() {

@@ -1,14 +1,31 @@
+import { useState } from 'react';
 import { PageHeader } from '@reyogo/ui';
+import { DateRangeFilter } from '../components/DateRangeFilter';
+import { ReportTabs } from './components/ReportTabs';
+import type { ReportView } from './types';
 
 export default function CostReportPage() {
+  const [activeView, setActiveView] = useState<ReportView>('item-cost-history');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <PageHeader
-        title="Cost Report"
-        description="Periodic cost breakdown and export — coming soon."
-      />
-      <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-        Cost period reports will appear here.
+      <PageHeader title="Cost Report" description="Item cost history and period cost summaries.">
+        <DateRangeFilter
+          fromDate={fromDate}
+          toDate={toDate}
+          onFromChange={setFromDate}
+          onToChange={setToDate}
+        />
+      </PageHeader>
+      <ReportTabs activeView={activeView} setActiveView={setActiveView} />
+      <div className="min-h-0 flex-1 overflow-auto p-4">
+        {activeView === 'item-cost-history' ? (
+          <p className="text-sm text-muted-foreground">Item Cost History — coming in Task 7.</p>
+        ) : (
+          <p className="text-sm text-muted-foreground">Period Summary — coming in Task 10.</p>
+        )}
       </div>
     </div>
   );
