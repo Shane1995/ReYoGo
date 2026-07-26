@@ -4,6 +4,7 @@ import { useEntities } from '@/Context/EntityContext';
 import { DateRangeFilter } from '../components/DateRangeFilter';
 import { ReportTabs } from './components/ReportTabs';
 import { ItemCostHistoryView } from './components/ItemCostHistoryView';
+import { PeriodSummaryView } from './components/PeriodSummaryView';
 import type { ReportView } from './types';
 
 export default function CostReportPage() {
@@ -31,7 +32,11 @@ export default function CostReportPage() {
             entityId={selectedEntityId || undefined}
           />
         ) : (
-          <p className="text-sm text-muted-foreground">Period Summary — coming in Task 10.</p>
+          <PeriodSummaryView
+            fromDate={fromDate}
+            toDate={toDate}
+            entityId={selectedEntityId || undefined}
+          />
         )}
       </div>
     </div>
