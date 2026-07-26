@@ -16,4 +16,5 @@ export type ItemCostHistoryViewProps = {
   fromDate: string;
   toDate: string;
   entityId: string | undefined;
+  onRowsChange: (rows: ItemCostHistoryRow[]) => void;
 };

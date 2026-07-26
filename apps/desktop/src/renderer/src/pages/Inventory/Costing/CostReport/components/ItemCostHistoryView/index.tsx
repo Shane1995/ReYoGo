@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from 'react';
 import { cn } from '@reyogo/ui';
 import { useItemCostHistoryData } from './hooks/useItemCostHistoryData';
 import { itemCostHistoryRowsOf } from './utils/itemCostHistoryRowsOf';
@@ -5,15 +6,24 @@ import { ItemCostHistoryTable } from './components/ItemCostHistoryTable';
 import { fieldLabel, selectClass } from '../../../../Analysis/components/AnalysisFilters/constants';
 import type { ItemCostHistoryViewProps } from './types';
 
-export function ItemCostHistoryView({ fromDate, toDate, entityId }: ItemCostHistoryViewProps) {
+export function ItemCostHistoryView({
+  fromDate,
+  toDate,
+  entityId,
+  onRowsChange,
+}: ItemCostHistoryViewProps) {
   const { loading, groups, filterCategory, setFilterCategory, availableCategories } =
     useItemCostHistoryData(fromDate, toDate, entityId);
+
+  const rows = useMemo(() => (loading ? [] : itemCostHistoryRowsOf(groups)), [loading, groups]);
+
+  useEffect(() => {
+    onRowsChange(rows);
+  }, [rows, onRowsChange]);
 
   if (loading) {
     return <p className="text-sm text-muted-foreground/60">Loading…</p>;
   }
-
-  const rows = itemCostHistoryRowsOf(groups);
 
   return (
     <div className="space-y-3">

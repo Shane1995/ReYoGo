@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { cn } from '@reyogo/ui';
 import { usePeriodSummaryData } from './hooks/usePeriodSummaryData';
 import { filteredCogsOf } from './utils/filteredCogsOf';
@@ -7,14 +7,28 @@ import { CogsCategoryTable } from '../../../Dashboard/components/CogsCategoryTab
 import { fieldLabel, selectClass } from '../../../../Analysis/components/AnalysisFilters/constants';
 import type { PeriodSummaryViewProps } from './types';
 
-export function PeriodSummaryView({ fromDate, toDate, entityId }: PeriodSummaryViewProps) {
+export function PeriodSummaryView({
+  fromDate,
+  toDate,
+  entityId,
+  onCogsChange,
+}: PeriodSummaryViewProps) {
   const { loading, cogs } = usePeriodSummaryData(fromDate, toDate, entityId);
   const [filterCategory, setFilterCategory] = useState('');
+
+  const filteredCogs = useMemo(() => {
+    if (!cogs) return null;
+    return filteredCogsOf(cogs, filterCategory);
+  }, [cogs, filterCategory]);
+
+  useEffect(() => {
+    onCogsChange(filteredCogs);
+  }, [filteredCogs, onCogsChange]);
 
   if (loading) {
     return <p className="text-sm text-muted-foreground/60">Loading…</p>;
   }
-  if (!cogs) {
+  if (!cogs || !filteredCogs) {
     return (
       <div className="rounded-lg border border-[var(--nav-border)] bg-muted/10 p-10 text-center text-sm text-muted-foreground/60">
         No cost of goods data for the selected range.
@@ -26,7 +40,6 @@ export function PeriodSummaryView({ fromDate, toDate, entityId }: PeriodSummaryV
     .map((row) => row.categoryName)
     .filter((name): name is string => name !== null)
     .sort();
-  const filteredCogs = filteredCogsOf(cogs, filterCategory);
 
   return (
     <div className="space-y-4">

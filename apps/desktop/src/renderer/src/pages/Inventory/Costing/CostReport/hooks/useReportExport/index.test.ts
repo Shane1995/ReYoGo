@@ -1,0 +1,73 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook } from '@testing-library/react';
+import * as XLSX from 'xlsx';
+import type { ItemCostHistoryRow } from '../../components/ItemCostHistoryView/types';
+import { useReportExport } from '.';
+
+const mockInvoke = vi.fn();
+Object.defineProperty(window, 'electronAPI', {
+  value: { ipcRenderer: { invoke: mockInvoke } },
+  writable: true,
+  configurable: true,
+});
+
+const row: ItemCostHistoryRow = {
+  itemId: 'item-1',
+  itemName: 'Flour',
+  uom: 'kg',
+  invoiceId: 'inv-1',
+  date: new Date('2026-01-15'),
+  quantity: 2,
+  unitCostExclVat: 10,
+  unitCostInclVat: 11.5,
+  isVatable: true,
+  pctChange: null,
+  flagged: false,
+};
+
+beforeEach(() => {
+  mockInvoke.mockReset();
+});
+
+describe('useReportExport', () => {
+  it('builds an Item Cost History workbook matching the visible rows and saves it', async () => {
+    const { result } = renderHook(() => useReportExport());
+    await result.current.exportReport({
+      view: 'item-cost-history',
+      rows: [row],
+      fromDate: '2026-01-01',
+      toDate: '2026-01-31',
+    });
+
+    expect(mockInvoke).toHaveBeenCalledTimes(1);
+    const [channel, payload] = mockInvoke.mock.calls[0]!;
+    expect(channel).toBe('shell:save-file-base64');
+    expect(payload.filename).toBe('reyogo-item-cost-history-2026-01-01-to-2026-01-31.xlsx');
+
+    const wb = XLSX.read(payload.base64, { type: 'base64' });
+    const sheet = wb.Sheets[wb.SheetNames[0]!]!;
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    expect(rows[1]).toEqual(['Flour', 'kg', '2026-01-15', 2, 10, 11.5, 'Yes', '']);
+  });
+
+  it('builds a Period Summary workbook matching the visible totals and saves it', async () => {
+    const { result } = renderHook(() => useReportExport());
+    await result.current.exportReport({
+      view: 'period-summary',
+      cogs: { total: 100, byCategory: [{ categoryId: 'c1', categoryName: 'Dairy', total: 100 }] },
+      fromDate: '',
+      toDate: '',
+    });
+
+    expect(mockInvoke).toHaveBeenCalledTimes(1);
+    const [channel, payload] = mockInvoke.mock.calls[0]!;
+    expect(channel).toBe('shell:save-file-base64');
+    expect(payload.filename).toBe('reyogo-period-summary-all-dates.xlsx');
+
+    const wb = XLSX.read(payload.base64, { type: 'base64' });
+    const sheet = wb.Sheets[wb.SheetNames[0]!]!;
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    expect(rows[1]).toEqual(['Dairy', 100, '100.0%']);
+    expect(rows[2]).toEqual(['Total', 100, '100.0%']);
+  });
+});
