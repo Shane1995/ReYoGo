@@ -44,12 +44,13 @@ function renderSidebar() {
 describe('AppSidebar', () => {
   beforeEach(() => localStorage.clear());
 
-  it('renders all five nav items when expanded', () => {
+  it('renders all six nav items when expanded', () => {
     renderSidebar();
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Stock')).toBeInTheDocument();
     expect(screen.getByText('Invoices')).toBeInTheDocument();
     expect(screen.getByText('Costing')).toBeInTheDocument();
+    expect(screen.getByText('Reports')).toBeInTheDocument();
     expect(screen.getByText('Suppliers')).toBeInTheDocument();
   });
 

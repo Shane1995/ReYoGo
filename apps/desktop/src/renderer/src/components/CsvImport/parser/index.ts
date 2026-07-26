@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { InventoryType } from '@reyogo/types';
 import type { IEntity } from '@reyogo/types';
+import { shellService } from '@/services/shell';
 import type { ParsedCategory, ParsedItem, ParseResult } from './types';
 
 export type { ParsedCategory, ParsedItem, ParseResult };
@@ -162,8 +163,5 @@ export function downloadTemplate(): void {
   XLSX.utils.book_append_sheet(wb, itemsSheet, 'Items');
 
   const base64: string = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
-  window.electronAPI.ipcRenderer.invoke('shell:save-file-base64', {
-    filename: 'reyogo-import-template.xlsx',
-    base64,
-  });
+  shellService.saveFileBase64({ filename: 'reyogo-import-template.xlsx', base64 });
 }

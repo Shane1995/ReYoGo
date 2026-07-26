@@ -17,7 +17,7 @@ export interface RouteConfig {
   'invoices.history': string;
   costing: string;
   'costing.priceVariance': string;
-  'costing.costReport': string;
+  reports: string;
   suppliers: string;
   settings: string;
   [key: string]: string;
@@ -66,7 +66,7 @@ export const appConfig: AppConfig = {
     'invoices.history': '/invoices/history',
     costing: '/costing',
     'costing.priceVariance': '/costing/price-variance',
-    'costing.costReport': '/costing/cost-report',
+    reports: '/reports',
     suppliers: '/suppliers',
     settings: '/settings',
   },
@@ -76,6 +76,7 @@ export const appConfig: AppConfig = {
       { label: 'Stock', pathKey: 'stock', icon: 'Package', end: false },
       { label: 'Invoices', pathKey: 'invoices', icon: 'Receipt', end: false },
       { label: 'Costing', pathKey: 'costing', icon: 'Coins', end: false },
+      { label: 'Reports', pathKey: 'reports', icon: 'FileBarChart2', end: false },
       { label: 'Suppliers', pathKey: 'suppliers', icon: 'Truck', end: false },
     ],
     stock: [
@@ -96,7 +97,6 @@ export const appConfig: AppConfig = {
         icon: 'ArrowUpDown',
         end: false,
       },
-      { label: 'Cost Report', pathKey: 'costing.costReport', icon: 'FileBarChart2', end: false },
     ],
   },
   dashboard: {

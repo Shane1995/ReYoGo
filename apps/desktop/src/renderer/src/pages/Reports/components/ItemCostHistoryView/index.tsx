@@ -3,7 +3,10 @@ import { cn } from '@reyogo/ui';
 import { useItemCostHistoryData } from './hooks/useItemCostHistoryData';
 import { itemCostHistoryRowsOf } from './utils/itemCostHistoryRowsOf';
 import { ItemCostHistoryTable } from './components/ItemCostHistoryTable';
-import { fieldLabel, selectClass } from '../../../../Analysis/components/AnalysisFilters/constants';
+import {
+  fieldLabel,
+  selectClass,
+} from '@/pages/Inventory/Analysis/components/AnalysisFilters/constants';
 import type { ItemCostHistoryViewProps } from './types';
 
 export function ItemCostHistoryView({

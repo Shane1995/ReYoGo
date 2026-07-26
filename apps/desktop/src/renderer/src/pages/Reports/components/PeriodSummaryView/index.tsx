@@ -2,9 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { cn } from '@reyogo/ui';
 import { usePeriodSummaryData } from './hooks/usePeriodSummaryData';
 import { filteredCogsOf } from './utils/filteredCogsOf';
-import { CogsTotalCard } from '../../../Dashboard/components/CogsTotalCard';
-import { CogsCategoryTable } from '../../../Dashboard/components/CogsCategoryTable';
-import { fieldLabel, selectClass } from '../../../../Analysis/components/AnalysisFilters/constants';
+import { CogsTotalCard } from '@/pages/Inventory/Costing/Dashboard/components/CogsTotalCard';
+import { CogsCategoryTable } from '@/pages/Inventory/Costing/Dashboard/components/CogsCategoryTable';
+import {
+  fieldLabel,
+  selectClass,
+} from '@/pages/Inventory/Analysis/components/AnalysisFilters/constants';
 import type { PeriodSummaryViewProps } from './types';
 
 export function PeriodSummaryView({

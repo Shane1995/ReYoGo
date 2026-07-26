@@ -3,30 +3,34 @@ import { PageHeader, Button } from '@reyogo/ui';
 import { DownloadIcon } from 'lucide-react';
 import { useEntities } from '@/Context/EntityContext';
 import type { COGSSummary } from '@reyogo/types';
-import { DateRangeFilter } from '../components/DateRangeFilter';
-import { ReportTabs } from './components/ReportTabs';
+import { DateRangeFilter } from '@/components/DateRangeFilter';
+import { ReportPicker } from './components/ReportPicker';
 import { ItemCostHistoryView } from './components/ItemCostHistoryView';
 import { PeriodSummaryView } from './components/PeriodSummaryView';
-import { useReportExport } from './hooks/useReportExport';
-import type { ReportView } from './types';
+import { exportReport } from './utils/exportReport';
+import { ReportView } from './types';
 import type { ItemCostHistoryRow } from './components/ItemCostHistoryView/types';
 
-export default function CostReportPage() {
+export default function ReportsPage() {
   const { selectedEntityId } = useEntities();
-  const { exportReport } = useReportExport();
-  const [activeView, setActiveView] = useState<ReportView>('item-cost-history');
+  const [activeView, setActiveView] = useState<ReportView>(ReportView.ItemCostHistory);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [itemCostHistoryRows, setItemCostHistoryRows] = useState<ItemCostHistoryRow[]>([]);
   const [periodSummaryCogs, setPeriodSummaryCogs] = useState<COGSSummary | null>(null);
 
   const handleExport = () => {
-    if (activeView === 'item-cost-history') {
-      exportReport({ view: 'item-cost-history', rows: itemCostHistoryRows, fromDate, toDate });
+    if (activeView === ReportView.ItemCostHistory) {
+      exportReport({
+        view: ReportView.ItemCostHistory,
+        rows: itemCostHistoryRows,
+        fromDate,
+        toDate,
+      });
       return;
     }
     if (periodSummaryCogs) {
-      exportReport({ view: 'period-summary', cogs: periodSummaryCogs, fromDate, toDate });
+      exportReport({ view: ReportView.PeriodSummary, cogs: periodSummaryCogs, fromDate, toDate });
     }
   };
 
@@ -34,23 +38,25 @@ export default function CostReportPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <PageHeader title="Cost Report" description="Item cost history and period cost summaries.">
-        <div className="flex items-center justify-between gap-4">
-          <DateRangeFilter
-            fromDate={fromDate}
-            toDate={toDate}
-            onFromChange={setFromDate}
-            onToChange={setToDate}
-          />
+      <PageHeader title="Reports" description="Capture and export reports on invoiced purchases.">
+        <div className="flex items-end justify-between gap-4">
+          <div className="flex items-end gap-4">
+            <ReportPicker activeView={activeView} setActiveView={setActiveView} />
+            <DateRangeFilter
+              fromDate={fromDate}
+              toDate={toDate}
+              onFromChange={setFromDate}
+              onToChange={setToDate}
+            />
+          </div>
           <Button type="button" variant="outline" size="sm" onClick={handleExport}>
             <DownloadIcon className="size-3.5 mr-1.5" />
             Export to XLSX
           </Button>
         </div>
       </PageHeader>
-      <ReportTabs activeView={activeView} setActiveView={setActiveView} />
       <div className="min-h-0 flex-1 overflow-auto p-4">
-        {activeView === 'item-cost-history' ? (
+        {activeView === ReportView.ItemCostHistory ? (
           <ItemCostHistoryView
             fromDate={fromDate}
             toDate={toDate}

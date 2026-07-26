@@ -43,7 +43,10 @@ export const InvoiceRouteSegments = {
 export const CostingRouteSegments = {
   root: lastSeg(r.costing),
   priceVariance: lastSeg(r['costing.priceVariance']),
-  costReport: lastSeg(r['costing.costReport']),
+} as const;
+
+export const ReportsRouteSegments = {
+  root: lastSeg(r.reports),
 } as const;
 
 export const SuppliersRouteSegments = {

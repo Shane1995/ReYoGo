@@ -1,6 +1,6 @@
 import type { ReportView } from '../../types';
 
-export type ReportTabsProps = {
+export type ReportPickerProps = {
   activeView: ReportView;
   setActiveView: (view: ReportView) => void;
 };

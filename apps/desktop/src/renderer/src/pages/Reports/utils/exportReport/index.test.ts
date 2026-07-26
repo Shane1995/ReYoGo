@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook } from '@testing-library/react';
 import * as XLSX from 'xlsx';
+import { ShellIPC } from '@shared/types/ipc';
 import type { ItemCostHistoryRow } from '../../components/ItemCostHistoryView/types';
-import { useReportExport } from '.';
+import { ReportView } from '../../types';
+import { exportReport } from '.';
 
 const mockInvoke = vi.fn();
 Object.defineProperty(window, 'electronAPI', {
@@ -29,11 +30,10 @@ beforeEach(() => {
   mockInvoke.mockReset();
 });
 
-describe('useReportExport', () => {
+describe('exportReport', () => {
   it('builds an Item Cost History workbook matching the visible rows and saves it', async () => {
-    const { result } = renderHook(() => useReportExport());
-    await result.current.exportReport({
-      view: 'item-cost-history',
+    await exportReport({
+      view: ReportView.ItemCostHistory,
       rows: [row],
       fromDate: '2026-01-01',
       toDate: '2026-01-31',
@@ -41,7 +41,7 @@ describe('useReportExport', () => {
 
     expect(mockInvoke).toHaveBeenCalledTimes(1);
     const [channel, payload] = mockInvoke.mock.calls[0]!;
-    expect(channel).toBe('shell:save-file-base64');
+    expect(channel).toBe(ShellIPC.SAVE_FILE_BASE64);
     expect(payload.filename).toBe('reyogo-item-cost-history-2026-01-01-to-2026-01-31.xlsx');
 
     const wb = XLSX.read(payload.base64, { type: 'base64' });
@@ -51,9 +51,8 @@ describe('useReportExport', () => {
   });
 
   it('builds a Period Summary workbook matching the visible totals and saves it', async () => {
-    const { result } = renderHook(() => useReportExport());
-    await result.current.exportReport({
-      view: 'period-summary',
+    await exportReport({
+      view: ReportView.PeriodSummary,
       cogs: { total: 100, byCategory: [{ categoryId: 'c1', categoryName: 'Dairy', total: 100 }] },
       fromDate: '',
       toDate: '',
@@ -61,7 +60,7 @@ describe('useReportExport', () => {
 
     expect(mockInvoke).toHaveBeenCalledTimes(1);
     const [channel, payload] = mockInvoke.mock.calls[0]!;
-    expect(channel).toBe('shell:save-file-base64');
+    expect(channel).toBe(ShellIPC.SAVE_FILE_BASE64);
     expect(payload.filename).toBe('reyogo-period-summary-all-dates.xlsx');
 
     const wb = XLSX.read(payload.base64, { type: 'base64' });
