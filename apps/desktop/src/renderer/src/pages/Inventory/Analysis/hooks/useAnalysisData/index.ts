@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useAnalysisLines } from '../useAnalysisLines';
 import { buildItemGroups } from '../../utils/buildItemGroups';
+import { useItemGroupCategoryFilter } from '../../../hooks/useItemGroupCategoryFilter';
 import { TYPE_ORDER } from '../../constants';
 import type { ItemGroup } from '../../types';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
@@ -14,32 +15,18 @@ function computeAvailableTypes(allGroups: ItemGroup[]): string[] {
   );
 }
 
-function computeAvailableCategories(allGroups: ItemGroup[]): string[] {
-  const seen = new Map<string, string>();
-  for (const g of allGroups) {
-    if (g.categoryName && !seen.has(g.categoryName)) {
-      seen.set(g.categoryName, g.categoryName);
-    }
-  }
-  return Array.from(seen.keys()).sort();
-}
-
-function filterGroups(
-  allGroups: ItemGroup[],
+function filterGroupsBySearchAndType(
+  groups: ItemGroup[],
   search: string,
   filterType: string,
-  filterCategory: string,
 ): ItemGroup[] {
-  let filtered = allGroups;
+  let filtered = groups;
   if (search.trim()) {
     const q = search.trim().toLowerCase();
     filtered = filtered.filter((g) => g.name.toLowerCase().includes(q));
   }
   if (filterType) {
     filtered = filtered.filter((g) => g.categoryType === filterType);
-  }
-  if (filterCategory) {
-    filtered = filtered.filter((g) => g.categoryName === filterCategory);
   }
   return filtered;
 }
@@ -55,7 +42,6 @@ export function useAnalysisData() {
   const [toDate, setToDate] = useState('');
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
   const [analysisTab, setAnalysisTab] = useState<AnalysisTab>('all');
 
   const allGroups = useMemo(
@@ -64,10 +50,12 @@ export function useAnalysisData() {
   );
 
   const availableTypes = useMemo(() => computeAvailableTypes(allGroups), [allGroups]);
-  const availableCategories = useMemo(() => computeAvailableCategories(allGroups), [allGroups]);
+  const { filterCategory, setFilterCategory, availableCategories, filteredGroups } =
+    useItemGroupCategoryFilter(allGroups);
+
   const groups = useMemo(
-    () => filterGroups(allGroups, search, filterType, filterCategory),
-    [allGroups, search, filterType, filterCategory],
+    () => filterGroupsBySearchAndType(filteredGroups, search, filterType),
+    [filteredGroups, search, filterType],
   );
 
   const clearFilters = () => {
