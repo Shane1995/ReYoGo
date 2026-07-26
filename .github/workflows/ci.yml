@@ -132,6 +132,7 @@ jobs:
           review-comments: true
           dead-code-baseline: .fallow-baselines/baseline.json
           fail-on-issues: true
+          version: '2.89.0'
 
   build-desktop:
     needs: [ lint, test, typecheck, fallow ]
