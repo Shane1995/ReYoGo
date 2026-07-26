@@ -76,11 +76,11 @@ describe('handleFieldKeyDown', () => {
       expect(ctx.onRemove).toHaveBeenCalledOnce();
     });
 
-    it('Backspace on an empty value confirms removal', () => {
+    it('does not confirm removal on Backspace — only Enter and Escape are valid here, matching the on-screen hint', () => {
       const ctx = makeContext({ confirmingDelete: true });
       const e = makeEvent('Backspace', { value: '' });
       handleFieldKeyDown(e, ctx);
-      expect(ctx.onRemove).toHaveBeenCalledOnce();
+      expect(ctx.onRemove).not.toHaveBeenCalled();
     });
   });
 
