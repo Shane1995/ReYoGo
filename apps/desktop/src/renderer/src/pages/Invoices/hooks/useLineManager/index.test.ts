@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { VatMode } from '@reyogo/types';
-import { useLineManager } from './index';
+import { newLine, useLineManager } from './index';
 
 describe('useLineManager', () => {
   it('initialises with one empty line', () => {
@@ -53,24 +52,25 @@ describe('useLineManager', () => {
     expect(result.current.lines[0]!.quantity).toBe(5);
   });
 
-  it('defaults isVatable to false when no vatMode provided', () => {
-    const { result } = renderHook(() => useLineManager());
-    expect(result.current.lines[0]!.isVatable).toBe(false);
+  it('newLine defaults isVatable to true', () => {
+    expect(newLine().isVatable).toBe(true);
   });
 
-  it('defaults isVatable to true when vatMode is Exclusive', () => {
-    const { result } = renderHook(() => useLineManager(undefined, VatMode.Exclusive));
+  it('defaults isVatable to true for the initial line', () => {
+    const { result } = renderHook(() => useLineManager());
     expect(result.current.lines[0]!.isVatable).toBe(true);
   });
 
-  it('defaults isVatable to false when vatMode is Inclusive', () => {
-    const { result } = renderHook(() => useLineManager(undefined, VatMode.Inclusive));
-    expect(result.current.lines[0]!.isVatable).toBe(false);
-  });
-
-  it('addLine respects current vatMode for isVatable', () => {
-    const { result } = renderHook(() => useLineManager(undefined, VatMode.Exclusive));
+  it('addLine defaults isVatable to true', () => {
+    const { result } = renderHook(() => useLineManager());
     act(() => result.current.addLine());
     expect(result.current.lines[1]!.isVatable).toBe(true);
+  });
+
+  it('removeLine fallback line defaults isVatable to true', () => {
+    const { result } = renderHook(() => useLineManager());
+    const onlyId = result.current.lines[0]!.id;
+    act(() => result.current.removeLine(onlyId));
+    expect(result.current.lines[0]!.isVatable).toBe(true);
   });
 });
