@@ -17,7 +17,7 @@ export function TrendHistoryTable({ entries }: TrendHistoryTableProps) {
               Qty
             </th>
             <th className="px-4 py-2.5 text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70">
-              Unit price
+              Unit price (excl. VAT)
             </th>
             <th className="px-4 py-2.5 text-right text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70">
               vs prev
