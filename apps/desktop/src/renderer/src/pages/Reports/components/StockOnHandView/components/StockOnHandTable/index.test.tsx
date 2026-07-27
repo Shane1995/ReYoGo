@@ -22,9 +22,11 @@ describe('StockOnHandTable', () => {
     expect(screen.getByText('No items match the selected categories.')).toBeInTheDocument();
   });
 
-  it('renders the category column', () => {
+  it('groups rows under their category header with a subtotal', () => {
     render(<StockOnHandTable rows={rows} grandTotal={20} />);
     expect(screen.getByText('Dairy')).toBeInTheDocument();
+    expect(screen.getByText('Milk')).toBeInTheDocument();
+    expect(screen.getAllByText('R 20,00').length).toBeGreaterThan(0);
   });
 
   it('shows the grand total row', () => {
