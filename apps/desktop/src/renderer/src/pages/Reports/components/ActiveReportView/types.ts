@@ -7,6 +7,7 @@ export type ActiveReportViewProps = {
   activeView: ReportView;
   fromDate: string;
   toDate: string;
+  asOfDate: string;
   entityId: string | undefined;
   onItemCostHistoryRowsChange: (rows: ItemCostHistoryRow[]) => void;
   onPeriodSummaryCogsChange: (cogs: COGSSummary | null) => void;

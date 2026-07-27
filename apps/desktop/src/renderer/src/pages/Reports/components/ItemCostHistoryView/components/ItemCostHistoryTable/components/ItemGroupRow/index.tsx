@@ -1,7 +1,8 @@
 import { Fragment } from 'react';
 import { ChevronRightIcon } from 'lucide-react';
 import { TableCell, TableRow } from '@reyogo/ui';
-import { fmt, fmtDate } from '@/pages/Inventory/Analysis/utils/format';
+import { fmtDate } from '@/pages/Inventory/Analysis/utils/format';
+import { formatZAR } from '@/utils/format';
 import { chevronClassName } from '@/pages/Inventory/Analysis/components/TableView/components/GroupRow/utils/chevronClassName';
 import { groupRowClassName } from '@/pages/Inventory/Analysis/components/TableView/components/GroupRow/utils/groupRowClassName';
 import { overallPctChangeOf } from './utils/overallPctChangeOf';
@@ -34,10 +35,10 @@ export function ItemGroupRow({ group, index, isExpanded, onToggle }: ItemGroupRo
         <TableCell className="py-2.5 text-sm text-muted-foreground">{fmtDate(last.date)}</TableCell>
         <TableCell className="text-right font-mono tabular-nums">{last.quantity}</TableCell>
         <TableCell className="text-right font-mono tabular-nums">
-          {fmt(last.unitCostExclVat)}
+          {formatZAR(last.unitCostExclVat)}
         </TableCell>
         <TableCell className="text-right font-mono tabular-nums">
-          {fmt(last.unitCostInclVat)}
+          {formatZAR(last.unitCostInclVat)}
         </TableCell>
         <TableCell className="text-center">
           <TaxableCell isVatable={last.isVatable} />

@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
 import { useStockLevelRows } from '../../hooks/useStockLevelRows';
 import { grandTotalOf } from '../../hooks/useStockLevelRows/utils/grandTotalOf';
+import { CategoryFilter } from '../CategoryFilter';
 import { StockValuationTable } from './components/StockValuationTable';
 import type { StockValuationViewProps } from './types';
 
-export function StockValuationView({ entityId, onRowsChange }: StockValuationViewProps) {
-  const { loading, rows } = useStockLevelRows(entityId);
+export function StockValuationView({ entityId, asOfDate, onRowsChange }: StockValuationViewProps) {
+  const { loading, rows, availableCategories, selectedCategories, setSelectedCategories } =
+    useStockLevelRows(entityId, asOfDate);
 
   useEffect(() => {
     onRowsChange(rows);
@@ -15,5 +17,14 @@ export function StockValuationView({ entityId, onRowsChange }: StockValuationVie
     return <p className="text-sm text-muted-foreground/60">Loading…</p>;
   }
 
-  return <StockValuationTable rows={rows} grandTotal={grandTotalOf(rows)} />;
+  return (
+    <div className="space-y-3">
+      <CategoryFilter
+        selected={selectedCategories}
+        options={availableCategories}
+        onChange={setSelectedCategories}
+      />
+      <StockValuationTable rows={rows} grandTotal={grandTotalOf(rows)} />
+    </div>
+  );
 }

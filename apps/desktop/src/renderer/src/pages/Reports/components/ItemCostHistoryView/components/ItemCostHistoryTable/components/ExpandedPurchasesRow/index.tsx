@@ -1,5 +1,6 @@
 import { TableCell, TableRow, Badge } from '@reyogo/ui';
-import { fmt, fmtDate } from '@/pages/Inventory/Analysis/utils/format';
+import { fmtDate } from '@/pages/Inventory/Analysis/utils/format';
+import { formatZAR } from '@/utils/format';
 import { changeCls } from '@/pages/Inventory/Analysis/utils/styles';
 import type { ExpandedPurchasesRowProps } from './types';
 
@@ -37,10 +38,10 @@ export function ExpandedPurchasesRow({ rows }: ExpandedPurchasesRowProps) {
                 <td className="py-1.5 text-muted-foreground">{fmtDate(row.date)}</td>
                 <td className="py-1.5 text-right font-mono tabular-nums">{row.quantity}</td>
                 <td className="py-1.5 text-right font-mono tabular-nums">
-                  {fmt(row.unitCostExclVat)}
+                  {formatZAR(row.unitCostExclVat)}
                 </td>
                 <td className="py-1.5 text-right font-mono tabular-nums">
-                  {fmt(row.unitCostInclVat)}
+                  {formatZAR(row.unitCostInclVat)}
                 </td>
                 <td className="py-1.5 text-center">
                   {row.isVatable ? (

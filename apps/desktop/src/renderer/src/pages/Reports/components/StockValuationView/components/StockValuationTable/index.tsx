@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from '@reyogo/ui';
-import { fmt } from '@/pages/Inventory/Analysis/utils/format';
+import { formatZAR } from '@/utils/format';
 import type { StockValuationTableProps } from './types';
 
 export function StockValuationTable({ rows, grandTotal }: StockValuationTableProps) {
@@ -38,10 +38,10 @@ export function StockValuationTable({ rows, grandTotal }: StockValuationTablePro
               <TableCell className="text-sm text-muted-foreground">{row.uom ?? '—'}</TableCell>
               <TableCell className="text-right font-mono tabular-nums">{row.quantity}</TableCell>
               <TableCell className="text-right font-mono tabular-nums">
-                {fmt(row.avgCost)}
+                {formatZAR(row.avgCost)}
               </TableCell>
               <TableCell className="text-right font-mono tabular-nums font-medium">
-                {fmt(row.totalValue)}
+                {formatZAR(row.totalValue)}
               </TableCell>
             </TableRow>
           ))}
@@ -52,7 +52,7 @@ export function StockValuationTable({ rows, grandTotal }: StockValuationTablePro
               Grand Total
             </TableCell>
             <TableCell className="text-right font-mono tabular-nums font-semibold">
-              {fmt(grandTotal)}
+              {formatZAR(grandTotal)}
             </TableCell>
           </TableRow>
         </TableFooter>

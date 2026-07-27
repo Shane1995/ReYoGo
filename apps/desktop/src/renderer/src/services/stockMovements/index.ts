@@ -4,11 +4,16 @@ import { StockMovementsIPC } from '@shared/types/ipc';
 const invoke = () => window.electronAPI.ipcRenderer.invoke;
 
 export const stockMovementsService = {
-  getCurrentStock: (entityId?: string): Promise<Record<string, number>> =>
-    invoke()(StockMovementsIPC.GET_CURRENT_STOCK, entityId) as Promise<Record<string, number>>,
+  getCurrentStock: (entityId?: string, asOfDate?: string): Promise<Record<string, number>> =>
+    invoke()(StockMovementsIPC.GET_CURRENT_STOCK, entityId, asOfDate) as Promise<
+      Record<string, number>
+    >,
 
-  getWeightedAvgCosts: (entityId?: string): Promise<Record<string, number | null>> =>
-    invoke()(StockMovementsIPC.GET_WEIGHTED_AVG_COSTS, entityId) as Promise<
+  getWeightedAvgCosts: (
+    entityId?: string,
+    asOfDate?: string,
+  ): Promise<Record<string, number | null>> =>
+    invoke()(StockMovementsIPC.GET_WEIGHTED_AVG_COSTS, entityId, asOfDate) as Promise<
       Record<string, number | null>
     >,
 

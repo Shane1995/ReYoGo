@@ -13,3 +13,8 @@ export const DATE_RANGE_REPORT_VIEWS: ReportView[] = [
   ReportView.ItemCostHistory,
   ReportView.PeriodSummary,
 ];
+
+export const AS_OF_DATE_REPORT_VIEWS: ReportView[] = [
+  ReportView.StockValuation,
+  ReportView.StockOnHand,
+];

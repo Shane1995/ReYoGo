@@ -5,10 +5,11 @@ import { useEntities } from '@/Context/EntityContext';
 import type { COGSSummary } from '@reyogo/types';
 import { DateRangeFilter } from '@/components/DateRangeFilter';
 import { ReportPicker } from './components/ReportPicker';
+import { AsOfDateFilter } from './components/AsOfDateFilter';
 import { ActiveReportView } from './components/ActiveReportView';
 import { exportReport } from './utils/exportReport';
 import { exportRequestOf } from './utils/exportRequestOf';
-import { DATE_RANGE_REPORT_VIEWS } from './constants';
+import { DATE_RANGE_REPORT_VIEWS, AS_OF_DATE_REPORT_VIEWS } from './constants';
 import { ReportView } from './types';
 import type { ItemCostHistoryRow } from './components/ItemCostHistoryView/types';
 import type { StockLevelRow } from './hooks/useStockLevelRows/types';
@@ -18,6 +19,7 @@ export default function ReportsPage() {
   const [activeView, setActiveView] = useState<ReportView>(ReportView.ItemCostHistory);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [asOfDate, setAsOfDate] = useState('');
   const [itemCostHistoryRows, setItemCostHistoryRows] = useState<ItemCostHistoryRow[]>([]);
   const [periodSummaryCogs, setPeriodSummaryCogs] = useState<COGSSummary | null>(null);
   const [stockValuationRows, setStockValuationRows] = useState<StockLevelRow[]>([]);
@@ -38,6 +40,7 @@ export default function ReportsPage() {
 
   const entityId = selectedEntityId || undefined;
   const showDateRangeFilter = DATE_RANGE_REPORT_VIEWS.includes(activeView);
+  const showAsOfDateFilter = AS_OF_DATE_REPORT_VIEWS.includes(activeView);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -53,6 +56,7 @@ export default function ReportsPage() {
                 onToChange={setToDate}
               />
             )}
+            {showAsOfDateFilter && <AsOfDateFilter value={asOfDate} onChange={setAsOfDate} />}
           </div>
           <Button type="button" variant="outline" size="sm" onClick={handleExport}>
             <DownloadIcon className="size-3.5 mr-1.5" />
@@ -65,6 +69,7 @@ export default function ReportsPage() {
           activeView={activeView}
           fromDate={fromDate}
           toDate={toDate}
+          asOfDate={asOfDate}
           entityId={entityId}
           onItemCostHistoryRowsChange={setItemCostHistoryRows}
           onPeriodSummaryCogsChange={setPeriodSummaryCogs}

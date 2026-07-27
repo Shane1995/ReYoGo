@@ -128,6 +128,37 @@ describe('createStockMovementsRepo', () => {
       expect((await repo.getCurrentStockByItem('default'))['item-1']).toBe(10);
     });
 
+    it('asOfDate: ignores movements after the given date', async () => {
+      await seedItem(db, 'item-1');
+      await seedMovement(db, {
+        id: 'mv-1',
+        itemId: 'item-1',
+        qty: 10,
+        stockAfter: 10,
+        occurredAt: new Date('2024-01-01'),
+      });
+      await seedMovement(db, {
+        id: 'mv-2',
+        itemId: 'item-1',
+        qty: 5,
+        stockAfter: 15,
+        occurredAt: new Date('2024-01-10'),
+      });
+      expect((await repo.getCurrentStockByItem(undefined, '2024-01-05'))['item-1']).toBe(10);
+    });
+
+    it('asOfDate: includes movements on the given date', async () => {
+      await seedItem(db, 'item-1');
+      await seedMovement(db, {
+        id: 'mv-1',
+        itemId: 'item-1',
+        qty: 10,
+        stockAfter: 10,
+        occurredAt: new Date('2024-01-05'),
+      });
+      expect((await repo.getCurrentStockByItem(undefined, '2024-01-05'))['item-1']).toBe(10);
+    });
+
     it('aggregate (no entityId): sums latest stock across entities', async () => {
       await seedItem(db, 'item-1');
       await db.insert(schema.entities).values({
@@ -182,6 +213,27 @@ describe('createStockMovementsRepo', () => {
         occurredAt: new Date('2024-01-02'),
       });
       expect((await repo.getWeightedAvgCosts())['item-1']).toBe(6.0);
+    });
+
+    it('asOfDate: returns WAC as of the given date, ignoring later movements', async () => {
+      await seedItem(db, 'item-1');
+      await seedMovement(db, {
+        id: 'mv-1',
+        itemId: 'item-1',
+        qty: 10,
+        wac: 5.0,
+        stockAfter: 10,
+        occurredAt: new Date('2024-01-01'),
+      });
+      await seedMovement(db, {
+        id: 'mv-2',
+        itemId: 'item-1',
+        qty: 10,
+        wac: 6.0,
+        stockAfter: 20,
+        occurredAt: new Date('2024-01-10'),
+      });
+      expect((await repo.getWeightedAvgCosts(undefined, '2024-01-05'))['item-1']).toBe(5.0);
     });
   });
 

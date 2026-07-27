@@ -9,6 +9,7 @@ export function ActiveReportView({
   activeView,
   fromDate,
   toDate,
+  asOfDate,
   entityId,
   onItemCostHistoryRowsChange,
   onPeriodSummaryCogsChange,
@@ -36,7 +37,19 @@ export function ActiveReportView({
     );
   }
   if (activeView === ReportView.StockValuation) {
-    return <StockValuationView entityId={entityId} onRowsChange={onStockValuationRowsChange} />;
+    return (
+      <StockValuationView
+        entityId={entityId}
+        asOfDate={asOfDate}
+        onRowsChange={onStockValuationRowsChange}
+      />
+    );
   }
-  return <StockOnHandView entityId={entityId} onRowsChange={onStockOnHandRowsChange} />;
+  return (
+    <StockOnHandView
+      entityId={entityId}
+      asOfDate={asOfDate}
+      onRowsChange={onStockOnHandRowsChange}
+    />
+  );
 }

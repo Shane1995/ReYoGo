@@ -1,4 +1,4 @@
-import type { StockLevelRow } from '../../../../hooks/useStockLevelRows/types';
+import type { StockLevelRow } from '../../types';
 
 export function availableCategoriesOfRows(rows: StockLevelRow[]): string[] {
   const seen = new Set<string>();

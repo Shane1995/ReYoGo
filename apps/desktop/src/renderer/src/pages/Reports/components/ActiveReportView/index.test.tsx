@@ -20,6 +20,7 @@ const noop = () => {};
 const baseProps = {
   fromDate: '',
   toDate: '',
+  asOfDate: '',
   entityId: undefined,
   onItemCostHistoryRowsChange: noop,
   onPeriodSummaryCogsChange: noop,

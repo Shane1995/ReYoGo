@@ -8,5 +8,6 @@ export enum StockOnHandSortKey {
 
 export type StockOnHandViewProps = {
   entityId: string | undefined;
+  asOfDate: string;
   onRowsChange: (rows: StockLevelRow[]) => void;
 };

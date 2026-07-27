@@ -61,11 +61,11 @@ export interface IPCInvokeMap {
     return: IInvoiceWithLines[];
   };
   'stock-movements:get-current-stock': {
-    args: [entityId?: string];
+    args: [entityId?: string, asOfDate?: string];
     return: Record<string, number>;
   };
   'stock-movements:get-weighted-avg-costs': {
-    args: [entityId?: string];
+    args: [entityId?: string, asOfDate?: string];
     return: Record<string, number | null>;
   };
   'stock-movements:get-item-cost-history': {

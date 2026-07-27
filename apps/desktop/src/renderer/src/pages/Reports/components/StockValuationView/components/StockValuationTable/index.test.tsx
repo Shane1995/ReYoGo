@@ -28,9 +28,9 @@ describe('StockValuationTable', () => {
     expect(screen.getByText('L')).toBeInTheDocument();
   });
 
-  it('shows the grand total row', () => {
+  it('shows the grand total row formatted as ZAR', () => {
     render(<StockValuationTable rows={rows} grandTotal={20} />);
     expect(screen.getByText('Grand Total')).toBeInTheDocument();
-    expect(screen.getAllByText('20.00').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('R 20,00').length).toBeGreaterThan(0);
   });
 });
