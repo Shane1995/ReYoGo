@@ -26,4 +26,16 @@ describe('reportFilename', () => {
       'reyogo-period-summary-to-2026-01-31.xlsx',
     );
   });
+
+  it('uses an as-of-date suffix for Stock Valuation instead of the date-range suffix', () => {
+    expect(reportFilename(ReportView.StockValuation, '', '', '2026-06-01')).toBe(
+      'reyogo-stock-valuation-as-of-2026-06-01.xlsx',
+    );
+  });
+
+  it('uses a "live" suffix for Stock on Hand when no as-of date is set', () => {
+    expect(reportFilename(ReportView.StockOnHand, '', '', '')).toBe(
+      'reyogo-stock-on-hand-live.xlsx',
+    );
+  });
 });
