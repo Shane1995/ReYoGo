@@ -3,15 +3,15 @@ import {
   fieldLabel,
   selectClass,
 } from '@/pages/Inventory/Analysis/components/AnalysisFilters/constants';
-import { SORT_OPTIONS } from '../../constants';
-import type { StockOnHandSortKey } from '../../types';
-import type { SortSelectProps } from './types';
+import { SORT_OPTIONS } from './constants';
+import type { StockSortKey } from '../../hooks/useStockLevelRows/types';
+import type { StockSortSelectProps } from './types';
 
-function isSortKey(value: string): value is StockOnHandSortKey {
+function isSortKey(value: string): value is StockSortKey {
   return SORT_OPTIONS.some((option) => option.key === value);
 }
 
-export function SortSelect({ value, onChange }: SortSelectProps) {
+export function StockSortSelect({ value, onChange }: StockSortSelectProps) {
   return (
     <div className="flex flex-col">
       <label className={fieldLabel}>Sort by</label>

@@ -8,3 +8,9 @@ export type StockLevelRow = {
   avgCost: number;
   totalValue: number;
 };
+
+export enum StockSortKey {
+  Name = 'name',
+  Quantity = 'quantity',
+  TotalValue = 'totalValue',
+}

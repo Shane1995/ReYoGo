@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStockLevelRows } from '../../hooks/useStockLevelRows';
 import { grandTotalOf } from '../../hooks/useStockLevelRows/utils/grandTotalOf';
-import { sortStockRows } from './utils/sortStockRows';
+import { sortStockRows } from '../../hooks/useStockLevelRows/utils/sortStockRows';
+import { StockSortKey } from '../../hooks/useStockLevelRows/types';
 import { CategoryFilter } from '../CategoryFilter';
-import { SortSelect } from './components/SortSelect';
+import { StockSortSelect } from '../StockSortSelect';
 import { StockOnHandTable } from './components/StockOnHandTable';
-import { StockOnHandSortKey } from './types';
 import type { StockOnHandViewProps } from './types';
 
 export function StockOnHandView({ entityId, asOfDate, onRowsChange }: StockOnHandViewProps) {
   const { loading, rows, availableCategories, selectedCategories, setSelectedCategories } =
     useStockLevelRows(entityId, asOfDate);
-  const [sortBy, setSortBy] = useState<StockOnHandSortKey>(StockOnHandSortKey.Name);
+  const [sortBy, setSortBy] = useState<StockSortKey>(StockSortKey.Name);
 
   const sortedRows = useMemo(() => sortStockRows(rows, sortBy), [rows, sortBy]);
 
@@ -31,7 +31,7 @@ export function StockOnHandView({ entityId, asOfDate, onRowsChange }: StockOnHan
           options={availableCategories}
           onChange={setSelectedCategories}
         />
-        <SortSelect value={sortBy} onChange={setSortBy} />
+        <StockSortSelect value={sortBy} onChange={setSortBy} />
       </div>
       <StockOnHandTable rows={sortedRows} grandTotal={grandTotalOf(sortedRows)} />
     </div>
