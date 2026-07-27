@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { useAnalysisLines } from '@/pages/Inventory/Analysis/hooks/useAnalysisLines';
 import { buildItemGroups } from '@/pages/Inventory/Analysis/utils/buildItemGroups';
-import { useItemGroupCategoryFilter } from '@/pages/Inventory/hooks/useItemGroupCategoryFilter';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
+import { useCategoryFilter } from '../useCategoryFilter';
 
 export function useItemCostHistoryData(
   fromDate: string,
@@ -17,14 +17,14 @@ export function useItemCostHistoryData(
     [lines, fromDate, toDate, items],
   );
 
-  const { filterCategory, setFilterCategory, availableCategories, filteredGroups } =
-    useItemGroupCategoryFilter(allGroups);
+  const { selectedCategories, setSelectedCategories, availableCategories, filteredGroups } =
+    useCategoryFilter(allGroups);
 
   return {
     loading,
     groups: filteredGroups,
-    filterCategory,
-    setFilterCategory,
+    selectedCategories,
+    setSelectedCategories,
     availableCategories,
   };
 }

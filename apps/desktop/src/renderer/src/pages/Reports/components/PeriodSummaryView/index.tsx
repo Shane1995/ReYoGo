@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cn } from '@reyogo/ui';
 import { usePeriodSummaryData } from './hooks/usePeriodSummaryData';
-import { filteredCogsOf } from './utils/filteredCogsOf';
+import { filteredCogsOrNull } from './utils/filteredCogsOrNull';
+import { availableCategoriesOf } from './utils/availableCategoriesOf';
 import { CogsTotalCard } from '@/pages/Inventory/Costing/Dashboard/components/CogsTotalCard';
 import { CogsCategoryTable } from '@/pages/Inventory/Costing/Dashboard/components/CogsCategoryTable';
-import {
-  fieldLabel,
-  selectClass,
-} from '@/pages/Inventory/Analysis/components/AnalysisFilters/constants';
+import { CategoryFilter } from '../CategoryFilter';
 import type { PeriodSummaryViewProps } from './types';
 
 export function PeriodSummaryView({
@@ -17,12 +14,12 @@ export function PeriodSummaryView({
   onCogsChange,
 }: PeriodSummaryViewProps) {
   const { loading, cogs } = usePeriodSummaryData(fromDate, toDate, entityId);
-  const [filterCategory, setFilterCategory] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
-  const filteredCogs = useMemo(() => {
-    if (!cogs) return null;
-    return filteredCogsOf(cogs, filterCategory);
-  }, [cogs, filterCategory]);
+  const filteredCogs = useMemo(
+    () => filteredCogsOrNull(cogs, selectedCategories),
+    [cogs, selectedCategories],
+  );
 
   useEffect(() => {
     onCogsChange(filteredCogs);
@@ -39,28 +36,13 @@ export function PeriodSummaryView({
     );
   }
 
-  const availableCategories = cogs.byCategory
-    .map((row) => row.categoryName)
-    .filter((name): name is string => name !== null)
-    .sort();
-
   return (
     <div className="space-y-4">
-      <div className="flex flex-col">
-        <label className={fieldLabel}>Category</label>
-        <select
-          value={filterCategory}
-          onChange={(e) => setFilterCategory(e.target.value)}
-          className={cn(selectClass, 'w-48', !filterCategory && 'text-muted-foreground/60')}
-        >
-          <option value="">All categories</option>
-          {availableCategories.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-      </div>
+      <CategoryFilter
+        selected={selectedCategories}
+        options={availableCategoriesOf(cogs)}
+        onChange={setSelectedCategories}
+      />
       <CogsTotalCard cogs={filteredCogs} />
       <CogsCategoryTable cogs={filteredCogs} />
     </div>

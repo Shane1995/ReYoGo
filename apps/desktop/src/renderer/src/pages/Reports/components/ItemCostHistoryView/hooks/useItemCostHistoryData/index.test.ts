@@ -75,10 +75,10 @@ describe('useItemCostHistoryData', () => {
     expect(result.current.availableCategories).toEqual(['Beverages', 'Dairy']);
   });
 
-  it('filters groups down to the selected category', async () => {
+  it('filters groups down to the selected categories', async () => {
     const { result } = renderHook(() => useItemCostHistoryData('', '', undefined));
     await waitFor(() => expect(result.current.loading).toBe(false));
-    act(() => result.current.setFilterCategory('Beverages'));
+    act(() => result.current.setSelectedCategories(['Beverages']));
     expect(result.current.groups).toHaveLength(1);
     expect(result.current.groups[0]!.itemId).toBe('item-2');
   });

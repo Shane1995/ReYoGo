@@ -75,9 +75,7 @@ export const appConfig: AppConfig = {
       { label: 'Dashboard', pathKey: 'home', icon: 'LayoutDashboard', end: true },
       { label: 'Stock', pathKey: 'stock', icon: 'Package', end: false },
       { label: 'Invoices', pathKey: 'invoices', icon: 'Receipt', end: false },
-      { label: 'Costing', pathKey: 'costing', icon: 'Coins', end: false },
       { label: 'Reports', pathKey: 'reports', icon: 'FileBarChart2', end: false },
-      { label: 'Suppliers', pathKey: 'suppliers', icon: 'Truck', end: false },
     ],
     stock: [
       { label: 'Captured Inventory', pathKey: 'stock', icon: 'PackagePlus', end: true },

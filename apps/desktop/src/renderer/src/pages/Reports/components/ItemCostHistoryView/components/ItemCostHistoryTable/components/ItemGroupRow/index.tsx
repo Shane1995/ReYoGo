@@ -1,12 +1,14 @@
 import { Fragment } from 'react';
 import { ChevronRightIcon } from 'lucide-react';
-import { TableCell, TableRow, Badge } from '@reyogo/ui';
+import { TableCell, TableRow } from '@reyogo/ui';
 import { fmt, fmtDate } from '@/pages/Inventory/Analysis/utils/format';
-import { changeCls } from '@/pages/Inventory/Analysis/utils/styles';
 import { chevronClassName } from '@/pages/Inventory/Analysis/components/TableView/components/GroupRow/utils/chevronClassName';
 import { groupRowClassName } from '@/pages/Inventory/Analysis/components/TableView/components/GroupRow/utils/groupRowClassName';
 import { overallPctChangeOf } from './utils/overallPctChangeOf';
 import { ExpandedPurchasesRow } from '../ExpandedPurchasesRow';
+import { ItemNameCell } from './components/ItemNameCell';
+import { TaxableCell } from './components/TaxableCell';
+import { ChangeCell } from './components/ChangeCell';
 import type { ItemGroupRowProps } from './types';
 
 export function ItemGroupRow({ group, index, isExpanded, onToggle }: ItemGroupRowProps) {
@@ -27,8 +29,7 @@ export function ItemGroupRow({ group, index, isExpanded, onToggle }: ItemGroupRo
           className="py-2.5 font-medium text-foreground cursor-pointer"
           onClick={() => onToggle(group.itemId)}
         >
-          {group.itemName}
-          {group.uom ? <span className="text-muted-foreground/60"> / {group.uom}</span> : null}
+          <ItemNameCell name={group.itemName} uom={group.uom} />
         </TableCell>
         <TableCell className="py-2.5 text-sm text-muted-foreground">{fmtDate(last.date)}</TableCell>
         <TableCell className="text-right font-mono tabular-nums">{last.quantity}</TableCell>
@@ -39,19 +40,10 @@ export function ItemGroupRow({ group, index, isExpanded, onToggle }: ItemGroupRo
           {fmt(last.unitCostInclVat)}
         </TableCell>
         <TableCell className="text-center">
-          {last.isVatable ? (
-            <span className="text-[var(--nav-active-border)]">✓</span>
-          ) : (
-            <span className="text-muted-foreground/30">—</span>
-          )}
+          <TaxableCell isVatable={last.isVatable} />
         </TableCell>
         <TableCell className="text-right">
-          <div className="flex items-center justify-end gap-1.5">
-            <span className={changeCls(change)}>
-              {change === null ? '—' : `${change.toFixed(1)}%`}
-            </span>
-            {group.flagged && <Badge variant="destructive">Jump</Badge>}
-          </div>
+          <ChangeCell change={change} flagged={group.flagged} />
         </TableCell>
       </TableRow>
       {isExpanded && <ExpandedPurchasesRow rows={group.rows} />}

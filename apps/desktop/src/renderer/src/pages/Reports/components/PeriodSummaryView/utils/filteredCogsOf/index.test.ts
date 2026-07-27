@@ -12,17 +12,23 @@ const cogs: COGSSummary = {
 
 describe('filteredCogsOf', () => {
   it('returns the summary unchanged when no category is selected', () => {
-    expect(filteredCogsOf(cogs, '')).toEqual(cogs);
+    expect(filteredCogsOf(cogs, [])).toEqual(cogs);
   });
 
-  it('narrows byCategory and total to the selected category', () => {
-    const filtered = filteredCogsOf(cogs, 'Dairy');
+  it('narrows byCategory and total to a single selected category', () => {
+    const filtered = filteredCogsOf(cogs, ['Dairy']);
     expect(filtered.total).toBe(100);
     expect(filtered.byCategory).toEqual([{ categoryId: 'c1', categoryName: 'Dairy', total: 100 }]);
   });
 
-  it('returns a zero summary when the category has no matching rows', () => {
-    const filtered = filteredCogsOf(cogs, 'Nonexistent');
+  it('includes rows for every selected category', () => {
+    const filtered = filteredCogsOf(cogs, ['Dairy', 'Beverages']);
+    expect(filtered.total).toBe(150);
+    expect(filtered.byCategory).toHaveLength(2);
+  });
+
+  it('returns a zero summary when no category matches', () => {
+    const filtered = filteredCogsOf(cogs, ['Nonexistent']);
     expect(filtered).toEqual({ total: 0, byCategory: [] });
   });
 });
