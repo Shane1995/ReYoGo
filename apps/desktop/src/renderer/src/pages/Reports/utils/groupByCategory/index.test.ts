@@ -36,4 +36,10 @@ describe('groupByCategory', () => {
     const buckets = groupByCategory(rows, (r) => r.category);
     expect(buckets).toEqual([{ category: UNCATEGORIZED_CATEGORY_LABEL, rows: [rows[0]] }]);
   });
+
+  it('buckets rows with an empty-string category under the uncategorized label', () => {
+    const rows: Row[] = [{ name: 'Mystery', category: '' }];
+    const buckets = groupByCategory(rows, (r) => r.category);
+    expect(buckets).toEqual([{ category: UNCATEGORIZED_CATEGORY_LABEL, rows: [rows[0]] }]);
+  });
 });

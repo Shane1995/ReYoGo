@@ -7,7 +7,7 @@ export function groupByCategory<T>(
 ): CategoryBucket<T>[] {
   const buckets = new Map<string, T[]>();
   for (const row of rows) {
-    const category = categoryOf(row) ?? UNCATEGORIZED_CATEGORY_LABEL;
+    const category = categoryOf(row) || UNCATEGORIZED_CATEGORY_LABEL;
     const bucketRows = buckets.get(category) ?? [];
     buckets.set(category, [...bucketRows, row]);
   }
