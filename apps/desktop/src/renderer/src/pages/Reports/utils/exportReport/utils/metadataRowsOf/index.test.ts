@@ -24,6 +24,26 @@ describe('metadataRowsOf', () => {
     expect(metadataRowsOf(request)).toEqual([['Date range: All dates'], []]);
   });
 
+  it('shows "From <date>" when only fromDate is set', () => {
+    const request: ExportRequest = {
+      view: ReportView.ItemCostHistory,
+      rows: [],
+      fromDate: '2026-01-01',
+      toDate: '',
+    };
+    expect(metadataRowsOf(request)).toEqual([['Date range: From 2026-01-01'], []]);
+  });
+
+  it('shows "To <date>" when only toDate is set', () => {
+    const request: ExportRequest = {
+      view: ReportView.PeriodSummary,
+      cogs: { total: 0, byCategory: [] },
+      fromDate: '',
+      toDate: '2026-01-31',
+    };
+    expect(metadataRowsOf(request)).toEqual([['Date range: To 2026-01-31'], []]);
+  });
+
   it('shows the as-of date for Stock Valuation', () => {
     const request: ExportRequest = {
       view: ReportView.StockValuation,
