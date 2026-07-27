@@ -9,8 +9,7 @@ export function groupByCategory<T>(
   for (const row of rows) {
     const category = categoryOf(row) ?? UNCATEGORIZED_CATEGORY_LABEL;
     const bucketRows = buckets.get(category) ?? [];
-    bucketRows.push(row);
-    buckets.set(category, bucketRows);
+    buckets.set(category, [...bucketRows, row]);
   }
   return Array.from(buckets.entries())
     .map(([category, bucketRows]) => ({ category, rows: bucketRows }))
