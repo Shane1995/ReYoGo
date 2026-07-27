@@ -73,18 +73,20 @@ export function StockOnHandTable({ rows, grandTotal }: StockOnHandTableProps) {
           </Table>
         </CategoryGroup>
       ))}
-      <Table>
-        <TableFooter>
-          <TableRow className="bg-muted/20 hover:bg-muted/20 print:bg-white">
-            <TableCell colSpan={4} className="text-right font-semibold">
-              Grand Total
-            </TableCell>
-            <TableCell className="text-right font-mono tabular-nums font-semibold">
-              {formatZAR(grandTotal)}
-            </TableCell>
-          </TableRow>
-        </TableFooter>
-      </Table>
+      <div className="rounded-lg border border-[var(--nav-border)] overflow-hidden print:border-none print:rounded-none">
+        <Table>
+          <TableFooter>
+            <TableRow className="bg-muted/20 hover:bg-muted/20 print:bg-white">
+              <TableCell colSpan={4} className="text-right font-semibold">
+                Grand Total
+              </TableCell>
+              <TableCell className="text-right font-mono tabular-nums font-semibold">
+                {formatZAR(grandTotal)}
+              </TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </div>
     </div>
   );
 }
