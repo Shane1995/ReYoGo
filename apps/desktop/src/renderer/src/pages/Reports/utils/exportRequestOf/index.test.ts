@@ -7,6 +7,7 @@ const baseState: ExportState = {
   activeView: ReportView.ItemCostHistory,
   fromDate: '2026-01-01',
   toDate: '2026-01-31',
+  asOfDate: '',
   itemCostHistoryRows: [],
   periodSummaryCogs: null,
   stockValuationRows: [],
@@ -44,13 +45,21 @@ describe('exportRequestOf', () => {
     });
   });
 
-  it('builds a Stock Valuation request without date fields', () => {
-    const request = exportRequestOf({ ...baseState, activeView: ReportView.StockValuation });
-    expect(request).toEqual({ view: ReportView.StockValuation, rows: [] });
+  it('builds a Stock Valuation request with the current as-of date', () => {
+    const request = exportRequestOf({
+      ...baseState,
+      activeView: ReportView.StockValuation,
+      asOfDate: '2026-06-01',
+    });
+    expect(request).toEqual({ view: ReportView.StockValuation, rows: [], asOfDate: '2026-06-01' });
   });
 
-  it('builds a Stock on Hand request without date fields', () => {
-    const request = exportRequestOf({ ...baseState, activeView: ReportView.StockOnHand });
-    expect(request).toEqual({ view: ReportView.StockOnHand, rows: [] });
+  it('builds a Stock on Hand request with the current as-of date', () => {
+    const request = exportRequestOf({
+      ...baseState,
+      activeView: ReportView.StockOnHand,
+      asOfDate: '',
+    });
+    expect(request).toEqual({ view: ReportView.StockOnHand, rows: [], asOfDate: '' });
   });
 });

@@ -83,7 +83,7 @@ describe('exportReport', () => {
   };
 
   it('builds a Stock Valuation workbook and saves it without a date suffix', async () => {
-    await exportReport({ view: ReportView.StockValuation, rows: [stockRow] });
+    await exportReport({ view: ReportView.StockValuation, rows: [stockRow], asOfDate: '' });
 
     expect(mockInvoke).toHaveBeenCalledTimes(1);
     const [channel, payload] = mockInvoke.mock.calls[0]!;
@@ -97,7 +97,7 @@ describe('exportReport', () => {
   });
 
   it('builds a Stock on Hand workbook including the category column', async () => {
-    await exportReport({ view: ReportView.StockOnHand, rows: [stockRow] });
+    await exportReport({ view: ReportView.StockOnHand, rows: [stockRow], asOfDate: '' });
 
     expect(mockInvoke).toHaveBeenCalledTimes(1);
     const [channel, payload] = mockInvoke.mock.calls[0]!;

@@ -30,6 +30,7 @@ export default function ReportsPage() {
       activeView,
       fromDate,
       toDate,
+      asOfDate,
       itemCostHistoryRows,
       periodSummaryCogs,
       stockValuationRows,

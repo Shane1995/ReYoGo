@@ -17,5 +17,5 @@ export type ExportRequest =
       toDate: string;
     }
   | { view: ReportView.PeriodSummary; cogs: COGSSummary; fromDate: string; toDate: string }
-  | { view: ReportView.StockValuation; rows: StockLevelRow[] }
-  | { view: ReportView.StockOnHand; rows: StockLevelRow[] };
+  | { view: ReportView.StockValuation; rows: StockLevelRow[]; asOfDate: string }
+  | { view: ReportView.StockOnHand; rows: StockLevelRow[]; asOfDate: string };

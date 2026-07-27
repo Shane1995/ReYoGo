@@ -7,6 +7,7 @@ export type ExportState = {
   activeView: ReportView;
   fromDate: string;
   toDate: string;
+  asOfDate: string;
   itemCostHistoryRows: ItemCostHistoryRow[];
   periodSummaryCogs: COGSSummary | null;
   stockValuationRows: StockLevelRow[];
