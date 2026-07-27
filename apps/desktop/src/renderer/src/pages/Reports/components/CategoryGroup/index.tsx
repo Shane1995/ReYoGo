@@ -1,0 +1,33 @@
+import { ChevronRightIcon } from 'lucide-react';
+import { chevronClassName } from '@/pages/Inventory/Analysis/components/TableView/components/GroupRow/utils/chevronClassName';
+import { itemCountLabelOf } from './utils/itemCountLabelOf';
+import type { CategoryGroupProps } from './types';
+
+export function CategoryGroup({
+  category,
+  count,
+  summary,
+  isExpanded,
+  onToggle,
+  children,
+}: CategoryGroupProps) {
+  return (
+    <div className="rounded-lg border border-[var(--nav-border)] overflow-hidden">
+      <button
+        type="button"
+        onClick={() => onToggle(category)}
+        className="flex w-full items-center justify-between gap-4 bg-muted/30 px-3 py-2 text-left hover:bg-muted/40"
+      >
+        <span className="flex items-center gap-2 font-medium text-foreground">
+          <ChevronRightIcon className={chevronClassName(isExpanded)} />
+          <span>{category}</span>
+          <span className="font-normal text-muted-foreground/60">{itemCountLabelOf(count)}</span>
+        </span>
+        {summary !== undefined && (
+          <span className="font-mono text-sm tabular-nums text-muted-foreground">{summary}</span>
+        )}
+      </button>
+      {isExpanded && children}
+    </div>
+  );
+}
