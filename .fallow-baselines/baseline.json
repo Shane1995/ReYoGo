@@ -5,7 +5,8 @@
     "apps/desktop/src/renderer/src/pages/Reports/utils/index.ts",
     "apps/desktop/src/renderer/src/pages/Reports/components/CategoryGroup/index.tsx",
     "apps/desktop/src/renderer/src/pages/Reports/components/CategoryGroup/types.ts",
-    "apps/desktop/src/renderer/src/pages/Reports/components/CategoryGroup/utils/itemCountLabelOf/index.ts"
+    "apps/desktop/src/renderer/src/pages/Reports/components/CategoryGroup/utils/itemCountLabelOf/index.ts",
+    "apps/desktop/src/renderer/src/pages/Reports/utils/exportReport/utils/metadataRowsOf/index.ts"
   ],
   "unused_exports": [
     "apps/desktop/src/renderer/src/pages/Reports/components/CategoryGroup/utils/itemCountLabelOf/index.ts:itemCountLabelOf"
