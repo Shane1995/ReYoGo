@@ -12,6 +12,7 @@ function entry(
     quantity: 1,
     unitPrice: 100,
     unitPriceInclVat: 115,
+    isVatable: true,
     ...overrides,
   };
 }

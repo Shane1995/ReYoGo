@@ -15,7 +15,8 @@ export const invoiceService = {
     invoke()(InvoicesIPC.SAVE_AND_POST_INVOICE, payload),
   getInvoicesWithLines: () => invoke()(InvoicesIPC.GET_INVOICES_WITH_LINES),
   getInvoice: (id: string) => invoke()(InvoicesIPC.GET_INVOICE, id),
-  getLinesForAnalysis: () => invoke()(InvoicesIPC.GET_LINES_FOR_ANALYSIS),
+  getLinesForAnalysis: (entityId?: string) =>
+    invoke()(InvoicesIPC.GET_LINES_FOR_ANALYSIS, entityId),
   postInvoice: (id: string) => invoke()(InvoicesIPC.POST_INVOICE, id),
   updateInvoice: (payload: IUpdateCapturedInvoicePayload) =>
     invoke()(InvoicesIPC.UPDATE_INVOICE, payload),

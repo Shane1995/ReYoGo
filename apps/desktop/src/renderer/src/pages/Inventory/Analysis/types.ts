@@ -4,6 +4,7 @@ export type ItemEntry = {
   quantity: number;
   unitPrice: number;
   unitPriceInclVat: number;
+  isVatable: boolean;
   uom?: string;
 };
 
@@ -15,3 +16,9 @@ export type ItemGroup = {
   categoryName?: string;
   entries: ItemEntry[];
 };
+
+export enum AnalysisTab {
+  All = 'all',
+  ByType = 'by-type',
+  ByCategory = 'by-category',
+}

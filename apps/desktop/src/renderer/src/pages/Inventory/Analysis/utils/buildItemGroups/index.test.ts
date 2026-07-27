@@ -47,4 +47,18 @@ describe('buildItemGroups', () => {
     );
     expect(groups).toHaveLength(0);
   });
+
+  it('carries isVatable through to the entry', () => {
+    const groups = buildItemGroups([makeLine({ isVatable: true })], '', '', [
+      { id: 'item-1', name: 'Flour' },
+    ]);
+    expect(groups[0]!.entries[0]!.isVatable).toBe(true);
+  });
+
+  it('carries isVatable false through to the entry', () => {
+    const groups = buildItemGroups([makeLine({ isVatable: false })], '', '', [
+      { id: 'item-1', name: 'Flour' },
+    ]);
+    expect(groups[0]!.entries[0]!.isVatable).toBe(false);
+  });
 });

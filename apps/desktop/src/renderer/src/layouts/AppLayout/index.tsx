@@ -5,15 +5,21 @@ import { EntityTopBar } from '@/components/EntityTopBar';
 import UpdateToast from '@/components/UpdateToast';
 
 const AppLayout = () => (
-  <div className="flex h-screen flex-col overflow-hidden">
-    <EntityTopBar />
-    <div className="flex min-h-0 flex-1 flex-row overflow-hidden">
-      <AppSidebar />
-      <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--content-tint)]">
+  <div className="flex h-screen flex-col overflow-hidden print:h-auto print:overflow-visible print:bg-white">
+    <div className="print:hidden">
+      <EntityTopBar />
+    </div>
+    <div className="flex min-h-0 flex-1 flex-row overflow-hidden print:block print:overflow-visible">
+      <div className="print:hidden">
+        <AppSidebar />
+      </div>
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--content-tint)] print:overflow-visible print:bg-white print:text-black">
         <Outlet />
       </main>
     </div>
-    <AppStatusBar />
+    <div className="print:hidden">
+      <AppStatusBar />
+    </div>
     <UpdateToast />
   </div>
 );

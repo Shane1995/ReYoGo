@@ -25,6 +25,21 @@ function entityFilter(entityId: string | undefined) {
   return eq(schema.stockMovements.entityId, entityId);
 }
 
+function asOfDateFilter(asOfDate: string | undefined) {
+  if (!asOfDate) return undefined;
+  return lte(schema.stockMovements.occurredAt, new Date(asOfDate + 'T23:59:59'));
+}
+
+function isDefined<T>(value: T | undefined): value is T {
+  return value !== undefined;
+}
+
+function combinedConditions(entityId: string | undefined, asOfDate: string | undefined) {
+  const conditions = [entityFilter(entityId), asOfDateFilter(asOfDate)].filter(isDefined);
+  if (conditions.length === 0) return undefined;
+  return and(...conditions);
+}
+
 function orNull<T>(value: T | null | undefined): T | null {
   if (value == null) return null;
   return value;
@@ -119,6 +134,7 @@ function stockAcrossEntities(rows: StockRow[]): Record<string, number> {
 async function getCurrentStockByItem(
   db: DbClient,
   entityId?: string,
+  asOfDate?: string,
 ): Promise<Record<string, number>> {
   const rows = await db
     .select({
@@ -128,16 +144,18 @@ async function getCurrentStockByItem(
       occurredAt: schema.stockMovements.occurredAt,
     })
     .from(schema.stockMovements)
-    .where(entityFilter(entityId))
+    .where(combinedConditions(entityId, asOfDate))
     .orderBy(asc(schema.stockMovements.occurredAt));
 
   if (entityId) return stockByItemForEntity(rows);
   return stockAcrossEntities(rows);
 }
 
-function wacConditions(entityId: string | undefined) {
+function wacConditions(entityId: string | undefined, asOfDate: string | undefined) {
   const conditions = [eq(schema.stockMovements.movementType, MovementType.In)];
   if (entityId) conditions.push(eq(schema.stockMovements.entityId, entityId));
+  const dateCondition = asOfDateFilter(asOfDate);
+  if (dateCondition) conditions.push(dateCondition);
   return conditions;
 }
 
@@ -163,6 +181,7 @@ function wacAcrossEntities(rows: WacRow[]): Record<string, number | null> {
 async function getWeightedAvgCosts(
   db: DbClient,
   entityId?: string,
+  asOfDate?: string,
 ): Promise<Record<string, number | null>> {
   const rows = await db
     .select({
@@ -172,7 +191,7 @@ async function getWeightedAvgCosts(
       occurredAt: schema.stockMovements.occurredAt,
     })
     .from(schema.stockMovements)
-    .where(and(...wacConditions(entityId)))
+    .where(and(...wacConditions(entityId, asOfDate)))
     .orderBy(asc(schema.stockMovements.occurredAt));
 
   if (entityId) return wacByItemForEntity(rows);
@@ -285,8 +304,10 @@ async function getCOGS(
 
 export function createStockMovementsRepo(db: DbClient) {
   return {
-    getCurrentStockByItem: (entityId?: string) => getCurrentStockByItem(db, entityId),
-    getWeightedAvgCosts: (entityId?: string) => getWeightedAvgCosts(db, entityId),
+    getCurrentStockByItem: (entityId?: string, asOfDate?: string) =>
+      getCurrentStockByItem(db, entityId, asOfDate),
+    getWeightedAvgCosts: (entityId?: string, asOfDate?: string) =>
+      getWeightedAvgCosts(db, entityId, asOfDate),
     getMovementsForItem: (itemId: string, entityId?: string) =>
       getMovementsForItem(db, itemId, entityId),
     getItemCostHistory: (itemId: string, entityId?: string) =>

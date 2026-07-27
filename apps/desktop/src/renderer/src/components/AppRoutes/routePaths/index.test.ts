@@ -6,6 +6,7 @@ import {
   StockRouteSegments,
   InvoiceRouteSegments,
   CostingRouteSegments,
+  ReportsRouteSegments,
   SuppliersRouteSegments,
   AnalysisRoutes,
   itemTrendPath,
@@ -66,6 +67,12 @@ describe('InvoiceRouteSegments', () => {
 describe('CostingRouteSegments', () => {
   it('root is costing', () => {
     expect(CostingRouteSegments.root).toBe('costing');
+  });
+});
+
+describe('ReportsRouteSegments', () => {
+  it('root is reports', () => {
+    expect(ReportsRouteSegments.root).toBe('reports');
   });
 });
 

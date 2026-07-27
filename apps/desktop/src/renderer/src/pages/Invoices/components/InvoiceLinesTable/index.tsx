@@ -22,7 +22,7 @@ export function InvoiceLinesTable({
   return (
     <div className="rounded-lg border border-[var(--nav-border)] bg-background overflow-hidden">
       <Table>
-        <LinesTableHeader />
+        <LinesTableHeader vatMode={vatMode} />
         <TableBody>
           {lines.map((line, i) => (
             <InvoiceLineRow

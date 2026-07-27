@@ -1,52 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useAnalysisLines } from '../useAnalysisLines';
 import { buildItemGroups } from '../../utils/buildItemGroups';
-import { TYPE_ORDER } from '../../constants';
-import type { ItemGroup } from '../../types';
+import { computeAvailableTypes } from '../../utils/computeAvailableTypes';
+import { filterGroupsBySearchAndType } from '../../utils/filterGroupsBySearchAndType';
+import { anyFilterActive } from '../../utils/anyFilterActive';
+import { useItemGroupCategoryFilter } from '../../../hooks/useItemGroupCategoryFilter';
+import { AnalysisTab } from '../../types';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
-
-export type AnalysisTab = 'all' | 'by-type' | 'by-category';
-
-function computeAvailableTypes(allGroups: ItemGroup[]): string[] {
-  const seen = new Set(allGroups.map((g) => g.categoryType));
-  return TYPE_ORDER.filter((t) => seen.has(t)).concat(
-    Array.from(seen).filter((t) => !TYPE_ORDER.includes(t)),
-  );
-}
-
-function computeAvailableCategories(allGroups: ItemGroup[]): string[] {
-  const seen = new Map<string, string>();
-  for (const g of allGroups) {
-    if (g.categoryName && !seen.has(g.categoryName)) {
-      seen.set(g.categoryName, g.categoryName);
-    }
-  }
-  return Array.from(seen.keys()).sort();
-}
-
-function filterGroups(
-  allGroups: ItemGroup[],
-  search: string,
-  filterType: string,
-  filterCategory: string,
-): ItemGroup[] {
-  let filtered = allGroups;
-  if (search.trim()) {
-    const q = search.trim().toLowerCase();
-    filtered = filtered.filter((g) => g.name.toLowerCase().includes(q));
-  }
-  if (filterType) {
-    filtered = filtered.filter((g) => g.categoryType === filterType);
-  }
-  if (filterCategory) {
-    filtered = filtered.filter((g) => g.categoryName === filterCategory);
-  }
-  return filtered;
-}
-
-function anyFilterActive(...filters: string[]): boolean {
-  return filters.some((filter) => !!filter);
-}
 
 export function useAnalysisData() {
   const { lines, loading } = useAnalysisLines();
@@ -55,8 +15,7 @@ export function useAnalysisData() {
   const [toDate, setToDate] = useState('');
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
-  const [analysisTab, setAnalysisTab] = useState<AnalysisTab>('all');
+  const [analysisTab, setAnalysisTab] = useState<AnalysisTab>(AnalysisTab.All);
 
   const allGroups = useMemo(
     () => buildItemGroups(lines, fromDate, toDate, items),
@@ -64,10 +23,12 @@ export function useAnalysisData() {
   );
 
   const availableTypes = useMemo(() => computeAvailableTypes(allGroups), [allGroups]);
-  const availableCategories = useMemo(() => computeAvailableCategories(allGroups), [allGroups]);
+  const { filterCategory, setFilterCategory, availableCategories, filteredGroups } =
+    useItemGroupCategoryFilter(allGroups);
+
   const groups = useMemo(
-    () => filterGroups(allGroups, search, filterType, filterCategory),
-    [allGroups, search, filterType, filterCategory],
+    () => filterGroupsBySearchAndType(filteredGroups, search, filterType),
+    [filteredGroups, search, filterType],
   );
 
   const clearFilters = () => {

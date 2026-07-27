@@ -22,8 +22,8 @@ describe('appConfig.nav', () => {
     });
   });
 
-  it('primary nav has five items', () => {
-    expect(appConfig.nav.primary).toHaveLength(5);
+  it('primary nav has four items', () => {
+    expect(appConfig.nav.primary).toHaveLength(4);
   });
 
   it('stock nav has four items', () => {

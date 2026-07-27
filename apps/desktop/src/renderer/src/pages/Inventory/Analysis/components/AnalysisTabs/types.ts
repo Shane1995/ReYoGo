@@ -1,4 +1,4 @@
-import type { AnalysisTab } from '../../hooks/useAnalysisData';
+import type { AnalysisTab } from '../../types';
 
 export type AnalysisTabsProps = {
   analysisTab: AnalysisTab;

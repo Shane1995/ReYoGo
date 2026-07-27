@@ -9,6 +9,7 @@ function makeEntry(date: Date): ItemEntry {
     quantity: 1,
     unitPrice: 10,
     unitPriceInclVat: 11,
+    isVatable: true,
   };
 }
 
