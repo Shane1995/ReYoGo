@@ -30,8 +30,7 @@
     "**/*.spec.ts",
     "**/*.spec.tsx",
     "**/vitest.setup.ts",
-    "**/__mocks__/**",
-    "apps/desktop/src/renderer/src/pages/Reports/components/CategoryGroup/**"
+    "**/__mocks__/**"
   ],
   "boundaries": {
     "zones": [

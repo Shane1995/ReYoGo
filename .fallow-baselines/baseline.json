@@ -2,11 +2,17 @@
   "unused_files": [
     "apps/desktop/src/renderer/src/pages/Reports/utils/groupByCategory/index.ts",
     "apps/desktop/src/renderer/src/pages/Reports/utils/groupByCategory/types.ts",
-    "apps/desktop/src/renderer/src/pages/Reports/utils/index.ts"
+    "apps/desktop/src/renderer/src/pages/Reports/utils/index.ts",
+    "apps/desktop/src/renderer/src/pages/Reports/components/CategoryGroup/index.tsx",
+    "apps/desktop/src/renderer/src/pages/Reports/components/CategoryGroup/types.ts",
+    "apps/desktop/src/renderer/src/pages/Reports/components/CategoryGroup/utils/itemCountLabelOf/index.ts"
   ],
-  "unused_exports": [],
+  "unused_exports": [
+    "apps/desktop/src/renderer/src/pages/Reports/components/CategoryGroup/utils/itemCountLabelOf/index.ts:itemCountLabelOf"
+  ],
   "unused_types": [
-    "apps/desktop/src/renderer/src/pages/Reports/utils/groupByCategory/types.ts:CategoryBucket"
+    "apps/desktop/src/renderer/src/pages/Reports/utils/groupByCategory/types.ts:CategoryBucket",
+    "apps/desktop/src/renderer/src/pages/Reports/components/CategoryGroup/types.ts:CategoryGroupProps"
   ],
   "private_type_leaks": [],
   "unused_dependencies": [],
