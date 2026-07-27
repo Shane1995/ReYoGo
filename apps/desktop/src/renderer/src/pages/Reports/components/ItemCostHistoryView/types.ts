@@ -2,6 +2,7 @@ export type ItemCostHistoryRow = {
   itemId: string;
   itemName: string;
   uom?: string;
+  categoryName?: string;
   invoiceId: string;
   date: Date;
   quantity: number;
