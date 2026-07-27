@@ -41,4 +41,16 @@ describe('buildItemCostHistorySheetRows', () => {
     const sheet = buildItemCostHistorySheetRows([]);
     expect(sheet).toHaveLength(1);
   });
+
+  it('rounds long decimal costs to 2 places and pctChange to 1 place', () => {
+    const sheet = buildItemCostHistorySheetRows([
+      {
+        ...row,
+        unitCostExclVat: 10.365942029,
+        unitCostInclVat: 11.920833333,
+        pctChange: 0.000000012345,
+      },
+    ]);
+    expect(sheet[1]).toEqual(['Flour', 'kg', '2026-01-15', 2, 10.37, 11.92, 'Yes', 0]);
+  });
 });

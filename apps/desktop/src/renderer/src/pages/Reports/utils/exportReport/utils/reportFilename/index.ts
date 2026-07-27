@@ -15,6 +15,6 @@ function dateRangeSuffix(fromDate: string, toDate: string): string {
   return singleDateSuffix(fromDate, toDate);
 }
 
-export function reportFilename(view: ReportView, fromDate: string, toDate: string): string {
+export function reportFilename(view: ReportView, fromDate = '', toDate = ''): string {
   return `reyogo-${view}-${dateRangeSuffix(fromDate, toDate)}.xlsx`;
 }
