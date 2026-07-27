@@ -1,10 +1,18 @@
 import type { ExportRequest } from '../../../../types';
 
-function dateRangeLabel(fromDate: string, toDate: string): string {
-  if (fromDate && toDate) return `${fromDate} to ${toDate}`;
+function hasBothDates(fromDate: string, toDate: string): boolean {
+  return Boolean(fromDate) && Boolean(toDate);
+}
+
+function singleDateLabel(fromDate: string, toDate: string): string {
   if (fromDate) return `From ${fromDate}`;
   if (toDate) return `To ${toDate}`;
   return 'All dates';
+}
+
+function dateRangeLabel(fromDate: string, toDate: string): string {
+  if (hasBothDates(fromDate, toDate)) return `${fromDate} to ${toDate}`;
+  return singleDateLabel(fromDate, toDate);
 }
 
 function asOfLabel(asOfDate: string): string {
