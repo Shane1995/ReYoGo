@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { useStockLevelRows } from '.';
 
 const useInventory = vi.fn();
@@ -38,32 +38,43 @@ beforeEach(() => {
 
 describe('useStockLevelRows', () => {
   it('passes entityId and asOfDate through to both stock movement calls', () => {
-    renderHook(() => useStockLevelRows('entity-1', '2026-01-15'));
+    renderHook(() => useStockLevelRows('entity-1', '2026-01-15', [], ''));
     expect(getCurrentStock).toHaveBeenCalledWith('entity-1', '2026-01-15');
     expect(getWeightedAvgCosts).toHaveBeenCalledWith('entity-1', '2026-01-15');
   });
 
   it('builds rows from inventory items and stock data once loaded', async () => {
-    const { result } = renderHook(() => useStockLevelRows(undefined, undefined));
+    const { result } = renderHook(() => useStockLevelRows(undefined, undefined, [], ''));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.rows).toHaveLength(2);
   });
 
   it('exposes available categories from the loaded rows', async () => {
-    const { result } = renderHook(() => useStockLevelRows(undefined, undefined));
+    const { result } = renderHook(() => useStockLevelRows(undefined, undefined, [], ''));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.availableCategories).toEqual(['Beverages', 'Dairy']);
   });
 
-  it('filters rows down to the selected categories', async () => {
-    const { result } = renderHook(() => useStockLevelRows(undefined, undefined));
+  it('exposes available types from the loaded rows', async () => {
+    const { result } = renderHook(() => useStockLevelRows(undefined, undefined, [], ''));
     await waitFor(() => expect(result.current.loading).toBe(false));
-    act(() => result.current.setSelectedCategories(['Dairy']));
+    expect(result.current.availableTypes).toEqual(['food', 'beverage']);
+  });
+
+  it('filters rows down to the selected categories', async () => {
+    const { result } = renderHook(() => useStockLevelRows(undefined, undefined, ['Dairy'], ''));
+    await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.rows.map((r) => r.itemId)).toEqual(['item-1']);
   });
 
+  it('filters rows down to the selected type', async () => {
+    const { result } = renderHook(() => useStockLevelRows(undefined, undefined, [], 'beverage'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.rows.map((r) => r.itemId)).toEqual(['item-2']);
+  });
+
   it('starts in a loading state', () => {
-    const { result } = renderHook(() => useStockLevelRows(undefined, undefined));
+    const { result } = renderHook(() => useStockLevelRows(undefined, undefined, [], ''));
     expect(result.current.loading).toBe(true);
   });
 });

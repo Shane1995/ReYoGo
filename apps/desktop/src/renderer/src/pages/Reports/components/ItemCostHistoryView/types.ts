@@ -17,5 +17,9 @@ export type ItemCostHistoryViewProps = {
   fromDate: string;
   toDate: string;
   entityId: string | undefined;
+  selectedCategories: string[];
+  selectedType: string;
   onRowsChange: (rows: ItemCostHistoryRow[]) => void;
+  onAvailableCategoriesChange: (categories: string[]) => void;
+  onAvailableTypesChange: (types: string[]) => void;
 };

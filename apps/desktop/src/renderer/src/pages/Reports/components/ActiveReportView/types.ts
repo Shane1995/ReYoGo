@@ -9,8 +9,12 @@ export type ActiveReportViewProps = {
   toDate: string;
   asOfDate: string;
   entityId: string | undefined;
+  selectedCategories: string[];
+  selectedType: string;
   onItemCostHistoryRowsChange: (rows: ItemCostHistoryRow[]) => void;
   onPeriodSummaryCogsChange: (cogs: COGSSummary | null) => void;
   onStockValuationRowsChange: (rows: StockLevelRow[]) => void;
   onStockOnHandRowsChange: (rows: StockLevelRow[]) => void;
+  onAvailableCategoriesChange: (categories: string[]) => void;
+  onAvailableTypesChange: (types: string[]) => void;
 };

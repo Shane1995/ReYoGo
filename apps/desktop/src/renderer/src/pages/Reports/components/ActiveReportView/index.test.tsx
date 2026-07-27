@@ -22,10 +22,14 @@ const baseProps = {
   toDate: '',
   asOfDate: '',
   entityId: undefined,
+  selectedCategories: [],
+  selectedType: '',
   onItemCostHistoryRowsChange: noop,
   onPeriodSummaryCogsChange: noop,
   onStockValuationRowsChange: noop,
   onStockOnHandRowsChange: noop,
+  onAvailableCategoriesChange: noop,
+  onAvailableTypesChange: noop,
 };
 
 describe('ActiveReportView', () => {

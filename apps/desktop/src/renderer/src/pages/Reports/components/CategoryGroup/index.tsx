@@ -16,15 +16,15 @@ export function CategoryGroup({
       <button
         type="button"
         onClick={() => onToggle(category)}
-        className="flex w-full items-center justify-between gap-4 bg-muted/30 px-3 py-2 text-left hover:bg-muted/40 print:bg-white"
+        className="flex w-full items-center justify-between gap-4 bg-muted px-3 py-2 text-left hover:bg-muted/80 print:bg-white"
       >
         <span className="flex items-center gap-2 font-medium text-foreground">
           <ChevronRightIcon className={chevronClassName(isExpanded)} />
           <span>{category}</span>
-          <span className="font-normal text-muted-foreground/60">{itemCountLabelOf(count)}</span>
+          <span className="font-normal text-muted-foreground">{itemCountLabelOf(count)}</span>
         </span>
         {summary !== undefined && (
-          <span className="font-mono text-sm tabular-nums text-muted-foreground">{summary}</span>
+          <span className="font-mono text-sm tabular-nums text-foreground">{summary}</span>
         )}
       </button>
       {isExpanded && children}

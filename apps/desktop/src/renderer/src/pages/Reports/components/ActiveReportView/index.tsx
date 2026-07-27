@@ -11,10 +11,14 @@ export function ActiveReportView({
   toDate,
   asOfDate,
   entityId,
+  selectedCategories,
+  selectedType,
   onItemCostHistoryRowsChange,
   onPeriodSummaryCogsChange,
   onStockValuationRowsChange,
   onStockOnHandRowsChange,
+  onAvailableCategoriesChange,
+  onAvailableTypesChange,
 }: ActiveReportViewProps) {
   if (activeView === ReportView.ItemCostHistory) {
     return (
@@ -22,7 +26,11 @@ export function ActiveReportView({
         fromDate={fromDate}
         toDate={toDate}
         entityId={entityId}
+        selectedCategories={selectedCategories}
+        selectedType={selectedType}
         onRowsChange={onItemCostHistoryRowsChange}
+        onAvailableCategoriesChange={onAvailableCategoriesChange}
+        onAvailableTypesChange={onAvailableTypesChange}
       />
     );
   }
@@ -32,7 +40,11 @@ export function ActiveReportView({
         fromDate={fromDate}
         toDate={toDate}
         entityId={entityId}
+        selectedCategories={selectedCategories}
+        selectedType={selectedType}
         onCogsChange={onPeriodSummaryCogsChange}
+        onAvailableCategoriesChange={onAvailableCategoriesChange}
+        onAvailableTypesChange={onAvailableTypesChange}
       />
     );
   }
@@ -41,7 +53,11 @@ export function ActiveReportView({
       <StockValuationView
         entityId={entityId}
         asOfDate={asOfDate}
+        selectedCategories={selectedCategories}
+        selectedType={selectedType}
         onRowsChange={onStockValuationRowsChange}
+        onAvailableCategoriesChange={onAvailableCategoriesChange}
+        onAvailableTypesChange={onAvailableTypesChange}
       />
     );
   }
@@ -49,7 +65,11 @@ export function ActiveReportView({
     <StockOnHandView
       entityId={entityId}
       asOfDate={asOfDate}
+      selectedCategories={selectedCategories}
+      selectedType={selectedType}
       onRowsChange={onStockOnHandRowsChange}
+      onAvailableCategoriesChange={onAvailableCategoriesChange}
+      onAvailableTypesChange={onAvailableTypesChange}
     />
   );
 }
