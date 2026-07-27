@@ -1,7 +1,13 @@
 {
-  "unused_files": [],
+  "unused_files": [
+    "apps/desktop/src/renderer/src/pages/Reports/utils/groupByCategory/index.ts",
+    "apps/desktop/src/renderer/src/pages/Reports/utils/groupByCategory/types.ts",
+    "apps/desktop/src/renderer/src/pages/Reports/utils/index.ts"
+  ],
   "unused_exports": [],
-  "unused_types": [],
+  "unused_types": [
+    "apps/desktop/src/renderer/src/pages/Reports/utils/groupByCategory/types.ts:CategoryBucket"
+  ],
   "private_type_leaks": [],
   "unused_dependencies": [],
   "unused_dev_dependencies": [],

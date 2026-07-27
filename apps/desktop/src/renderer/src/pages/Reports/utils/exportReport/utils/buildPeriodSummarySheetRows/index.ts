@@ -1,4 +1,5 @@
 import type { COGSSummary } from '@reyogo/types';
+import { UNCATEGORIZED_CATEGORY_LABEL } from '../../../../constants';
 import { roundTo } from '../roundTo';
 
 const HEADER = ['Category', 'COGS', '% of Total'];
@@ -9,7 +10,11 @@ function pctOf(rowTotal: number, total: number): string {
 }
 
 function categoryRowOf(row: COGSSummary['byCategory'][number], total: number): (string | number)[] {
-  return [row.categoryName ?? 'Uncategorised', roundTo(row.total, 2), pctOf(row.total, total)];
+  return [
+    row.categoryName ?? UNCATEGORIZED_CATEGORY_LABEL,
+    roundTo(row.total, 2),
+    pctOf(row.total, total),
+  ];
 }
 
 export function buildPeriodSummarySheetRows(cogs: COGSSummary): (string | number)[][] {
