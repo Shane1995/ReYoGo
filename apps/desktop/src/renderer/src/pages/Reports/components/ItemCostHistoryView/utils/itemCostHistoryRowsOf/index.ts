@@ -16,6 +16,7 @@ function rowsForGroup(group: ItemGroup): ItemCostHistoryRow[] {
       itemId: group.itemId,
       itemName: group.name,
       uom: group.uom,
+      categoryName: group.categoryName,
       invoiceId: entry.invoiceId,
       date: entry.date,
       quantity: entry.quantity,

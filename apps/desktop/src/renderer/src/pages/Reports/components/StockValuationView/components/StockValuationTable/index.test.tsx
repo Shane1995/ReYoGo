@@ -22,8 +22,9 @@ describe('StockValuationTable', () => {
     expect(screen.getByText('No items in inventory.')).toBeInTheDocument();
   });
 
-  it('renders each item row', () => {
+  it('groups each item row under its category header', () => {
     render(<StockValuationTable rows={rows} grandTotal={20} />);
+    expect(screen.getByText('Dairy')).toBeInTheDocument();
     expect(screen.getByText('Milk')).toBeInTheDocument();
     expect(screen.getByText('L')).toBeInTheDocument();
   });

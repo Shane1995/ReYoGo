@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import type { InvoiceLineWithDate } from '@reyogo/types';
 import { useItemCostHistoryData } from '.';
 
@@ -59,33 +59,47 @@ beforeEach(() => {
 
 describe('useItemCostHistoryData', () => {
   it('passes entityId through to useAnalysisLines', () => {
-    renderHook(() => useItemCostHistoryData('', '', 'entity-1'));
+    renderHook(() => useItemCostHistoryData('', '', 'entity-1', [], ''));
     expect(useAnalysisLines).toHaveBeenCalledWith('entity-1');
   });
 
   it('groups lines by item within the date range', async () => {
-    const { result } = renderHook(() => useItemCostHistoryData('', '', undefined));
+    const { result } = renderHook(() => useItemCostHistoryData('', '', undefined, [], ''));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.groups).toHaveLength(2);
   });
 
   it('exposes available categories from the grouped data', async () => {
-    const { result } = renderHook(() => useItemCostHistoryData('', '', undefined));
+    const { result } = renderHook(() => useItemCostHistoryData('', '', undefined, [], ''));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.availableCategories).toEqual(['Beverages', 'Dairy']);
   });
 
-  it('filters groups down to the selected categories', async () => {
-    const { result } = renderHook(() => useItemCostHistoryData('', '', undefined));
+  it('exposes available types from the grouped data', async () => {
+    const { result } = renderHook(() => useItemCostHistoryData('', '', undefined, [], ''));
     await waitFor(() => expect(result.current.loading).toBe(false));
-    act(() => result.current.setSelectedCategories(['Beverages']));
+    expect(result.current.availableTypes).toEqual(['food', 'beverage']);
+  });
+
+  it('filters groups down to the selected categories', async () => {
+    const { result } = renderHook(() =>
+      useItemCostHistoryData('', '', undefined, ['Beverages'], ''),
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.groups).toHaveLength(1);
     expect(result.current.groups[0]!.itemId).toBe('item-2');
   });
 
+  it('filters groups down to the selected type', async () => {
+    const { result } = renderHook(() => useItemCostHistoryData('', '', undefined, [], 'food'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.groups).toHaveLength(1);
+    expect(result.current.groups[0]!.itemId).toBe('item-1');
+  });
+
   it('reflects useAnalysisLines loading state', () => {
     useAnalysisLines.mockReturnValue({ lines: [], loading: true });
-    const { result } = renderHook(() => useItemCostHistoryData('', '', undefined));
+    const { result } = renderHook(() => useItemCostHistoryData('', '', undefined, [], ''));
     expect(result.current.loading).toBe(true);
   });
 });

@@ -25,7 +25,11 @@ export function exportRequestOf(state: ExportState): ExportRequest | null {
     return periodSummaryRequestOf(state.periodSummaryCogs, state.fromDate, state.toDate);
   }
   if (state.activeView === ReportView.StockValuation) {
-    return { view: ReportView.StockValuation, rows: state.stockValuationRows };
+    return {
+      view: ReportView.StockValuation,
+      rows: state.stockValuationRows,
+      asOfDate: state.asOfDate,
+    };
   }
-  return { view: ReportView.StockOnHand, rows: state.stockOnHandRows };
+  return { view: ReportView.StockOnHand, rows: state.stockOnHandRows, asOfDate: state.asOfDate };
 }

@@ -48,7 +48,8 @@ describe('exportReport', () => {
     const wb = XLSX.read(payload.base64, { type: 'base64' });
     const sheet = wb.Sheets[wb.SheetNames[0]!]!;
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    expect(rows[1]).toEqual(['Flour', 'kg', '2026-01-15', 2, 10, 11.5, 'Yes', '']);
+    expect(rows[0]).toEqual(['Date range: 2026-01-01 to 2026-01-31']);
+    expect(rows[3]).toEqual(['Flour', 'kg', '2026-01-15', 2, 10, 11.5, 'Yes', '']);
   });
 
   it('builds a Period Summary workbook matching the visible totals and saves it', async () => {
@@ -67,8 +68,9 @@ describe('exportReport', () => {
     const wb = XLSX.read(payload.base64, { type: 'base64' });
     const sheet = wb.Sheets[wb.SheetNames[0]!]!;
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    expect(rows[1]).toEqual(['Dairy', 100, '100.0%']);
-    expect(rows[2]).toEqual(['Total', 100, '100.0%']);
+    expect(rows[0]).toEqual(['Date range: All dates']);
+    expect(rows[3]).toEqual(['Dairy', 100, '100.0%']);
+    expect(rows[4]).toEqual(['Total', 100, '100.0%']);
   });
 
   const stockRow: StockLevelRow = {
@@ -82,31 +84,37 @@ describe('exportReport', () => {
     totalValue: 20,
   };
 
-  it('builds a Stock Valuation workbook and saves it without a date suffix', async () => {
-    await exportReport({ view: ReportView.StockValuation, rows: [stockRow] });
+  it('builds a Stock Valuation workbook with an as-of-date filename and metadata row', async () => {
+    await exportReport({
+      view: ReportView.StockValuation,
+      rows: [stockRow],
+      asOfDate: '2026-06-01',
+    });
 
     expect(mockInvoke).toHaveBeenCalledTimes(1);
     const [channel, payload] = mockInvoke.mock.calls[0]!;
     expect(channel).toBe(ShellIPC.SAVE_FILE_BASE64);
-    expect(payload.filename).toBe('reyogo-stock-valuation-all-dates.xlsx');
+    expect(payload.filename).toBe('reyogo-stock-valuation-as-of-2026-06-01.xlsx');
 
     const wb = XLSX.read(payload.base64, { type: 'base64' });
     const sheet = wb.Sheets[wb.SheetNames[0]!]!;
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    expect(rows[1]).toEqual(['Milk', 'L', 10, 2, 20]);
+    expect(rows[0]).toEqual(['As of: 2026-06-01']);
+    expect(rows[3]).toEqual(['Milk', 'L', 10, 2, 20]);
   });
 
-  it('builds a Stock on Hand workbook including the category column', async () => {
-    await exportReport({ view: ReportView.StockOnHand, rows: [stockRow] });
+  it('builds a Stock on Hand workbook with a "live" filename and metadata row', async () => {
+    await exportReport({ view: ReportView.StockOnHand, rows: [stockRow], asOfDate: '' });
 
     expect(mockInvoke).toHaveBeenCalledTimes(1);
     const [channel, payload] = mockInvoke.mock.calls[0]!;
     expect(channel).toBe(ShellIPC.SAVE_FILE_BASE64);
-    expect(payload.filename).toBe('reyogo-stock-on-hand-all-dates.xlsx');
+    expect(payload.filename).toBe('reyogo-stock-on-hand-live.xlsx');
 
     const wb = XLSX.read(payload.base64, { type: 'base64' });
     const sheet = wb.Sheets[wb.SheetNames[0]!]!;
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    expect(rows[1]).toEqual(['Milk', 'Dairy', 'L', 10, 2, 20]);
+    expect(rows[0]).toEqual(['As of: Live']);
+    expect(rows[3]).toEqual(['Milk', 'Dairy', 'L', 10, 2, 20]);
   });
 });

@@ -1,29 +1,50 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { usePeriodSummaryData } from './hooks/usePeriodSummaryData';
 import { filteredCogsOrNull } from './utils/filteredCogsOrNull';
+import { filteredCogsOfType } from './utils/filteredCogsOfType';
 import { availableCategoriesOf } from './utils/availableCategoriesOf';
+import { availableTypesOfCogs } from './utils/availableTypesOfCogs';
+import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
+import { useAvailableOptionsSync } from '../../hooks/useAvailableOptionsSync';
 import { CogsTotalCard } from '@/pages/Inventory/Costing/Dashboard/components/CogsTotalCard';
 import { CogsCategoryTable } from '@/pages/Inventory/Costing/Dashboard/components/CogsCategoryTable';
-import { CategoryFilter } from '../CategoryFilter';
 import type { PeriodSummaryViewProps } from './types';
 
 export function PeriodSummaryView({
   fromDate,
   toDate,
   entityId,
+  selectedCategories,
+  selectedType,
   onCogsChange,
+  onAvailableCategoriesChange,
+  onAvailableTypesChange,
 }: PeriodSummaryViewProps) {
   const { loading, cogs } = usePeriodSummaryData(fromDate, toDate, entityId);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const { categories } = useInventory();
 
-  const filteredCogs = useMemo(
-    () => filteredCogsOrNull(cogs, selectedCategories),
-    [cogs, selectedCategories],
+  const availableCategories = useMemo(() => (cogs ? availableCategoriesOf(cogs) : []), [cogs]);
+  const availableTypes = useMemo(
+    () => (cogs ? availableTypesOfCogs(cogs, categories) : []),
+    [cogs, categories],
   );
+
+  const filteredCogs = useMemo(() => {
+    const byCategory = filteredCogsOrNull(cogs, selectedCategories);
+    if (!byCategory) return null;
+    return filteredCogsOfType(byCategory, categories, selectedType);
+  }, [cogs, categories, selectedCategories, selectedType]);
 
   useEffect(() => {
     onCogsChange(filteredCogs);
   }, [filteredCogs, onCogsChange]);
+
+  useAvailableOptionsSync({
+    availableCategories,
+    availableTypes,
+    onAvailableCategoriesChange,
+    onAvailableTypesChange,
+  });
 
   if (loading) {
     return <p className="text-sm text-muted-foreground/60">Loading…</p>;
@@ -38,11 +59,6 @@ export function PeriodSummaryView({
 
   return (
     <div className="space-y-4">
-      <CategoryFilter
-        selected={selectedCategories}
-        options={availableCategoriesOf(cogs)}
-        onChange={setSelectedCategories}
-      />
       <CogsTotalCard cogs={filteredCogs} />
       <CogsCategoryTable cogs={filteredCogs} />
     </div>

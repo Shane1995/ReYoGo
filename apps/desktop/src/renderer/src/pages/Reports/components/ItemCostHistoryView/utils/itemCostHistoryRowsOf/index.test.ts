@@ -36,6 +36,7 @@ describe('itemCostHistoryRowsOf', () => {
       itemId: 'item-1',
       itemName: 'Flour',
       uom: 'kg',
+      categoryName: 'Dry Goods',
       quantity: 2,
       unitCostExclVat: 10,
       unitCostInclVat: 11.5,

@@ -4,13 +4,19 @@ import { stockMovementsService } from '@/services/stockMovements';
 import { stockLevelRowsOf } from './utils/stockLevelRowsOf';
 import { availableCategoriesOfRows } from './utils/availableCategoriesOfRows';
 import { filterRowsByCategories } from './utils/filterRowsByCategories';
+import { availableTypesOfRows } from './utils/availableTypesOfRows';
+import { filterRowsByType } from './utils/filterRowsByType';
 import type { StockLevelRow } from './types';
 
-export function useStockLevelRows(entityId: string | undefined, asOfDate: string | undefined) {
+export function useStockLevelRows(
+  entityId: string | undefined,
+  asOfDate: string | undefined,
+  selectedCategories: string[],
+  selectedType: string,
+) {
   const { items, categories } = useInventory();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<StockLevelRow[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,16 +41,16 @@ export function useStockLevelRows(entityId: string | undefined, asOfDate: string
   }, [items, categories, entityId, asOfDate]);
 
   const availableCategories = useMemo(() => availableCategoriesOfRows(rows), [rows]);
-  const filteredRows = useMemo(
-    () => filterRowsByCategories(rows, selectedCategories),
-    [rows, selectedCategories],
-  );
+  const availableTypes = useMemo(() => availableTypesOfRows(rows), [rows]);
+  const filteredRows = useMemo(() => {
+    const byCategory = filterRowsByCategories(rows, selectedCategories);
+    return filterRowsByType(byCategory, selectedType);
+  }, [rows, selectedCategories, selectedType]);
 
   return {
     loading,
     rows: filteredRows,
     availableCategories,
-    selectedCategories,
-    setSelectedCategories,
+    availableTypes,
   };
 }
