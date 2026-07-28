@@ -27,6 +27,7 @@
     "format:check": "oxfmt --check src/"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0",
     "@reyogo/db": "workspace:*",
     "@reyogo/types": "workspace:*",
     "@reyogo/ui": "workspace:*",

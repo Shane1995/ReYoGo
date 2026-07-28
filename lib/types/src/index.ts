@@ -1,5 +1,6 @@
 export * from './base';
 export type { IBusinessGroup, IEntity, ICompleteSetupPayload } from './entities';
+export * from './aiScan';
 export * from './costingSnapshot';
 export * from './inventory';
 export * from './invoices';

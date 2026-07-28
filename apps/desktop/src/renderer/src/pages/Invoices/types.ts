@@ -7,6 +7,10 @@ export type ProcessReceiptLine = {
   quantity: number;
   isVatable: boolean;
   totalVatExclude: number;
+  needsReview?: boolean;
+  quantityNeedsReview?: boolean;
+  totalNeedsReview?: boolean;
+  taxNeedsReview?: boolean;
 };
 
 type LineTotals = { netTotal: number; grossTotal: number; vatAmount: number };

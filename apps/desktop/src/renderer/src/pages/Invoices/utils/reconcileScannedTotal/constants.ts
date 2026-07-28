@@ -1,0 +1,2 @@
+export const ROUNDING_TOLERANCE_PER_LINE = 0.01;
+export const MIN_ROUNDING_TOLERANCE = 0.01;

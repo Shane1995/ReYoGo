@@ -1,5 +1,6 @@
 import type { Supplier } from '@reyogo/types';
 import type { VatMode } from '@reyogo/types';
+import type { HeaderReview } from '../../hooks/useInvoiceScan/types';
 
 export type InvoiceHeaderProps = {
   invoiceNumber: string;
@@ -15,4 +16,7 @@ export type InvoiceHeaderProps = {
   onAddItem: () => void;
   isDirty: boolean;
   onClear: () => void;
+  scanConfigured: boolean;
+  onScanInvoice: () => void;
+  headerReview?: HeaderReview;
 };

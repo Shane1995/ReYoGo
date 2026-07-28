@@ -91,6 +91,7 @@ export function useInvoiceFormFields(
     reuseNoticeDismissed,
     setReuseNoticeDismissed,
     lines,
+    setLines,
     addLine,
     removeLine,
     updateLine,

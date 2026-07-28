@@ -1,6 +1,8 @@
+export { AiSettingsIPC } from './aiSettings';
 export { AppIPC } from './app';
 export { CloudSyncIPC } from './cloudSync';
 export { EntitiesIPC } from './entities';
+export { InvoiceScanIPC } from './invoiceScan';
 export { InventoryIPC } from './inventory';
 export { InvoicesIPC } from './invoices';
 export { SetupIPC } from './setup';

@@ -6,6 +6,7 @@ import type { ItemMeta } from '../ItemMetaHint';
 export type LineItemCellProps = {
   lineId: string;
   itemId: string;
+  needsReview: boolean;
   sortedItems: ItemOption[];
   entityId: string;
   isLast: boolean;

@@ -4,6 +4,8 @@ export type LineNumberCellProps = {
   field: 'qty' | 'total';
   lineId: string;
   value: number;
+  needsReview?: boolean;
+  reviewMessage?: string;
   onChange: (value: number) => void;
   onBlur: (e: React.FocusEvent) => void;
   keyDownCtx: Omit<FieldKeyDownContext, 'field'>;

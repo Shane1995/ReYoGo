@@ -1,11 +1,10 @@
-import { Button, PageHeader, DatePicker } from '@reyogo/ui';
-import { Link } from 'react-router-dom';
-import { RotateCcwIcon } from 'lucide-react';
-import { InvoiceRoutes } from '@/components/AppRoutes/routePaths';
-import { VatMode } from '@reyogo/types';
-import { inputClass } from '../../utils/inputClass';
-import { cn } from '@reyogo/ui';
-import { FIELD_LABEL_CLASS, FIELD_GROUP_CLASS } from './constants';
+import { PageHeader } from '@reyogo/ui';
+import { HeaderActions } from './components/HeaderActions';
+import { InvoiceNumberField } from './components/InvoiceNumberField';
+import { DateField } from './components/DateField';
+import { SupplierField } from './components/SupplierField';
+import { VatModeField } from './components/VatModeField';
+import { NO_HEADER_REVIEW } from '../../hooks/useInvoiceScan/constants';
 import type { InvoiceHeaderProps } from './types';
 
 export function InvoiceHeader({
@@ -22,90 +21,47 @@ export function InvoiceHeader({
   onAddItem,
   isDirty,
   onClear,
+  scanConfigured,
+  onScanInvoice,
+  headerReview = NO_HEADER_REVIEW,
 }: InvoiceHeaderProps) {
   return (
     <PageHeader
       title="Capture Invoice"
       actions={
-        <div className="flex items-center gap-2">
-          {isDirty && (
-            <>
-              <button
-                type="button"
-                onClick={onClear}
-                className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive transition-colors"
-              >
-                <RotateCcwIcon className="size-3" />
-                Clear
-              </button>
-              <div className="h-4 w-px bg-border" />
-            </>
-          )}
-          <Button asChild variant="ghost" size="sm">
-            <Link to={InvoiceRoutes.History}>History</Link>
-          </Button>
-          <div className="h-4 w-px bg-border" />
-          <Button type="button" variant="outline" size="sm" onClick={onAddCategory}>
-            + Category
-          </Button>
-          <Button type="button" variant="outline" size="sm" onClick={onAddItem}>
-            + Item
-          </Button>
-        </div>
+        <HeaderActions
+          isDirty={isDirty}
+          onClear={onClear}
+          scanConfigured={scanConfigured}
+          onScanInvoice={onScanInvoice}
+          onAddCategory={onAddCategory}
+          onAddItem={onAddItem}
+        />
       }
     >
       <div className="flex flex-wrap items-end gap-x-5 gap-y-3 pb-1">
-        <div className={FIELD_GROUP_CLASS}>
-          <label className={FIELD_LABEL_CLASS}>Invoice #</label>
-          <input
-            type="text"
-            value={invoiceNumber}
-            onChange={(e) => onInvoiceNumberChange(e.target.value)}
-            placeholder="INV-0042"
-            className={cn(
-              inputClass,
-              'w-52 font-mono text-[13px] placeholder:text-muted-foreground/40',
-            )}
-          />
-        </div>
+        <InvoiceNumberField
+          value={invoiceNumber}
+          onChange={onInvoiceNumberChange}
+          needsReview={headerReview.invoiceNumber}
+        />
 
-        <div className={FIELD_GROUP_CLASS}>
-          <label className={FIELD_LABEL_CLASS}>Date</label>
-          <DatePicker value={invoiceDate} onChange={onInvoiceDateChange} />
-        </div>
+        <DateField
+          value={invoiceDate}
+          onChange={onInvoiceDateChange}
+          needsReview={headerReview.date}
+        />
 
-        <div className={FIELD_GROUP_CLASS}>
-          <label className={FIELD_LABEL_CLASS}>Supplier</label>
-          <select
-            value={supplierId}
-            onChange={(e) => onSupplierChange(e.target.value)}
-            className={cn(inputClass, 'w-44')}
-          >
-            <option value="">— none —</option>
-            {suppliers.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <SupplierField
+          value={supplierId}
+          onChange={onSupplierChange}
+          suppliers={suppliers}
+          needsReview={headerReview.supplier}
+        />
 
         <div className="h-8 w-px bg-border/60 self-end mb-0.5 hidden sm:block" />
 
-        <div className={FIELD_GROUP_CLASS}>
-          <label className={FIELD_LABEL_CLASS}>VAT treatment</label>
-          <select
-            value={vatMode}
-            onChange={(e) => {
-              const mode = e.target.value;
-              if (mode === VatMode.Exclusive || mode === VatMode.Inclusive) onVatModeChange(mode);
-            }}
-            className={cn(inputClass, 'w-40')}
-          >
-            <option value={VatMode.Exclusive}>+ VAT (exclusive)</option>
-            <option value={VatMode.Inclusive}>VAT included</option>
-          </select>
-        </div>
+        <VatModeField value={vatMode} onChange={onVatModeChange} />
       </div>
     </PageHeader>
   );

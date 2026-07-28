@@ -14,6 +14,7 @@ export type ItemAutocompleteProps = {
   entityId: string;
   placeholder?: string;
   className?: string;
+  inputClassName?: string;
   disabled?: boolean;
   inputId?: string;
   onSelectComplete?: () => void;
