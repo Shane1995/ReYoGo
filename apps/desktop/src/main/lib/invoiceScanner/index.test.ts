@@ -1,14 +1,40 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockCreate, mockGetApiKey } = vi.hoisted(() => ({
-  mockCreate: vi.fn(),
-  mockGetApiKey: vi.fn(),
-}));
+const { mockCreate, mockGetApiKey, AnthropicErrors } = vi.hoisted(() => {
+  class MockAPIError extends Error {
+    status?: number;
+    constructor(status: number | undefined, message: string) {
+      super(message);
+      this.status = status;
+    }
+  }
+  class MockAuthenticationError extends MockAPIError {}
+  class MockPermissionDeniedError extends MockAPIError {}
+  class MockRateLimitError extends MockAPIError {}
+  class MockInternalServerError extends MockAPIError {}
+  class MockAPIConnectionError extends MockAPIError {}
+
+  return {
+    mockCreate: vi.fn(),
+    mockGetApiKey: vi.fn(),
+    AnthropicErrors: {
+      APIError: MockAPIError,
+      AuthenticationError: MockAuthenticationError,
+      PermissionDeniedError: MockPermissionDeniedError,
+      RateLimitError: MockRateLimitError,
+      InternalServerError: MockInternalServerError,
+      APIConnectionError: MockAPIConnectionError,
+    },
+  };
+});
 
 vi.mock('@anthropic-ai/sdk', () => ({
-  default: class MockAnthropic {
-    messages = { create: mockCreate };
-  },
+  default: Object.assign(
+    class MockAnthropic {
+      messages = { create: mockCreate };
+    },
+    AnthropicErrors,
+  ),
 }));
 
 vi.mock('../anthropicKeyStore', () => ({
@@ -20,6 +46,7 @@ import {
   NoApiKeyConfiguredError,
   UnsupportedFileTypeError,
   FileTooLargeError,
+  ScanApiError,
   ScanParseError,
   ScanTruncatedError,
 } from './errors';
@@ -190,6 +217,73 @@ describe('scanInvoiceImage', () => {
       usage: { input_tokens: 900, output_tokens: 4096 },
       stop_reason: 'max_tokens',
     });
+
+    await expect(scanInvoiceImage({ base64: 'abc', mimeType: 'image/png' })).rejects.toThrow(
+      ScanTruncatedError,
+    );
+  });
+
+  it('maps a 529 overloaded error to a friendly, retryable message', async () => {
+    mockCreate.mockRejectedValue(new AnthropicErrors.InternalServerError(529, 'Overloaded'));
+
+    await expect(scanInvoiceImage({ base64: 'abc', mimeType: 'image/png' })).rejects.toThrow(
+      ScanApiError,
+    );
+    await expect(scanInvoiceImage({ base64: 'abc', mimeType: 'image/png' })).rejects.toThrow(
+      /overloaded/i,
+    );
+  });
+
+  it('maps a generic 500 error to a friendly server-error message', async () => {
+    mockCreate.mockRejectedValue(new AnthropicErrors.InternalServerError(500, 'Internal error'));
+
+    await expect(scanInvoiceImage({ base64: 'abc', mimeType: 'image/png' })).rejects.toThrow(
+      /had a problem/i,
+    );
+  });
+
+  it('maps a 401 authentication error to a friendly message pointing at AI Settings', async () => {
+    mockCreate.mockRejectedValue(new AnthropicErrors.AuthenticationError(401, 'invalid x-api-key'));
+
+    await expect(scanInvoiceImage({ base64: 'abc', mimeType: 'image/png' })).rejects.toThrow(
+      /AI Settings/,
+    );
+  });
+
+  it('maps a 403 permission error to a friendly message', async () => {
+    mockCreate.mockRejectedValue(new AnthropicErrors.PermissionDeniedError(403, 'forbidden'));
+
+    await expect(scanInvoiceImage({ base64: 'abc', mimeType: 'image/png' })).rejects.toThrow(
+      /permission/i,
+    );
+  });
+
+  it('maps a 429 rate limit error to a friendly message', async () => {
+    mockCreate.mockRejectedValue(new AnthropicErrors.RateLimitError(429, 'rate limited'));
+
+    await expect(scanInvoiceImage({ base64: 'abc', mimeType: 'image/png' })).rejects.toThrow(
+      /too many scans/i,
+    );
+  });
+
+  it('maps a network connection error to a friendly message', async () => {
+    mockCreate.mockRejectedValue(new AnthropicErrors.APIConnectionError(undefined, 'fetch failed'));
+
+    await expect(scanInvoiceImage({ base64: 'abc', mimeType: 'image/png' })).rejects.toThrow(
+      /internet connection/i,
+    );
+  });
+
+  it('falls back to a generic message for an unrecognized Anthropic API error', async () => {
+    mockCreate.mockRejectedValue(new AnthropicErrors.APIError(418, "I'm a teapot"));
+
+    await expect(scanInvoiceImage({ base64: 'abc', mimeType: 'image/png' })).rejects.toThrow(
+      /failed unexpectedly/i,
+    );
+  });
+
+  it('passes through non-Anthropic errors unchanged', async () => {
+    mockCreate.mockRejectedValue(new ScanTruncatedError());
 
     await expect(scanInvoiceImage({ base64: 'abc', mimeType: 'image/png' })).rejects.toThrow(
       ScanTruncatedError,
