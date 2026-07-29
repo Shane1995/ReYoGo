@@ -170,6 +170,7 @@ describe('useInvoiceScan', () => {
     });
     expect(result.current.lastSummary?.reviewNotes).toEqual([]);
     expect(result.current.lastSummary?.totalMismatch).toBeNull();
+    expect(result.current.lastSummary?.flagCount).toBe(0);
     expect(result.current.lastSummary?.confidence).toBe('high');
     expect(result.current.lastSummary?.scannedAt).toBeInstanceOf(Date);
     expect(result.current.lastSummary?.previewUrl).toBe('blob:mock-url');
@@ -272,6 +273,8 @@ describe('useInvoiceScan', () => {
       invoiceTotal: 999,
       difference: -989.01,
     });
+    // 1 line needing review + 3 flagged header fields (all null in BLANK_INVOICE) + 1 total mismatch
+    expect(result.current.lastSummary?.flagCount).toBe(5);
   });
 
   it('defaults isVatable to true and does not flag it for review when the document is silent on tax status', async () => {

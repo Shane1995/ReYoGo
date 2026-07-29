@@ -25,6 +25,7 @@ export type LastScanSummary = {
   usage: IInvoiceScanUsage;
   reviewNotes: string[];
   totalMismatch: TotalMismatch | null;
+  flagCount: number;
   confidence: ScanConfidence;
   scannedAt: Date;
   previewUrl: string | null;

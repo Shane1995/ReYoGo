@@ -4,6 +4,7 @@ import { VatMode, type IScannedInvoice, type IScannedInvoiceLine } from '@reyogo
 import { invoiceScanService } from '@/services/invoiceScan';
 import { ipcErrorMessage } from '@/utils/ipcErrorMessage';
 import { fileToBase64 } from '../../utils/fileToBase64';
+import { lineNeedsReview } from '../../utils/lineNeedsReview';
 import { matchScannedLineToItem } from '../../utils/matchScannedLineToItem';
 import { matchScannedSupplier } from '../../utils/matchScannedSupplier';
 import { reconcileScannedTotal } from '../../utils/reconcileScannedTotal';
@@ -69,9 +70,21 @@ function applyScannedLines(
   return scannedLines;
 }
 
-function scanToastDescription(reviewNotes: string[], totalMismatch: TotalMismatch | null): string {
-  if (reviewNotes.length > 0 || totalMismatch)
-    return 'Review the highlighted fields before saving.';
+function countHeaderFlags(headerReview: HeaderReview): number {
+  return Object.values(headerReview).filter(Boolean).length;
+}
+
+function computeFlagCount(
+  scannedLines: ProcessReceiptLine[],
+  headerReview: HeaderReview,
+  totalMismatch: TotalMismatch | null,
+): number {
+  const lineFlags = scannedLines.filter(lineNeedsReview).length;
+  return lineFlags + countHeaderFlags(headerReview) + (totalMismatch ? 1 : 0);
+}
+
+function scanToastDescription(flagCount: number): string {
+  if (flagCount > 0) return 'Review the highlighted fields before saving.';
   return 'All fields were pre-filled with high confidence.';
 }
 
@@ -124,16 +137,19 @@ export function useInvoiceScan(params: UseInvoiceScanParams) {
       setVatMode(invoice.vatMode ?? VatMode.Exclusive);
       const matchedSupplierId = matchScannedSupplier(invoice.supplierName, suppliers);
       setSupplierId(matchedSupplierId);
-      headerReviewState.setHeaderReview(buildHeaderReview(invoice, matchedSupplierId));
+      const headerReview = buildHeaderReview(invoice, matchedSupplierId);
+      headerReviewState.setHeaderReview(headerReview);
 
       const scannedLines = applyScannedLines(invoice.lines, itemsWithCategory, setLines);
       const unmatchedCount = scannedLines.filter((l) => l.needsReview).length;
       const reviewNotes = scannedInvoiceReviewNotes(invoice, unmatchedCount);
       const totalMismatch = reconcileScannedTotal(invoice.lines, invoice.invoiceTotal);
+      const flagCount = computeFlagCount(scannedLines, headerReview, totalMismatch);
       summary.setLastSummary({
         usage,
         reviewNotes,
         totalMismatch,
+        flagCount,
         confidence: invoice.confidence,
         scannedAt: new Date(),
         previewUrl: meta.previewUrl,
@@ -143,7 +159,7 @@ export function useInvoiceScan(params: UseInvoiceScanParams) {
       });
 
       toast.success('Invoice scanned', {
-        description: scanToastDescription(reviewNotes, totalMismatch),
+        description: scanToastDescription(flagCount),
       });
     },
     [

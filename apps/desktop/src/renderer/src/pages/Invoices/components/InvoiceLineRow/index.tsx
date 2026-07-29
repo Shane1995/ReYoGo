@@ -7,8 +7,8 @@ import { LineNumberCell } from './LineNumberCell';
 import { RemoveLineCell } from './RemoveLineCell';
 import { VatToggleCell } from './VatToggleCell';
 import { useLineRowState } from './useLineRowState';
+import { lineNeedsReview } from '../../utils/lineNeedsReview';
 import type { InvoiceLineRowProps } from './types';
-import type { ProcessReceiptLine } from '../../types';
 
 function rowBackgroundClass(confirmingDelete: boolean, isExpanded: boolean): string {
   if (confirmingDelete) return 'bg-destructive/5';
@@ -32,15 +32,6 @@ function rowClassName(
     needsReview && 'border-l-2 border-l-amber-500',
     rowBackgroundClass(confirmingDelete, isExpanded),
     isAlternateRow(confirmingDelete, isExpanded, index) && 'bg-black/[0.025]',
-  );
-}
-
-function lineRowNeedsReview(line: ProcessReceiptLine): boolean {
-  return (
-    !!line.needsReview ||
-    !!line.quantityNeedsReview ||
-    !!line.totalNeedsReview ||
-    !!line.taxNeedsReview
   );
 }
 
@@ -80,7 +71,7 @@ export function InvoiceLineRow({
     <Fragment>
       <TableRow
         ref={rowRef}
-        className={rowClassName(confirmingDelete, isExpanded, lineRowNeedsReview(line), index)}
+        className={rowClassName(confirmingDelete, isExpanded, lineNeedsReview(line), index)}
       >
         <ExpandToggleCell isExpanded={isExpanded} onToggle={onToggleExpand} />
 
