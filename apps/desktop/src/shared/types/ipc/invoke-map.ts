@@ -12,6 +12,7 @@ import type {
 } from '@reyogo/types';
 import type { ItemCostHistory, COGSSummary } from '@reyogo/types';
 import type { Supplier, UpsertSupplierPayload } from '@reyogo/types';
+import type { IInvoiceScanResult } from '@reyogo/types';
 
 export interface AppVersionInfo {
   version: string;
@@ -114,6 +115,17 @@ export interface IPCInvokeMap {
   'cloud-sync:is-fresh-replica': { args: []; return: boolean };
   'cloud-sync:rotate-token': { args: [authToken: string]; return: void };
   'cloud-sync:connect': { args: [tursoUrl: string, authToken: string]; return: void };
+  'ai-settings:set-key': { args: [apiKey: string]; return: void };
+  'ai-settings:clear-key': { args: []; return: void };
+  'ai-settings:get-key-status': { args: []; return: { configured: boolean } };
+  'ai-settings:test-connection': {
+    args: [apiKey: string];
+    return: { success: boolean; error: string | null };
+  };
+  'invoice-scan:scan': {
+    args: [payload: { base64: string; mimeType: string }];
+    return: IInvoiceScanResult;
+  };
 }
 
 export type IPCChannel = keyof IPCInvokeMap;

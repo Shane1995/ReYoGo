@@ -14,6 +14,7 @@ export function ItemAutocomplete({
   entityId,
   placeholder = 'Search or select item…',
   className,
+  inputClassName,
   disabled,
   inputId,
   onSelectComplete,
@@ -55,7 +56,7 @@ export function ItemAutocomplete({
         aria-expanded={isOpen}
         aria-autocomplete="list"
         aria-controls={listId}
-        className={inputClass}
+        className={cn(inputClass, inputClassName)}
       />
       {isOpen &&
         createPortal(

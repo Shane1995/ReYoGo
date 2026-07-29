@@ -33,7 +33,7 @@ function copyDir(src: string, dest: string): void {
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin(), copyMigrationsPlugin()],
+    plugins: [externalizeDepsPlugin({ exclude: ['@reyogo/types'] }), copyMigrationsPlugin()],
     resolve: {
       alias: {
         '@main': resolve(__dirname, './src/main'),
