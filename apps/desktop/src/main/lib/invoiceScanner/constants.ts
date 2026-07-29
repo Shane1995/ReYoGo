@@ -1,4 +1,4 @@
-export const INVOICE_SCAN_MODEL = 'claude-haiku-4-5';
+export const INVOICE_SCAN_MODEL = 'claude-sonnet-5';
 // Each line item now carries 5 fields (incl. two confidence ratings), so a longer invoice can
 // easily need several hundred output tokens on its own — 1024 was truncating mid-JSON on
 // anything past ~8 lines.
@@ -6,8 +6,8 @@ export const INVOICE_SCAN_MAX_TOKENS = 4096;
 
 export const MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
 
-export const INPUT_COST_PER_MILLION_TOKENS_USD = 1;
-export const OUTPUT_COST_PER_MILLION_TOKENS_USD = 5;
+export const INPUT_COST_PER_MILLION_TOKENS_USD = 3;
+export const OUTPUT_COST_PER_MILLION_TOKENS_USD = 15;
 
 export const SUPPORTED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png'] as const;
 export const SUPPORTED_PDF_MIME_TYPE = 'application/pdf';

@@ -15,6 +15,7 @@ import {
 import {
   FileTooLargeError,
   NoApiKeyConfiguredError,
+  ScanApiError,
   ScanParseError,
   ScanTruncatedError,
   UnsupportedFileTypeError,
@@ -144,11 +145,73 @@ function toInvoiceScanResult(
   };
 }
 
+function authError(): ScanApiError {
+  return new ScanApiError('Your Anthropic API key was rejected — check it in AI Settings.');
+}
+
+function permissionError(): ScanApiError {
+  return new ScanApiError("Your Anthropic API key doesn't have permission to use this model.");
+}
+
+function rateLimitError(): ScanApiError {
+  return new ScanApiError('Too many scans in a short time — wait a moment and try again.');
+}
+
+function overloadedError(): ScanApiError {
+  return new ScanApiError(
+    "Claude's servers are overloaded right now — wait a moment and try again.",
+  );
+}
+
+function serverError(): ScanApiError {
+  return new ScanApiError(
+    "Claude's servers had a problem processing the scan — try again in a moment.",
+  );
+}
+
+function connectionError(): ScanApiError {
+  return new ScanApiError('Could not reach Claude — check your internet connection and try again.');
+}
+
+function genericApiError(): ScanApiError {
+  return new ScanApiError('The scan failed unexpectedly — try again.');
+}
+
+function mapInternalServerError(err: unknown): ScanApiError {
+  if (!(err instanceof Anthropic.InternalServerError)) return genericApiError();
+  return err.status === 529 ? overloadedError() : serverError();
+}
+
+const ANTHROPIC_ERROR_MATCHERS: Array<{
+  matches: (err: unknown) => boolean;
+  toError: (err: unknown) => ScanApiError;
+}> = [
+  { matches: (err) => err instanceof Anthropic.AuthenticationError, toError: authError },
+  { matches: (err) => err instanceof Anthropic.PermissionDeniedError, toError: permissionError },
+  { matches: (err) => err instanceof Anthropic.RateLimitError, toError: rateLimitError },
+  {
+    matches: (err) => err instanceof Anthropic.InternalServerError,
+    toError: mapInternalServerError,
+  },
+  { matches: (err) => err instanceof Anthropic.APIConnectionError, toError: connectionError },
+  { matches: (err) => err instanceof Anthropic.APIError, toError: genericApiError },
+];
+
+function mapAnthropicError(err: unknown): Error {
+  const matcher = ANTHROPIC_ERROR_MATCHERS.find(({ matches }) => matches(err));
+  if (matcher) return matcher.toError(err);
+  return err instanceof Error ? err : genericApiError();
+}
+
 export async function scanInvoiceImage(input: ScanImageInput): Promise<IInvoiceScanResult> {
   assertSupportedMimeType(input.mimeType);
   assertWithinSizeLimit(input.base64);
   const apiKey = requireApiKey();
 
-  const response = await callAnthropicScan(apiKey, input, input.mimeType);
-  return toInvoiceScanResult(response);
+  try {
+    const response = await callAnthropicScan(apiKey, input, input.mimeType);
+    return toInvoiceScanResult(response);
+  } catch (err) {
+    throw mapAnthropicError(err);
+  }
 }

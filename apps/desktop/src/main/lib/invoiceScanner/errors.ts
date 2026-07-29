@@ -34,3 +34,10 @@ export class ScanTruncatedError extends Error {
     this.name = 'ScanTruncatedError';
   }
 }
+
+export class ScanApiError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ScanApiError';
+  }
+}
