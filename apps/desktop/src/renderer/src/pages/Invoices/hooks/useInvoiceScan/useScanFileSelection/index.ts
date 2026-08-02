@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ACCEPTED_MIME_TYPES, MAX_UPLOAD_SIZE_BYTES } from '../constants';
+import { enhanceScanImage } from '../../../utils/enhanceScanImage';
+import {
+  ACCEPTED_MIME_TYPES,
+  MAX_UPLOAD_SIZE_BYTES,
+  PREPROCESSABLE_MIME_TYPES,
+} from '../constants';
 import type { ScanStatus } from '../types';
 
 function validateFile(file: File): string | null {
@@ -33,7 +38,7 @@ export function useScanFileSelection() {
   }, []);
 
   const handleFileSelected = useCallback(
-    (file: File) => {
+    async (file: File) => {
       const validationError = validateFile(file);
       if (validationError) {
         setSelectedFile(null);
@@ -44,10 +49,20 @@ export function useScanFileSelection() {
       }
 
       if (previewUrl) URL.revokeObjectURL(previewUrl);
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-      setStatus('preview');
       setErrorMessage('');
+
+      if (!PREPROCESSABLE_MIME_TYPES.includes(file.type)) {
+        setSelectedFile(file);
+        setPreviewUrl(URL.createObjectURL(file));
+        setStatus('preview');
+        return;
+      }
+
+      setStatus('processing');
+      const enhanced = await enhanceScanImage(file).catch(() => file);
+      setSelectedFile(enhanced);
+      setPreviewUrl(URL.createObjectURL(enhanced));
+      setStatus('preview');
     },
     [previewUrl],
   );

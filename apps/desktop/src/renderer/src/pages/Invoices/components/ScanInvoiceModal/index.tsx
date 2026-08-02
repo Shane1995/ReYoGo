@@ -26,7 +26,7 @@ export function ScanInvoiceModal({
           <DialogTitle>Scan invoice</DialogTitle>
         </DialogHeader>
 
-        {view.kind === 'loading' && <ScanLoadingState />}
+        {view.kind === 'loading' && <ScanLoadingState variant={view.variant} />}
 
         {view.kind === 'preview' && (
           <ScanPreview

@@ -7,7 +7,17 @@ function makeFile() {
 
 describe('resolveScanView', () => {
   it('returns loading while scanning', () => {
-    expect(resolveScanView('scanning', makeFile(), 'blob:url')).toEqual({ kind: 'loading' });
+    expect(resolveScanView('scanning', makeFile(), 'blob:url')).toEqual({
+      kind: 'loading',
+      variant: 'scanning',
+    });
+  });
+
+  it('returns loading while processing', () => {
+    expect(resolveScanView('processing', makeFile(), 'blob:url')).toEqual({
+      kind: 'loading',
+      variant: 'processing',
+    });
   });
 
   it('returns preview when a file and preview URL are ready', () => {
