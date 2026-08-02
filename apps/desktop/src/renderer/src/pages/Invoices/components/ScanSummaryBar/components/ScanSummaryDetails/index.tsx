@@ -4,6 +4,7 @@ import { ScannedDocumentPreview } from '../../../ScannedDocumentPreview';
 import { formatDate } from '../../../../utils/formatDate';
 import { ScanReviewNotesList } from '../ScanReviewNotesList';
 import { CONFIDENCE_BADGE_CLASS, CONFIDENCE_LABEL, COST_DECIMALS } from '../../constants';
+import { resolveDisplayConfidence } from './utils/resolveDisplayConfidence';
 import type { ScanSummaryDetailsProps } from './types';
 
 export function ScanSummaryDetails({ summary }: ScanSummaryDetailsProps) {
@@ -18,6 +19,11 @@ export function ScanSummaryDetails({ summary }: ScanSummaryDetailsProps) {
     mimeType,
     fileSizeBytes,
   } = summary;
+
+  const displayConfidence = resolveDisplayConfidence(
+    confidence,
+    reviewNotes.length > 0 || totalMismatch !== null,
+  );
 
   return (
     <div className="flex flex-col gap-3 border-t border-[var(--nav-border)] pt-3">
@@ -34,8 +40,8 @@ export function ScanSummaryDetails({ summary }: ScanSummaryDetailsProps) {
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         <span>Scanned {formatDate(scannedAt)}</span>
         <span>·</span>
-        <Badge variant="outline" className={CONFIDENCE_BADGE_CLASS[confidence]}>
-          {CONFIDENCE_LABEL[confidence]}
+        <Badge variant="outline" className={CONFIDENCE_BADGE_CLASS[displayConfidence]}>
+          {CONFIDENCE_LABEL[displayConfidence]}
         </Badge>
       </div>
 
