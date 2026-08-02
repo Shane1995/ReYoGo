@@ -15,6 +15,10 @@ vi.mock('../../utils/fileToBase64', () => ({
   fileToBase64: vi.fn().mockResolvedValue('base64data'),
 }));
 
+vi.mock('../../utils/enhanceScanImage', () => ({
+  enhanceScanImage: vi.fn((file) => Promise.resolve(file)),
+}));
+
 import { useInvoiceScan } from './index';
 import { aiSettingsService } from '@/services/aiSettings';
 import { invoiceScanService } from '@/services/invoiceScan';
@@ -69,7 +73,7 @@ describe('useInvoiceScan', () => {
     const { result } = renderHook(() => useInvoiceScan(makeParams()));
     await waitFor(() => expect(result.current.configured).toBe(true));
 
-    act(() => result.current.handleFileSelected(makeFile('image/gif')));
+    await act(() => result.current.handleFileSelected(makeFile('image/gif')));
 
     expect(result.current.status).toBe('error');
     expect(result.current.errorMessage).toMatch(/unsupported file type/i);
@@ -81,7 +85,7 @@ describe('useInvoiceScan', () => {
     const { result } = renderHook(() => useInvoiceScan(makeParams()));
     await waitFor(() => expect(result.current.configured).toBe(true));
 
-    act(() => result.current.handleFileSelected(makeFile('image/png', 11 * 1024 * 1024)));
+    await act(() => result.current.handleFileSelected(makeFile('image/png', 11 * 1024 * 1024)));
 
     expect(result.current.status).toBe('error');
     expect(result.current.errorMessage).toMatch(/size limit/i);
@@ -92,7 +96,7 @@ describe('useInvoiceScan', () => {
     const { result } = renderHook(() => useInvoiceScan(makeParams()));
     await waitFor(() => expect(result.current.configured).toBe(true));
 
-    act(() => result.current.handleFileSelected(makeFile()));
+    await act(() => result.current.handleFileSelected(makeFile()));
 
     expect(result.current.status).toBe('preview');
     expect(result.current.selectedFile).not.toBeNull();
@@ -104,7 +108,7 @@ describe('useInvoiceScan', () => {
     const { result } = renderHook(() => useInvoiceScan(makeParams()));
     await waitFor(() => expect(result.current.configured).toBe(true));
 
-    act(() => result.current.handleFileSelected(makeFile()));
+    await act(() => result.current.handleFileSelected(makeFile()));
     act(() => result.current.chooseDifferentFile());
 
     expect(result.current.status).toBe('idle');
@@ -142,7 +146,7 @@ describe('useInvoiceScan', () => {
     const { result } = renderHook(() => useInvoiceScan(params));
     await waitFor(() => expect(result.current.configured).toBe(true));
 
-    act(() => result.current.handleFileSelected(makeFile()));
+    await act(() => result.current.handleFileSelected(makeFile()));
     expect(invoiceScanService.scan).not.toHaveBeenCalled();
 
     await act(() => result.current.confirmScan());
@@ -193,7 +197,7 @@ describe('useInvoiceScan', () => {
     const { result } = renderHook(() => useInvoiceScan(params));
     await waitFor(() => expect(result.current.configured).toBe(true));
 
-    act(() => result.current.handleFileSelected(makeFile()));
+    await act(() => result.current.handleFileSelected(makeFile()));
     await act(() => result.current.confirmScan());
 
     // supplier: name present but medium confidence, and no supplier matched the name -> flagged
@@ -214,7 +218,7 @@ describe('useInvoiceScan', () => {
     const params = makeParams();
     const { result } = renderHook(() => useInvoiceScan(params));
     await waitFor(() => expect(result.current.configured).toBe(true));
-    act(() => result.current.handleFileSelected(makeFile()));
+    await act(() => result.current.handleFileSelected(makeFile()));
     await act(() => result.current.confirmScan());
     expect(result.current.headerReview).toEqual({
       supplier: true,
@@ -255,7 +259,7 @@ describe('useInvoiceScan', () => {
     const { result } = renderHook(() => useInvoiceScan(params));
     await waitFor(() => expect(result.current.configured).toBe(true));
 
-    act(() => result.current.handleFileSelected(makeFile()));
+    await act(() => result.current.handleFileSelected(makeFile()));
     await act(() => result.current.confirmScan());
 
     expect(params.setLines).toHaveBeenCalledWith([
@@ -298,7 +302,7 @@ describe('useInvoiceScan', () => {
     const { result } = renderHook(() => useInvoiceScan(params));
     await waitFor(() => expect(result.current.configured).toBe(true));
 
-    act(() => result.current.handleFileSelected(makeFile()));
+    await act(() => result.current.handleFileSelected(makeFile()));
     await act(() => result.current.confirmScan());
 
     expect(params.setLines).toHaveBeenCalledWith([
@@ -313,7 +317,7 @@ describe('useInvoiceScan', () => {
     const { result } = renderHook(() => useInvoiceScan(makeParams()));
     await waitFor(() => expect(result.current.configured).toBe(true));
 
-    act(() => result.current.handleFileSelected(makeFile()));
+    await act(() => result.current.handleFileSelected(makeFile()));
     await act(() => result.current.confirmScan());
 
     expect(result.current.status).toBe('error');
@@ -328,7 +332,7 @@ describe('useInvoiceScan', () => {
     });
     const { result } = renderHook(() => useInvoiceScan(makeParams()));
     await waitFor(() => expect(result.current.configured).toBe(true));
-    act(() => result.current.handleFileSelected(makeFile()));
+    await act(() => result.current.handleFileSelected(makeFile()));
     await act(() => result.current.confirmScan());
     expect(result.current.lastSummary).not.toBeNull();
 

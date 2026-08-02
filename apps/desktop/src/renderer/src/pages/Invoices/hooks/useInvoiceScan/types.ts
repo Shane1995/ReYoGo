@@ -3,7 +3,7 @@ import type { ItemOption } from '../../components/ItemAutocomplete';
 import type { ProcessReceiptLine } from '../../types';
 import type { TotalMismatch } from '../../utils/reconcileScannedTotal/types';
 
-export type ScanStatus = 'idle' | 'preview' | 'scanning' | 'error';
+export type ScanStatus = 'idle' | 'preview' | 'processing' | 'scanning' | 'error';
 
 export type UseInvoiceScanParams = {
   itemsWithCategory: ItemOption[];

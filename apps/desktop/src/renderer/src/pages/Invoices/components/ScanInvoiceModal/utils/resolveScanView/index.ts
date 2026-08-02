@@ -16,7 +16,8 @@ export function resolveScanView(
   selectedFile: File | null,
   previewUrl: string | null,
 ): ScanView {
-  if (status === 'scanning') return { kind: 'loading' };
+  if (status === 'scanning') return { kind: 'loading', variant: 'scanning' };
+  if (status === 'processing') return { kind: 'loading', variant: 'processing' };
   const preview = previewReady(status, selectedFile, previewUrl);
   if (preview) return { kind: 'preview', ...preview };
   return { kind: 'upload' };
