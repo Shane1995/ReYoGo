@@ -49,4 +49,7 @@ export function registerInvoicesHandlers(): void {
   ipcMain.handle(InvoicesIPC.GET_CREDIT_NOTES_FOR_INVOICE, (_e, sourceInvoiceId: string) =>
     getRepos().invoices.getCreditNotesForInvoice(sourceInvoiceId),
   );
+  ipcMain.handle(InvoicesIPC.GET_CREDITED_QTY_BY_INVOICE_ITEM, (_e, entityId?: string) =>
+    getRepos().invoices.getCreditNotedQtyByInvoiceItem(entityId),
+  );
 }

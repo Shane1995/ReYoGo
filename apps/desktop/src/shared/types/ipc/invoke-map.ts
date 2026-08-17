@@ -10,7 +10,7 @@ import type {
   IUpdateCapturedInvoiceMetadataPayload,
   ISaveCreditNotePayload,
 } from '@reyogo/types';
-import type { ItemCostHistory, COGSSummary } from '@reyogo/types';
+import type { ItemCostHistory, COGSSummary, IStockMovementWithLabel } from '@reyogo/types';
 import type { Supplier, UpsertSupplierPayload } from '@reyogo/types';
 import type { IInvoiceScanResult } from '@reyogo/types';
 import type {
@@ -82,6 +82,10 @@ export interface IPCInvokeMap {
     args: [fromDate?: string, toDate?: string, entityId?: string];
     return: COGSSummary;
   };
+  'stock-movements:get-movements-for-item-with-labels': {
+    args: [itemId: string, entityId?: string];
+    return: IStockMovementWithLabel[];
+  };
   'setup:get-units': { args: []; return: UnitOfMeasure[] };
   'setup:upsert-unit': { args: [unit: UnitOfMeasure]; return: void };
   'setup:delete-unit': { args: [id: string]; return: void };
@@ -130,6 +134,10 @@ export interface IPCInvokeMap {
   'invoice-scan:scan': {
     args: [payload: { base64: string; mimeType: string }];
     return: IInvoiceScanResult;
+  };
+  'invoices:get-credited-qty-by-invoice-item': {
+    args: [entityId?: string];
+    return: Record<string, number>;
   };
   'stocktake:create-session': { args: [label?: string]; return: IStocktakeSession };
   'stocktake:get-sessions': { args: []; return: IStocktakeSession[] };

@@ -1,6 +1,11 @@
-import { and, asc, desc, eq, gte, lte } from 'drizzle-orm';
-import { MovementType } from '@reyogo/types';
-import type { COGSSummary, ItemCostHistory, StockMovement } from '@reyogo/types';
+import { and, asc, desc, eq, gte, inArray, lte } from 'drizzle-orm';
+import { MovementType, ReferenceType } from '@reyogo/types';
+import type {
+  COGSSummary,
+  ItemCostHistory,
+  StockMovement,
+  StockMovementWithLabel,
+} from '@reyogo/types';
 import type { DbClient } from '../../client';
 import * as schema from '../../schema';
 
@@ -231,6 +236,46 @@ async function getMovementsForItem(
   return rows.map((r) => toStockMovement(r));
 }
 
+function referenceLabelOf(
+  movement: StockMovement,
+  invoiceNumberById: Record<string, string>,
+): string | null {
+  const isInvoiceReference =
+    movement.referenceType === ReferenceType.Invoice ||
+    movement.referenceType === ReferenceType.CreditNote;
+  if (isInvoiceReference && movement.referenceId) {
+    return invoiceNumberById[movement.referenceId] ?? null;
+  }
+  return movement.notes;
+}
+
+async function getMovementsForItemWithLabels(
+  db: DbClient,
+  itemId: string,
+  entityId?: string,
+): Promise<StockMovementWithLabel[]> {
+  const movements = await getMovementsForItem(db, itemId, entityId);
+  const invoiceIds = movements
+    .filter(
+      (m) =>
+        (m.referenceType === ReferenceType.Invoice ||
+          m.referenceType === ReferenceType.CreditNote) &&
+        m.referenceId,
+    )
+    .map((m) => m.referenceId as string);
+
+  const invoiceNumberById: Record<string, string> = {};
+  if (invoiceIds.length > 0) {
+    const rows = await db
+      .select({ id: schema.invoices.id, invoiceNumber: schema.invoices.invoiceNumber })
+      .from(schema.invoices)
+      .where(inArray(schema.invoices.id, invoiceIds));
+    for (const row of rows) invoiceNumberById[row.id] = row.invoiceNumber;
+  }
+
+  return movements.map((m) => ({ ...m, referenceLabel: referenceLabelOf(m, invoiceNumberById) }));
+}
+
 function weightedAvgCostOf(movement: StockMovement | undefined): number | null {
   if (!movement) return null;
   return movement.weightedAvgCostAfter;
@@ -310,6 +355,8 @@ export function createStockMovementsRepo(db: DbClient) {
       getWeightedAvgCosts(db, entityId, asOfDate),
     getMovementsForItem: (itemId: string, entityId?: string) =>
       getMovementsForItem(db, itemId, entityId),
+    getMovementsForItemWithLabels: (itemId: string, entityId?: string) =>
+      getMovementsForItemWithLabels(db, itemId, entityId),
     getItemCostHistory: (itemId: string, entityId?: string) =>
       getItemCostHistory(db, itemId, entityId),
     getCOGS: (fromDate?: string, toDate?: string, entityId?: string) =>

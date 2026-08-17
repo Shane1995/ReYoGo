@@ -31,4 +31,6 @@ export const invoiceService = {
     invoke()(InvoicesIPC.SAVE_CREDIT_NOTE, payload),
   getCreditNotesForInvoice: (sourceInvoiceId: string) =>
     invoke()(InvoicesIPC.GET_CREDIT_NOTES_FOR_INVOICE, sourceInvoiceId),
+  getCreditedQtyByInvoiceItem: (entityId?: string): Promise<Record<string, number>> =>
+    invoke()(InvoicesIPC.GET_CREDITED_QTY_BY_INVOICE_ITEM, entityId),
 };

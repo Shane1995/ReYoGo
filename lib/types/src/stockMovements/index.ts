@@ -29,6 +29,10 @@ export interface StockMovement {
   createdAt: Date;
 }
 
+export interface StockMovementWithLabel extends StockMovement {
+  referenceLabel: string | null;
+}
+
 export type StockMovementSummary = Pick<
   StockMovement,
   | 'id'
@@ -60,6 +64,7 @@ export interface COGSSummary {
 
 export type StockMovementType = 'IN' | 'OUT' | 'ADJUSTMENT' | 'WASTE' | 'RETURN';
 export type IStockMovement = StockMovement;
+export type IStockMovementWithLabel = StockMovementWithLabel;
 export type IStockMovementSummary = StockMovementSummary;
 export type IItemCostHistory = ItemCostHistory;
 export type ICOGSSummary = COGSSummary;
