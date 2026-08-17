@@ -28,11 +28,17 @@ type Props = {
   detailCache: Record<string, ICapturedInvoiceWithLines>;
   onExpand: (id: string) => void;
   onEditClick: (id: string) => void;
+  onEditDetailsClick: (id: string) => void;
   onAuditClick: (id: string) => void;
   onPost: (id: string) => void;
   onReuse: (id: string) => void;
   onRaiseCreditNoteClick: (id: string) => void;
-  onSaveEdit: (inv: ICapturedInvoice, lines: ProcessReceiptLine[], note: string) => Promise<void>;
+  onSaveEdit: (
+    inv: ICapturedInvoice,
+    lines: ProcessReceiptLine[],
+    note: string,
+    invoiceDate?: Date | null,
+  ) => Promise<void>;
   onMetadataSave: (
     id: string,
     fields: {
@@ -110,6 +116,7 @@ export function InvoiceRow({
   detailCache,
   onExpand,
   onEditClick,
+  onEditDetailsClick,
   onAuditClick,
   onPost,
   onReuse,
@@ -157,6 +164,7 @@ export function InvoiceRow({
             isCreditNote={isCreditNote}
             onReuse={() => onReuse(inv.id)}
             onEdit={() => onEditClick(inv.id)}
+            onEditDetails={() => onEditDetailsClick(inv.id)}
             onPost={() => onPost(inv.id)}
             onAudit={() => onAuditClick(inv.id)}
             onRaiseCreditNote={() => onRaiseCreditNoteClick(inv.id)}

@@ -20,7 +20,12 @@ type PanelContext = {
   inv: ICapturedInvoice;
   detail: ICapturedInvoiceWithLines | undefined;
   suppliers: Supplier[];
-  onSaveEdit: (inv: ICapturedInvoice, lines: ProcessReceiptLine[], note: string) => Promise<void>;
+  onSaveEdit: (
+    inv: ICapturedInvoice,
+    lines: ProcessReceiptLine[],
+    note: string,
+    invoiceDate?: Date | null,
+  ) => Promise<void>;
   onMetadataSave: (
     id: string,
     fields: {
@@ -46,7 +51,7 @@ const PANEL_RENDERERS: Record<RowModeKind, (ctx: PanelContext) => ReactNode | nu
     detail ? (
       <EditPanel
         invoice={detail}
-        onSave={(lines, note) => onSaveEdit(inv, lines, note)}
+        onSave={(lines, note, invoiceDate) => onSaveEdit(inv, lines, note, invoiceDate)}
         onCancel={cancelView}
       />
     ) : null,

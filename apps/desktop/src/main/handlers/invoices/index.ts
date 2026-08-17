@@ -3,6 +3,7 @@ import type {
   ISaveCapturedInvoicePayload,
   IUpdateCapturedInvoicePayload,
   IUpdateCapturedInvoiceMetadataPayload,
+  IUpdatePostedInvoiceLinesPayload,
   ISaveCreditNotePayload,
 } from '@reyogo/types';
 import { InvoicesIPC } from '@shared/types/ipc';
@@ -61,5 +62,10 @@ export function registerInvoicesHandlers(): void {
     InvoicesIPC.GET_CREDIT_TOTALS_BY_ITEM,
     (_e, fromDate?: string, toDate?: string, entityId?: string) =>
       getRepos().invoices.getCreditTotalsByItem(fromDate, toDate, entityId),
+  );
+  ipcMain.handle(
+    InvoicesIPC.UPDATE_POSTED_INVOICE_LINES,
+    (_e, payload: IUpdatePostedInvoiceLinesPayload) =>
+      withSync(() => getRepos().invoices.updatePostedInvoiceLines(payload)),
   );
 }

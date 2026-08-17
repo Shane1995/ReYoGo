@@ -15,6 +15,7 @@ export const InvoicesIPC = {
   GET_CREDITED_QTY_BY_INVOICE_ITEM: 'invoices:get-credited-qty-by-invoice-item',
   GET_PURCHASE_TOTALS_BY_ITEM: 'invoices:get-purchase-totals-by-item',
   GET_CREDIT_TOTALS_BY_ITEM: 'invoices:get-credit-totals-by-item',
+  UPDATE_POSTED_INVOICE_LINES: 'invoices:update-posted-invoice-lines',
 } as const;
 
 export type InvoicesIPC = (typeof InvoicesIPC)[keyof typeof InvoicesIPC];

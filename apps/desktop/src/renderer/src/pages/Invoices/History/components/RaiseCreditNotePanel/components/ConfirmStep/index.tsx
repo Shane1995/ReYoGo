@@ -52,7 +52,7 @@ export function ConfirmStep({ confirmedLines, onBack, onConfirm }: Props) {
 
   return (
     <div className="border-t border-[var(--nav-border)] bg-[var(--nav-accent)]/30 px-6 py-4 space-y-4">
-      <p className="text-sm font-medium">Confirm credit note</p>
+      <p className="text-sm font-medium">Confirm damage / return</p>
       <p className="text-xs text-muted-foreground">
         The following stock will be reduced as of today. This cannot be undone.
       </p>

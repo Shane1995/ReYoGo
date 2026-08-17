@@ -3,6 +3,7 @@ import type {
   ISaveCapturedInvoicePayload,
   IUpdateCapturedInvoicePayload,
   IUpdateCapturedInvoiceMetadataPayload,
+  IUpdatePostedInvoiceLinesPayload,
   ISaveCreditNotePayload,
 } from '@reyogo/types';
 
@@ -45,4 +46,6 @@ export const invoiceService = {
     entityId?: string,
   ): Promise<Record<string, { qty: number; totalValue: number }>> =>
     invoke()(InvoicesIPC.GET_CREDIT_TOTALS_BY_ITEM, fromDate, toDate, entityId),
+  updatePostedInvoiceLines: (payload: IUpdatePostedInvoiceLinesPayload) =>
+    invoke()(InvoicesIPC.UPDATE_POSTED_INVOICE_LINES, payload),
 };

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { VatMode } from '@reyogo/types';
+import { InvoiceStatus, VatMode } from '@reyogo/types';
 import type { ICapturedInvoiceWithLines } from '@reyogo/types';
 import { EditPanel } from './index';
 
@@ -18,7 +18,7 @@ function baseInvoice(
     sourceInvoiceId: null,
     invoiceNumber: 'INV-1',
     invoiceDate: null,
-    status: 'posted' as ICapturedInvoiceWithLines['status'],
+    status: InvoiceStatus.Posted,
     vatMode: VatMode.Exclusive,
     vatRate: 15,
     createdAt: new Date(),
@@ -65,5 +65,92 @@ describe('EditPanel', () => {
       />,
     );
     expect(taxableCheckboxes()[0]).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('shows a date field for a posted invoice', () => {
+    render(
+      <EditPanel
+        invoice={baseInvoice({ status: InvoiceStatus.Posted, lines: [] })}
+        onSave={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    expect(screen.getByLabelText('Invoice date')).toBeDefined();
+  });
+
+  it('does not show a date field for a draft invoice', () => {
+    render(
+      <EditPanel
+        invoice={baseInvoice({ status: InvoiceStatus.Draft, lines: [] })}
+        onSave={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    expect(screen.queryByLabelText('Invoice date')).toBeNull();
+  });
+
+  it('passes the edited date through to onSave for a posted invoice', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(
+      <EditPanel
+        invoice={baseInvoice({
+          status: InvoiceStatus.Posted,
+          invoiceDate: new Date('2026-01-01'),
+          lines: [
+            {
+              id: 'l1',
+              invoiceId: 'inv-1',
+              itemId: 'item-1',
+              itemNameSnapshot: 'Flour',
+              quantity: 10,
+              isVatable: true,
+              totalVatExclude: 100,
+              unitOfMeasure: 'kg',
+            },
+          ],
+        })}
+        onSave={onSave}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('Invoice date'), {
+      target: { value: '2026-02-15' },
+    });
+    fireEvent.click(screen.getByText('Save changes'));
+
+    expect(onSave).toHaveBeenCalled();
+    const [, , invoiceDate] = onSave.mock.calls[0]!;
+    expect(invoiceDate).toEqual(new Date('2026-02-15'));
+  });
+
+  it('passes undefined as the date for a draft invoice save', () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(
+      <EditPanel
+        invoice={baseInvoice({
+          status: InvoiceStatus.Draft,
+          lines: [
+            {
+              id: 'l1',
+              invoiceId: 'inv-1',
+              itemId: 'item-1',
+              itemNameSnapshot: 'Flour',
+              quantity: 10,
+              isVatable: true,
+              totalVatExclude: 100,
+              unitOfMeasure: 'kg',
+            },
+          ],
+        })}
+        onSave={onSave}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('Save changes'));
+
+    const [, , invoiceDate] = onSave.mock.calls[0]!;
+    expect(invoiceDate).toBeUndefined();
   });
 });

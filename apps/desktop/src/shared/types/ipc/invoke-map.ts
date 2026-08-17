@@ -8,6 +8,7 @@ import type {
   ISaveCapturedInvoicePayload,
   IUpdateCapturedInvoicePayload,
   IUpdateCapturedInvoiceMetadataPayload,
+  IUpdatePostedInvoiceLinesPayload,
   ISaveCreditNotePayload,
 } from '@reyogo/types';
 import type { ItemCostHistory, COGSSummary, IStockMovementWithLabel } from '@reyogo/types';
@@ -146,6 +147,10 @@ export interface IPCInvokeMap {
   'invoices:get-credit-totals-by-item': {
     args: [fromDate?: string, toDate?: string, entityId?: string];
     return: Record<string, { qty: number; totalValue: number }>;
+  };
+  'invoices:update-posted-invoice-lines': {
+    args: [payload: IUpdatePostedInvoiceLinesPayload];
+    return: void;
   };
   'stocktake:create-session': { args: [label?: string]; return: IStocktakeSession };
   'stocktake:get-sessions': { args: []; return: IStocktakeSession[] };

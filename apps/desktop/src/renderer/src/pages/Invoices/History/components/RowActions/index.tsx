@@ -14,6 +14,7 @@ type Props = {
   isCreditNote: boolean;
   onReuse: () => void;
   onEdit: () => void;
+  onEditDetails: () => void;
   onPost: () => void;
   onAudit: () => void;
   onRaiseCreditNote: () => void;
@@ -21,11 +22,6 @@ type Props = {
 
 const item =
   'flex w-full items-center gap-2.5 rounded px-2.5 py-1.5 text-sm text-left transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40';
-
-function editTitleOf(isPosted: boolean): string {
-  if (isPosted) return 'Edit supplier, date and invoice number';
-  return 'Edit lines';
-}
 
 function postLabelOf(isPosting: boolean): string {
   if (isPosting) return 'Posting…';
@@ -58,6 +54,27 @@ function PostButton({
   );
 }
 
+function EditDetailsButton({
+  isPosted,
+  onEditDetails,
+}: {
+  isPosted: boolean;
+  onEditDetails: () => void;
+}) {
+  if (!isPosted) return null;
+  return (
+    <button
+      type="button"
+      className={item}
+      title="Edit supplier, date and invoice number"
+      onClick={onEditDetails}
+    >
+      <PencilIcon className="size-3.5 shrink-0" />
+      Edit details
+    </button>
+  );
+}
+
 function RaiseCreditNoteButton({
   isPosted,
   onRaiseCreditNote,
@@ -75,7 +92,7 @@ function RaiseCreditNoteButton({
         onClick={onRaiseCreditNote}
       >
         <ReceiptIcon className="size-3.5 shrink-0" />
-        Raise credit note
+        Report Damage / Return
       </button>
     </>
   );
@@ -86,6 +103,7 @@ function InvoiceMenuItems({
   isPosting,
   onReuse,
   onEdit,
+  onEditDetails,
   onPost,
   onAudit,
   onRaiseCreditNote,
@@ -96,10 +114,11 @@ function InvoiceMenuItems({
         <CopyIcon className="size-3.5 shrink-0" />
         Reuse
       </button>
-      <button type="button" className={item} title={editTitleOf(isPosted)} onClick={onEdit}>
+      <button type="button" className={item} title="Edit lines" onClick={onEdit}>
         <PencilIcon className="size-3.5 shrink-0" />
-        Edit
+        Edit lines
       </button>
+      <EditDetailsButton isPosted={isPosted} onEditDetails={onEditDetails} />
       <PostButton isPosted={isPosted} isPosting={isPosting} onPost={onPost} />
       <div className="my-1 h-px bg-border" />
       <button type="button" className={item} onClick={onAudit}>
@@ -117,6 +136,7 @@ export function RowActions({
   isCreditNote,
   onReuse,
   onEdit,
+  onEditDetails,
   onPost,
   onAudit,
   onRaiseCreditNote,
@@ -144,6 +164,7 @@ export function RowActions({
               isPosting={isPosting}
               onReuse={onReuse}
               onEdit={onEdit}
+              onEditDetails={onEditDetails}
               onPost={onPost}
               onAudit={onAudit}
               onRaiseCreditNote={onRaiseCreditNote}

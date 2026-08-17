@@ -4,13 +4,16 @@ import type {
   IInvoice,
   IInvoiceWithLines,
   IInvoiceLine,
+  IInvoiceLinePayload,
   IInvoiceAuditEntry,
   ISaveCapturedInvoicePayload,
   IUpdateCapturedInvoicePayload,
   IUpdateCapturedInvoiceMetadataPayload,
+  IUpdatePostedInvoiceLinesPayload,
   InvoiceLineWithDate,
   ISaveCreditNotePayload,
 } from '@reyogo/types';
+import { replayWacForward } from '../../utils/wac/replayForward';
 import type { DbClient } from '../../client';
 import * as schema from '../../schema';
 import { calculateWAC } from '../../utils/wac';
@@ -337,12 +340,12 @@ async function saveInvoice(db: DbClient, payload: ISaveCapturedInvoicePayload): 
   });
 }
 
-function resolveVatMode(payload: IUpdateCapturedInvoicePayload, current: IInvoice): VatMode {
+function resolveVatMode(payload: { vatMode?: VatMode }, current: IInvoice): VatMode {
   if (payload.vatMode != null) return payload.vatMode;
   return current.vatMode;
 }
 
-function resolveVatRate(payload: IUpdateCapturedInvoicePayload, current: IInvoice): number {
+function resolveVatRate(payload: { vatRate?: number }, current: IInvoice): number {
   if (payload.vatRate != null) return payload.vatRate;
   return current.vatRate;
 }
@@ -883,6 +886,216 @@ async function getCreditNotesForInvoice(
   }));
 }
 
+type ReplayableMovement = {
+  id: string;
+  movementType: MovementType;
+  qty: number;
+  unitCostAtTime: number | null;
+  occurredAt: Date;
+  createdAt: Date;
+};
+
+function toReplayable(row: schema.StockMovementRow): ReplayableMovement {
+  return {
+    id: row.id,
+    movementType: row.movementType,
+    qty: row.qty,
+    unitCostAtTime: row.unitCostAtTime,
+    occurredAt: row.occurredAt,
+    createdAt: row.createdAt,
+  };
+}
+
+function sortMovements(a: ReplayableMovement, b: ReplayableMovement): number {
+  const occurredDiff = a.occurredAt.getTime() - b.occurredAt.getTime();
+  if (occurredDiff !== 0) return occurredDiff;
+  const createdDiff = a.createdAt.getTime() - b.createdAt.getTime();
+  if (createdDiff !== 0) return createdDiff;
+  if (a.id < b.id) return -1;
+  if (a.id > b.id) return 1;
+  return 0;
+}
+
+const NEGATIVE_STOCK_EPSILON = 1e-6;
+
+async function replayItemMovements(
+  tx: TxClient,
+  invoiceId: string,
+  itemId: string,
+  newLine: IInvoiceLinePayload | undefined,
+  newOccurredAt: Date,
+  editedAt: Date,
+  entityId: string,
+): Promise<void> {
+  const rows = await tx
+    .select()
+    .from(schema.stockMovements)
+    .where(eq(schema.stockMovements.inventoryItemId, itemId));
+
+  const anchorRow = rows.find(
+    (m) => m.referenceType === ReferenceType.Invoice && m.referenceId === invoiceId,
+  );
+  const otherRows = rows.filter((r) => r.id !== anchorRow?.id);
+  const others = otherRows.map(toReplayable);
+
+  let candidate: ReplayableMovement | null = null;
+  if (newLine && newLine.quantity > 0) {
+    candidate = {
+      id: anchorRow?.id ?? generateId(),
+      movementType: MovementType.In,
+      qty: newLine.quantity,
+      unitCostAtTime: newLine.totalVatExclude / newLine.quantity,
+      occurredAt: newOccurredAt,
+      createdAt: anchorRow?.createdAt ?? editedAt,
+    };
+  }
+
+  const merged = (candidate ? [...others, candidate] : others).sort(sortMovements);
+  const results = replayWacForward(0, null, merged);
+
+  for (const result of results) {
+    if (result.stockQtyAfter < -NEGATIVE_STOCK_EPSILON) {
+      throw new Error(
+        `Editing this line would make stock for item ${itemId} negative — a later credit note or adjustment conflicts with this change`,
+      );
+    }
+  }
+
+  const resultById = new Map(results.map((r) => [r.id, r]));
+
+  for (const row of otherRows) {
+    const result = resultById.get(row.id)!;
+    if (
+      row.stockQtyAfter !== result.stockQtyAfter ||
+      row.weightedAvgCostAfter !== result.weightedAvgCostAfter
+    ) {
+      await tx
+        .update(schema.stockMovements)
+        .set({
+          stockQtyAfter: result.stockQtyAfter,
+          weightedAvgCostAfter: result.weightedAvgCostAfter,
+        })
+        .where(eq(schema.stockMovements.id, row.id));
+    }
+  }
+
+  if (candidate) {
+    const result = resultById.get(candidate.id)!;
+    const totalCost = candidate.qty * (candidate.unitCostAtTime ?? 0);
+    if (anchorRow) {
+      await tx
+        .update(schema.stockMovements)
+        .set({
+          qty: candidate.qty,
+          unitCostAtTime: candidate.unitCostAtTime,
+          totalCost,
+          occurredAt: candidate.occurredAt,
+          stockQtyAfter: result.stockQtyAfter,
+          weightedAvgCostAfter: result.weightedAvgCostAfter,
+        })
+        .where(eq(schema.stockMovements.id, anchorRow.id));
+    } else {
+      await tx.insert(schema.stockMovements).values({
+        id: candidate.id,
+        accountId: 'default',
+        entityId,
+        inventoryItemId: itemId,
+        movementType: MovementType.In,
+        qty: candidate.qty,
+        unitCostAtTime: candidate.unitCostAtTime,
+        totalCost,
+        weightedAvgCostAfter: result.weightedAvgCostAfter,
+        stockQtyAfter: result.stockQtyAfter,
+        referenceType: ReferenceType.Invoice,
+        referenceId: invoiceId,
+        occurredAt: candidate.occurredAt,
+        createdAt: candidate.createdAt,
+      });
+    }
+  } else if (anchorRow) {
+    await tx.delete(schema.stockMovements).where(eq(schema.stockMovements.id, anchorRow.id));
+  }
+}
+
+async function updatePostedInvoiceLines(
+  db: DbClient,
+  payload: IUpdatePostedInvoiceLinesPayload,
+): Promise<void> {
+  const editedAt = now();
+  const current = await getInvoiceById(db, payload.id);
+  if (!current) throw new Error(`Invoice not found: ${payload.id}`);
+  if (current.status !== InvoiceStatus.Posted)
+    throw new Error(`Invoice ${payload.id} is not posted`);
+
+  const vatMode = resolveVatMode(payload, current);
+  const vatRate = resolveVatRate(payload, current);
+  const validLines = payload.lines.filter(isValidInvoiceLine);
+  const { totalExclTax, taxAmount } = computeTax(validLines, vatRate);
+  const newInvoiceDate = withDefault(payload.invoiceDate, current.invoiceDate);
+  const newOccurredAt = newInvoiceDate ?? current.createdAt;
+
+  await db.transaction(async (tx) => {
+    await tx.insert(schema.invoiceAuditLog).values({
+      id: generateId(),
+      invoiceId: payload.id,
+      editedAt,
+      note: payload.note ?? null,
+      snapshot: JSON.stringify(current),
+    });
+
+    const creditedByItem = await getCreditNotedQtyByItem(tx, payload.id);
+    const newQtyByItem = new Map(validLines.map((l) => [l.itemId, l.quantity]));
+    for (const line of current.lines) {
+      const credited = creditedByItem[line.itemId] ?? 0;
+      if (credited <= 0) continue;
+      const newQty = newQtyByItem.get(line.itemId) ?? 0;
+      if (newQty < credited) {
+        throw new Error(
+          `Item ${line.itemId} has ${credited} units already credited via credit note; cannot reduce invoiced qty below ${credited} — use a credit note instead`,
+        );
+      }
+    }
+
+    await tx
+      .delete(schema.invoiceLineItems)
+      .where(eq(schema.invoiceLineItems.invoiceId, payload.id));
+    if (validLines.length > 0) {
+      await tx
+        .insert(schema.invoiceLineItems)
+        .values(buildLineValues(validLines, payload.id, vatRate));
+    }
+    await tx
+      .update(schema.invoices)
+      .set({
+        updatedAt: editedAt,
+        vatMode,
+        vatRate,
+        invoiceDate: newInvoiceDate,
+        totalExclTax,
+        taxAmount,
+        totalInclTax: totalExclTax + taxAmount,
+      })
+      .where(eq(schema.invoices.id, payload.id));
+
+    const affectedItemIds = new Set([
+      ...current.lines.map((l) => l.itemId),
+      ...validLines.map((l) => l.itemId),
+    ]);
+    for (const itemId of affectedItemIds) {
+      const newLine = validLines.find((l) => l.itemId === itemId);
+      await replayItemMovements(
+        tx,
+        payload.id,
+        itemId,
+        newLine,
+        newOccurredAt,
+        editedAt,
+        current.entityId,
+      );
+    }
+  });
+}
+
 export function createInvoicesRepo(db: DbClient) {
   return {
     saveInvoice: (payload: ISaveCapturedInvoicePayload) => saveInvoice(db, payload),
@@ -906,5 +1119,7 @@ export function createInvoicesRepo(db: DbClient) {
       getPurchaseTotalsByItem(db, fromDate, toDate, entityId),
     getCreditTotalsByItem: (fromDate?: string, toDate?: string, entityId?: string) =>
       getCreditTotalsByItem(db, fromDate, toDate, entityId),
+    updatePostedInvoiceLines: (payload: IUpdatePostedInvoiceLinesPayload) =>
+      updatePostedInvoiceLines(db, payload),
   };
 }

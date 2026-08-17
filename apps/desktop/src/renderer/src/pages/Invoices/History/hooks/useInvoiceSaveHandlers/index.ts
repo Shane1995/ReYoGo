@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { InvoiceStatus } from '@reyogo/types';
 import type { ICapturedInvoice, ICapturedInvoiceWithLines } from '@reyogo/types';
 import { invoiceService } from '@/services/invoice';
 import type { ProcessReceiptLine } from '../../../types';
@@ -60,6 +61,20 @@ function buildSaveEditPayload(
   };
 }
 
+function buildSavePostedEditPayload(
+  invoice: ICapturedInvoice,
+  editLines: ProcessReceiptLine[],
+  note: string,
+  items: { id: string; name: string }[],
+  detailCache: Record<string, ICapturedInvoiceWithLines>,
+  invoiceDate: Date | null | undefined,
+) {
+  return {
+    ...buildSaveEditPayload(invoice, editLines, note, items, detailCache),
+    invoiceDate,
+  };
+}
+
 function buildMetadataSavePayload(
   id: string,
   fields: {
@@ -86,9 +101,26 @@ export function useInvoiceSaveHandlers({
   setMode,
 }: SaveHandlerDeps) {
   const handleSaveEdit = useCallback(
-    async (invoice: ICapturedInvoice, editLines: ProcessReceiptLine[], note: string) => {
-      const payload = buildSaveEditPayload(invoice, editLines, note, items, detailCache);
-      await invoiceService.updateInvoice(payload);
+    async (
+      invoice: ICapturedInvoice,
+      editLines: ProcessReceiptLine[],
+      note: string,
+      invoiceDate?: Date | null,
+    ) => {
+      if (invoice.status === InvoiceStatus.Posted) {
+        const payload = buildSavePostedEditPayload(
+          invoice,
+          editLines,
+          note,
+          items,
+          detailCache,
+          invoiceDate,
+        );
+        await invoiceService.updatePostedInvoiceLines(payload);
+      } else {
+        const payload = buildSaveEditPayload(invoice, editLines, note, items, detailCache);
+        await invoiceService.updateInvoice(payload);
+      }
       setDetailCache((prev) => {
         const next = { ...prev };
         delete next[invoice.id];
