@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
 import { stockMovementsService } from '@/services/stockMovements';
 import { invoiceService } from '@/services/invoice';
+import { stocktakeService } from '@/services/stocktake';
 import { stockLevelRowsOf } from './utils/stockLevelRowsOf';
 import { availableCategoriesOfRows } from './utils/availableCategoriesOfRows';
 import { filterRowsByCategories } from './utils/filterRowsByCategories';
@@ -9,6 +10,23 @@ import { availableTypesOfRows } from './utils/availableTypesOfRows';
 import { filterRowsByType } from './utils/filterRowsByType';
 import { StockCostSource } from './types';
 import type { StockLevelRow } from './types';
+
+function stockByItemOf(
+  entityId: string | undefined,
+  asOfDate: string | undefined,
+  sessionId: string | undefined,
+): Promise<Record<string, number>> {
+  if (sessionId) {
+    return stocktakeService.getSession(sessionId).then((session) => {
+      const result: Record<string, number> = {};
+      for (const line of session?.lines ?? []) {
+        result[line.inventoryItemId] = (result[line.inventoryItemId] ?? 0) + line.countedQty;
+      }
+      return result;
+    });
+  }
+  return stockMovementsService.getCurrentStock(entityId, asOfDate);
+}
 
 function costByItemOf(
   costSource: StockCostSource,
@@ -31,6 +49,7 @@ export function useStockLevelRows(
   selectedCategories: string[],
   selectedType: string,
   costSource: StockCostSource,
+  sessionId?: string,
 ) {
   const { items, categories } = useInventory();
   const [loading, setLoading] = useState(true);
@@ -40,7 +59,7 @@ export function useStockLevelRows(
     let cancelled = false;
     setLoading(true);
     Promise.all([
-      stockMovementsService.getCurrentStock(entityId, asOfDate),
+      stockByItemOf(entityId, asOfDate, sessionId),
       costByItemOf(costSource, entityId, asOfDate),
     ])
       .then(([stockByItem, costByItem]) => {
@@ -56,7 +75,7 @@ export function useStockLevelRows(
     return () => {
       cancelled = true;
     };
-  }, [items, categories, entityId, asOfDate, costSource]);
+  }, [items, categories, entityId, asOfDate, costSource, sessionId]);
 
   const availableCategories = useMemo(() => availableCategoriesOfRows(rows), [rows]);
   const availableTypes = useMemo(() => availableTypesOfRows(rows), [rows]);

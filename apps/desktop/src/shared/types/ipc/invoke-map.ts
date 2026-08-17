@@ -13,6 +13,11 @@ import type {
 import type { ItemCostHistory, COGSSummary } from '@reyogo/types';
 import type { Supplier, UpsertSupplierPayload } from '@reyogo/types';
 import type { IInvoiceScanResult } from '@reyogo/types';
+import type {
+  IStocktakeSession,
+  IStocktakeSessionWithLines,
+  ISaveStocktakeLinePayload,
+} from '@reyogo/types';
 
 export interface AppVersionInfo {
   version: string;
@@ -125,6 +130,17 @@ export interface IPCInvokeMap {
   'invoice-scan:scan': {
     args: [payload: { base64: string; mimeType: string }];
     return: IInvoiceScanResult;
+  };
+  'stocktake:create-session': { args: [label?: string]; return: IStocktakeSession };
+  'stocktake:get-sessions': { args: []; return: IStocktakeSession[] };
+  'stocktake:get-session': { args: [id: string]; return: IStocktakeSessionWithLines | null };
+  'stocktake:save-draft-lines': {
+    args: [sessionId: string, lines: ISaveStocktakeLinePayload[]];
+    return: void;
+  };
+  'stocktake:complete-session': {
+    args: [sessionId: string, lines: ISaveStocktakeLinePayload[]];
+    return: void;
   };
 }
 

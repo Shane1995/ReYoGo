@@ -120,6 +120,7 @@ async function recordVarianceMovement(
   tx: TxClient,
   line: CompleteStocktakePayload['lines'][number],
   sessionId: string,
+  entityId: string,
   completedAt: Date,
 ): Promise<void> {
   const bookQty = await getLatestStockQty(tx, line.inventoryItemId);
@@ -129,7 +130,7 @@ async function recordVarianceMovement(
   await tx.insert(schema.stockMovements).values({
     id: generateId(),
     accountId: 'default',
-    entityId: 'default',
+    entityId,
     inventoryItemId: line.inventoryItemId,
     movementType: 'ADJUSTMENT' as MovementType,
     qty: variance,
@@ -148,7 +149,7 @@ async function recordVarianceMovements(
   completedAt: Date,
 ): Promise<void> {
   for (const line of payload.lines) {
-    await recordVarianceMovement(tx, line, payload.sessionId, completedAt);
+    await recordVarianceMovement(tx, line, payload.sessionId, payload.entityId, completedAt);
   }
 }
 
@@ -165,11 +166,23 @@ async function completeSession(db: DbClient, payload: CompleteStocktakePayload):
   });
 }
 
+async function saveDraftLines(
+  db: DbClient,
+  sessionId: string,
+  lines: CompleteStocktakePayload['lines'],
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    await replaceCountedLines(tx, sessionId, lines);
+  });
+}
+
 export function createStocktakeRepo(db: DbClient) {
   return {
     createSession: (label?: string) => createSession(db, label),
     getSessions: () => getSessions(db),
     getSessionById: (id: string) => getSessionById(db, id),
     completeSession: (payload: CompleteStocktakePayload) => completeSession(db, payload),
+    saveDraftLines: (sessionId: string, lines: CompleteStocktakePayload['lines']) =>
+      saveDraftLines(db, sessionId, lines),
   };
 }

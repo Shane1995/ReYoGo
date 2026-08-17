@@ -26,6 +26,14 @@ vi.mock('@/services/invoice', () => ({
   },
 }));
 
+const getSession = vi.fn();
+
+vi.mock('@/services/stocktake', () => ({
+  stocktakeService: {
+    getSession: (id: string) => getSession(id),
+  },
+}));
+
 const items = [
   { id: 'item-1', name: 'Milk', categoryId: 'cat-1', type: 'food', unitOfMeasure: 'L' },
   { id: 'item-2', name: 'Cola', categoryId: 'cat-2', type: 'beverage', unitOfMeasure: 'L' },
@@ -116,5 +124,30 @@ describe('useStockLevelRows', () => {
       useStockLevelRows(undefined, undefined, [], '', StockCostSource.WeightedAverage),
     );
     expect(result.current.loading).toBe(true);
+  });
+
+  it('sources quantity from a stocktake session instead of current stock when sessionId is given', async () => {
+    getSession.mockResolvedValue({
+      id: 'sess-1',
+      accountId: 'default',
+      label: 'Week 1',
+      status: 'complete',
+      completedAt: new Date(),
+      createdAt: new Date(),
+      lines: [
+        { id: 'l1', sessionId: 'sess-1', inventoryItemId: 'item-1', countedQty: 42, notes: null },
+      ],
+    });
+    const { result } = renderHook(() =>
+      useStockLevelRows(undefined, undefined, [], '', StockCostSource.LastCost, 'sess-1'),
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(getSession).toHaveBeenCalledWith('sess-1');
+    expect(getCurrentStock).not.toHaveBeenCalled();
+    const milk = result.current.rows.find((r) => r.itemId === 'item-1')!;
+    expect(milk.quantity).toBe(42);
+    const cola = result.current.rows.find((r) => r.itemId === 'item-2')!;
+    expect(cola.quantity).toBe(0);
   });
 });

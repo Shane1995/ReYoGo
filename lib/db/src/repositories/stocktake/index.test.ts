@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { InventoryType } from '@reyogo/types';
+import { InventoryType, VatMode } from '@reyogo/types';
 import type { MovementType } from '@reyogo/types';
 import { createTestDb, type DbClient } from '../../__tests__/helpers';
 import { createStocktakeRepo } from '.';
@@ -24,6 +24,23 @@ async function seedItem(db: DbClient, itemId: string) {
     categoryId: 'cat-1',
     createdAt: new Date(),
     updatedAt: new Date(),
+  });
+}
+
+async function seedEntity(db: DbClient, entityId: string) {
+  await db.insert(schema.businessGroups).values({
+    id: `group-${entityId}`,
+    accountId: 'default',
+    name: 'Group',
+    createdAt: new Date(),
+  });
+  await db.insert(schema.entities).values({
+    id: entityId,
+    groupId: `group-${entityId}`,
+    name: 'Entity',
+    defaultVatRate: 15,
+    defaultVatMode: VatMode.Exclusive,
+    createdAt: new Date(),
   });
 }
 
@@ -85,6 +102,7 @@ describe('createStocktakeRepo', () => {
       const session = await repo.createSession();
       await repo.completeSession({
         sessionId: session.id,
+        entityId: 'default',
         lines: [{ id: 'l-1', inventoryItemId: 'item-1', countedQty: 5 }],
       });
       const result = await repo.getSessionById(session.id);
@@ -96,22 +114,22 @@ describe('createStocktakeRepo', () => {
 
   describe('completeSession', () => {
     it('throws when the session does not exist', async () => {
-      await expect(repo.completeSession({ sessionId: 'nope', lines: [] })).rejects.toThrow(
-        'not found',
-      );
+      await expect(
+        repo.completeSession({ sessionId: 'nope', entityId: 'default', lines: [] }),
+      ).rejects.toThrow('not found');
     });
 
     it('throws when the session is already complete', async () => {
       const session = await repo.createSession();
-      await repo.completeSession({ sessionId: session.id, lines: [] });
-      await expect(repo.completeSession({ sessionId: session.id, lines: [] })).rejects.toThrow(
-        'already completed',
-      );
+      await repo.completeSession({ sessionId: session.id, entityId: 'default', lines: [] });
+      await expect(
+        repo.completeSession({ sessionId: session.id, entityId: 'default', lines: [] }),
+      ).rejects.toThrow('already completed');
     });
 
     it('marks the session as complete', async () => {
       const session = await repo.createSession();
-      await repo.completeSession({ sessionId: session.id, lines: [] });
+      await repo.completeSession({ sessionId: session.id, entityId: 'default', lines: [] });
       const result = await repo.getSessionById(session.id);
       expect(result!.status).toBe('complete');
       expect(result!.completedAt).not.toBeNull();
@@ -123,6 +141,7 @@ describe('createStocktakeRepo', () => {
       const session = await repo.createSession();
       await repo.completeSession({
         sessionId: session.id,
+        entityId: 'default',
         lines: [{ id: 'l-1', inventoryItemId: 'item-1', countedQty: 10 }],
       });
       const adjustments = (await db.select().from(schema.stockMovements)).filter(
@@ -137,6 +156,7 @@ describe('createStocktakeRepo', () => {
       const session = await repo.createSession();
       await repo.completeSession({
         sessionId: session.id,
+        entityId: 'default',
         lines: [{ id: 'l-1', inventoryItemId: 'item-1', countedQty: 14 }],
       });
       const adjustments = (await db.select().from(schema.stockMovements)).filter(
@@ -154,6 +174,7 @@ describe('createStocktakeRepo', () => {
       const session = await repo.createSession();
       await repo.completeSession({
         sessionId: session.id,
+        entityId: 'default',
         lines: [{ id: 'l-1', inventoryItemId: 'item-1', countedQty: 7 }],
       });
       const adjustments = (await db.select().from(schema.stockMovements)).filter(
@@ -168,6 +189,7 @@ describe('createStocktakeRepo', () => {
       const session = await repo.createSession();
       await repo.completeSession({
         sessionId: session.id,
+        entityId: 'default',
         lines: [{ id: 'l-1', inventoryItemId: 'item-1', countedQty: 5 }],
       });
       const adjustments = (await db.select().from(schema.stockMovements)).filter(
@@ -175,6 +197,56 @@ describe('createStocktakeRepo', () => {
       );
       expect(adjustments[0]!.qty).toBe(5);
       expect(adjustments[0]!.stockQtyAfter).toBe(5);
+    });
+
+    it("posts the adjustment movement under the session's real entityId, not a hardcoded default", async () => {
+      await seedItem(db, 'item-1');
+      await seedEntity(db, 'entity-real-1');
+      const session = await repo.createSession();
+      await repo.completeSession({
+        sessionId: session.id,
+        entityId: 'entity-real-1',
+        lines: [{ id: 'l-1', inventoryItemId: 'item-1', countedQty: 5 }],
+      });
+      const adjustments = (await db.select().from(schema.stockMovements)).filter(
+        (m) => m.movementType === 'ADJUSTMENT',
+      );
+      expect(adjustments[0]!.entityId).toBe('entity-real-1');
+    });
+  });
+
+  describe('saveDraftLines', () => {
+    it('saves counted lines without posting any stock movements or completing the session', async () => {
+      await seedItem(db, 'item-1');
+      const session = await repo.createSession();
+      await repo.saveDraftLines(session.id, [
+        { id: 'l-1', inventoryItemId: 'item-1', countedQty: 5 },
+      ]);
+
+      const result = await repo.getSessionById(session.id);
+      expect(result!.status).toBe('open');
+      expect(result!.lines).toHaveLength(1);
+      expect(result!.lines[0]!.countedQty).toBe(5);
+      const adjustments = (await db.select().from(schema.stockMovements)).filter(
+        (m) => m.movementType === 'ADJUSTMENT',
+      );
+      expect(adjustments).toHaveLength(0);
+    });
+
+    it('overwrites previously saved draft lines on a subsequent autosave', async () => {
+      await seedItem(db, 'item-1');
+      const session = await repo.createSession();
+      await repo.saveDraftLines(session.id, [
+        { id: 'l-1', inventoryItemId: 'item-1', countedQty: 5 },
+      ]);
+      await repo.saveDraftLines(session.id, [
+        { id: 'l-2', inventoryItemId: 'item-1', countedQty: 9 },
+      ]);
+
+      const result = await repo.getSessionById(session.id);
+      expect(result!.lines).toHaveLength(1);
+      expect(result!.lines[0]!.id).toBe('l-2');
+      expect(result!.lines[0]!.countedQty).toBe(9);
     });
   });
 });

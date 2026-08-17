@@ -9,6 +9,7 @@ import { InvoiceLayout } from '@/pages/Invoices/Layout';
 import InvoicePage from '@/pages/Invoices';
 import InvoiceHistoryPage from '@/pages/Invoices/History';
 import ManagePage from '@/pages/Inventory/Manage';
+import StockTakePage from '@/pages/Inventory/StockTake';
 import InventoryAnalysis from '@/pages/Inventory/Analysis';
 import ItemTrendPage from '@/pages/Inventory/Analysis/ItemTrendPage';
 import { CostingLayout } from '@/pages/Inventory/Costing/Layout';
@@ -44,6 +45,7 @@ export function AppRoutesComponent() {
           </Route>
           <Route path={StockRouteSegments.analysis} element={<InventoryAnalysis />} />
           <Route path={StockRouteSegments.manage} element={<ManagePage />} />
+          <Route path={StockRouteSegments.stocktake} element={<StockTakePage />} />
           <Route path={`${StockRouteSegments.analysis}/item/:itemId`} element={<ItemTrendPage />} />
         </Route>
 

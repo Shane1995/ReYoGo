@@ -33,6 +33,7 @@ export const StockRouteSegments = {
   categories: lastSeg(r['stock.categories']),
   analysis: lastSeg(r['stock.analysis']),
   manage: lastSeg(r['stock.manage']),
+  stocktake: lastSeg(r['stock.stocktake']),
 } as const;
 
 export const InvoiceRouteSegments = {

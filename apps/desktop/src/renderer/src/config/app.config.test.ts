@@ -26,8 +26,8 @@ describe('appConfig.nav', () => {
     expect(appConfig.nav.primary).toHaveLength(4);
   });
 
-  it('stock nav has four items', () => {
-    expect(appConfig.nav.stock).toHaveLength(4);
+  it('stock nav has five items', () => {
+    expect(appConfig.nav.stock).toHaveLength(5);
   });
 });
 
