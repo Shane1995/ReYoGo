@@ -16,10 +16,11 @@ const rows: StockLevelRow[] = [
 ];
 
 describe('buildStockOnHandSheetRows', () => {
-  it('builds a header row, one row per item including category, and a grand total row', () => {
+  it('builds a header row, a category header row, one row per item, and a grand total row', () => {
     const sheet = buildStockOnHandSheetRows(rows);
-    expect(sheet[0]).toEqual(['Item', 'Category', 'Unit', 'Qty', 'Avg Cost', 'Total Value']);
-    expect(sheet[1]).toEqual(['Milk', 'Dairy', 'L', 10, 2, 20]);
-    expect(sheet[2]).toEqual(['', '', '', '', 'Grand Total', 20]);
+    expect(sheet[0]).toEqual(['Item', 'Unit', 'Qty', 'Avg Cost', 'Total Value']);
+    expect(sheet[1]).toEqual(['Dairy']);
+    expect(sheet[2]).toEqual(['Milk', 'L', 10, 2, 20]);
+    expect(sheet[3]).toEqual(['', '', '', 'Grand Total', 20]);
   });
 });

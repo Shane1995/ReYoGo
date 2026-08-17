@@ -1,5 +1,6 @@
 import type { ItemCostHistoryRow } from '../../../../components/ItemCostHistoryView/types';
 import { roundTo } from '../roundTo';
+import { groupSheetRowsByCategory } from '../groupSheetRowsByCategory';
 
 const HEADER = ['Item', 'UOM', 'Date', 'Qty', 'Excl. VAT', 'Incl. VAT', 'Taxable', '% Change'];
 
@@ -21,5 +22,5 @@ function rowOf(row: ItemCostHistoryRow): (string | number)[] {
 }
 
 export function buildItemCostHistorySheetRows(rows: ItemCostHistoryRow[]): (string | number)[][] {
-  return [HEADER, ...rows.map(rowOf)];
+  return [HEADER, ...groupSheetRowsByCategory(rows, (row) => row.categoryName, rowOf)];
 }

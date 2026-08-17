@@ -18,6 +18,7 @@ const row: ItemCostHistoryRow = {
   itemId: 'item-1',
   itemName: 'Flour',
   uom: 'kg',
+  categoryName: 'Bakery',
   invoiceId: 'inv-1',
   date: new Date('2026-01-15'),
   quantity: 2,
@@ -50,7 +51,8 @@ describe('exportReport', () => {
     const sheet = wb.Sheets[wb.SheetNames[0]!]!;
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
     expect(rows[0]).toEqual(['Date range: 2026-01-01 to 2026-01-31']);
-    expect(rows[3]).toEqual(['Flour', 'kg', '2026-01-15', 2, 10, 11.5, 'Yes', '']);
+    expect(rows[3]).toEqual(['Bakery']);
+    expect(rows[4]).toEqual(['Flour', 'kg', '2026-01-15', 2, 10, 11.5, 'Yes', '']);
   });
 
   it('builds a Period Summary workbook matching the visible totals and saves it', async () => {
@@ -101,7 +103,8 @@ describe('exportReport', () => {
     const sheet = wb.Sheets[wb.SheetNames[0]!]!;
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
     expect(rows[0]).toEqual(['As of: 2026-06-01']);
-    expect(rows[3]).toEqual(['Milk', 'L', 10, 2, 20]);
+    expect(rows[3]).toEqual(['Dairy']);
+    expect(rows[4]).toEqual(['Milk', 'L', 10, 2, 20]);
   });
 
   it('builds a Stock on Hand workbook with a "live" filename and metadata row', async () => {
@@ -116,7 +119,8 @@ describe('exportReport', () => {
     const sheet = wb.Sheets[wb.SheetNames[0]!]!;
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
     expect(rows[0]).toEqual(['As of: Live']);
-    expect(rows[3]).toEqual(['Milk', 'Dairy', 'L', 10, 2, 20]);
+    expect(rows[3]).toEqual(['Dairy']);
+    expect(rows[4]).toEqual(['Milk', 'L', 10, 2, 20]);
   });
 
   const totalRow: ItemTotalRow = {

@@ -1,6 +1,7 @@
 import type { StockLevelRow } from '../../../../hooks/useStockLevelRows/types';
 import { grandTotalOf } from '../../../../hooks/useStockLevelRows/utils/grandTotalOf';
 import { roundTo } from '../roundTo';
+import { groupSheetRowsByCategory } from '../groupSheetRowsByCategory';
 
 const HEADER = ['Item', 'Unit', 'Qty', 'Last Cost', 'Total Value'];
 
@@ -16,5 +17,5 @@ function rowOf(row: StockLevelRow): (string | number)[] {
 
 export function buildStockValuationSheetRows(rows: StockLevelRow[]): (string | number)[][] {
   const totalRow = ['', '', '', 'Grand Total', roundTo(grandTotalOf(rows), 2)];
-  return [HEADER, ...rows.map(rowOf), totalRow];
+  return [HEADER, ...groupSheetRowsByCategory(rows, (row) => row.categoryName, rowOf), totalRow];
 }
