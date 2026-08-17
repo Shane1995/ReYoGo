@@ -14,3 +14,8 @@ export enum StockSortKey {
   Quantity = 'quantity',
   TotalValue = 'totalValue',
 }
+
+export enum StockCostSource {
+  WeightedAverage = 'wac',
+  LastCost = 'lastCost',
+}

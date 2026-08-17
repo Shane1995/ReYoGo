@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useStockLevelRows } from '../../hooks/useStockLevelRows';
 import { grandTotalOf } from '../../hooks/useStockLevelRows/utils/grandTotalOf';
 import { sortStockRows } from '../../hooks/useStockLevelRows/utils/sortStockRows';
-import { StockSortKey } from '../../hooks/useStockLevelRows/types';
+import { StockCostSource, StockSortKey } from '../../hooks/useStockLevelRows/types';
 import { useAvailableOptionsSync } from '../../hooks/useAvailableOptionsSync';
 import { StockSortSelect } from '../StockSortSelect';
 import { StockValuationTable } from './components/StockValuationTable';
@@ -22,6 +22,7 @@ export function StockValuationView({
     asOfDate,
     selectedCategories,
     selectedType,
+    StockCostSource.LastCost,
   );
   const [sortBy, setSortBy] = useState<StockSortKey>(StockSortKey.Name);
 

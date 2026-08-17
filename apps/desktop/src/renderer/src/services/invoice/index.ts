@@ -23,8 +23,10 @@ export const invoiceService = {
   updateInvoiceMetadata: (payload: IUpdateCapturedInvoiceMetadataPayload) =>
     invoke()(InvoicesIPC.UPDATE_INVOICE_METADATA, payload),
   getInvoiceAudit: (id: string) => invoke()(InvoicesIPC.GET_INVOICE_AUDIT, id),
-  getLastUnitPrices: (): Promise<Record<string, { exclVat: number; inclVat: number }>> =>
-    invoke()(InvoicesIPC.GET_LAST_UNIT_PRICES),
+  getLastUnitPrices: (
+    asOfDate?: string,
+  ): Promise<Record<string, { exclVat: number; inclVat: number }>> =>
+    invoke()(InvoicesIPC.GET_LAST_UNIT_PRICES, asOfDate),
   saveCreditNote: (payload: ISaveCreditNotePayload) =>
     invoke()(InvoicesIPC.SAVE_CREDIT_NOTE, payload),
   getCreditNotesForInvoice: (sourceInvoiceId: string) =>

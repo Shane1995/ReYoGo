@@ -385,6 +385,35 @@ describe('createInvoicesRepo', () => {
       });
       expect(await repo.getLastUnitPrices()).toEqual({});
     });
+
+    it('only considers the most recent purchase as of the given date', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-early',
+        entityId: 'default',
+        supplierId: null,
+        invoiceNumber: 'INV-EARLY',
+        invoiceDate: new Date('2026-01-01'),
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l-early', quantity: 10, totalVatExclude: 100, isVatable: true })],
+      });
+      await repo.saveAndPostInvoice({
+        id: 'inv-late',
+        entityId: 'default',
+        supplierId: null,
+        invoiceNumber: 'INV-LATE',
+        invoiceDate: new Date('2026-06-01'),
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l-late', quantity: 10, totalVatExclude: 200, isVatable: true })],
+      });
+
+      const asOfEarly = await repo.getLastUnitPrices('2026-03-01');
+      expect(asOfEarly['item-1']!.exclVat).toBe(10);
+
+      const asOfLate = await repo.getLastUnitPrices('2026-12-01');
+      expect(asOfLate['item-1']!.exclVat).toBe(20);
+    });
   });
 
   describe('saveCreditNote', () => {
@@ -722,6 +751,77 @@ describe('createInvoicesRepo', () => {
     it('returns empty array when no credit notes exist', async () => {
       const creditNotes = await repo.getCreditNotesForInvoice('nonexistent-inv');
       expect(creditNotes).toEqual([]);
+    });
+  });
+
+  describe('getCreditNotedQtyByInvoiceItem', () => {
+    it('returns credited qty keyed by invoiceId::itemId across all invoices', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-8',
+        entityId: 'default',
+        invoiceNumber: 'INV-008',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-8', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+      await repo.saveCreditNote({
+        id: 'cn-8',
+        sourceInvoiceId: 'inv-8',
+        entityId: 'default',
+        invoiceNumber: 'CN-INV-008',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'cn-line-8', itemId: 'item-1', quantity: 4, totalVatExclude: 40 })],
+      });
+
+      const result = await repo.getCreditNotedQtyByInvoiceItem();
+      expect(result['inv-8::item-1']).toBe(4);
+    });
+
+    it('sums multiple credit notes against the same source invoice/item', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-9',
+        entityId: 'default',
+        invoiceNumber: 'INV-009',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-9', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+      await repo.saveCreditNote({
+        id: 'cn-9a',
+        sourceInvoiceId: 'inv-9',
+        entityId: 'default',
+        invoiceNumber: 'CN-INV-009A',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'cn-line-9a', itemId: 'item-1', quantity: 3, totalVatExclude: 30 })],
+      });
+      await repo.saveCreditNote({
+        id: 'cn-9b',
+        sourceInvoiceId: 'inv-9',
+        entityId: 'default',
+        invoiceNumber: 'CN-INV-009B',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'cn-line-9b', itemId: 'item-1', quantity: 2, totalVatExclude: 20 })],
+      });
+
+      const result = await repo.getCreditNotedQtyByInvoiceItem();
+      expect(result['inv-9::item-1']).toBe(5);
+    });
+
+    it('returns an empty object when no credit notes exist', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-10',
+        entityId: 'default',
+        invoiceNumber: 'INV-010',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-10', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+
+      const result = await repo.getCreditNotedQtyByInvoiceItem();
+      expect(result).toEqual({});
     });
   });
 });

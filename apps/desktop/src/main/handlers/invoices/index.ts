@@ -40,7 +40,9 @@ export function registerInvoicesHandlers(): void {
   ipcMain.handle(InvoicesIPC.GET_INVOICE_AUDIT, (_e, id: string) =>
     getRepos().invoices.getInvoiceAudit(id),
   );
-  ipcMain.handle(InvoicesIPC.GET_LAST_UNIT_PRICES, () => getRepos().invoices.getLastUnitPrices());
+  ipcMain.handle(InvoicesIPC.GET_LAST_UNIT_PRICES, (_e, asOfDate?: string) =>
+    getRepos().invoices.getLastUnitPrices(asOfDate),
+  );
   ipcMain.handle(InvoicesIPC.SAVE_CREDIT_NOTE, (_e, payload: ISaveCreditNotePayload) =>
     withSync(() => getRepos().invoices.saveCreditNote(payload)),
   );

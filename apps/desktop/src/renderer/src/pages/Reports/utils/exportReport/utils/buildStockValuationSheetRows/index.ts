@@ -2,7 +2,7 @@ import type { StockLevelRow } from '../../../../hooks/useStockLevelRows/types';
 import { grandTotalOf } from '../../../../hooks/useStockLevelRows/utils/grandTotalOf';
 import { roundTo } from '../roundTo';
 
-const HEADER = ['Item', 'Unit', 'Qty', 'Avg Cost', 'Total Value'];
+const HEADER = ['Item', 'Unit', 'Qty', 'Last Cost', 'Total Value'];
 
 function rowOf(row: StockLevelRow): (string | number)[] {
   return [

@@ -53,7 +53,7 @@ export interface IPCInvokeMap {
   };
   'invoices:get-invoice-audit': { args: [id: string]; return: IInvoiceAuditEntry[] };
   'invoices:get-last-unit-prices': {
-    args: [];
+    args: [asOfDate?: string];
     return: Record<string, { exclVat: number; inclVat: number }>;
   };
   'invoices:save-credit-note': { args: [payload: ISaveCreditNotePayload]; return: void };

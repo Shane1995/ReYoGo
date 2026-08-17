@@ -218,6 +218,35 @@ async function getCreditNotedQtyByItem(
   return result;
 }
 
+async function getCreditNotedQtyByInvoiceItem(
+  client: DbClient | TxClient,
+  entityId?: string,
+): Promise<Record<string, number>> {
+  const rows = await client
+    .select({
+      sourceInvoiceId: schema.invoices.sourceInvoiceId,
+      inventoryItemId: schema.invoiceLineItems.inventoryItemId,
+      qty: schema.invoiceLineItems.qty,
+    })
+    .from(schema.invoiceLineItems)
+    .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
+    .where(
+      entityId
+        ? and(
+            eq(schema.invoices.status, InvoiceStatus.CreditNote),
+            eq(schema.invoices.entityId, entityId),
+          )
+        : eq(schema.invoices.status, InvoiceStatus.CreditNote),
+    );
+  const result: Record<string, number> = {};
+  for (const row of rows) {
+    if (!row.sourceInvoiceId) continue;
+    const key = `${row.sourceInvoiceId}::${row.inventoryItemId}`;
+    result[key] = (result[key] ?? 0) + row.qty;
+  }
+  return result;
+}
+
 async function saveInvoice(db: DbClient, payload: ISaveCapturedInvoicePayload): Promise<void> {
   const createdAt = now();
   const { totalExclTax, taxAmount } = computeTax(payload.lines, payload.vatRate);
@@ -477,7 +506,18 @@ async function getLinesForAnalysis(
 
 async function getLastUnitPrices(
   db: DbClient,
+  asOfDate?: string,
 ): Promise<Record<string, { exclVat: number; inclVat: number }>> {
+  const conditions = [
+    gt(schema.invoiceLineItems.qty, 0),
+    eq(schema.invoices.status, InvoiceStatus.Posted),
+  ];
+  if (asOfDate) {
+    const cutoffSeconds = Math.floor(new Date(asOfDate + 'T23:59:59').getTime() / 1000);
+    conditions.push(
+      sql`COALESCE(${schema.invoices.invoiceDate}, ${schema.invoices.createdAt}) <= ${cutoffSeconds}`,
+    );
+  }
   const rows = await db
     .select({
       inventoryItemId: schema.invoiceLineItems.inventoryItemId,
@@ -488,9 +528,7 @@ async function getLastUnitPrices(
     })
     .from(schema.invoiceLineItems)
     .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
-    .where(
-      and(gt(schema.invoiceLineItems.qty, 0), eq(schema.invoices.status, InvoiceStatus.Posted)),
-    )
+    .where(and(...conditions))
     .orderBy(desc(sql`COALESCE(${schema.invoices.invoiceDate}, ${schema.invoices.createdAt})`));
   const result: Record<string, { exclVat: number; inclVat: number }> = {};
   for (const row of rows) {
@@ -795,12 +833,14 @@ export function createInvoicesRepo(db: DbClient) {
     getInvoicesWithLines: () => getInvoicesWithLines(db),
     getInvoiceById: (id: string) => getInvoiceById(db, id),
     getLinesForAnalysis: (entityId?: string) => getLinesForAnalysis(db, entityId),
-    getLastUnitPrices: () => getLastUnitPrices(db),
+    getLastUnitPrices: (asOfDate?: string) => getLastUnitPrices(db, asOfDate),
     getInvoiceAudit: (id: string) => getInvoiceAudit(db, id),
     saveAndPostInvoice: (payload: ISaveCapturedInvoicePayload) => saveAndPostInvoice(db, payload),
     postInvoice: (id: string) => postInvoice(db, id),
     saveCreditNote: (payload: ISaveCreditNotePayload) => saveCreditNote(db, payload),
     getCreditNotesForInvoice: (sourceInvoiceId: string) =>
       getCreditNotesForInvoice(db, sourceInvoiceId),
+    getCreditNotedQtyByInvoiceItem: (entityId?: string) =>
+      getCreditNotedQtyByInvoiceItem(db, entityId),
   };
 }
