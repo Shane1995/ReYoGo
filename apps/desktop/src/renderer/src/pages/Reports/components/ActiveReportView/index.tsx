@@ -3,6 +3,8 @@ import { ItemCostHistoryView } from '../ItemCostHistoryView';
 import { PeriodSummaryView } from '../PeriodSummaryView';
 import { StockValuationView } from '../StockValuationView';
 import { StockOnHandView } from '../StockOnHandView';
+import { PurchaseReportView } from '../PurchaseReportView';
+import { CreditReportView } from '../CreditReportView';
 import type { ActiveReportViewProps } from './types';
 
 export function ActiveReportView({
@@ -17,6 +19,8 @@ export function ActiveReportView({
   onPeriodSummaryCogsChange,
   onStockValuationRowsChange,
   onStockOnHandRowsChange,
+  onPurchaseReportRowsChange,
+  onCreditReportRowsChange,
   onAvailableCategoriesChange,
   onAvailableTypesChange,
 }: ActiveReportViewProps) {
@@ -61,13 +65,41 @@ export function ActiveReportView({
       />
     );
   }
+  if (activeView === ReportView.StockOnHand) {
+    return (
+      <StockOnHandView
+        entityId={entityId}
+        asOfDate={asOfDate}
+        selectedCategories={selectedCategories}
+        selectedType={selectedType}
+        onRowsChange={onStockOnHandRowsChange}
+        onAvailableCategoriesChange={onAvailableCategoriesChange}
+        onAvailableTypesChange={onAvailableTypesChange}
+      />
+    );
+  }
+  if (activeView === ReportView.PurchaseReport) {
+    return (
+      <PurchaseReportView
+        fromDate={fromDate}
+        toDate={toDate}
+        entityId={entityId}
+        selectedCategories={selectedCategories}
+        selectedType={selectedType}
+        onRowsChange={onPurchaseReportRowsChange}
+        onAvailableCategoriesChange={onAvailableCategoriesChange}
+        onAvailableTypesChange={onAvailableTypesChange}
+      />
+    );
+  }
   return (
-    <StockOnHandView
+    <CreditReportView
+      fromDate={fromDate}
+      toDate={toDate}
       entityId={entityId}
-      asOfDate={asOfDate}
       selectedCategories={selectedCategories}
       selectedType={selectedType}
-      onRowsChange={onStockOnHandRowsChange}
+      onRowsChange={onCreditReportRowsChange}
       onAvailableCategoriesChange={onAvailableCategoriesChange}
       onAvailableTypesChange={onAvailableTypesChange}
     />

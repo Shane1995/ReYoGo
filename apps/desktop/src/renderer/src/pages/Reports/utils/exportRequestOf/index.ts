@@ -31,5 +31,21 @@ export function exportRequestOf(state: ExportState): ExportRequest | null {
       asOfDate: state.asOfDate,
     };
   }
-  return { view: ReportView.StockOnHand, rows: state.stockOnHandRows, asOfDate: state.asOfDate };
+  if (state.activeView === ReportView.StockOnHand) {
+    return { view: ReportView.StockOnHand, rows: state.stockOnHandRows, asOfDate: state.asOfDate };
+  }
+  if (state.activeView === ReportView.PurchaseReport) {
+    return {
+      view: ReportView.PurchaseReport,
+      rows: state.purchaseReportRows,
+      fromDate: state.fromDate,
+      toDate: state.toDate,
+    };
+  }
+  return {
+    view: ReportView.CreditReport,
+    rows: state.creditReportRows,
+    fromDate: state.fromDate,
+    toDate: state.toDate,
+  };
 }

@@ -247,6 +247,66 @@ async function getCreditNotedQtyByInvoiceItem(
   return result;
 }
 
+type ItemTotal = { qty: number; totalValue: number };
+
+async function getItemTotals(
+  db: DbClient,
+  status: InvoiceStatus,
+  fromDate?: string,
+  toDate?: string,
+  entityId?: string,
+): Promise<Record<string, ItemTotal>> {
+  const conditions = [eq(schema.invoices.status, status)];
+  if (entityId) conditions.push(eq(schema.invoices.entityId, entityId));
+  const dateExpr = sql`COALESCE(${schema.invoices.invoiceDate}, ${schema.invoices.createdAt})`;
+  if (fromDate) {
+    const cutoff = Math.floor(new Date(fromDate + 'T00:00:00').getTime() / 1000);
+    conditions.push(sql`${dateExpr} >= ${cutoff}`);
+  }
+  if (toDate) {
+    const cutoff = Math.floor(new Date(toDate + 'T23:59:59').getTime() / 1000);
+    conditions.push(sql`${dateExpr} <= ${cutoff}`);
+  }
+
+  const rows = await db
+    .select({
+      inventoryItemId: schema.invoiceLineItems.inventoryItemId,
+      qty: schema.invoiceLineItems.qty,
+      totalCost: schema.invoiceLineItems.totalCost,
+    })
+    .from(schema.invoiceLineItems)
+    .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
+    .where(and(...conditions));
+
+  const result: Record<string, ItemTotal> = {};
+  for (const row of rows) {
+    const existing = result[row.inventoryItemId] ?? { qty: 0, totalValue: 0 };
+    result[row.inventoryItemId] = {
+      qty: existing.qty + row.qty,
+      totalValue: existing.totalValue + row.totalCost,
+    };
+  }
+  return result;
+}
+
+async function getPurchaseTotalsByItem(
+  db: DbClient,
+  fromDate?: string,
+  toDate?: string,
+  entityId?: string,
+): Promise<Record<string, ItemTotal>> {
+  return getItemTotals(db, InvoiceStatus.Posted, fromDate, toDate, entityId);
+}
+
+async function getCreditTotalsByItem(
+  db: DbClient,
+  fromDate?: string,
+  toDate?: string,
+  entityId?: string,
+): Promise<Record<string, ItemTotal>> {
+  return getItemTotals(db, InvoiceStatus.CreditNote, fromDate, toDate, entityId);
+}
+
 async function saveInvoice(db: DbClient, payload: ISaveCapturedInvoicePayload): Promise<void> {
   const createdAt = now();
   const { totalExclTax, taxAmount } = computeTax(payload.lines, payload.vatRate);
@@ -842,5 +902,9 @@ export function createInvoicesRepo(db: DbClient) {
       getCreditNotesForInvoice(db, sourceInvoiceId),
     getCreditNotedQtyByInvoiceItem: (entityId?: string) =>
       getCreditNotedQtyByInvoiceItem(db, entityId),
+    getPurchaseTotalsByItem: (fromDate?: string, toDate?: string, entityId?: string) =>
+      getPurchaseTotalsByItem(db, fromDate, toDate, entityId),
+    getCreditTotalsByItem: (fromDate?: string, toDate?: string, entityId?: string) =>
+      getCreditTotalsByItem(db, fromDate, toDate, entityId),
   };
 }

@@ -2,6 +2,7 @@ import type { COGSSummary } from '@reyogo/types';
 import type { ReportView } from '../../types';
 import type { ItemCostHistoryRow } from '../../components/ItemCostHistoryView/types';
 import type { StockLevelRow } from '../../hooks/useStockLevelRows/types';
+import type { ItemTotalRow } from '../itemTotalRowsOf/types';
 
 export type ExportState = {
   activeView: ReportView;
@@ -12,4 +13,6 @@ export type ExportState = {
   periodSummaryCogs: COGSSummary | null;
   stockValuationRows: StockLevelRow[];
   stockOnHandRows: StockLevelRow[];
+  purchaseReportRows: ItemTotalRow[];
+  creditReportRows: ItemTotalRow[];
 };

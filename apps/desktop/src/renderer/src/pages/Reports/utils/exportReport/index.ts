@@ -6,6 +6,8 @@ import { buildItemCostHistorySheetRows } from './utils/buildItemCostHistorySheet
 import { buildPeriodSummarySheetRows } from './utils/buildPeriodSummarySheetRows';
 import { buildStockValuationSheetRows } from './utils/buildStockValuationSheetRows';
 import { buildStockOnHandSheetRows } from './utils/buildStockOnHandSheetRows';
+import { buildPurchaseReportSheetRows } from './utils/buildPurchaseReportSheetRows';
+import { buildCreditReportSheetRows } from './utils/buildCreditReportSheetRows';
 import { columnWidthsOf } from './utils/columnWidthsOf';
 import { ReportView } from '../../types';
 import type { ExportRequest } from '../../types';
@@ -20,7 +22,13 @@ function sheetRowsOf(request: ExportRequest): (string | number)[][] {
   if (request.view === ReportView.StockValuation) {
     return buildStockValuationSheetRows(request.rows);
   }
-  return buildStockOnHandSheetRows(request.rows);
+  if (request.view === ReportView.StockOnHand) {
+    return buildStockOnHandSheetRows(request.rows);
+  }
+  if (request.view === ReportView.PurchaseReport) {
+    return buildPurchaseReportSheetRows(request.rows);
+  }
+  return buildCreditReportSheetRows(request.rows);
 }
 
 function datesOf(request: ExportRequest): { fromDate: string; toDate: string } {

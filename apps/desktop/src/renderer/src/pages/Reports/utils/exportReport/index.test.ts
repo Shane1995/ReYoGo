@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import { ShellIPC } from '@shared/types/ipc';
 import type { ItemCostHistoryRow } from '../../components/ItemCostHistoryView/types';
 import type { StockLevelRow } from '../../hooks/useStockLevelRows/types';
+import type { ItemTotalRow } from '../itemTotalRowsOf/types';
 import { ReportView } from '../../types';
 import { exportReport } from '.';
 
@@ -116,5 +117,49 @@ describe('exportReport', () => {
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
     expect(rows[0]).toEqual(['As of: Live']);
     expect(rows[3]).toEqual(['Milk', 'Dairy', 'L', 10, 2, 20]);
+  });
+
+  const totalRow: ItemTotalRow = {
+    itemId: 'item-1',
+    itemName: 'Milk',
+    categoryName: 'Dairy',
+    categoryType: 'food',
+    uom: 'L',
+    qty: 10,
+    totalValue: 40,
+  };
+
+  it('builds a Purchase Report workbook matching the visible totals and saves it', async () => {
+    await exportReport({
+      view: ReportView.PurchaseReport,
+      rows: [totalRow],
+      fromDate: '2026-01-01',
+      toDate: '2026-01-31',
+    });
+
+    expect(mockInvoke).toHaveBeenCalledTimes(1);
+    const [channel, payload] = mockInvoke.mock.calls[0]!;
+    expect(channel).toBe(ShellIPC.SAVE_FILE_BASE64);
+    expect(payload.filename).toBe('reyogo-purchase-report-2026-01-01-to-2026-01-31.xlsx');
+
+    const wb = XLSX.read(payload.base64, { type: 'base64' });
+    const sheet = wb.Sheets[wb.SheetNames[0]!]!;
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    expect(rows[3]).toEqual(['Dairy']);
+    expect(rows[4]).toEqual(['Milk', 'L', 10, 40]);
+  });
+
+  it('builds a Credit Report workbook matching the visible totals and saves it', async () => {
+    await exportReport({
+      view: ReportView.CreditReport,
+      rows: [totalRow],
+      fromDate: '2026-01-01',
+      toDate: '2026-01-31',
+    });
+
+    expect(mockInvoke).toHaveBeenCalledTimes(1);
+    const [channel, payload] = mockInvoke.mock.calls[0]!;
+    expect(channel).toBe(ShellIPC.SAVE_FILE_BASE64);
+    expect(payload.filename).toBe('reyogo-credit-report-2026-01-01-to-2026-01-31.xlsx');
   });
 });

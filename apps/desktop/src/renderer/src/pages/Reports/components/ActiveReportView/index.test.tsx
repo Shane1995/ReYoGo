@@ -15,6 +15,12 @@ vi.mock('../StockValuationView', () => ({
 vi.mock('../StockOnHandView', () => ({
   StockOnHandView: () => <div>StockOnHandView</div>,
 }));
+vi.mock('../PurchaseReportView', () => ({
+  PurchaseReportView: () => <div>PurchaseReportView</div>,
+}));
+vi.mock('../CreditReportView', () => ({
+  CreditReportView: () => <div>CreditReportView</div>,
+}));
 
 const noop = () => {};
 const baseProps = {
@@ -28,6 +34,8 @@ const baseProps = {
   onPeriodSummaryCogsChange: noop,
   onStockValuationRowsChange: noop,
   onStockOnHandRowsChange: noop,
+  onPurchaseReportRowsChange: noop,
+  onCreditReportRowsChange: noop,
   onAvailableCategoriesChange: noop,
   onAvailableTypesChange: noop,
 };
@@ -51,5 +59,15 @@ describe('ActiveReportView', () => {
   it('renders StockOnHandView for the stock-on-hand view', () => {
     render(<ActiveReportView {...baseProps} activeView={ReportView.StockOnHand} />);
     expect(screen.getByText('StockOnHandView')).toBeInTheDocument();
+  });
+
+  it('renders PurchaseReportView for the purchase-report view', () => {
+    render(<ActiveReportView {...baseProps} activeView={ReportView.PurchaseReport} />);
+    expect(screen.getByText('PurchaseReportView')).toBeInTheDocument();
+  });
+
+  it('renders CreditReportView for the credit-report view', () => {
+    render(<ActiveReportView {...baseProps} activeView={ReportView.CreditReport} />);
+    expect(screen.getByText('CreditReportView')).toBeInTheDocument();
   });
 });

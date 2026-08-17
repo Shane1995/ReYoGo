@@ -824,4 +824,105 @@ describe('createInvoicesRepo', () => {
       expect(result).toEqual({});
     });
   });
+
+  describe('getPurchaseTotalsByItem', () => {
+    it('sums qty and total value across posted invoices for each item', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-11',
+        entityId: 'default',
+        invoiceNumber: 'INV-011',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-11a', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+      await repo.saveAndPostInvoice({
+        id: 'inv-12',
+        entityId: 'default',
+        invoiceNumber: 'INV-012',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-12a', itemId: 'item-1', quantity: 5, totalVatExclude: 50 })],
+      });
+
+      const result = await repo.getPurchaseTotalsByItem();
+      expect(result['item-1']).toEqual({ qty: 15, totalValue: 150 });
+    });
+
+    it('excludes draft invoices', async () => {
+      await repo.saveInvoice({
+        id: 'inv-13',
+        entityId: 'default',
+        invoiceNumber: 'INV-013',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-13a', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+
+      const result = await repo.getPurchaseTotalsByItem();
+      expect(result['item-1']).toBeUndefined();
+    });
+
+    it('filters by date range', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-14',
+        entityId: 'default',
+        invoiceNumber: 'INV-014',
+        invoiceDate: new Date('2026-01-01'),
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-14a', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+      await repo.saveAndPostInvoice({
+        id: 'inv-15',
+        entityId: 'default',
+        invoiceNumber: 'INV-015',
+        invoiceDate: new Date('2026-06-01'),
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-15a', itemId: 'item-1', quantity: 5, totalVatExclude: 50 })],
+      });
+
+      const result = await repo.getPurchaseTotalsByItem('2026-01-01', '2026-03-01');
+      expect(result['item-1']).toEqual({ qty: 10, totalValue: 100 });
+    });
+  });
+
+  describe('getCreditTotalsByItem', () => {
+    it('sums qty and total value across credit notes for each item', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-16',
+        entityId: 'default',
+        invoiceNumber: 'INV-016',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-16a', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+      await repo.saveCreditNote({
+        id: 'cn-16',
+        sourceInvoiceId: 'inv-16',
+        entityId: 'default',
+        invoiceNumber: 'CN-INV-016',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'cn-line-16', itemId: 'item-1', quantity: 3, totalVatExclude: 30 })],
+      });
+
+      const result = await repo.getCreditTotalsByItem();
+      expect(result['item-1']).toEqual({ qty: 3, totalValue: 30 });
+    });
+
+    it('excludes posted (non-credit) invoices', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-17',
+        entityId: 'default',
+        invoiceNumber: 'INV-017',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-17a', itemId: 'item-2', quantity: 10, totalVatExclude: 100 })],
+      });
+
+      const result = await repo.getCreditTotalsByItem();
+      expect(result['item-2']).toBeUndefined();
+    });
+  });
 });

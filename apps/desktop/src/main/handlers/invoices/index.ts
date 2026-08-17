@@ -52,4 +52,14 @@ export function registerInvoicesHandlers(): void {
   ipcMain.handle(InvoicesIPC.GET_CREDITED_QTY_BY_INVOICE_ITEM, (_e, entityId?: string) =>
     getRepos().invoices.getCreditNotedQtyByInvoiceItem(entityId),
   );
+  ipcMain.handle(
+    InvoicesIPC.GET_PURCHASE_TOTALS_BY_ITEM,
+    (_e, fromDate?: string, toDate?: string, entityId?: string) =>
+      getRepos().invoices.getPurchaseTotalsByItem(fromDate, toDate, entityId),
+  );
+  ipcMain.handle(
+    InvoicesIPC.GET_CREDIT_TOTALS_BY_ITEM,
+    (_e, fromDate?: string, toDate?: string, entityId?: string) =>
+      getRepos().invoices.getCreditTotalsByItem(fromDate, toDate, entityId),
+  );
 }

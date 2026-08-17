@@ -139,6 +139,14 @@ export interface IPCInvokeMap {
     args: [entityId?: string];
     return: Record<string, number>;
   };
+  'invoices:get-purchase-totals-by-item': {
+    args: [fromDate?: string, toDate?: string, entityId?: string];
+    return: Record<string, { qty: number; totalValue: number }>;
+  };
+  'invoices:get-credit-totals-by-item': {
+    args: [fromDate?: string, toDate?: string, entityId?: string];
+    return: Record<string, { qty: number; totalValue: number }>;
+  };
   'stocktake:create-session': { args: [label?: string]; return: IStocktakeSession };
   'stocktake:get-sessions': { args: []; return: IStocktakeSession[] };
   'stocktake:get-session': { args: [id: string]; return: IStocktakeSessionWithLines | null };
