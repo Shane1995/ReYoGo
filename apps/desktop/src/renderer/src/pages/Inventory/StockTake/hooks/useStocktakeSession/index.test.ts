@@ -35,6 +35,29 @@ describe('useStocktakeSession', () => {
     expect(result.current.sessions).toHaveLength(1);
   });
 
+  it('auto-selects the most recent session when sessions exist on mount', async () => {
+    vi.mocked(stocktakeService.getSession).mockResolvedValue({
+      id: 's1',
+      accountId: 'default',
+      label: 'Week 1',
+      status: 'open',
+      completedAt: null,
+      createdAt: new Date(),
+      lines: [],
+    });
+    const { result } = renderHook(() => useStocktakeSession());
+    await waitFor(() => expect(result.current.currentSession?.id).toBe('s1'));
+    expect(stocktakeService.getSession).toHaveBeenCalledWith('s1');
+  });
+
+  it('does not auto-select when there are no sessions', async () => {
+    vi.mocked(stocktakeService.getSessions).mockResolvedValue([]);
+    const { result } = renderHook(() => useStocktakeSession());
+    await waitFor(() => expect(result.current.loadingSessions).toBe(false));
+    expect(result.current.currentSession).toBeNull();
+    expect(stocktakeService.getSession).not.toHaveBeenCalled();
+  });
+
   it('creates a session and selects it as current', async () => {
     vi.mocked(stocktakeService.createSession).mockResolvedValue({
       id: 's2',
@@ -121,6 +144,7 @@ describe('useStocktakeSession', () => {
   });
 
   it('does nothing when saving a draft with no current session selected', async () => {
+    vi.mocked(stocktakeService.getSessions).mockResolvedValue([]);
     const { result } = renderHook(() => useStocktakeSession());
     await waitFor(() => expect(result.current.loadingSessions).toBe(false));
 

@@ -74,4 +74,28 @@ describe('SessionPicker', () => {
     fireEvent.click(screen.getByRole('button', { name: /New Stock Sheet/i }));
     expect(onCreate).toHaveBeenCalled();
   });
+
+  it('shows a status badge for the currently selected session', () => {
+    render(
+      <SessionPicker
+        sessions={sessions}
+        currentSessionId="s2"
+        onSelect={vi.fn()}
+        onCreate={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Completed')).toBeDefined();
+  });
+
+  it('shows an open badge for an in-progress session', () => {
+    render(
+      <SessionPicker
+        sessions={sessions}
+        currentSessionId="s1"
+        onSelect={vi.fn()}
+        onCreate={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Open')).toBeDefined();
+  });
 });

@@ -16,6 +16,15 @@ export function useStocktakeSession() {
   const [saving, setSaving] = useState(false);
   const [completing, setCompleting] = useState(false);
 
+  const selectSession = useCallback(async (id: string) => {
+    setLoadingSession(true);
+    try {
+      setCurrentSession(await stocktakeService.getSession(id));
+    } finally {
+      setLoadingSession(false);
+    }
+  }, []);
+
   const loadSessions = useCallback(async () => {
     setLoadingSessions(true);
     try {
@@ -29,14 +38,10 @@ export function useStocktakeSession() {
     loadSessions();
   }, [loadSessions]);
 
-  const selectSession = useCallback(async (id: string) => {
-    setLoadingSession(true);
-    try {
-      setCurrentSession(await stocktakeService.getSession(id));
-    } finally {
-      setLoadingSession(false);
-    }
-  }, []);
+  useEffect(() => {
+    if (loadingSessions || currentSession || sessions.length === 0) return;
+    selectSession(sessions[0]!.id);
+  }, [loadingSessions, currentSession, sessions, selectSession]);
 
   const createSession = useCallback(
     async (label?: string) => {

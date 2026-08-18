@@ -2,14 +2,37 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CountSheetRowInput } from '.';
 
-const row = { itemId: 'item-1', itemName: 'Milk', uom: 'L', lastCost: 4.5, countedQty: null };
+const row = {
+  itemId: 'item-1',
+  itemName: 'Milk',
+  uom: 'L',
+  lastCost: 4.5,
+  countedQty: null,
+  lineValue: null,
+};
 
 describe('CountSheetRowInput', () => {
   it('shows the item name, unit, and last cost', () => {
     render(<CountSheetRowInput row={row} readOnly={false} onQtyChange={vi.fn()} />);
     expect(screen.getByText('Milk')).toBeDefined();
     expect(screen.getByText('L')).toBeDefined();
-    expect(screen.getByText('4.5')).toBeDefined();
+    expect(screen.getByText('R 4,50')).toBeDefined();
+  });
+
+  it('shows the counted line value once a quantity is captured', () => {
+    render(
+      <CountSheetRowInput
+        row={{ ...row, countedQty: 3, lineValue: 13.5 }}
+        readOnly={false}
+        onQtyChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('R 13,50')).toBeDefined();
+  });
+
+  it('shows a placeholder for line value until the item is counted', () => {
+    render(<CountSheetRowInput row={row} readOnly={false} onQtyChange={vi.fn()} />);
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0);
   });
 
   it('calls onQtyChange with a parsed number when the qty input changes', () => {
@@ -45,6 +68,6 @@ describe('CountSheetRowInput', () => {
         onQtyChange={vi.fn()}
       />,
     );
-    expect(screen.getByText('—')).toBeDefined();
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0);
   });
 });

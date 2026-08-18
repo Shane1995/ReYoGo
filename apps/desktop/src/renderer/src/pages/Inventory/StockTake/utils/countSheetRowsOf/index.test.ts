@@ -41,4 +41,16 @@ describe('countSheetRowsOf', () => {
     expect(milk.countedQty).toBeNull();
     expect(milk.lastCost).toBeNull();
   });
+
+  it('computes lineValue as countedQty times lastCost when both are known', () => {
+    const buckets = countSheetRowsOf(items, categories, { 'item-1': 7 }, { 'item-1': 4.5 });
+    const milk = buckets.flatMap((b) => b.rows).find((r) => r.itemId === 'item-1')!;
+    expect(milk.lineValue).toBe(31.5);
+  });
+
+  it('leaves lineValue null when countedQty or lastCost is missing', () => {
+    const buckets = countSheetRowsOf(items, categories, {}, { 'item-1': 4.5 });
+    const milk = buckets.flatMap((b) => b.rows).find((r) => r.itemId === 'item-1')!;
+    expect(milk.lineValue).toBeNull();
+  });
 });

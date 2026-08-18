@@ -4,4 +4,5 @@ export type CountSheetRow = {
   uom?: string;
   lastCost: number | null;
   countedQty: number | null;
+  lineValue: number | null;
 };

@@ -10,17 +10,25 @@ function categoryNameOf(categoryId: string, categories: InventoryCategory[]): st
   return categories.find((category) => category.id === categoryId)?.name;
 }
 
+function lineValueOf(countedQty: number | null, lastCost: number | null): number | null {
+  if (countedQty === null || lastCost === null) return null;
+  return countedQty * lastCost;
+}
+
 function rowOf(
   item: InventoryItem,
   countedQtyByItem: Record<string, number>,
   lastCostByItem: Record<string, number>,
 ): CountSheetRow {
+  const lastCost = lastCostByItem[item.id] ?? null;
+  const countedQty = countedQtyByItem[item.id] ?? null;
   return {
     itemId: item.id,
     itemName: item.name,
     uom: item.unitOfMeasure,
-    lastCost: lastCostByItem[item.id] ?? null,
-    countedQty: countedQtyByItem[item.id] ?? null,
+    lastCost,
+    countedQty,
+    lineValue: lineValueOf(countedQty, lastCost),
   };
 }
 
