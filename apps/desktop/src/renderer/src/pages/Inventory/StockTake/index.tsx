@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, PageHeader, StatCard, cn } from '@reyogo/ui';
-import { ClipboardCheckIcon, LayersIcon, SearchIcon, WalletIcon } from 'lucide-react';
+import { PageHeader } from '@reyogo/ui';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
 import { invoiceService } from '@/services/invoice';
-import { formatZAR } from '@/utils/format';
 import { useStocktakeSession } from './hooks/useStocktakeSession';
 import { useCountEntries } from './hooks/useCountEntries';
 import { countSheetRowsOf } from './utils/countSheetRowsOf';
 import { filterBucketsByName } from './utils/filterBucketsByName';
 import { stockTakeSummaryOf } from './utils/stockTakeSummaryOf';
 import { SessionPicker } from './components/SessionPicker';
-import { CountSheetTable } from './components/CountSheetTable';
+import { ActiveSessionPanel } from './components/ActiveSessionPanel';
 import { CompleteCountDialog } from './components/CompleteCountDialog';
 
 export default function StockTakePage() {
@@ -52,55 +50,19 @@ export default function StockTakePage() {
             onCreate={() => session.createSession()}
           />
           {session.currentSession ? (
-            <>
-              <div className="grid grid-cols-3 gap-3">
-                <StatCard
-                  label="Items counted"
-                  value={`${summary.countedCount} / ${summary.totalCount}`}
-                  icon={ClipboardCheckIcon}
-                />
-                <StatCard label="Categories" value={summary.categoryCount} icon={LayersIcon} />
-                <StatCard
-                  label="Counted value"
-                  value={formatZAR(summary.totalValue)}
-                  icon={WalletIcon}
-                />
-              </div>
-              <div className="relative">
-                <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50 pointer-events-none" />
-                <input
-                  type="search"
-                  placeholder="Search items…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className={cn(
-                    'h-9 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm',
-                    'placeholder:text-muted-foreground/50',
-                  )}
-                />
-              </div>
-              <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-                <CountSheetTable
-                  buckets={visibleBuckets}
-                  readOnly={readOnly}
-                  onQtyChange={entries.setQty}
-                />
-              </div>
-              {!readOnly && (
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    disabled={session.saving}
-                    onClick={() => session.saveDraft(entries.lines)}
-                  >
-                    {session.saving ? 'Saving…' : 'Save Progress'}
-                  </Button>
-                  <Button disabled={session.completing} onClick={() => setConfirmingComplete(true)}>
-                    Complete Count
-                  </Button>
-                </div>
-              )}
-            </>
+            <ActiveSessionPanel
+              buckets={visibleBuckets}
+              readOnly={readOnly}
+              onQtyChange={entries.setQty}
+              summary={summary}
+              search={search}
+              onSearchChange={setSearch}
+              saving={session.saving}
+              completing={session.completing}
+              lines={entries.lines}
+              onSaveDraft={session.saveDraft}
+              onCompleteClick={() => setConfirmingComplete(true)}
+            />
           ) : (
             <div className="rounded-2xl border border-dashed border-border bg-card/50 px-6 py-10 text-center">
               <p className="text-sm font-medium text-foreground">

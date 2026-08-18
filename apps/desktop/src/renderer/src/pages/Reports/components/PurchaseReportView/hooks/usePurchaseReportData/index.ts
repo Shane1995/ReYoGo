@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
 import { invoiceService } from '@/services/invoice';
+import { useCancellableFetch } from '../../../../hooks/useCancellableFetch';
 import { itemTotalRowsOf } from '../../../../utils/itemTotalRowsOf';
 import type { ItemTotalRow } from '../../../../utils/itemTotalRowsOf/types';
 
@@ -11,26 +12,14 @@ export function usePurchaseReportData(
 ) {
   const { items, categories } = useInventory();
   const [rows, setRows] = useState<ItemTotalRow[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    invoiceService
-      .getPurchaseTotalsByItem(fromDate || undefined, toDate || undefined, entityId)
-      .then((totals) => {
-        if (!cancelled) setRows(itemTotalRowsOf(items, categories, totals));
-      })
-      .catch(() => {
-        if (!cancelled) setRows([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [items, categories, fromDate, toDate, entityId]);
+  const loading = useCancellableFetch(
+    () =>
+      invoiceService.getPurchaseTotalsByItem(fromDate || undefined, toDate || undefined, entityId),
+    (totals) => setRows(itemTotalRowsOf(items, categories, totals)),
+    () => setRows([]),
+    [items, categories, fromDate, toDate, entityId],
+  );
 
   return { loading, rows };
 }

@@ -12,6 +12,8 @@ import { columnWidthsOf } from './utils/columnWidthsOf';
 import { ReportView } from '../../types';
 import type { ExportRequest } from '../../types';
 
+// Discriminated-union dispatch over ReportView; a lookup table would need `as` casts per variant.
+// fallow-ignore-next-line complexity
 function sheetRowsOf(request: ExportRequest): (string | number)[][] {
   if (request.view === ReportView.ItemCostHistory) {
     return buildItemCostHistorySheetRows(request.rows);

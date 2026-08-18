@@ -7,6 +7,8 @@ import { PurchaseReportView } from '../PurchaseReportView';
 import { CreditReportView } from '../CreditReportView';
 import type { ActiveReportViewProps } from './types';
 
+// View-switch rendering one of 6 report components, each with a distinct prop shape.
+// fallow-ignore-next-line complexity
 export function ActiveReportView({
   activeView,
   fromDate,

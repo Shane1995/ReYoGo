@@ -1,22 +1,14 @@
-import { useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@reyogo/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@reyogo/ui';
 import { formatZAR } from '@/utils/format';
-import { toggleSetMember } from '@/pages/Inventory/Analysis/utils/toggleSetMember';
+import { useCollapsedCategories } from '../../hooks/useCollapsedCategories';
 import { groupByCategory } from '../../utils/groupByCategory';
 import { grandItemTotalOf } from '../../utils/grandItemTotalOf';
 import { CategoryGroup } from '../CategoryGroup';
+import { GrandTotalFooter } from '../GrandTotalFooter';
 import type { ItemTotalsTableProps } from './types';
 
 export function ItemTotalsTable({ rows, grandTotal, emptyMessage }: ItemTotalsTableProps) {
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const { isExpanded, toggleCategory } = useCollapsedCategories();
 
   if (rows.length === 0) {
     return (
@@ -26,8 +18,6 @@ export function ItemTotalsTable({ rows, grandTotal, emptyMessage }: ItemTotalsTa
     );
   }
 
-  const toggleCategory = (category: string) =>
-    setCollapsedCategories((prev) => toggleSetMember(prev, category));
   const buckets = groupByCategory(rows, (row) => row.categoryName);
 
   return (
@@ -38,7 +28,7 @@ export function ItemTotalsTable({ rows, grandTotal, emptyMessage }: ItemTotalsTa
           category={bucket.category}
           count={bucket.rows.length}
           summary={formatZAR(grandItemTotalOf(bucket.rows))}
-          isExpanded={!collapsedCategories.has(bucket.category)}
+          isExpanded={isExpanded(bucket.category)}
           onToggle={toggleCategory}
         >
           <Table>
@@ -67,20 +57,7 @@ export function ItemTotalsTable({ rows, grandTotal, emptyMessage }: ItemTotalsTa
           </Table>
         </CategoryGroup>
       ))}
-      <div className="rounded-lg border border-[var(--nav-border)] overflow-hidden">
-        <Table>
-          <TableFooter>
-            <TableRow className="bg-muted/20 hover:bg-muted/20">
-              <TableCell colSpan={3} className="text-right font-semibold">
-                Grand Total
-              </TableCell>
-              <TableCell className="text-right font-mono tabular-nums font-semibold">
-                {formatZAR(grandTotal)}
-              </TableCell>
-            </TableRow>
-          </TableFooter>
-        </Table>
-      </div>
+      <GrandTotalFooter colSpan={3} total={grandTotal} />
     </div>
   );
 }

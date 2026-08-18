@@ -2,6 +2,26 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { IStocktakeSessionWithLines } from '@reyogo/types';
 import type { CountEntry } from './types';
 
+function removeEntry(prev: Record<string, CountEntry>, itemId: string): Record<string, CountEntry> {
+  const next = { ...prev };
+  delete next[itemId];
+  return next;
+}
+
+function upsertEntry(
+  prev: Record<string, CountEntry>,
+  itemId: string,
+  qty: number,
+): Record<string, CountEntry> {
+  const existing = prev[itemId];
+  const id = existing ? existing.id : crypto.randomUUID();
+  const notes = existing ? existing.notes : undefined;
+  return {
+    ...prev,
+    [itemId]: { id, inventoryItemId: itemId, countedQty: qty, notes },
+  };
+}
+
 function entriesFromSession(
   session: IStocktakeSessionWithLines | null,
 ): Record<string, CountEntry> {
@@ -28,23 +48,9 @@ export function useCountEntries(session: IStocktakeSessionWithLines | null) {
   }, [session]);
 
   const setQty = useCallback((itemId: string, qty: number | null) => {
-    setEntries((prev) => {
-      if (qty === null) {
-        const next = { ...prev };
-        delete next[itemId];
-        return next;
-      }
-      const existing = prev[itemId];
-      return {
-        ...prev,
-        [itemId]: {
-          id: existing?.id ?? crypto.randomUUID(),
-          inventoryItemId: itemId,
-          countedQty: qty,
-          notes: existing?.notes,
-        },
-      };
-    });
+    setEntries((prev) =>
+      qty === null ? removeEntry(prev, itemId) : upsertEntry(prev, itemId, qty),
+    );
   }, []);
 
   const countedQtyByItem = useMemo(

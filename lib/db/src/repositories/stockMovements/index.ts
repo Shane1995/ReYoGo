@@ -236,17 +236,18 @@ async function getMovementsForItem(
   return rows.map((r) => toStockMovement(r));
 }
 
+function isInvoiceReferenceType(referenceType: StockMovement['referenceType']): boolean {
+  return referenceType === ReferenceType.Invoice || referenceType === ReferenceType.CreditNote;
+}
+
 function referenceLabelOf(
   movement: StockMovement,
   invoiceNumberById: Record<string, string>,
 ): string | null {
-  const isInvoiceReference =
-    movement.referenceType === ReferenceType.Invoice ||
-    movement.referenceType === ReferenceType.CreditNote;
-  if (isInvoiceReference && movement.referenceId) {
-    return invoiceNumberById[movement.referenceId] ?? null;
+  if (!movement.referenceId || !isInvoiceReferenceType(movement.referenceType)) {
+    return movement.notes;
   }
-  return movement.notes;
+  return invoiceNumberById[movement.referenceId] ?? null;
 }
 
 async function getMovementsForItemWithLabels(

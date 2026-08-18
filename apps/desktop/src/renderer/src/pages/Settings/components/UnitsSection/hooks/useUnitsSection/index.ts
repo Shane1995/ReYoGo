@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import type { UnitOfMeasure } from '@reyogo/types';
 import { setupService } from '@/services/setup';
 import { ipcErrorMessage } from '@/utils/ipcErrorMessage';
-import { isDuplicateUnitName } from '../../utils/isDuplicateUnitName';
+import { checkUnitName } from './utils/checkUnitName';
 import type { UnitWithUsage } from '../../types';
 
 async function withUsageCounts(units: UnitOfMeasure[]): Promise<UnitWithUsage[]> {
@@ -46,14 +46,10 @@ export function useUnitsSection() {
   const allUnits = useCallback(() => [...units, ...archivedUnits], [units, archivedUnits]);
 
   const handleAdd = useCallback(async () => {
-    const name = addName.trim();
-    if (!name) return;
-    if (isDuplicateUnitName(allUnits(), name)) {
-      toast.error(`A unit named "${name}" already exists`);
-      return;
-    }
+    const check = checkUnitName(allUnits(), addName);
+    if (!check.ok) return;
     try {
-      await setupService.upsertUnit({ id: crypto.randomUUID(), name });
+      await setupService.upsertUnit({ id: crypto.randomUUID(), name: check.name });
       setAddName('');
       toast.success('Unit added');
       await loadUnits();
@@ -64,14 +60,10 @@ export function useUnitsSection() {
 
   const handleRename = useCallback(
     async (id: string, name: string) => {
-      const trimmed = name.trim();
-      if (!trimmed) return;
-      if (isDuplicateUnitName(allUnits(), trimmed, id)) {
-        toast.error(`A unit named "${trimmed}" already exists`);
-        return;
-      }
+      const check = checkUnitName(allUnits(), name, id);
+      if (!check.ok) return;
       try {
-        await setupService.upsertUnit({ id, name: trimmed });
+        await setupService.upsertUnit({ id, name: check.name });
         toast.success('Unit renamed');
         await loadUnits();
         if (showArchived) await loadArchivedUnits();

@@ -1,5 +1,6 @@
 import { Button, Badge } from '@reyogo/ui';
 import { sessionOptionLabelOf } from './utils/sessionOptionLabelOf';
+import { statusBadgeProps } from './utils/statusBadgeProps';
 import type { SessionPickerProps } from './types';
 
 export function SessionPicker({
@@ -9,6 +10,7 @@ export function SessionPicker({
   onCreate,
 }: SessionPickerProps) {
   const currentSession = sessions.find((session) => session.id === currentSessionId);
+  const badge = currentSession ? statusBadgeProps(currentSession.status) : null;
 
   return (
     <div className="flex items-center gap-2">
@@ -27,11 +29,7 @@ export function SessionPicker({
           </option>
         ))}
       </select>
-      {currentSession && (
-        <Badge variant={currentSession.status === 'complete' ? 'secondary' : 'outline'}>
-          {currentSession.status === 'complete' ? 'Completed' : 'Open'}
-        </Badge>
-      )}
+      {badge && <Badge variant={badge.variant}>{badge.label}</Badge>}
       <Button size="sm" variant="outline" className="ml-auto" onClick={onCreate}>
         New Stock Sheet
       </Button>

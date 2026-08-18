@@ -12,6 +12,8 @@ function periodSummaryRequestOf(
   return { view: ReportView.PeriodSummary, cogs, fromDate, toDate };
 }
 
+// Discriminated-union dispatch over ReportView; a lookup table would need `as` casts per variant.
+// fallow-ignore-next-line complexity
 export function exportRequestOf(state: ExportState): ExportRequest | null {
   if (state.activeView === ReportView.ItemCostHistory) {
     return {

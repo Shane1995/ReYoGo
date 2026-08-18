@@ -20,6 +20,15 @@ function dateOrNull(value: string): Date | null {
   return new Date(value);
 }
 
+function saveInvoiceDate(isPosted: boolean, invoiceDate: string): Date | null | undefined {
+  if (!isPosted) return undefined;
+  return dateOrNull(invoiceDate);
+}
+
+function errorMessageOf(e: unknown): string {
+  return e instanceof Error ? e.message : 'Failed to save';
+}
+
 function categoryNameOf(category: { name: string } | undefined): string {
   if (!category) return '';
   return category.name;
@@ -197,9 +206,9 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
     setSaving(true);
     setError(null);
     try {
-      await onSave(validLines, note, isPosted ? dateOrNull(invoiceDate) : undefined);
+      await onSave(validLines, note, saveInvoiceDate(isPosted, invoiceDate));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save');
+      setError(errorMessageOf(e));
       setSaving(false);
     }
   };
