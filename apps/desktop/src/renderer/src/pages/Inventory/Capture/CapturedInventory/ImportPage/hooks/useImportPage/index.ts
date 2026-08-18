@@ -1,13 +1,16 @@
 import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useEntities } from '@/Context/EntityContext';
 import { parseFile } from '@/components/CsvImport/parser';
 import { enrichParseResult } from '@/components/CsvImport/review';
 import type { ReviewResult } from '@/components/CsvImport/review';
 import { StockRoutes } from '@/components/AppRoutes/routePaths';
+import { ipcErrorMessage } from '@/utils/ipcErrorMessage';
 import { useInventory } from '../../../Context/InventoryContext';
 import { loadExistingInventory, commitReview } from '../../importActions';
 import { getSelectedFile } from '../../utils/getSelectedFile';
+import { importSummaryOf } from '../../utils/importSummaryOf';
 import { FILE_READ_ERROR, SAVE_ERROR, LOADING_LABEL } from '../../constants';
 import type { PageState } from '../../types';
 
@@ -44,9 +47,10 @@ export function useImportPage() {
       setState({ phase: 'loading', label: LOADING_LABEL.SavingToDatabase });
       try {
         await commitReview(review, existingCats, selectedEntityId, addCategory, addItem);
+        toast.success(importSummaryOf(review));
         navigate(StockRoutes.Base);
       } catch (err) {
-        console.error('Import commit failed', err);
+        toast.error(ipcErrorMessage(err, SAVE_ERROR));
         setState({ phase: 'error', message: SAVE_ERROR });
       }
     },

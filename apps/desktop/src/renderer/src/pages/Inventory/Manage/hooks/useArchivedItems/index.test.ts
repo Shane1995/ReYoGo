@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
+import { toast } from 'sonner';
 import { InventoryIPC, SetupIPC } from '@shared/types/ipc';
 import { useArchivedItems } from '.';
+
+vi.mock('sonner', () => ({
+  toast: { error: vi.fn(), success: vi.fn() },
+}));
 
 const invoke = vi.fn();
 
@@ -59,5 +64,32 @@ describe('useArchivedItems', () => {
 
     expect(invoke).toHaveBeenCalledWith(InventoryIPC.RESTORE_ITEM, 'item-1');
     expect(invoke).toHaveBeenCalledWith(InventoryIPC.GET_ARCHIVED_ITEMS);
+  });
+
+  it('shows a success toast when an item is restored', async () => {
+    const { result } = renderHook(() => useArchivedItems());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.unarchiveItem('item-1');
+    });
+
+    expect(toast.success).toHaveBeenCalled();
+  });
+
+  it('shows an error toast when restoring an item fails', async () => {
+    const { result } = renderHook(() => useArchivedItems());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    invoke.mockImplementation((channel: string) => {
+      if (channel === InventoryIPC.RESTORE_ITEM) return Promise.reject(new Error('boom'));
+      return Promise.resolve([]);
+    });
+
+    await act(async () => {
+      await result.current.unarchiveItem('item-1');
+    });
+
+    expect(toast.error).toHaveBeenCalled();
   });
 });

@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import type { ICapturedInvoiceWithLines, ISaveCreditNotePayload } from '@reyogo/types';
 import { invoiceService } from '@/services/invoice';
+import { ipcErrorMessage } from '@/utils/ipcErrorMessage';
 import { RowModeKind, type RowMode } from '../../types';
 
 type PostHandlerDeps = {
@@ -25,6 +27,9 @@ export function useInvoicePostHandlers({ setDetailCache, loadInvoices, setMode }
           return next;
         });
         await loadInvoices();
+        toast.success('Invoice posted');
+      } catch (err) {
+        toast.error(ipcErrorMessage(err, 'Failed to post the invoice'));
       } finally {
         setPostingId(null);
       }
@@ -39,6 +44,9 @@ export function useInvoicePostHandlers({ setDetailCache, loadInvoices, setMode }
         await invoiceService.saveCreditNote(payload);
         await loadInvoices();
         setMode(payload.sourceInvoiceId, { kind: RowModeKind.View });
+        toast.success('Damage / return recorded');
+      } catch (err) {
+        toast.error(ipcErrorMessage(err, 'Failed to record the damage / return'));
       } finally {
         setCreditNoteSubmitting(false);
       }

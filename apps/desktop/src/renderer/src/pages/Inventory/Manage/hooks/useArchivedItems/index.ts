@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { InventoryIPC, SetupIPC } from '@shared/types/ipc';
+import { ipcErrorMessage } from '@/utils/ipcErrorMessage';
 import type { ArchivedItem } from '../../types';
 
 export function useArchivedItems() {
@@ -36,8 +38,13 @@ export function useArchivedItems() {
 
   const unarchiveItem = useCallback(
     async (id: string) => {
-      await window.electronAPI.ipcRenderer.invoke(InventoryIPC.RESTORE_ITEM, id);
-      loadItems();
+      try {
+        await window.electronAPI.ipcRenderer.invoke(InventoryIPC.RESTORE_ITEM, id);
+        toast.success('Item restored');
+        await loadItems();
+      } catch (err) {
+        toast.error(ipcErrorMessage(err, 'Failed to restore the item'));
+      }
     },
     [loadItems],
   );

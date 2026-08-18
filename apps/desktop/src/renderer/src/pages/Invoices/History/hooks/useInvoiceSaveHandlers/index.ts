@@ -1,7 +1,9 @@
 import { useCallback } from 'react';
+import { toast } from 'sonner';
 import { InvoiceStatus } from '@reyogo/types';
 import type { ICapturedInvoice, ICapturedInvoiceWithLines } from '@reyogo/types';
 import { invoiceService } from '@/services/invoice';
+import { ipcErrorMessage } from '@/utils/ipcErrorMessage';
 import type { ProcessReceiptLine } from '../../../types';
 import { getProcessLineComputed } from '../../../types';
 import { RowModeKind, type RowMode } from '../../types';
@@ -107,27 +109,33 @@ export function useInvoiceSaveHandlers({
       note: string,
       invoiceDate?: Date | null,
     ) => {
-      if (invoice.status === InvoiceStatus.Posted) {
-        const payload = buildSavePostedEditPayload(
-          invoice,
-          editLines,
-          note,
-          items,
-          detailCache,
-          invoiceDate,
-        );
-        await invoiceService.updatePostedInvoiceLines(payload);
-      } else {
-        const payload = buildSaveEditPayload(invoice, editLines, note, items, detailCache);
-        await invoiceService.updateInvoice(payload);
+      try {
+        if (invoice.status === InvoiceStatus.Posted) {
+          const payload = buildSavePostedEditPayload(
+            invoice,
+            editLines,
+            note,
+            items,
+            detailCache,
+            invoiceDate,
+          );
+          await invoiceService.updatePostedInvoiceLines(payload);
+        } else {
+          const payload = buildSaveEditPayload(invoice, editLines, note, items, detailCache);
+          await invoiceService.updateInvoice(payload);
+        }
+        setDetailCache((prev) => {
+          const next = { ...prev };
+          delete next[invoice.id];
+          return next;
+        });
+        await loadInvoices();
+        setMode(invoice.id, { kind: RowModeKind.View });
+        toast.success('Invoice updated');
+      } catch (err) {
+        toast.error(ipcErrorMessage(err, 'Failed to save the invoice'));
+        throw err;
       }
-      setDetailCache((prev) => {
-        const next = { ...prev };
-        delete next[invoice.id];
-        return next;
-      });
-      await loadInvoices();
-      setMode(invoice.id, { kind: RowModeKind.View });
     },
     [items, detailCache, setDetailCache, loadInvoices, setMode],
   );
@@ -142,14 +150,20 @@ export function useInvoiceSaveHandlers({
         note: string;
       },
     ) => {
-      await invoiceService.updateInvoiceMetadata(buildMetadataSavePayload(id, fields));
-      setDetailCache((prev) => {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      });
-      await loadInvoices();
-      setMode(id, { kind: RowModeKind.View });
+      try {
+        await invoiceService.updateInvoiceMetadata(buildMetadataSavePayload(id, fields));
+        setDetailCache((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+        await loadInvoices();
+        setMode(id, { kind: RowModeKind.View });
+        toast.success('Invoice details updated');
+      } catch (err) {
+        toast.error(ipcErrorMessage(err, 'Failed to save the invoice details'));
+        throw err;
+      }
     },
     [setDetailCache, loadInvoices, setMode],
   );
