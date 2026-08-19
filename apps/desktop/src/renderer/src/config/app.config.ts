@@ -13,6 +13,7 @@ export interface RouteConfig {
   'stock.categories': string;
   'stock.analysis': string;
   'stock.manage': string;
+  'stock.stocktake': string;
   invoices: string;
   'invoices.history': string;
   costing: string;
@@ -62,6 +63,7 @@ export const appConfig: AppConfig = {
     'stock.categories': '/stock/categories',
     'stock.analysis': '/stock/analysis',
     'stock.manage': '/stock/manage',
+    'stock.stocktake': '/stock/stocktake',
     invoices: '/invoices',
     'invoices.history': '/invoices/history',
     costing: '/costing',
@@ -82,6 +84,7 @@ export const appConfig: AppConfig = {
       { label: 'Add', pathKey: 'stock.addItems', icon: 'ListPlus', end: true },
       { label: 'Analysis', pathKey: 'stock.analysis', icon: 'TrendingUp', end: false },
       { label: 'Archive', pathKey: 'stock.manage', icon: 'Archive', end: false },
+      { label: 'Stock Take', pathKey: 'stock.stocktake', icon: 'ClipboardList', end: false },
     ],
     invoices: [
       { label: 'Capture Invoice', pathKey: 'invoices', icon: 'Receipt', end: true },

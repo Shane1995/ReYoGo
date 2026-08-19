@@ -3,6 +3,7 @@ import { PageHeader } from '@reyogo/ui';
 import { BusinessSection } from './components/BusinessSection';
 import { EntitiesSection } from './components/EntitiesSection';
 import { TaxSection } from './components/TaxSection';
+import { UnitsSection } from './components/UnitsSection';
 import { CloudSyncSection } from './components/CloudSyncSection';
 import { AISettingsSection } from './components/AISettingsSection';
 import { AboutSection } from './components/AboutSection';
@@ -21,6 +22,7 @@ export default function SettingsPage() {
           <BusinessSection group={group} onSaved={refetchEntities} />
           <EntitiesSection entities={entities} onSaved={refetchEntities} />
           <TaxSection entities={entities} onSaved={refetchEntities} />
+          <UnitsSection />
           <CloudSyncSection />
           <AISettingsSection />
           <AboutSection />

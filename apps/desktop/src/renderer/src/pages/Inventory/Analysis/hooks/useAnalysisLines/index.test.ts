@@ -3,16 +3,20 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { useAnalysisLines } from '.';
 
 const getLinesForAnalysis = vi.fn();
+const getCreditedQtyByInvoiceItem = vi.fn();
 
 vi.mock('@/services/invoice', () => ({
   invoiceService: {
     getLinesForAnalysis: (...args: unknown[]) => getLinesForAnalysis(...args),
+    getCreditedQtyByInvoiceItem: (...args: unknown[]) => getCreditedQtyByInvoiceItem(...args),
   },
 }));
 
 beforeEach(() => {
   getLinesForAnalysis.mockReset();
+  getCreditedQtyByInvoiceItem.mockReset();
   getLinesForAnalysis.mockResolvedValue([]);
+  getCreditedQtyByInvoiceItem.mockResolvedValue({});
 });
 
 describe('useAnalysisLines', () => {
@@ -35,5 +39,51 @@ describe('useAnalysisLines', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     rerender({ entityId: 'entity-2' });
     await waitFor(() => expect(getLinesForAnalysis).toHaveBeenLastCalledWith('entity-2'));
+  });
+
+  it('excludes lines that have been fully credited', async () => {
+    getLinesForAnalysis.mockResolvedValue([
+      {
+        id: 'l1',
+        invoiceId: 'inv-1',
+        inventoryItemId: 'item-1',
+        qty: 10,
+        unitCost: 5,
+        totalCost: 50,
+      },
+      {
+        id: 'l2',
+        invoiceId: 'inv-2',
+        inventoryItemId: 'item-1',
+        qty: 4,
+        unitCost: 5,
+        totalCost: 20,
+      },
+    ]);
+    getCreditedQtyByInvoiceItem.mockResolvedValue({ 'inv-1::item-1': 10 });
+
+    const { result } = renderHook(() => useAnalysisLines());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.lines.map((l) => l.id)).toEqual(['l2']);
+  });
+
+  it('keeps lines that have only been partially credited', async () => {
+    getLinesForAnalysis.mockResolvedValue([
+      {
+        id: 'l1',
+        invoiceId: 'inv-1',
+        inventoryItemId: 'item-1',
+        qty: 10,
+        unitCost: 5,
+        totalCost: 50,
+      },
+    ]);
+    getCreditedQtyByInvoiceItem.mockResolvedValue({ 'inv-1::item-1': 4 });
+
+    const { result } = renderHook(() => useAnalysisLines());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.lines.map((l) => l.id)).toEqual(['l1']);
   });
 });

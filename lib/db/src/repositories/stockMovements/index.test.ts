@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { InventoryType, MovementType } from '@reyogo/types';
+import { InventoryType, InvoiceStatus, MovementType, ReferenceType, VatMode } from '@reyogo/types';
 import { createTestDb, type DbClient } from '../../__tests__/helpers';
 import { createStockMovementsRepo } from '.';
 import * as schema from '../../schema';
@@ -40,6 +40,9 @@ async function seedMovement(
     wac?: number;
     stockAfter: number;
     occurredAt?: Date;
+    referenceType?: ReferenceType;
+    referenceId?: string;
+    notes?: string;
   },
 ) {
   const t = opts.occurredAt ?? new Date();
@@ -53,8 +56,24 @@ async function seedMovement(
     unitCostAtTime: opts.unitCost ?? null,
     weightedAvgCostAfter: opts.wac ?? null,
     stockQtyAfter: opts.stockAfter,
+    referenceType: opts.referenceType ?? null,
+    referenceId: opts.referenceId ?? null,
+    notes: opts.notes ?? null,
     occurredAt: t,
     createdAt: t,
+  });
+}
+
+async function seedInvoice(db: DbClient, id: string, invoiceNumber: string, status: InvoiceStatus) {
+  await db.insert(schema.invoices).values({
+    id,
+    accountId: 'default',
+    entityId: 'default',
+    invoiceNumber,
+    status,
+    vatMode: VatMode.Exclusive,
+    vatRate: 15,
+    createdAt: new Date(),
   });
 }
 
@@ -270,6 +289,62 @@ describe('createStockMovementsRepo', () => {
       await seedMovement(db, { id: 'mv-1', itemId: 'item-1', qty: 10, stockAfter: 10 });
       await seedMovement(db, { id: 'mv-2', itemId: 'item-2', qty: 5, stockAfter: 5 });
       expect(await repo.getMovementsForItem('item-1')).toHaveLength(1);
+    });
+  });
+
+  describe('getMovementsForItemWithLabels', () => {
+    it('labels an invoice-referenced movement with the invoice number', async () => {
+      await seedItem(db, 'item-1');
+      await seedInvoice(db, 'inv-1', 'INV-001', InvoiceStatus.Posted);
+      await seedMovement(db, {
+        id: 'mv-1',
+        itemId: 'item-1',
+        qty: 10,
+        stockAfter: 10,
+        referenceType: ReferenceType.Invoice,
+        referenceId: 'inv-1',
+      });
+      const movements = await repo.getMovementsForItemWithLabels('item-1');
+      expect(movements[0]!.referenceLabel).toBe('INV-001');
+    });
+
+    it('labels a credit-note-referenced movement with the credit note number', async () => {
+      await seedItem(db, 'item-1');
+      await seedInvoice(db, 'cn-1', 'CN-INV-001', InvoiceStatus.CreditNote);
+      await seedMovement(db, {
+        id: 'mv-1',
+        itemId: 'item-1',
+        type: MovementType.Return,
+        qty: -2,
+        stockAfter: 8,
+        referenceType: ReferenceType.CreditNote,
+        referenceId: 'cn-1',
+      });
+      const movements = await repo.getMovementsForItemWithLabels('item-1');
+      expect(movements[0]!.referenceLabel).toBe('CN-INV-001');
+    });
+
+    it('labels a non-invoice movement with its notes', async () => {
+      await seedItem(db, 'item-1');
+      await seedMovement(db, {
+        id: 'mv-1',
+        itemId: 'item-1',
+        type: MovementType.Adjustment,
+        qty: 3,
+        stockAfter: 3,
+        referenceType: ReferenceType.Adjustment,
+        referenceId: 'session-1',
+        notes: 'Stock count variance',
+      });
+      const movements = await repo.getMovementsForItemWithLabels('item-1');
+      expect(movements[0]!.referenceLabel).toBe('Stock count variance');
+    });
+
+    it('returns a null label when there is no reference or notes', async () => {
+      await seedItem(db, 'item-1');
+      await seedMovement(db, { id: 'mv-1', itemId: 'item-1', qty: 10, stockAfter: 10 });
+      const movements = await repo.getMovementsForItemWithLabels('item-1');
+      expect(movements[0]!.referenceLabel).toBeNull();
     });
   });
 

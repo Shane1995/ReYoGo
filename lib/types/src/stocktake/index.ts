@@ -30,6 +30,7 @@ export interface SaveStocktakeLinePayload {
 
 export interface CompleteStocktakePayload {
   sessionId: string;
+  entityId: string;
   lines: SaveStocktakeLinePayload[];
 }
 

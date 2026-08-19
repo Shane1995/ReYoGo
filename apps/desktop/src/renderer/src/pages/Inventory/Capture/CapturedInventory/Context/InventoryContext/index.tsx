@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
 import { InventoryIPC, SetupIPC } from '@shared/types/ipc';
 import { INVENTORY_TYPES } from '@reyogo/types';
 import type { InventoryCategory, InventoryItem } from '../../types';
@@ -6,6 +7,7 @@ import type { UnitOption } from '../../components/ItemsTable/types';
 import { invokeInventory } from './utils/invokeInventory';
 import { enrichedTypeOf } from './utils/enrichedTypeOf';
 import { enrichedUnitOfMeasureOf } from './utils/enrichedUnitOfMeasureOf';
+import { ipcErrorMessage } from '@/utils/ipcErrorMessage';
 import type { InventoryContextValue } from './types';
 
 const InventoryContext = createContext<InventoryContextValue | null>(null);
@@ -42,7 +44,9 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     const newCategory = { ...category, id };
     setCategories((prev) => [...prev, newCategory].sort((a, b) => a.name.localeCompare(b.name)));
     if (category.name.trim()) {
-      invokeInventory(InventoryIPC.UPSERT_CATEGORY, newCategory).catch(console.error);
+      invokeInventory(InventoryIPC.UPSERT_CATEGORY, newCategory).catch((err) => {
+        toast.error(ipcErrorMessage(err, 'Failed to save the category'));
+      });
     }
     return id;
   }, []);
@@ -56,7 +60,11 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     setCategories((prev) => {
       const toSave = prev.find((c) => c.id === id);
       if (toSave) {
-        invokeInventory(InventoryIPC.UPSERT_CATEGORY, toSave).catch(console.error);
+        invokeInventory(InventoryIPC.UPSERT_CATEGORY, toSave)
+          .then(() => toast.success('Category updated'))
+          .catch((err) => {
+            toast.error(ipcErrorMessage(err, 'Failed to update the category'));
+          });
       }
       return prev;
     });
@@ -67,7 +75,9 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     const newItem = { ...item, id };
     setItems((prev) => [...prev, newItem]);
     if (item.name.trim()) {
-      invokeInventory(InventoryIPC.UPSERT_ITEM, newItem).catch(console.error);
+      invokeInventory(InventoryIPC.UPSERT_ITEM, newItem).catch((err) => {
+        toast.error(ipcErrorMessage(err, 'Failed to save the item'));
+      });
     }
     return id;
   }, []);
@@ -77,7 +87,11 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     setItems((prev) => {
       const toSave = prev.find((i) => i.id === id);
       if (toSave) {
-        invokeInventory(InventoryIPC.UPSERT_ITEM, toSave).catch(console.error);
+        invokeInventory(InventoryIPC.UPSERT_ITEM, toSave)
+          .then(() => toast.success('Item updated'))
+          .catch((err) => {
+            toast.error(ipcErrorMessage(err, 'Failed to update the item'));
+          });
       }
       return prev;
     });
@@ -92,24 +106,33 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
       .then(() => {
         setCategories((prev) => prev.filter((c) => c.id !== id));
         setItems((prev) => prev.filter((i) => i.categoryId !== id));
+        toast.success('Category deleted');
       })
-      .catch(console.error);
+      .catch((err) => {
+        toast.error(ipcErrorMessage(err, 'Failed to delete the category'));
+      });
   }, []);
 
   const deleteItemFromBackend = useCallback((id: string): Promise<void> => {
     return invokeInventory(InventoryIPC.DELETE_ITEM, id)
       .then(() => {
         setItems((prev) => prev.filter((i) => i.id !== id));
+        toast.success('Item deleted');
       })
-      .catch(console.error);
+      .catch((err) => {
+        toast.error(ipcErrorMessage(err, 'Failed to delete the item'));
+      });
   }, []);
 
   const archiveItemInBackend = useCallback((id: string): Promise<void> => {
     return invokeInventory(InventoryIPC.ARCHIVE_ITEM, id)
       .then(() => {
         setItems((prev) => prev.filter((i) => i.id !== id));
+        toast.success('Item archived');
       })
-      .catch(console.error);
+      .catch((err) => {
+        toast.error(ipcErrorMessage(err, 'Failed to archive the item'));
+      });
   }, []);
 
   const inventoryTypes = useMemo(() => {

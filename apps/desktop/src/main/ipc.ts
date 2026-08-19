@@ -8,6 +8,7 @@ import { registerSetupHandlers } from './handlers/setup';
 import { registerSettingsHandlers } from './handlers/settings';
 import { registerShellHandlers } from './handlers/shell';
 import { registerStockMovementsHandlers } from './handlers/stockMovements';
+import { registerStocktakeHandlers } from './handlers/stocktake';
 import { registerSuppliersHandlers } from './handlers/suppliers';
 
 export const registerIPC = () => {
@@ -21,5 +22,6 @@ export const registerIPC = () => {
   registerSettingsHandlers();
   registerShellHandlers();
   registerStockMovementsHandlers();
+  registerStocktakeHandlers();
   registerSuppliersHandlers();
 };

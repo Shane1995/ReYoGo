@@ -3,6 +3,7 @@ import type {
   ISaveCapturedInvoicePayload,
   IUpdateCapturedInvoicePayload,
   IUpdateCapturedInvoiceMetadataPayload,
+  IUpdatePostedInvoiceLinesPayload,
   ISaveCreditNotePayload,
 } from '@reyogo/types';
 
@@ -23,10 +24,28 @@ export const invoiceService = {
   updateInvoiceMetadata: (payload: IUpdateCapturedInvoiceMetadataPayload) =>
     invoke()(InvoicesIPC.UPDATE_INVOICE_METADATA, payload),
   getInvoiceAudit: (id: string) => invoke()(InvoicesIPC.GET_INVOICE_AUDIT, id),
-  getLastUnitPrices: (): Promise<Record<string, { exclVat: number; inclVat: number }>> =>
-    invoke()(InvoicesIPC.GET_LAST_UNIT_PRICES),
+  getLastUnitPrices: (
+    asOfDate?: string,
+  ): Promise<Record<string, { exclVat: number; inclVat: number }>> =>
+    invoke()(InvoicesIPC.GET_LAST_UNIT_PRICES, asOfDate),
   saveCreditNote: (payload: ISaveCreditNotePayload) =>
     invoke()(InvoicesIPC.SAVE_CREDIT_NOTE, payload),
   getCreditNotesForInvoice: (sourceInvoiceId: string) =>
     invoke()(InvoicesIPC.GET_CREDIT_NOTES_FOR_INVOICE, sourceInvoiceId),
+  getCreditedQtyByInvoiceItem: (entityId?: string): Promise<Record<string, number>> =>
+    invoke()(InvoicesIPC.GET_CREDITED_QTY_BY_INVOICE_ITEM, entityId),
+  getPurchaseTotalsByItem: (
+    fromDate?: string,
+    toDate?: string,
+    entityId?: string,
+  ): Promise<Record<string, { qty: number; totalValue: number }>> =>
+    invoke()(InvoicesIPC.GET_PURCHASE_TOTALS_BY_ITEM, fromDate, toDate, entityId),
+  getCreditTotalsByItem: (
+    fromDate?: string,
+    toDate?: string,
+    entityId?: string,
+  ): Promise<Record<string, { qty: number; totalValue: number }>> =>
+    invoke()(InvoicesIPC.GET_CREDIT_TOTALS_BY_ITEM, fromDate, toDate, entityId),
+  updatePostedInvoiceLines: (payload: IUpdatePostedInvoiceLinesPayload) =>
+    invoke()(InvoicesIPC.UPDATE_POSTED_INVOICE_LINES, payload),
 };

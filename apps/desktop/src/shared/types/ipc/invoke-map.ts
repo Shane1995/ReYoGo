@@ -8,11 +8,17 @@ import type {
   ISaveCapturedInvoicePayload,
   IUpdateCapturedInvoicePayload,
   IUpdateCapturedInvoiceMetadataPayload,
+  IUpdatePostedInvoiceLinesPayload,
   ISaveCreditNotePayload,
 } from '@reyogo/types';
-import type { ItemCostHistory, COGSSummary } from '@reyogo/types';
+import type { ItemCostHistory, COGSSummary, IStockMovementWithLabel } from '@reyogo/types';
 import type { Supplier, UpsertSupplierPayload } from '@reyogo/types';
 import type { IInvoiceScanResult } from '@reyogo/types';
+import type {
+  IStocktakeSession,
+  IStocktakeSessionWithLines,
+  ISaveStocktakeLinePayload,
+} from '@reyogo/types';
 
 export interface AppVersionInfo {
   version: string;
@@ -53,7 +59,7 @@ export interface IPCInvokeMap {
   };
   'invoices:get-invoice-audit': { args: [id: string]; return: IInvoiceAuditEntry[] };
   'invoices:get-last-unit-prices': {
-    args: [];
+    args: [asOfDate?: string];
     return: Record<string, { exclVat: number; inclVat: number }>;
   };
   'invoices:save-credit-note': { args: [payload: ISaveCreditNotePayload]; return: void };
@@ -76,6 +82,10 @@ export interface IPCInvokeMap {
   'stock-movements:get-cogs': {
     args: [fromDate?: string, toDate?: string, entityId?: string];
     return: COGSSummary;
+  };
+  'stock-movements:get-movements-for-item-with-labels': {
+    args: [itemId: string, entityId?: string];
+    return: IStockMovementWithLabel[];
   };
   'setup:get-units': { args: []; return: UnitOfMeasure[] };
   'setup:upsert-unit': { args: [unit: UnitOfMeasure]; return: void };
@@ -125,6 +135,33 @@ export interface IPCInvokeMap {
   'invoice-scan:scan': {
     args: [payload: { base64: string; mimeType: string }];
     return: IInvoiceScanResult;
+  };
+  'invoices:get-credited-qty-by-invoice-item': {
+    args: [entityId?: string];
+    return: Record<string, number>;
+  };
+  'invoices:get-purchase-totals-by-item': {
+    args: [fromDate?: string, toDate?: string, entityId?: string];
+    return: Record<string, { qty: number; totalValue: number }>;
+  };
+  'invoices:get-credit-totals-by-item': {
+    args: [fromDate?: string, toDate?: string, entityId?: string];
+    return: Record<string, { qty: number; totalValue: number }>;
+  };
+  'invoices:update-posted-invoice-lines': {
+    args: [payload: IUpdatePostedInvoiceLinesPayload];
+    return: void;
+  };
+  'stocktake:create-session': { args: [label?: string]; return: IStocktakeSession };
+  'stocktake:get-sessions': { args: []; return: IStocktakeSession[] };
+  'stocktake:get-session': { args: [id: string]; return: IStocktakeSessionWithLines | null };
+  'stocktake:save-draft-lines': {
+    args: [sessionId: string, lines: ISaveStocktakeLinePayload[]];
+    return: void;
+  };
+  'stocktake:complete-session': {
+    args: [sessionId: string, lines: ISaveStocktakeLinePayload[]];
+    return: void;
   };
 }
 

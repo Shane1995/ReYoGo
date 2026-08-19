@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { XIcon, CheckIcon } from 'lucide-react';
 import { Button } from '@reyogo/ui';
 import { useInventory } from '@/pages/Inventory/Capture/CapturedInventory/Context/InventoryContext';
-import { VatMode } from '@reyogo/types';
+import { InvoiceStatus, VatMode } from '@reyogo/types';
 import type { ICapturedInvoiceWithLines } from '@reyogo/types';
 import { ItemAutocomplete } from '../../../components/ItemAutocomplete';
 import type { ProcessReceiptLine } from '../../../types';
@@ -11,8 +11,23 @@ import { inputClass } from '../../../utils/inputClass';
 import { formatMoney } from '../../../utils/formatMoney';
 import { newLine } from '../../../hooks/useLineManager';
 import { lineToEditLine } from '../../../utils/lineToEditLine';
+import { toDateStr } from '../../utils/toDateStr';
 import { cn } from '@reyogo/ui';
 import { Checkbox } from '@/components/Checkbox';
+
+function dateOrNull(value: string): Date | null {
+  if (!value) return null;
+  return new Date(value);
+}
+
+function saveInvoiceDate(isPosted: boolean, invoiceDate: string): Date | null | undefined {
+  if (!isPosted) return undefined;
+  return dateOrNull(invoiceDate);
+}
+
+function errorMessageOf(e: unknown): string {
+  return e instanceof Error ? e.message : 'Failed to save';
+}
 
 function categoryNameOf(category: { name: string } | undefined): string {
   if (!category) return '';
@@ -144,7 +159,7 @@ function EditPanelFooter({
 
 type Props = {
   invoice: ICapturedInvoiceWithLines;
-  onSave: (lines: ProcessReceiptLine[], note: string) => Promise<void>;
+  onSave: (lines: ProcessReceiptLine[], note: string, invoiceDate?: Date | null) => Promise<void>;
   onCancel: () => void;
 };
 
@@ -156,10 +171,12 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
       : [newLine()],
   );
   const [note, setNote] = useState('');
+  const [invoiceDate, setInvoiceDate] = useState(() => toDateStr(invoice.invoiceDate));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { vatMode, vatRate } = invoice;
+  const isPosted = invoice.status === InvoiceStatus.Posted;
 
   const itemsWithCategory = items.map((item) => {
     const cat = categories.find((c) => c.id === item.categoryId);
@@ -189,9 +206,9 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
     setSaving(true);
     setError(null);
     try {
-      await onSave(validLines, note);
+      await onSave(validLines, note, saveInvoiceDate(isPosted, invoiceDate));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save');
+      setError(errorMessageOf(e));
       setSaving(false);
     }
   };
@@ -212,8 +229,11 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
     <div className="border-t border-[var(--nav-border)] bg-muted/5">
       <div className="flex items-center gap-4 px-4 pt-3 pb-2">
         <div className="flex items-center gap-3">
-          <label className="shrink-0 text-sm font-medium text-muted-foreground">Edit note</label>
+          <label htmlFor="edit-note" className="shrink-0 text-sm font-medium text-muted-foreground">
+            Edit note
+          </label>
           <input
+            id="edit-note"
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -221,6 +241,23 @@ export function EditPanel({ invoice, onSave, onCancel }: Props) {
             className={cn(inputClass, 'max-w-md')}
           />
         </div>
+        {isPosted && (
+          <div className="flex items-center gap-3">
+            <label
+              htmlFor="edit-invoice-date"
+              className="shrink-0 text-sm font-medium text-muted-foreground"
+            >
+              Invoice date
+            </label>
+            <input
+              id="edit-invoice-date"
+              type="date"
+              value={invoiceDate}
+              onChange={(e) => setInvoiceDate(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+        )}
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>
             VAT:{' '}

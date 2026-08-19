@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Input } from '@reyogo/ui';
 import type { IBusinessGroup } from '@reyogo/types';
 import { entitiesService } from '@/services/entities';
+import { ipcErrorMessage } from '@/utils/ipcErrorMessage';
 import { SectionHeader } from '../SectionHeader';
 
 interface BusinessSectionProps {
@@ -43,6 +45,8 @@ export function BusinessSection({ group, onSaved }: BusinessSectionProps) {
       await onSaved();
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      toast.error(ipcErrorMessage(err, 'Failed to save the business name'));
     } finally {
       setSaving(false);
     }

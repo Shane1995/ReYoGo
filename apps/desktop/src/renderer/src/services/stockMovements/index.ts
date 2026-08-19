@@ -1,4 +1,4 @@
-import type { COGSSummary, ItemCostHistory } from '@reyogo/types';
+import type { COGSSummary, ItemCostHistory, IStockMovementWithLabel } from '@reyogo/types';
 import { StockMovementsIPC } from '@shared/types/ipc';
 
 const invoke = () => window.electronAPI.ipcRenderer.invoke;
@@ -22,4 +22,12 @@ export const stockMovementsService = {
 
   getCOGS: (fromDate?: string, toDate?: string, entityId?: string): Promise<COGSSummary> =>
     invoke()(StockMovementsIPC.GET_COGS, fromDate, toDate, entityId) as Promise<COGSSummary>,
+
+  getMovementsForItemWithLabels: (
+    itemId: string,
+    entityId?: string,
+  ): Promise<IStockMovementWithLabel[]> =>
+    invoke()(StockMovementsIPC.GET_MOVEMENTS_FOR_ITEM_WITH_LABELS, itemId, entityId) as Promise<
+      IStockMovementWithLabel[]
+    >,
 };

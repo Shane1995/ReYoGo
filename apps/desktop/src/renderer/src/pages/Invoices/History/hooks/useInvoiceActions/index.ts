@@ -39,6 +39,7 @@ export function useInvoiceActions({
     handleReuse: detail.handleReuse,
     handleExpandDetail: detail.handleExpandDetail,
     handleEditClick: detail.handleEditClick,
+    handleEditDetailsClick: detail.handleEditDetailsClick,
     handleAuditClick: detail.handleAuditClick,
     handlePost: post.handlePost,
     handleRaiseCreditNoteClick: detail.handleRaiseCreditNoteClick,

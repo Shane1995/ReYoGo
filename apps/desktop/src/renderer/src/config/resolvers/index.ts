@@ -20,6 +20,7 @@ import {
   BuildingIcon,
   PercentIcon,
   ArchiveIcon,
+  ClipboardListIcon,
 } from 'lucide-react';
 import { appConfig } from '@/config/app.config';
 
@@ -44,6 +45,7 @@ const iconRegistry: Readonly<Record<string, LucideIcon>> = {
   Building: BuildingIcon,
   Percent: PercentIcon,
   Archive: ArchiveIcon,
+  ClipboardList: ClipboardListIcon,
 };
 
 export function resolveIcon(name: string): LucideIcon {

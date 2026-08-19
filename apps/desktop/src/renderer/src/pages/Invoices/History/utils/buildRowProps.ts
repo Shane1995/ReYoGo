@@ -8,6 +8,7 @@ export function buildRowProps(history: ReturnType<typeof useInvoiceHistory>): Ro
     suppliers: history.suppliers,
     onExpand: history.handleExpandDetail,
     onEditClick: history.handleEditClick,
+    onEditDetailsClick: history.handleEditDetailsClick,
     onAuditClick: history.handleAuditClick,
     onPost: history.handlePost,
     onReuse: history.handleReuse,

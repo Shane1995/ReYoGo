@@ -12,6 +12,8 @@ const baseState: ExportState = {
   periodSummaryCogs: null,
   stockValuationRows: [],
   stockOnHandRows: [],
+  purchaseReportRows: [],
+  creditReportRows: [],
 };
 
 describe('exportRequestOf', () => {
@@ -61,5 +63,25 @@ describe('exportRequestOf', () => {
       asOfDate: '',
     });
     expect(request).toEqual({ view: ReportView.StockOnHand, rows: [], asOfDate: '' });
+  });
+
+  it('builds a Purchase Report request with the current date range', () => {
+    const request = exportRequestOf({ ...baseState, activeView: ReportView.PurchaseReport });
+    expect(request).toEqual({
+      view: ReportView.PurchaseReport,
+      rows: [],
+      fromDate: '2026-01-01',
+      toDate: '2026-01-31',
+    });
+  });
+
+  it('builds a Credit Report request with the current date range', () => {
+    const request = exportRequestOf({ ...baseState, activeView: ReportView.CreditReport });
+    expect(request).toEqual({
+      view: ReportView.CreditReport,
+      rows: [],
+      fromDate: '2026-01-01',
+      toDate: '2026-01-31',
+    });
   });
 });

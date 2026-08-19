@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import type { IEntity } from '@reyogo/types';
 import { entitiesService } from '@/services/entities';
+import { ipcErrorMessage } from '@/utils/ipcErrorMessage';
 import { SectionHeader } from '../SectionHeader';
 
 interface TaxSectionProps {
@@ -39,6 +41,8 @@ export function TaxSection({ entities, onSaved }: TaxSectionProps) {
       await onSaved();
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      toast.error(ipcErrorMessage(err, 'Failed to save the VAT rate'));
     } finally {
       setSaving(false);
     }

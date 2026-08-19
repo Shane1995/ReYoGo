@@ -3,6 +3,7 @@ import type {
   ISaveCapturedInvoicePayload,
   IUpdateCapturedInvoicePayload,
   IUpdateCapturedInvoiceMetadataPayload,
+  IUpdatePostedInvoiceLinesPayload,
   ISaveCreditNotePayload,
 } from '@reyogo/types';
 import { InvoicesIPC } from '@shared/types/ipc';
@@ -40,11 +41,31 @@ export function registerInvoicesHandlers(): void {
   ipcMain.handle(InvoicesIPC.GET_INVOICE_AUDIT, (_e, id: string) =>
     getRepos().invoices.getInvoiceAudit(id),
   );
-  ipcMain.handle(InvoicesIPC.GET_LAST_UNIT_PRICES, () => getRepos().invoices.getLastUnitPrices());
+  ipcMain.handle(InvoicesIPC.GET_LAST_UNIT_PRICES, (_e, asOfDate?: string) =>
+    getRepos().invoices.getLastUnitPrices(asOfDate),
+  );
   ipcMain.handle(InvoicesIPC.SAVE_CREDIT_NOTE, (_e, payload: ISaveCreditNotePayload) =>
     withSync(() => getRepos().invoices.saveCreditNote(payload)),
   );
   ipcMain.handle(InvoicesIPC.GET_CREDIT_NOTES_FOR_INVOICE, (_e, sourceInvoiceId: string) =>
     getRepos().invoices.getCreditNotesForInvoice(sourceInvoiceId),
+  );
+  ipcMain.handle(InvoicesIPC.GET_CREDITED_QTY_BY_INVOICE_ITEM, (_e, entityId?: string) =>
+    getRepos().invoices.getCreditNotedQtyByInvoiceItem(entityId),
+  );
+  ipcMain.handle(
+    InvoicesIPC.GET_PURCHASE_TOTALS_BY_ITEM,
+    (_e, fromDate?: string, toDate?: string, entityId?: string) =>
+      getRepos().invoices.getPurchaseTotalsByItem(fromDate, toDate, entityId),
+  );
+  ipcMain.handle(
+    InvoicesIPC.GET_CREDIT_TOTALS_BY_ITEM,
+    (_e, fromDate?: string, toDate?: string, entityId?: string) =>
+      getRepos().invoices.getCreditTotalsByItem(fromDate, toDate, entityId),
+  );
+  ipcMain.handle(
+    InvoicesIPC.UPDATE_POSTED_INVOICE_LINES,
+    (_e, payload: IUpdatePostedInvoiceLinesPayload) =>
+      withSync(() => getRepos().invoices.updatePostedInvoiceLines(payload)),
   );
 }

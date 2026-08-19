@@ -143,6 +143,17 @@ export interface IUpdateInvoiceMetadataPayload {
   note?: string;
 }
 
+export interface UpdatePostedInvoiceLinesPayload {
+  id: string;
+  note?: string;
+  vatMode?: VatMode;
+  vatRate?: number;
+  invoiceDate?: Date | null;
+  lines: IInvoiceLinePayload[];
+}
+
+export type IUpdatePostedInvoiceLinesPayload = UpdatePostedInvoiceLinesPayload;
+
 export type ICapturedInvoiceLine = IInvoiceLine;
 export type ICapturedInvoice = IInvoice;
 export type ICapturedInvoiceWithLines = IInvoiceWithLines;

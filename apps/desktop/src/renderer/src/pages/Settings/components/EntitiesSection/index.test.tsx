@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { toast } from 'sonner';
 import { EntitiesSection } from '.';
 import { entitiesService } from '@/services/entities';
 import { VatMode } from '@reyogo/types';
@@ -10,6 +11,10 @@ vi.mock('@/services/entities', () => ({
     createEntity: vi.fn(),
     renameEntity: vi.fn(),
   },
+}));
+
+vi.mock('sonner', () => ({
+  toast: { error: vi.fn(), success: vi.fn() },
 }));
 
 const mockEntities: IEntity[] = [
@@ -40,5 +45,24 @@ describe('EntitiesSection', () => {
     fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
     await waitFor(() => expect(entitiesService.createEntity).toHaveBeenCalledWith('Gin on Tap'));
     expect(onSaved).toHaveBeenCalled();
+  });
+
+  it('shows an error toast when adding a business fails', async () => {
+    vi.mocked(entitiesService.createEntity).mockRejectedValue(new Error('boom'));
+    render(<EntitiesSection entities={mockEntities} onSaved={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /add business/i }));
+    fireEvent.change(screen.getByPlaceholderText(/new business name/i), {
+      target: { value: 'Gin on Tap' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalled());
+  });
+
+  it('shows an error toast when renaming an entity fails', async () => {
+    vi.mocked(entitiesService.renameEntity).mockRejectedValue(new Error('boom'));
+    render(<EntitiesSection entities={mockEntities} onSaved={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /rename/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalled());
   });
 });

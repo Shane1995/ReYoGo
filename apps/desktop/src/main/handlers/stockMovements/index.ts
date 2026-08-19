@@ -19,4 +19,9 @@ export function registerStockMovementsHandlers(): void {
     (_e, fromDate?: string, toDate?: string, entityId?: string) =>
       getRepos().stockMovements.getCOGS(fromDate, toDate, entityId),
   );
+  ipcMain.handle(
+    StockMovementsIPC.GET_MOVEMENTS_FOR_ITEM_WITH_LABELS,
+    (_e, itemId: string, entityId?: string) =>
+      getRepos().stockMovements.getMovementsForItemWithLabels(itemId, entityId),
+  );
 }

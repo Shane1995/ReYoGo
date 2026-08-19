@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import type { ICapturedInvoiceWithLines } from '@reyogo/types';
-import { InvoiceStatus } from '@reyogo/types';
 import { invoiceService } from '@/services/invoice';
 import { useNavigateToInvoice } from '../../../hooks/useNavigateToInvoice';
 import { RowModeKind, type RowMode } from '../../types';
@@ -61,9 +60,16 @@ export function useInvoiceDetailHandlers({
 
   const handleEditClick = useCallback(
     async (id: string) => {
-      const detail = await getDetail(id);
-      const isPosted = detail?.status === InvoiceStatus.Posted;
-      setMode(id, { kind: isPosted ? RowModeKind.MetadataEdit : RowModeKind.Edit });
+      await getDetail(id);
+      setMode(id, { kind: RowModeKind.Edit });
+    },
+    [getDetail, setMode],
+  );
+
+  const handleEditDetailsClick = useCallback(
+    async (id: string) => {
+      await getDetail(id);
+      setMode(id, { kind: RowModeKind.MetadataEdit });
     },
     [getDetail, setMode],
   );
@@ -92,6 +98,7 @@ export function useInvoiceDetailHandlers({
     getDetail,
     handleExpandDetail,
     handleEditClick,
+    handleEditDetailsClick,
     handleAuditClick,
     handleReuse,
     handleRaiseCreditNoteClick,

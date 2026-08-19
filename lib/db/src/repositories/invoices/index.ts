@@ -4,13 +4,17 @@ import type {
   IInvoice,
   IInvoiceWithLines,
   IInvoiceLine,
+  IInvoiceLinePayload,
   IInvoiceAuditEntry,
   ISaveCapturedInvoicePayload,
   IUpdateCapturedInvoicePayload,
   IUpdateCapturedInvoiceMetadataPayload,
+  IUpdatePostedInvoiceLinesPayload,
   InvoiceLineWithDate,
   ISaveCreditNotePayload,
 } from '@reyogo/types';
+import { replayWacForward } from '../../utils/wac/replayForward';
+import type { ReplayMovementResult } from '../../utils/wac/replayForward/types';
 import type { DbClient } from '../../client';
 import * as schema from '../../schema';
 import { calculateWAC } from '../../utils/wac';
@@ -218,6 +222,114 @@ async function getCreditNotedQtyByItem(
   return result;
 }
 
+function accumulateCreditedQty(
+  rows: { sourceInvoiceId: string | null; inventoryItemId: string; qty: number }[],
+): Record<string, number> {
+  const result: Record<string, number> = {};
+  for (const row of rows) {
+    if (!row.sourceInvoiceId) continue;
+    const key = `${row.sourceInvoiceId}::${row.inventoryItemId}`;
+    result[key] = (result[key] ?? 0) + row.qty;
+  }
+  return result;
+}
+
+async function getCreditNotedQtyByInvoiceItem(
+  client: DbClient | TxClient,
+  entityId?: string,
+): Promise<Record<string, number>> {
+  const conditions = [eq(schema.invoices.status, InvoiceStatus.CreditNote)];
+  if (entityId) conditions.push(eq(schema.invoices.entityId, entityId));
+  const rows = await client
+    .select({
+      sourceInvoiceId: schema.invoices.sourceInvoiceId,
+      inventoryItemId: schema.invoiceLineItems.inventoryItemId,
+      qty: schema.invoiceLineItems.qty,
+    })
+    .from(schema.invoiceLineItems)
+    .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
+    .where(and(...conditions));
+  return accumulateCreditedQty(rows);
+}
+
+type ItemTotal = { qty: number; totalValue: number };
+
+function itemTotalDateConditions(
+  dateExpr: ReturnType<typeof sql>,
+  fromDate?: string,
+  toDate?: string,
+) {
+  const conditions = [];
+  if (fromDate) {
+    const cutoff = Math.floor(new Date(fromDate + 'T00:00:00').getTime() / 1000);
+    conditions.push(sql`${dateExpr} >= ${cutoff}`);
+  }
+  if (toDate) {
+    const cutoff = Math.floor(new Date(toDate + 'T23:59:59').getTime() / 1000);
+    conditions.push(sql`${dateExpr} <= ${cutoff}`);
+  }
+  return conditions;
+}
+
+function accumulateItemTotals(
+  rows: { inventoryItemId: string; qty: number; totalCost: number }[],
+): Record<string, ItemTotal> {
+  const result: Record<string, ItemTotal> = {};
+  for (const row of rows) {
+    const existing = result[row.inventoryItemId] ?? { qty: 0, totalValue: 0 };
+    result[row.inventoryItemId] = {
+      qty: existing.qty + row.qty,
+      totalValue: existing.totalValue + row.totalCost,
+    };
+  }
+  return result;
+}
+
+async function getItemTotals(
+  db: DbClient,
+  status: InvoiceStatus,
+  fromDate?: string,
+  toDate?: string,
+  entityId?: string,
+): Promise<Record<string, ItemTotal>> {
+  const dateExpr = sql`COALESCE(${schema.invoices.invoiceDate}, ${schema.invoices.createdAt})`;
+  const conditions = [
+    eq(schema.invoices.status, status),
+    ...(entityId ? [eq(schema.invoices.entityId, entityId)] : []),
+    ...itemTotalDateConditions(dateExpr, fromDate, toDate),
+  ];
+
+  const rows = await db
+    .select({
+      inventoryItemId: schema.invoiceLineItems.inventoryItemId,
+      qty: schema.invoiceLineItems.qty,
+      totalCost: schema.invoiceLineItems.totalCost,
+    })
+    .from(schema.invoiceLineItems)
+    .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
+    .where(and(...conditions));
+
+  return accumulateItemTotals(rows);
+}
+
+async function getPurchaseTotalsByItem(
+  db: DbClient,
+  fromDate?: string,
+  toDate?: string,
+  entityId?: string,
+): Promise<Record<string, ItemTotal>> {
+  return getItemTotals(db, InvoiceStatus.Posted, fromDate, toDate, entityId);
+}
+
+async function getCreditTotalsByItem(
+  db: DbClient,
+  fromDate?: string,
+  toDate?: string,
+  entityId?: string,
+): Promise<Record<string, ItemTotal>> {
+  return getItemTotals(db, InvoiceStatus.CreditNote, fromDate, toDate, entityId);
+}
+
 async function saveInvoice(db: DbClient, payload: ISaveCapturedInvoicePayload): Promise<void> {
   const createdAt = now();
   const { totalExclTax, taxAmount } = computeTax(payload.lines, payload.vatRate);
@@ -248,12 +360,12 @@ async function saveInvoice(db: DbClient, payload: ISaveCapturedInvoicePayload): 
   });
 }
 
-function resolveVatMode(payload: IUpdateCapturedInvoicePayload, current: IInvoice): VatMode {
+function resolveVatMode(payload: { vatMode?: VatMode }, current: IInvoice): VatMode {
   if (payload.vatMode != null) return payload.vatMode;
   return current.vatMode;
 }
 
-function resolveVatRate(payload: IUpdateCapturedInvoicePayload, current: IInvoice): number {
+function resolveVatRate(payload: { vatRate?: number }, current: IInvoice): number {
   if (payload.vatRate != null) return payload.vatRate;
   return current.vatRate;
 }
@@ -477,7 +589,18 @@ async function getLinesForAnalysis(
 
 async function getLastUnitPrices(
   db: DbClient,
+  asOfDate?: string,
 ): Promise<Record<string, { exclVat: number; inclVat: number }>> {
+  const conditions = [
+    gt(schema.invoiceLineItems.qty, 0),
+    eq(schema.invoices.status, InvoiceStatus.Posted),
+  ];
+  if (asOfDate) {
+    const cutoffSeconds = Math.floor(new Date(asOfDate + 'T23:59:59').getTime() / 1000);
+    conditions.push(
+      sql`COALESCE(${schema.invoices.invoiceDate}, ${schema.invoices.createdAt}) <= ${cutoffSeconds}`,
+    );
+  }
   const rows = await db
     .select({
       inventoryItemId: schema.invoiceLineItems.inventoryItemId,
@@ -488,9 +611,7 @@ async function getLastUnitPrices(
     })
     .from(schema.invoiceLineItems)
     .innerJoin(schema.invoices, eq(schema.invoiceLineItems.invoiceId, schema.invoices.id))
-    .where(
-      and(gt(schema.invoiceLineItems.qty, 0), eq(schema.invoices.status, InvoiceStatus.Posted)),
-    )
+    .where(and(...conditions))
     .orderBy(desc(sql`COALESCE(${schema.invoices.invoiceDate}, ${schema.invoices.createdAt})`));
   const result: Record<string, { exclVat: number; inclVat: number }> = {};
   for (const row of rows) {
@@ -785,6 +906,284 @@ async function getCreditNotesForInvoice(
   }));
 }
 
+type ReplayableMovement = {
+  id: string;
+  movementType: MovementType;
+  qty: number;
+  unitCostAtTime: number | null;
+  occurredAt: Date;
+  createdAt: Date;
+};
+
+function toReplayable(row: schema.StockMovementRow): ReplayableMovement {
+  return {
+    id: row.id,
+    movementType: row.movementType,
+    qty: row.qty,
+    unitCostAtTime: row.unitCostAtTime,
+    occurredAt: row.occurredAt,
+    createdAt: row.createdAt,
+  };
+}
+
+// 3-tier chronological tiebreak (occurredAt, createdAt, id); each tier is required for deterministic ordering.
+// fallow-ignore-next-line complexity
+function sortMovements(a: ReplayableMovement, b: ReplayableMovement): number {
+  const occurredDiff = a.occurredAt.getTime() - b.occurredAt.getTime();
+  if (occurredDiff !== 0) return occurredDiff;
+  const createdDiff = a.createdAt.getTime() - b.createdAt.getTime();
+  if (createdDiff !== 0) return createdDiff;
+  if (a.id < b.id) return -1;
+  if (a.id > b.id) return 1;
+  return 0;
+}
+
+const NEGATIVE_STOCK_EPSILON = 1e-6;
+
+function hasPositiveQuantity(
+  newLine: IInvoiceLinePayload | undefined,
+): newLine is IInvoiceLinePayload {
+  return newLine !== undefined && newLine.quantity > 0;
+}
+
+function buildCandidateMovement(
+  anchorRow: schema.StockMovementRow | undefined,
+  newLine: IInvoiceLinePayload | undefined,
+  newOccurredAt: Date,
+  editedAt: Date,
+): ReplayableMovement | null {
+  if (!hasPositiveQuantity(newLine)) return null;
+  const id = anchorRow ? anchorRow.id : generateId();
+  const createdAt = anchorRow ? anchorRow.createdAt : editedAt;
+  return {
+    id,
+    movementType: MovementType.In,
+    qty: newLine.quantity,
+    unitCostAtTime: newLine.totalVatExclude / newLine.quantity,
+    occurredAt: newOccurredAt,
+    createdAt,
+  };
+}
+
+function assertNoNegativeStock(results: ReplayMovementResult[], itemId: string): void {
+  const negative = results.some((r) => r.stockQtyAfter < -NEGATIVE_STOCK_EPSILON);
+  if (!negative) return;
+  throw new Error(
+    `Editing this line would make stock for item ${itemId} negative — a later credit note or adjustment conflicts with this change`,
+  );
+}
+
+async function writeUpdatedMovements(
+  tx: TxClient,
+  otherRows: schema.StockMovementRow[],
+  resultById: Map<string, ReplayMovementResult>,
+): Promise<void> {
+  for (const row of otherRows) {
+    const result = resultById.get(row.id)!;
+    const unchanged =
+      row.stockQtyAfter === result.stockQtyAfter &&
+      row.weightedAvgCostAfter === result.weightedAvgCostAfter;
+    if (unchanged) continue;
+    await tx
+      .update(schema.stockMovements)
+      .set({
+        stockQtyAfter: result.stockQtyAfter,
+        weightedAvgCostAfter: result.weightedAvgCostAfter,
+      })
+      .where(eq(schema.stockMovements.id, row.id));
+  }
+}
+
+async function writeCandidateMovement(
+  tx: TxClient,
+  candidate: ReplayableMovement,
+  anchorRow: schema.StockMovementRow | undefined,
+  result: ReplayMovementResult,
+  invoiceId: string,
+  itemId: string,
+  entityId: string,
+): Promise<void> {
+  const totalCost = candidate.qty * (candidate.unitCostAtTime ?? 0);
+  if (anchorRow) {
+    await tx
+      .update(schema.stockMovements)
+      .set({
+        qty: candidate.qty,
+        unitCostAtTime: candidate.unitCostAtTime,
+        totalCost,
+        occurredAt: candidate.occurredAt,
+        stockQtyAfter: result.stockQtyAfter,
+        weightedAvgCostAfter: result.weightedAvgCostAfter,
+      })
+      .where(eq(schema.stockMovements.id, anchorRow.id));
+    return;
+  }
+  await tx.insert(schema.stockMovements).values({
+    id: candidate.id,
+    accountId: 'default',
+    entityId,
+    inventoryItemId: itemId,
+    movementType: MovementType.In,
+    qty: candidate.qty,
+    unitCostAtTime: candidate.unitCostAtTime,
+    totalCost,
+    weightedAvgCostAfter: result.weightedAvgCostAfter,
+    stockQtyAfter: result.stockQtyAfter,
+    referenceType: ReferenceType.Invoice,
+    referenceId: invoiceId,
+    occurredAt: candidate.occurredAt,
+    createdAt: candidate.createdAt,
+  });
+}
+
+async function replayItemMovements(
+  tx: TxClient,
+  invoiceId: string,
+  itemId: string,
+  newLine: IInvoiceLinePayload | undefined,
+  newOccurredAt: Date,
+  editedAt: Date,
+  entityId: string,
+): Promise<void> {
+  const rows = await tx
+    .select()
+    .from(schema.stockMovements)
+    .where(eq(schema.stockMovements.inventoryItemId, itemId));
+
+  const anchorRow = rows.find(
+    (m) => m.referenceType === ReferenceType.Invoice && m.referenceId === invoiceId,
+  );
+  const otherRows = rows.filter((r) => r.id !== anchorRow?.id);
+  const others = otherRows.map(toReplayable);
+  const candidate = buildCandidateMovement(anchorRow, newLine, newOccurredAt, editedAt);
+  const merged = (candidate ? [...others, candidate] : others).sort(sortMovements);
+  const results = replayWacForward(0, null, merged);
+  assertNoNegativeStock(results, itemId);
+
+  const resultById = new Map(results.map((r) => [r.id, r]));
+  await writeUpdatedMovements(tx, otherRows, resultById);
+
+  if (candidate) {
+    await writeCandidateMovement(
+      tx,
+      candidate,
+      anchorRow,
+      resultById.get(candidate.id)!,
+      invoiceId,
+      itemId,
+      entityId,
+    );
+  } else if (anchorRow) {
+    await tx.delete(schema.stockMovements).where(eq(schema.stockMovements.id, anchorRow.id));
+  }
+}
+
+function creditedQtyOf(itemId: string, creditedByItem: Record<string, number>): number {
+  return creditedByItem[itemId] ?? 0;
+}
+
+function newQtyOf(itemId: string, newQtyByItem: Map<string, number>): number {
+  return newQtyByItem.get(itemId) ?? 0;
+}
+
+function assertNoCreditGuardViolation(
+  currentLines: IInvoiceLine[],
+  newQtyByItem: Map<string, number>,
+  creditedByItem: Record<string, number>,
+): void {
+  for (const line of currentLines) {
+    const credited = creditedQtyOf(line.itemId, creditedByItem);
+    const newQty = newQtyOf(line.itemId, newQtyByItem);
+    if (credited > 0 && newQty < credited) {
+      throw new Error(
+        `Item ${line.itemId} has ${credited} units already credited via credit note; cannot reduce invoiced qty below ${credited} — use a credit note instead`,
+      );
+    }
+  }
+}
+
+async function replayAllAffectedItems(
+  tx: TxClient,
+  invoiceId: string,
+  currentLines: IInvoiceLine[],
+  validLines: IInvoiceLinePayload[],
+  newOccurredAt: Date,
+  editedAt: Date,
+  entityId: string,
+): Promise<void> {
+  const affectedItemIds = new Set([
+    ...currentLines.map((l) => l.itemId),
+    ...validLines.map((l) => l.itemId),
+  ]);
+  for (const itemId of affectedItemIds) {
+    const newLine = validLines.find((l) => l.itemId === itemId);
+    await replayItemMovements(tx, invoiceId, itemId, newLine, newOccurredAt, editedAt, entityId);
+  }
+}
+
+async function updatePostedInvoiceLines(
+  db: DbClient,
+  payload: IUpdatePostedInvoiceLinesPayload,
+): Promise<void> {
+  const editedAt = now();
+  const current = await getInvoiceById(db, payload.id);
+  if (!current) throw new Error(`Invoice not found: ${payload.id}`);
+  if (current.status !== InvoiceStatus.Posted)
+    throw new Error(`Invoice ${payload.id} is not posted`);
+
+  const vatMode = resolveVatMode(payload, current);
+  const vatRate = resolveVatRate(payload, current);
+  const validLines = payload.lines.filter(isValidInvoiceLine);
+  const { totalExclTax, taxAmount } = computeTax(validLines, vatRate);
+  const newInvoiceDate = withDefault(payload.invoiceDate, current.invoiceDate);
+  const newOccurredAt = newInvoiceDate ?? current.createdAt;
+
+  await db.transaction(async (tx) => {
+    await tx.insert(schema.invoiceAuditLog).values({
+      id: generateId(),
+      invoiceId: payload.id,
+      editedAt,
+      note: payload.note ?? null,
+      snapshot: JSON.stringify(current),
+    });
+
+    const creditedByItem = await getCreditNotedQtyByItem(tx, payload.id);
+    const newQtyByItem = new Map(validLines.map((l) => [l.itemId, l.quantity]));
+    assertNoCreditGuardViolation(current.lines, newQtyByItem, creditedByItem);
+
+    await tx
+      .delete(schema.invoiceLineItems)
+      .where(eq(schema.invoiceLineItems.invoiceId, payload.id));
+    if (validLines.length > 0) {
+      await tx
+        .insert(schema.invoiceLineItems)
+        .values(buildLineValues(validLines, payload.id, vatRate));
+    }
+    await tx
+      .update(schema.invoices)
+      .set({
+        updatedAt: editedAt,
+        vatMode,
+        vatRate,
+        invoiceDate: newInvoiceDate,
+        totalExclTax,
+        taxAmount,
+        totalInclTax: totalExclTax + taxAmount,
+      })
+      .where(eq(schema.invoices.id, payload.id));
+
+    await replayAllAffectedItems(
+      tx,
+      payload.id,
+      current.lines,
+      validLines,
+      newOccurredAt,
+      editedAt,
+      current.entityId,
+    );
+  });
+}
+
 export function createInvoicesRepo(db: DbClient) {
   return {
     saveInvoice: (payload: ISaveCapturedInvoicePayload) => saveInvoice(db, payload),
@@ -795,12 +1194,20 @@ export function createInvoicesRepo(db: DbClient) {
     getInvoicesWithLines: () => getInvoicesWithLines(db),
     getInvoiceById: (id: string) => getInvoiceById(db, id),
     getLinesForAnalysis: (entityId?: string) => getLinesForAnalysis(db, entityId),
-    getLastUnitPrices: () => getLastUnitPrices(db),
+    getLastUnitPrices: (asOfDate?: string) => getLastUnitPrices(db, asOfDate),
     getInvoiceAudit: (id: string) => getInvoiceAudit(db, id),
     saveAndPostInvoice: (payload: ISaveCapturedInvoicePayload) => saveAndPostInvoice(db, payload),
     postInvoice: (id: string) => postInvoice(db, id),
     saveCreditNote: (payload: ISaveCreditNotePayload) => saveCreditNote(db, payload),
     getCreditNotesForInvoice: (sourceInvoiceId: string) =>
       getCreditNotesForInvoice(db, sourceInvoiceId),
+    getCreditNotedQtyByInvoiceItem: (entityId?: string) =>
+      getCreditNotedQtyByInvoiceItem(db, entityId),
+    getPurchaseTotalsByItem: (fromDate?: string, toDate?: string, entityId?: string) =>
+      getPurchaseTotalsByItem(db, fromDate, toDate, entityId),
+    getCreditTotalsByItem: (fromDate?: string, toDate?: string, entityId?: string) =>
+      getCreditTotalsByItem(db, fromDate, toDate, entityId),
+    updatePostedInvoiceLines: (payload: IUpdatePostedInvoiceLinesPayload) =>
+      updatePostedInvoiceLines(db, payload),
   };
 }

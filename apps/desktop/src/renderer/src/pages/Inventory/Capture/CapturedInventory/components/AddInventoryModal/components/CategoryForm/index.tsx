@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Button, cn } from '@reyogo/ui';
 import { INVENTORY_TYPES, InventoryType } from '@reyogo/types';
 import { useInventory } from '../../../../Context/InventoryContext';
@@ -15,6 +16,7 @@ export function CategoryForm({ onDone }: CategoryFormProps) {
     const trimmed = name.trim();
     if (!trimmed || !type) return;
     addCategory({ name: trimmed, type });
+    toast.success('Category added');
     setName('');
     onDone();
   }

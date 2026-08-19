@@ -10,6 +10,7 @@ import {
   createInvoicesRepo,
   createSetupRepo,
   createEntitiesRepo,
+  createStocktakeRepo,
   schema,
   type DbClient,
   type DbHandle,
@@ -35,6 +36,7 @@ type Repos = {
   invoices: ReturnType<typeof createInvoicesRepo>;
   setup: ReturnType<typeof createSetupRepo>;
   entities: ReturnType<typeof createEntitiesRepo>;
+  stocktake: ReturnType<typeof createStocktakeRepo>;
 };
 
 let _handle: DbHandle | ReplicaHandle | null = null;
@@ -86,6 +88,7 @@ function buildRepos(db: DbClient): Repos {
     invoices: createInvoicesRepo(db),
     setup: createSetupRepo(db),
     entities: createEntitiesRepo(db),
+    stocktake: createStocktakeRepo(db),
   };
 }
 

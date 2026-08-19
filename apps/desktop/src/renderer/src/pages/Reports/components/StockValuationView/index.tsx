@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { useStockLevelRows } from '../../hooks/useStockLevelRows';
 import { grandTotalOf } from '../../hooks/useStockLevelRows/utils/grandTotalOf';
 import { sortStockRows } from '../../hooks/useStockLevelRows/utils/sortStockRows';
-import { StockSortKey } from '../../hooks/useStockLevelRows/types';
+import { StockCostSource, StockSortKey } from '../../hooks/useStockLevelRows/types';
 import { useAvailableOptionsSync } from '../../hooks/useAvailableOptionsSync';
 import { StockSortSelect } from '../StockSortSelect';
 import { StockValuationTable } from './components/StockValuationTable';
+import { StocktakeSessionSelect } from './components/StocktakeSessionSelect';
+import { useCompletedStocktakeSessions } from './hooks/useCompletedStocktakeSessions';
 import type { StockValuationViewProps } from './types';
 
 export function StockValuationView({
@@ -17,11 +19,15 @@ export function StockValuationView({
   onAvailableCategoriesChange,
   onAvailableTypesChange,
 }: StockValuationViewProps) {
+  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
+  const completedSessions = useCompletedStocktakeSessions();
   const { loading, rows, availableCategories, availableTypes } = useStockLevelRows(
     entityId,
     asOfDate,
     selectedCategories,
     selectedType,
+    StockCostSource.LastCost,
+    sessionId,
   );
   const [sortBy, setSortBy] = useState<StockSortKey>(StockSortKey.Name);
 
@@ -46,6 +52,11 @@ export function StockValuationView({
     <div className="space-y-3">
       <div className="flex items-end gap-4">
         <StockSortSelect value={sortBy} onChange={setSortBy} />
+        <StocktakeSessionSelect
+          sessions={completedSessions}
+          value={sessionId}
+          onChange={setSessionId}
+        />
       </div>
       <StockValuationTable rows={sortedRows} grandTotal={grandTotalOf(sortedRows)} />
     </div>

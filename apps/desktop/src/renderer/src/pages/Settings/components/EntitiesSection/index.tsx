@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Input } from '@reyogo/ui';
 import type { IEntity } from '@reyogo/types';
 import { entitiesService } from '@/services/entities';
+import { ipcErrorMessage } from '@/utils/ipcErrorMessage';
 import { SectionHeader } from '../SectionHeader';
 
 interface EntitiesSectionProps {
@@ -91,6 +93,8 @@ function EntityRow({
       await entitiesService.renameEntity(entity.id, name.trim());
       await onSaved();
       setEditing(false);
+    } catch (err) {
+      toast.error(ipcErrorMessage(err, 'Failed to rename the business'));
     } finally {
       setSaving(false);
     }
@@ -145,6 +149,8 @@ function AddEntityForm({ onSaved }: { onSaved: () => Promise<void> }) {
       await onSaved();
       setAddingName('');
       setShowAdd(false);
+    } catch (err) {
+      toast.error(ipcErrorMessage(err, 'Failed to add the business'));
     } finally {
       setAdding(false);
     }

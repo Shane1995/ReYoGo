@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@reyogo/ui';
 import { useEntities } from '@/Context/EntityContext';
 import { useInventory } from '../../../../Context/InventoryContext';
@@ -20,6 +21,7 @@ export function ItemForm({ onDone }: ItemFormProps) {
     const payload = itemSavePayload(name.trim(), categoryId, category, unitOfMeasureId, entityId);
     if (!payload) return;
     addItem(payload);
+    toast.success('Item added');
     setName('');
     setCategoryId('');
     setUnitOfMeasureId('');

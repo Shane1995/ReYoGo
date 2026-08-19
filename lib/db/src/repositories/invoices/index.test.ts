@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { InventoryType, VatMode, MovementType, ReferenceType, InvoiceStatus } from '@reyogo/types';
 import { eq } from 'drizzle-orm';
 import { createTestDb, type DbClient } from '../../__tests__/helpers';
@@ -31,6 +31,10 @@ function line(overrides: {
     totalVatExclude: overrides.totalVatExclude ?? 100,
   };
 }
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 beforeEach(async () => {
   db = await createTestDb();
@@ -385,6 +389,35 @@ describe('createInvoicesRepo', () => {
       });
       expect(await repo.getLastUnitPrices()).toEqual({});
     });
+
+    it('only considers the most recent purchase as of the given date', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-early',
+        entityId: 'default',
+        supplierId: null,
+        invoiceNumber: 'INV-EARLY',
+        invoiceDate: new Date('2026-01-01'),
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l-early', quantity: 10, totalVatExclude: 100, isVatable: true })],
+      });
+      await repo.saveAndPostInvoice({
+        id: 'inv-late',
+        entityId: 'default',
+        supplierId: null,
+        invoiceNumber: 'INV-LATE',
+        invoiceDate: new Date('2026-06-01'),
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l-late', quantity: 10, totalVatExclude: 200, isVatable: true })],
+      });
+
+      const asOfEarly = await repo.getLastUnitPrices('2026-03-01');
+      expect(asOfEarly['item-1']!.exclVat).toBe(10);
+
+      const asOfLate = await repo.getLastUnitPrices('2026-12-01');
+      expect(asOfLate['item-1']!.exclVat).toBe(20);
+    });
   });
 
   describe('saveCreditNote', () => {
@@ -722,6 +755,488 @@ describe('createInvoicesRepo', () => {
     it('returns empty array when no credit notes exist', async () => {
       const creditNotes = await repo.getCreditNotesForInvoice('nonexistent-inv');
       expect(creditNotes).toEqual([]);
+    });
+  });
+
+  describe('getCreditNotedQtyByInvoiceItem', () => {
+    it('returns credited qty keyed by invoiceId::itemId across all invoices', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-8',
+        entityId: 'default',
+        invoiceNumber: 'INV-008',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-8', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+      await repo.saveCreditNote({
+        id: 'cn-8',
+        sourceInvoiceId: 'inv-8',
+        entityId: 'default',
+        invoiceNumber: 'CN-INV-008',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'cn-line-8', itemId: 'item-1', quantity: 4, totalVatExclude: 40 })],
+      });
+
+      const result = await repo.getCreditNotedQtyByInvoiceItem();
+      expect(result['inv-8::item-1']).toBe(4);
+    });
+
+    it('sums multiple credit notes against the same source invoice/item', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-9',
+        entityId: 'default',
+        invoiceNumber: 'INV-009',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-9', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+      await repo.saveCreditNote({
+        id: 'cn-9a',
+        sourceInvoiceId: 'inv-9',
+        entityId: 'default',
+        invoiceNumber: 'CN-INV-009A',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'cn-line-9a', itemId: 'item-1', quantity: 3, totalVatExclude: 30 })],
+      });
+      await repo.saveCreditNote({
+        id: 'cn-9b',
+        sourceInvoiceId: 'inv-9',
+        entityId: 'default',
+        invoiceNumber: 'CN-INV-009B',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'cn-line-9b', itemId: 'item-1', quantity: 2, totalVatExclude: 20 })],
+      });
+
+      const result = await repo.getCreditNotedQtyByInvoiceItem();
+      expect(result['inv-9::item-1']).toBe(5);
+    });
+
+    it('returns an empty object when no credit notes exist', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-10',
+        entityId: 'default',
+        invoiceNumber: 'INV-010',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-10', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+
+      const result = await repo.getCreditNotedQtyByInvoiceItem();
+      expect(result).toEqual({});
+    });
+  });
+
+  describe('getPurchaseTotalsByItem', () => {
+    it('sums qty and total value across posted invoices for each item', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-11',
+        entityId: 'default',
+        invoiceNumber: 'INV-011',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-11a', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+      await repo.saveAndPostInvoice({
+        id: 'inv-12',
+        entityId: 'default',
+        invoiceNumber: 'INV-012',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-12a', itemId: 'item-1', quantity: 5, totalVatExclude: 50 })],
+      });
+
+      const result = await repo.getPurchaseTotalsByItem();
+      expect(result['item-1']).toEqual({ qty: 15, totalValue: 150 });
+    });
+
+    it('excludes draft invoices', async () => {
+      await repo.saveInvoice({
+        id: 'inv-13',
+        entityId: 'default',
+        invoiceNumber: 'INV-013',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-13a', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+
+      const result = await repo.getPurchaseTotalsByItem();
+      expect(result['item-1']).toBeUndefined();
+    });
+
+    it('filters by date range', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-14',
+        entityId: 'default',
+        invoiceNumber: 'INV-014',
+        invoiceDate: new Date('2026-01-01'),
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-14a', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+      await repo.saveAndPostInvoice({
+        id: 'inv-15',
+        entityId: 'default',
+        invoiceNumber: 'INV-015',
+        invoiceDate: new Date('2026-06-01'),
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-15a', itemId: 'item-1', quantity: 5, totalVatExclude: 50 })],
+      });
+
+      const result = await repo.getPurchaseTotalsByItem('2026-01-01', '2026-03-01');
+      expect(result['item-1']).toEqual({ qty: 10, totalValue: 100 });
+    });
+  });
+
+  describe('getCreditTotalsByItem', () => {
+    it('sums qty and total value across credit notes for each item', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-16',
+        entityId: 'default',
+        invoiceNumber: 'INV-016',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-16a', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+      await repo.saveCreditNote({
+        id: 'cn-16',
+        sourceInvoiceId: 'inv-16',
+        entityId: 'default',
+        invoiceNumber: 'CN-INV-016',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'cn-line-16', itemId: 'item-1', quantity: 3, totalVatExclude: 30 })],
+      });
+
+      const result = await repo.getCreditTotalsByItem();
+      expect(result['item-1']).toEqual({ qty: 3, totalValue: 30 });
+    });
+
+    it('excludes posted (non-credit) invoices', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-17',
+        entityId: 'default',
+        invoiceNumber: 'INV-017',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'line-17a', itemId: 'item-2', quantity: 10, totalVatExclude: 100 })],
+      });
+
+      const result = await repo.getCreditTotalsByItem();
+      expect(result['item-2']).toBeUndefined();
+    });
+  });
+
+  describe('updatePostedInvoiceLines', () => {
+    async function movementFor(invoiceId: string, itemId: string) {
+      const rows = await db
+        .select()
+        .from(schema.stockMovements)
+        .where(eq(schema.stockMovements.referenceId, invoiceId));
+      return rows.find((r) => r.inventoryItemId === itemId) ?? null;
+    }
+
+    it('throws when the invoice is not posted', async () => {
+      await repo.saveInvoice({
+        id: 'inv-d1',
+        entityId: 'default',
+        invoiceNumber: 'INV-D1',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l1', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+
+      await expect(
+        repo.updatePostedInvoiceLines({
+          id: 'inv-d1',
+          lines: [line({ id: 'l1', itemId: 'item-1', quantity: 5, totalVatExclude: 50 })],
+        }),
+      ).rejects.toThrow('is not posted');
+    });
+
+    it('increases qty on the most recent purchase with no later movements', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-20',
+        entityId: 'default',
+        invoiceNumber: 'INV-020',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l20', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+
+      await repo.updatePostedInvoiceLines({
+        id: 'inv-20',
+        lines: [line({ id: 'l20', itemId: 'item-1', quantity: 15, totalVatExclude: 150 })],
+      });
+
+      const movement = await movementFor('inv-20', 'item-1');
+      expect(movement!.qty).toBe(15);
+      expect(movement!.stockQtyAfter).toBe(15);
+      expect(movement!.weightedAvgCostAfter).toBe(10);
+
+      const invoice = await repo.getInvoiceById('inv-20');
+      expect(invoice!.lines[0]!.quantity).toBe(15);
+    });
+
+    it('recalculates a later credit note downstream when the purchase qty changes', async () => {
+      // occurredAt/createdAt are stored with second-level precision. Real credit
+      // notes are always raised well after their source invoice is posted, so
+      // pin the system clock a full second apart to make that ordering
+      // deterministic here rather than relying on real elapsed time.
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'));
+      await repo.saveAndPostInvoice({
+        id: 'inv-21',
+        entityId: 'default',
+        invoiceNumber: 'INV-021',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l21', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+      vi.setSystemTime(new Date('2026-01-01T00:00:01.000Z'));
+      await repo.saveCreditNote({
+        id: 'cn-21',
+        sourceInvoiceId: 'inv-21',
+        entityId: 'default',
+        invoiceNumber: 'CN-INV-021',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'cn-l21', itemId: 'item-1', quantity: 3, totalVatExclude: 30 })],
+      });
+      vi.useRealTimers();
+
+      await repo.updatePostedInvoiceLines({
+        id: 'inv-21',
+        lines: [line({ id: 'l21', itemId: 'item-1', quantity: 20, totalVatExclude: 200 })],
+      });
+
+      const anchor = await movementFor('inv-21', 'item-1');
+      expect(anchor!.qty).toBe(20);
+      expect(anchor!.stockQtyAfter).toBe(20);
+      expect(anchor!.weightedAvgCostAfter).toBe(10);
+
+      const creditMovement = await movementFor('cn-21', 'item-1');
+      expect(creditMovement!.qty).toBe(-3);
+      expect(creditMovement!.weightedAvgCostAfter).toBe(10);
+      expect(creditMovement!.stockQtyAfter).toBe(17);
+    });
+
+    it('leaves an unrelated item entirely untouched', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-22',
+        entityId: 'default',
+        invoiceNumber: 'INV-022',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l22', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+      await db.insert(schema.stockMovements).values({
+        id: 'unrelated-mv',
+        accountId: 'default',
+        entityId: 'default',
+        inventoryItemId: 'item-2',
+        movementType: 'IN' as MovementType,
+        qty: 5,
+        unitCostAtTime: 3,
+        totalCost: 15,
+        weightedAvgCostAfter: 3,
+        stockQtyAfter: 5,
+        occurredAt: new Date(),
+        createdAt: new Date(),
+      });
+
+      await repo.updatePostedInvoiceLines({
+        id: 'inv-22',
+        lines: [line({ id: 'l22', itemId: 'item-1', quantity: 8, totalVatExclude: 80 })],
+      });
+
+      const untouched = await db
+        .select()
+        .from(schema.stockMovements)
+        .where(eq(schema.stockMovements.id, 'unrelated-mv'));
+      expect(untouched[0]!.qty).toBe(5);
+      expect(untouched[0]!.stockQtyAfter).toBe(5);
+      expect(untouched[0]!.weightedAvgCostAfter).toBe(3);
+    });
+
+    it('rejects and rolls back an edit that would drive stock negative downstream', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-23',
+        entityId: 'default',
+        invoiceNumber: 'INV-023',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l23', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+      await db.insert(schema.stockMovements).values({
+        id: 'adj-23',
+        accountId: 'default',
+        entityId: 'default',
+        inventoryItemId: 'item-1',
+        movementType: 'ADJUSTMENT' as MovementType,
+        qty: -9,
+        weightedAvgCostAfter: 10,
+        stockQtyAfter: 1,
+        occurredAt: new Date(Date.now() + 60_000),
+        createdAt: new Date(Date.now() + 60_000),
+      });
+
+      await expect(
+        repo.updatePostedInvoiceLines({
+          id: 'inv-23',
+          lines: [line({ id: 'l23', itemId: 'item-1', quantity: 3, totalVatExclude: 30 })],
+        }),
+      ).rejects.toThrow('negative');
+
+      const invoice = await repo.getInvoiceById('inv-23');
+      expect(invoice!.lines[0]!.quantity).toBe(10);
+      const adjustment = await db
+        .select()
+        .from(schema.stockMovements)
+        .where(eq(schema.stockMovements.id, 'adj-23'));
+      expect(adjustment[0]!.stockQtyAfter).toBe(1);
+    });
+
+    it('rejects and rolls back reducing qty below already-credited qty', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-24',
+        entityId: 'default',
+        invoiceNumber: 'INV-024',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l24', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+      await repo.saveCreditNote({
+        id: 'cn-24',
+        sourceInvoiceId: 'inv-24',
+        entityId: 'default',
+        invoiceNumber: 'CN-INV-024',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'cn-l24', itemId: 'item-1', quantity: 6, totalVatExclude: 60 })],
+      });
+
+      await expect(
+        repo.updatePostedInvoiceLines({
+          id: 'inv-24',
+          lines: [line({ id: 'l24', itemId: 'item-1', quantity: 5, totalVatExclude: 50 })],
+        }),
+      ).rejects.toThrow('already credited');
+
+      const invoice = await repo.getInvoiceById('inv-24');
+      expect(invoice!.lines[0]!.quantity).toBe(10);
+    });
+
+    it('adds a stock movement for an item newly added to the invoice', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-25',
+        entityId: 'default',
+        invoiceNumber: 'INV-025',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l25a', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+
+      await repo.updatePostedInvoiceLines({
+        id: 'inv-25',
+        lines: [
+          line({ id: 'l25a', itemId: 'item-1', quantity: 10, totalVatExclude: 100 }),
+          line({ id: 'l25b', itemId: 'item-2', quantity: 4, totalVatExclude: 8, unitPrice: 2 }),
+        ],
+      });
+
+      const movement = await movementFor('inv-25', 'item-2');
+      expect(movement!.qty).toBe(4);
+      expect(movement!.stockQtyAfter).toBe(4);
+      expect(movement!.weightedAvgCostAfter).toBe(2);
+    });
+
+    it('removes the stock movement for an item dropped from the invoice', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-26',
+        entityId: 'default',
+        invoiceNumber: 'INV-026',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [
+          line({ id: 'l26a', itemId: 'item-1', quantity: 10, totalVatExclude: 100 }),
+          line({ id: 'l26b', itemId: 'item-2', quantity: 5, totalVatExclude: 50 }),
+        ],
+      });
+
+      await repo.updatePostedInvoiceLines({
+        id: 'inv-26',
+        lines: [line({ id: 'l26a', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+
+      const movement = await movementFor('inv-26', 'item-2');
+      expect(movement).toBeNull();
+      const invoice = await repo.getInvoiceById('inv-26');
+      expect(invoice!.lines).toHaveLength(1);
+    });
+
+    it('writes an audit log entry with the pre-edit snapshot', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-27',
+        entityId: 'default',
+        invoiceNumber: 'INV-027',
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l27', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+
+      await repo.updatePostedInvoiceLines({
+        id: 'inv-27',
+        note: 'Fixed a typo in the qty',
+        lines: [line({ id: 'l27', itemId: 'item-1', quantity: 12, totalVatExclude: 120 })],
+      });
+
+      const audit = await repo.getInvoiceAudit('inv-27');
+      expect(audit).toHaveLength(1);
+      expect(audit[0]!.note).toBe('Fixed a typo in the qty');
+      expect(audit[0]!.snapshot.lines[0]!.quantity).toBe(10);
+    });
+
+    it('re-sorts and re-replays WAC when the invoice date moves after a later purchase', async () => {
+      await repo.saveAndPostInvoice({
+        id: 'inv-28a',
+        entityId: 'default',
+        invoiceNumber: 'INV-028A',
+        invoiceDate: new Date('2026-01-01'),
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [line({ id: 'l28a', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+      await repo.saveAndPostInvoice({
+        id: 'inv-28b',
+        entityId: 'default',
+        invoiceNumber: 'INV-028B',
+        invoiceDate: new Date('2026-01-02'),
+        vatMode: VatMode.Exclusive,
+        vatRate: 15,
+        lines: [
+          line({ id: 'l28b', itemId: 'item-1', quantity: 10, totalVatExclude: 200, unitPrice: 20 }),
+        ],
+      });
+
+      const beforeB = await movementFor('inv-28b', 'item-1');
+      expect(beforeB!.weightedAvgCostAfter).toBe(15);
+
+      await repo.updatePostedInvoiceLines({
+        id: 'inv-28a',
+        invoiceDate: new Date('2026-01-03'),
+        lines: [line({ id: 'l28a', itemId: 'item-1', quantity: 10, totalVatExclude: 100 })],
+      });
+
+      const afterA = await movementFor('inv-28a', 'item-1');
+      const afterB = await movementFor('inv-28b', 'item-1');
+      expect(afterB!.weightedAvgCostAfter).toBe(20);
+      expect(afterB!.stockQtyAfter).toBe(10);
+      expect(afterA!.weightedAvgCostAfter).toBe(15);
+      expect(afterA!.stockQtyAfter).toBe(20);
     });
   });
 });

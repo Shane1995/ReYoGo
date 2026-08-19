@@ -15,6 +15,7 @@ import { DATE_RANGE_REPORT_VIEWS, AS_OF_DATE_REPORT_VIEWS } from './constants';
 import { ReportView } from './types';
 import type { ItemCostHistoryRow } from './components/ItemCostHistoryView/types';
 import type { StockLevelRow } from './hooks/useStockLevelRows/types';
+import type { ItemTotalRow } from './utils/itemTotalRowsOf/types';
 
 export default function ReportsPage() {
   const { selectedEntityId } = useEntities();
@@ -30,6 +31,8 @@ export default function ReportsPage() {
   const [periodSummaryCogs, setPeriodSummaryCogs] = useState<COGSSummary | null>(null);
   const [stockValuationRows, setStockValuationRows] = useState<StockLevelRow[]>([]);
   const [stockOnHandRows, setStockOnHandRows] = useState<StockLevelRow[]>([]);
+  const [purchaseReportRows, setPurchaseReportRows] = useState<ItemTotalRow[]>([]);
+  const [creditReportRows, setCreditReportRows] = useState<ItemTotalRow[]>([]);
 
   const handleViewChange = (view: ReportView) => {
     setActiveView(view);
@@ -47,6 +50,8 @@ export default function ReportsPage() {
       periodSummaryCogs,
       stockValuationRows,
       stockOnHandRows,
+      purchaseReportRows,
+      creditReportRows,
     });
     if (request) exportReport(request);
   };
@@ -96,6 +101,8 @@ export default function ReportsPage() {
           onPeriodSummaryCogsChange={setPeriodSummaryCogs}
           onStockValuationRowsChange={setStockValuationRows}
           onStockOnHandRowsChange={setStockOnHandRows}
+          onPurchaseReportRowsChange={setPurchaseReportRows}
+          onCreditReportRowsChange={setCreditReportRows}
           onAvailableCategoriesChange={setAvailableCategories}
           onAvailableTypesChange={setAvailableTypes}
         />
